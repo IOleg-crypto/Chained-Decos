@@ -1,6 +1,5 @@
 #include "shadow_pass.h"
 #include "engine/core/service_locator.h"
-#include "engine/scene/components.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/project/project.h"
@@ -25,34 +24,25 @@ void ShadowPass::Init()
 
 void ShadowPass::Execute(const RenderContext& ctx)
 {
-    // Always cast shadows from the global environment directional light.
-    // A LightComponent with Shadows=true is only needed when entity-based directional lights exist.
-    const auto& ld = ctx.Renderer->GetEnvironment().Lighting;
-    glm::vec3 lightDir = glm::length(glm::vec3(ld.Direction)) > 0.0001f
-                             ? glm::normalize(glm::vec3(ld.Direction))
-                             : glm::normalize(glm::vec3(0.3f, -0.7f, 0.3f));
-
-    // If entity-based directional lights exist but none have Shadows enabled, skip.
-    bool hasAnyDirLight = false, entityShadowEnabled = false;
-    ctx.Registry.view<LightComponent>().each([&](LightComponent& lc) {
-        if (lc.Type == LightType::Directional)
-        {
-            hasAnyDirLight = true;
-            if (lc.Shadows) entityShadowEnabled = true;
-        }
-    });
-    if (hasAnyDirLight && !entityShadowEnabled)
+    // Always cast shadows from the global environment directional light,
+    // unless the project's Render settings have shadows disabled entirely.
+    auto project = Project::GetActive();
+    if (project && !project->GetConfig().Render.EnableShadows)
     {
         m_HasShadows = false;
         return;
     }
+
+    const auto& ld = ctx.Renderer->GetEnvironment().Lighting;
+    glm::vec3 lightDir = glm::length(glm::vec3(ld.Direction)) > 0.0001f
+                             ? glm::normalize(glm::vec3(ld.Direction))
+                             : glm::normalize(glm::vec3(0.3f, -0.7f, 0.3f));
 
     m_HasShadows = true;
     if (!m_DepthShaderAsset || !m_DepthShaderAsset->GetShader()) return;
 
     // Read shadow resolution from project settings
     uint32_t shadowRes = 2048;
-    auto project = Project::GetActive();
     if (project)
     {
         shadowRes = (uint32_t)project->GetConfig().Render.ShadowResolution;

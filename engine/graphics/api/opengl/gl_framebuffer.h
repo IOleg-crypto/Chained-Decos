@@ -17,9 +17,16 @@ public:
     virtual void Unbind() override;
 
     virtual void Resize(uint32_t width, uint32_t height) override;
+    virtual void Resolve() override;
 
-    virtual uint32_t GetColorAttachmentRendererID() const override { return m_ColorAttachment; }
-    virtual uint32_t GetDepthAttachmentRendererID() const override { return m_DepthAttachment; }
+    virtual uint32_t GetColorAttachmentRendererID() const override
+    {
+        return m_Specification.Samples > 1 ? m_ResolveColorAttachment : m_ColorAttachment;
+    }
+    virtual uint32_t GetDepthAttachmentRendererID() const override
+    {
+        return m_Specification.Samples > 1 ? m_ResolveDepthAttachment : m_DepthAttachment;
+    }
 
     virtual const FramebufferSpecification& GetSpecification() const override { return m_Specification; }
 
@@ -31,6 +38,14 @@ private:
     uint32_t m_RendererID = 0;
     uint32_t m_ColorAttachment = 0;
     uint32_t m_DepthAttachment = 0;
+
+    // Only used when m_Specification.Samples > 1: a same-size single-sample FBO that
+    // Resolve() blits the multisample attachments into, so downstream code can keep
+    // sampling a plain sampler2D regardless of whether MSAA is on.
+    uint32_t m_ResolveFBO = 0;
+    uint32_t m_ResolveColorAttachment = 0;
+    uint32_t m_ResolveDepthAttachment = 0;
+
     FramebufferSpecification m_Specification;
     bool m_IsComplete = false;
 };

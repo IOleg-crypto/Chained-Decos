@@ -200,7 +200,7 @@ void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
 
     assembly.UploadInternalCalls();
     CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.",
-        91, (std::string)assembly.GetName());
+        121, (std::string)assembly.GetName());
 }
 
 } // namespace Chained

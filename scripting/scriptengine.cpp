@@ -1,4 +1,5 @@
 #include "scriptengine.h"
+#include "engine/app/application.h"
 #include "engine/core/log.h"
 #include "engine/common/engine_assert.h"
 #include <exception>
@@ -106,6 +107,78 @@ bool ScriptEngine::RequestAssemblyReload(const std::string& assemblyPath, const 
 Coral::Type* ScriptEngine::GetScriptClass(const std::string& name)
 {
     return m_Registry.GetScriptClass(name);
+}
+
+std::filesystem::path ScriptEngine::ResolveAssemblyPath(const ScriptingSettings& scripting,
+                                                        const std::filesystem::path& projectDir)
+{
+    if (scripting.ModuleName.empty())
+    {
+        return {};
+    }
+
+    std::string dllName = scripting.ModuleName;
+    if (!dllName.ends_with(".dll"))
+    {
+        dllName += ".dll";
+    }
+
+    // Try ModuleDirectory first (relative to project dir)
+    std::filesystem::path dllPath = scripting.ModuleDirectory / dllName;
+    if (dllPath.is_relative())
+    {
+        dllPath = projectDir / dllPath;
+    }
+
+    if (std::filesystem::exists(dllPath))
+    {
+        return dllPath;
+    }
+
+    // Try MinGW "lib" prefix
+    std::filesystem::path libPath = dllPath.parent_path() / ("lib" + dllName);
+    if (std::filesystem::exists(libPath))
+    {
+        return libPath;
+    }
+
+    // Try exe directory (build output)
+    std::filesystem::path exeDir = Application::GetExecutableDirectory();
+    std::filesystem::path exePath = exeDir / dllName;
+    if (std::filesystem::exists(exePath))
+    {
+        return exePath;
+    }
+
+    // Try exe directory with lib prefix
+    std::filesystem::path exeLibPath = exeDir / ("lib" + dllName);
+    if (std::filesystem::exists(exeLibPath))
+    {
+        return exeLibPath;
+    }
+
+    return {};
+}
+
+bool ScriptEngine::TryAutoLoad(const ProjectConfig& config)
+{
+    if (!config.Scripting.AutoLoad || config.Scripting.ModuleName.empty())
+    {
+        return false;
+    }
+
+    auto dllPath = ResolveAssemblyPath(config.Scripting, config.ProjectDirectory);
+    if (dllPath.empty())
+    {
+        CH_CORE_WARN("ScriptEngine: Script assembly not found for '{}'.", config.Name);
+        return false;
+    }
+
+    SetEnabled(true);
+    Initialize();
+    LoadAppAssembly(dllPath.string());
+    CH_CORE_INFO("ScriptEngine: Auto-loaded script assembly '{}'.", dllPath.string());
+    return true;
 }
 
 } // namespace Chained

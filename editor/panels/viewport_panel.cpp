@@ -155,6 +155,15 @@ void ViewportPanel::DrawGizmoButtons()
     ImGui::PopStyleColor();
 }
 
+// Project's RenderSettings::AntiAliasingSamples is 0/2/4/8 ("0 = off"); Framebuffer's
+// Samples field uses "1 = off" (matches GL's own multisample vs. non-multisample distinction).
+static uint32_t GetConfiguredMSAASamples()
+{
+    auto project = Project::GetActive();
+    int samples = project ? project->GetConfig().Render.AntiAliasingSamples : 4;
+    return samples > 1 ? (uint32_t)samples : 1u;
+}
+
 ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr, EditorState& state, ImVec2& editorViewportSize)
     : m_CommandHistory(cmd), m_SceneManager(sceneMgr), m_ProjectManager(projMgr), m_EditorState(state), m_EditorViewportSize(editorViewportSize)
 {
@@ -178,6 +187,8 @@ ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, 
 
     FramebufferSpecification hdrSpec = spec;
     hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
+    hdrSpec.Samples = GetConfiguredMSAASamples();
+    m_HDRFramebufferSamples = hdrSpec.Samples;
     m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
 
     m_SceneRenderer = new SceneRenderer();
@@ -356,7 +367,15 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
         }
     }
 
-    // Recreate FBOs if they became invalid (e.g. after context loss or bad resize)
+    // Recreate FBOs if they became invalid (e.g. after context loss or bad resize),
+    // or if the project's AntiAliasingSamples setting changed since we last (re)created them -
+    // the sample count is baked into the framebuffer at creation and can't change in place.
+    uint32_t configuredSamples = GetConfiguredMSAASamples();
+    if (m_HDRFramebuffer && configuredSamples != m_HDRFramebufferSamples)
+    {
+        m_HDRFramebuffer.reset();
+    }
+
     if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
     {
         if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
@@ -373,6 +392,8 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             hdrSpec.Width = (uint32_t)m_ViewportSize.x;
             hdrSpec.Height = (uint32_t)m_ViewportSize.y;
             hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
+            hdrSpec.Samples = configuredSamples;
+            m_HDRFramebufferSamples = configuredSamples;
             m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
         }
     }
@@ -444,6 +465,9 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     }
 
     m_HDRFramebuffer->Unbind();
+    // Multisample attachments aren't directly sampleable - resolve into the single-sample
+    // texture that ApplyPostProcessing()/GetColorAttachmentRendererID() below reads from.
+    m_HDRFramebuffer->Resolve();
 
     if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
         return;
@@ -701,13 +725,8 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
             auto project = Project::GetActive();
             if (project)
             {
-                std::string moduleName = project->GetConfig().Scripting.ModuleName;
-                if (moduleName.find(".dll") == std::string::npos)
-                    moduleName += ".dll";
-                if(moduleName.find(".so") == std::string::npos)
-                    moduleName += ".so";
-                    
-                std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
+                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(
+                    project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
                 auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
                 scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
             }

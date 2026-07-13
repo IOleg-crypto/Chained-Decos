@@ -1,3 +1,5 @@
+add_subdirectory(api)
+
 set(STB_IMPL_SOURCE "${CMAKE_CURRENT_BINARY_DIR}/stb_impl.cpp")
 file(WRITE "${STB_IMPL_SOURCE}" "#define STB_IMAGE_IMPLEMENTATION\n#include \"stb_image.h\"\n")
 
@@ -9,8 +11,8 @@ chained_add_engine_module(engine_graphics
     DEPENDS
         engine_core
         engine_project
-        engine_audio
         engine_assets
+        engine_graphics_api
         yaml-cpp
         engine_external_entt
         glm

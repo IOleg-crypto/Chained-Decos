@@ -184,105 +184,45 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         {
             ImGui::TextDisabled("Rendering Settings");
             ImGui::Separator();
-            ImGui::Spacing();
-
-            ImGui::DragFloat("Ambient Intensity", &config.Render.AmbientIntensity, 0.01f, 0.0f, 1.0f);
-            ImGui::DragFloat("Default Exposure", &config.Render.DefaultExposure, 0.01f, 0.0f, 10.0f);
-
-            ImGui::Separator();
             ImGui::TextDisabled("Visual Quality");
 
-            const char* shadowResNames[] = {"512", "1024", "2048", "4096"};
+            static constexpr int kShadowResValues[] = {512, 1024, 2048, 4096};
+            static constexpr int kShadowResCount = sizeof(kShadowResValues) / sizeof(kShadowResValues[0]);
+            const char* shadowResNames[kShadowResCount] = {"512", "1024", "2048", "4096"};
             int currentShadowResIdx = 2; // Default 2048
-            if (config.Render.ShadowResolution == 512)
+            for (int i = 0; i < kShadowResCount; i++)
             {
-                currentShadowResIdx = 0;
-            }
-            else if (config.Render.ShadowResolution == 1024)
-            {
-                currentShadowResIdx = 1;
-            }
-            else if (config.Render.ShadowResolution == 2048)
-            {
-                currentShadowResIdx = 2;
-            }
-            else if (config.Render.ShadowResolution == 4096)
-            {
-                currentShadowResIdx = 3;
-            }
-
-            if (ImGui::Combo("Shadow Resolution", &currentShadowResIdx, shadowResNames, 4))
-            {
-                if (currentShadowResIdx == 0)
+                if (config.Render.ShadowResolution == kShadowResValues[i])
                 {
-                    config.Render.ShadowResolution = 512;
-                }
-                else if (currentShadowResIdx == 1)
-                {
-                    config.Render.ShadowResolution = 1024;
-                }
-                else if (currentShadowResIdx == 2)
-                {
-                    config.Render.ShadowResolution = 2048;
-                }
-                else if (currentShadowResIdx == 3)
-                {
-                    config.Render.ShadowResolution = 4096;
+                    currentShadowResIdx = i;
+                    break;
                 }
             }
 
-            const char* aaNames[] = {"None", "2x MSAA", "4x MSAA", "8x MSAA"};
+            if (ImGui::Combo("Shadow Resolution", &currentShadowResIdx, shadowResNames, kShadowResCount))
+            {
+                config.Render.ShadowResolution = kShadowResValues[currentShadowResIdx];
+            }
+
+            static constexpr int kAAValues[] = {0, 2, 4, 8};
+            static constexpr int kAACount = sizeof(kAAValues) / sizeof(kAAValues[0]);
+            const char* aaNames[kAACount] = {"None", "2x MSAA", "4x MSAA", "8x MSAA"};
             int currentAAIdx = 0;
-            if (config.Render.AntiAliasingSamples == 0)
+            for (int i = 0; i < kAACount; i++)
             {
-                currentAAIdx = 0;
-            }
-            else if (config.Render.AntiAliasingSamples == 2)
-            {
-                currentAAIdx = 1;
-            }
-            else if (config.Render.AntiAliasingSamples == 4)
-            {
-                currentAAIdx = 2;
-            }
-            else if (config.Render.AntiAliasingSamples == 8)
-            {
-                currentAAIdx = 3;
-            }
-
-            if (ImGui::Combo("Anti-Aliasing", &currentAAIdx, aaNames, 4))
-            {
-                if (currentAAIdx == 0)
+                if (config.Render.AntiAliasingSamples == kAAValues[i])
                 {
-                    config.Render.AntiAliasingSamples = 0;
-                }
-                else if (currentAAIdx == 1)
-                {
-                    config.Render.AntiAliasingSamples = 2;
-                }
-                else if (currentAAIdx == 2)
-                {
-                    config.Render.AntiAliasingSamples = 4;
-                }
-                else if (currentAAIdx == 3)
-                {
-                    config.Render.AntiAliasingSamples = 8;
+                    currentAAIdx = i;
+                    break;
                 }
             }
 
-            ImGui::Checkbox("Enable SSAO", &config.Render.EnableSSAO);
-            ImGui::Checkbox("Enable Bloom", &config.Render.EnableBloom);
-
-            ImGui::Separator();
-            ImGui::TextDisabled("Textures");
-            ImGui::Checkbox("Generate Mipmaps", &config.Texture.GenerateMipmaps);
-
-            const char* filterNames[] = {"None", "Bilinear", "Trilinear", "Aniso 4x", "Aniso 8x", "Aniso 16x"};
-            int currentFilter = (int)config.Texture.Filter;
-            if (ImGui::Combo("Texture Filtering", &currentFilter, filterNames, 6))
+            if (ImGui::Combo("Anti-Aliasing", &currentAAIdx, aaNames, kAACount))
             {
-                config.Texture.Filter = (TextureFilter)currentFilter;
+                config.Render.AntiAliasingSamples = kAAValues[currentAAIdx];
             }
+
+            ImGui::Checkbox("Enable Shadows", &config.Render.EnableShadows);
         }
         else if (selectedCategory == 6) // Audio
         {

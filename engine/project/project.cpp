@@ -57,8 +57,8 @@ Project::~Project() = default;
 
         if (projectNode["Render"])
         {
-            config.Render.AmbientIntensity = projectNode["Render"]["AmbientIntensity"].as<float>();
-            config.Render.DefaultExposure = projectNode["Render"]["DefaultExposure"].as<float>();
+            // Note: Rendering deserialization handled thoroughly in EditorProjectSerializer.
+            // Simplified fallback here could still load ShadowResolution, etc.
         }
 
         if (projectNode["Scripting"])
@@ -110,19 +110,6 @@ std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path
 {
     return s_ActiveProject ? s_ActiveProject->GetAbsolutePathForProject(path) : path;
 }
-
-// Project lifecycle managed by ProjectManager.
-
-
-// Static Load/Save moved to ProjectManager or ProjectSerializer.
-// Keeping them commented or removed to force DI usage.
-
-
-// Removed legacy static SetActive and SetEngineRoot. 
-// Management logic moved to ProjectManager.
-
-
-
 
 
 std::vector<std::string> Project::GetAvailableScenes() const

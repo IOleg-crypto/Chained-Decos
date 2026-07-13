@@ -9,23 +9,11 @@ namespace Chained
 {
 
 // ── Logging ──────────────────────────────────────────────────────────
-static std::string ch_log_u16(const char16_t* ptr)
-{
-    if (!ptr) return {};
-    std::u16string u16(ptr);
-    std::string r; r.reserve(u16.size());
-    for (char16_t c : u16) 
-    {
-        r += (c < 0x80) ? (char)c : '?';
-    }
-    return r;
-}
+CH_SCRIPT_FUNC void Log_Info(const Coral::UCChar* message);
 
-CH_SCRIPT_FUNC void Log_Info(const char16_t* message);
+CH_SCRIPT_FUNC void Log_Warn(const Coral::UCChar* message);
 
-CH_SCRIPT_FUNC void Log_Warn(const char16_t* message);
-
-CH_SCRIPT_FUNC void Log_Error(const char16_t* message);
+CH_SCRIPT_FUNC void Log_Error(const Coral::UCChar* message);
 
 // ── Application / Window ─────────────────────────────────────────────
 CH_SCRIPT_FUNC void Application_Close();

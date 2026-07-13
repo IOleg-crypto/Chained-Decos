@@ -163,30 +163,21 @@ void ContentBrowserPanel::RenderGridView()
             const char* icon = asset.isDirectory ? ICON_FA_FOLDER : ICON_FA_FILE;
             if (!asset.isDirectory)
             {
-                switch (asset.type)
-                {
-                case EditorAssetType::Scene:
-                    icon = ICON_FA_CUBES;
-                    break;
-                case EditorAssetType::Prefab:
-                    icon = ICON_FA_CUBE;
-                    break;
-                case EditorAssetType::Model:
-                    icon = ICON_FA_SHAPES;
-                    break;
-                case EditorAssetType::Texture:
-                    icon = ICON_FA_IMAGE;
-                    break;
-                case EditorAssetType::Script:
-                    icon = ICON_FA_FILE_CODE;
-                    break;
-                case EditorAssetType::Audio:
-                    icon = ICON_FA_MUSIC;
-                    break;
-                default:
-                    icon = ICON_FA_FILE;
-                    break;
-                }
+                static const char* kAssetIcons[] = {
+                    nullptr,                // Directory (not used here)
+                    ICON_FA_CUBES,          // Scene
+                    ICON_FA_FILE_CODE,      // Script
+                    ICON_FA_SHAPES,         // Model
+                    ICON_FA_IMAGE,          // Texture
+                    ICON_FA_MUSIC,          // Audio
+                    ICON_FA_CUBE,           // Prefab
+                    ICON_FA_FILE            // Other
+                };
+                static constexpr int kAssetIconCount = sizeof(kAssetIcons) / sizeof(kAssetIcons[0]);
+                int typeIdx = static_cast<int>(asset.type);
+                icon = (typeIdx >= 0 && typeIdx < kAssetIconCount && kAssetIcons[typeIdx])
+                           ? kAssetIcons[typeIdx]
+                           : ICON_FA_FILE;
             }
 
             ImGui::BeginGroup();

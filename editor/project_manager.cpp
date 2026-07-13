@@ -10,6 +10,7 @@
 #include "scripting/scriptengine.h"
 #include "engine/assets/asset_manager.h"
 #include <algorithm>
+#include <fstream>
 #include <string>
 #include <format>
 #include "engine/scene/scene_serializer.h"
@@ -199,6 +200,80 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     project->GetConfig().Name = name;
     project->GetConfig().ProjectDirectory = path;
 
+    // Create standard directory structure
+    auto scriptsDir = std::filesystem::path(path) / "assets" / "scripts";
+    std::filesystem::create_directories(scriptsDir / "src");
+
+    // Generate .csproj
+    {
+        auto engineRoot = std::filesystem::path(PROJECT_ROOT_DIR);
+        auto managedCsproj = engineRoot / "scripting" / "managed" / "Chained.Managed.csproj";
+        auto relativeManaged = std::filesystem::relative(managedCsproj, scriptsDir);
+
+        std::string csprojContent =
+            "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
+            "\n"
+            "  <PropertyGroup>\n"
+            "    <TargetFramework>net9.0</TargetFramework>\n"
+            "    <AssemblyName>" + name + ".Scripts</AssemblyName>\n"
+            "    <RootNamespace>" + name + ".Scripts</RootNamespace>\n"
+            "    <ImplicitUsings>disable</ImplicitUsings>\n"
+            "    <Nullable>enable</Nullable>\n"
+            "    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n"
+            "    <OutputPath>../bin</OutputPath>\n"
+            "    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>\n"
+            "    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>\n"
+            "    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n"
+            "  </PropertyGroup>\n"
+            "\n"
+            "  <ItemGroup>\n"
+            "    <Compile Include=\"src/**/*.cs\" />\n"
+            "  </ItemGroup>\n"
+            "\n"
+            "  <ItemGroup>\n"
+            "    <ProjectReference Include=\"" + relativeManaged.string() + "\" />\n"
+            "  </ItemGroup>\n"
+            "\n"
+            "</Project>\n";
+
+        std::ofstream csprojOut(scriptsDir / (name + ".Scripts.csproj"));
+        if (csprojOut.is_open())
+        {
+            csprojOut << csprojContent;
+        }
+    }
+
+    // Generate starter script
+    {
+        std::string scriptContent =
+            "using Chained;\n"
+            "\n"
+            "namespace " + name + ".Scripts\n"
+            "{\n"
+            "    public class Starter : Script\n"
+            "    {\n"
+            "        public override void OnCreate()\n"
+            "        {\n"
+            "        }\n"
+            "\n"
+            "        public override void OnUpdate(float dt)\n"
+            "        {\n"
+            "        }\n"
+            "    }\n"
+            "}\n";
+
+        std::ofstream scriptOut(scriptsDir / "src" / "Starter.cs");
+        if (scriptOut.is_open())
+        {
+            scriptOut << scriptContent;
+        }
+    }
+
+    // Configure scripting settings
+    project->GetConfig().Scripting.ModuleName = name + ".Scripts.dll";
+    project->GetConfig().Scripting.ModuleDirectory = "assets/bin";
+    project->GetConfig().Scripting.AutoLoad = true;
+
     m_EditorSettings = EditorSettings(); // Reset to defaults
 
     EditorProjectSerializer::Serialize(project, m_EditorSettings, (std::filesystem::path(path) / (name + ".chproject")));
@@ -270,30 +345,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
         EditorLayer::Get().SaveConfig();
 
         // Auto-load script assembly if configured
-        auto& scripting = project->GetConfig().Scripting;
-        if (scripting.AutoLoad && !scripting.ModuleName.empty())
-        {
-            std::string dllName = scripting.ModuleName;
-            if (dllName.find(".dll") == std::string::npos)
-                dllName += ".dll";
-
-            std::filesystem::path dllPath = scripting.ModuleDirectory / dllName;
-            if (dllPath.is_relative())
-                dllPath = project->GetConfig().ProjectDirectory / dllPath;
-
-            if (std::filesystem::exists(dllPath))
-            {
-                 ServiceLocator::Get<ScriptEngine>()->SetEnabled(true);
-                 ServiceLocator::Get<ScriptEngine>()->Initialize();
-                 ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
-                 CH_CORE_INFO("EditorProjectManager: Auto-loaded script assembly '{}'.", dllPath.string());
-            }
-            else
-            {
-                CH_CORE_WARN("EditorProjectManager: Script assembly not found at '{}'. Build the C# project first.",
-                             dllPath.string());
-            }
-        }
+        ServiceLocator::Get<ScriptEngine>()->TryAutoLoad(project->GetConfig());
 
         // Auto-load scene if available
         std::filesystem::path sceneToLoad;

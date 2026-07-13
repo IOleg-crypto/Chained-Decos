@@ -1,7 +1,7 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/graphics/api/graphics_device.h"
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"

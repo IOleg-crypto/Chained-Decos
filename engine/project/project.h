@@ -23,11 +23,8 @@ struct AnimationSettings
 
 struct RenderSettings
 {
-    float AmbientIntensity = 0.3f;
-    float DefaultExposure = 1.0f;
     int ShadowResolution = 2048;
-    bool EnableSSAO = false;
-    bool EnableBloom = true;
+    bool EnableShadows = true;
     int AntiAliasingSamples = 4; // 0, 2, 4, 8
 };
 
@@ -36,23 +33,6 @@ struct MeshSettings
     bool ImportMaterials = true;
     bool CalculateTangents = true;
     bool FlipUVs = true;
-};
-
-// 0=None, 1=Bilinear, 2=Trilinear, 3=Anisotropic 4x, 4=Anisotropic 8x, 5=Anisotropic 16x
-enum class TextureFilter : int
-{
-    None        = 0,
-    Bilinear    = 1,
-    Trilinear   = 2,
-    Anisotropic4x  = 3,
-    Anisotropic8x  = 4,
-    Anisotropic16x = 5
-};
-
-struct TextureSettings
-{
-    bool GenerateMipmaps = true;
-    TextureFilter Filter = TextureFilter::Bilinear;
 };
 
 struct WindowSettings
@@ -108,7 +88,6 @@ struct ProjectConfig
     PhysicsSettings Physics;
     AnimationSettings Animation;
     RenderSettings Render;
-    TextureSettings Texture;
     MeshSettings Mesh;
     WindowSettings Window;
     AudioSettings Audio;

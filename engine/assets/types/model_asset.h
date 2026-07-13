@@ -4,7 +4,7 @@
 #include "engine/assets/asset.h"
 #include "engine/common/base.h"
 #include "engine/graphics/api/model_data.h"
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 #include <future>
 // #include <mutex>
 #include <string>

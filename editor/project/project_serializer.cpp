@@ -44,17 +44,9 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::EndMap;
 
         out << YAML::Key << "Render" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "AmbientIntensity" << YAML::Value << config.Render.AmbientIntensity;
-        out << YAML::Key << "DefaultExposure" << YAML::Value << config.Render.DefaultExposure;
         out << YAML::Key << "ShadowResolution" << YAML::Value << config.Render.ShadowResolution;
-        out << YAML::Key << "EnableSSAO" << YAML::Value << config.Render.EnableSSAO;
-        out << YAML::Key << "EnableBloom" << YAML::Value << config.Render.EnableBloom;
+        out << YAML::Key << "EnableShadows" << YAML::Value << config.Render.EnableShadows;
         out << YAML::Key << "AntiAliasingSamples" << YAML::Value << config.Render.AntiAliasingSamples;
-        out << YAML::EndMap;
-
-        out << YAML::Key << "Texture" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "GenerateMipmaps" << YAML::Value << config.Texture.GenerateMipmaps;
-        out << YAML::Key << "Filter" << YAML::Value << (int)config.Texture.Filter;
         out << YAML::EndMap;
 
         out << YAML::Key << "Mesh" << YAML::Value << YAML::BeginMap;
@@ -170,24 +162,9 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
 
     if (projectNode["Render"])
     {
-        config.Render.AmbientIntensity = projectNode["Render"]["AmbientIntensity"].as<float>();
-        config.Render.DefaultExposure = projectNode["Render"]["DefaultExposure"].as<float>();
         if (projectNode["Render"]["ShadowResolution"]) config.Render.ShadowResolution = projectNode["Render"]["ShadowResolution"].as<int>();
-        if (projectNode["Render"]["EnableSSAO"]) config.Render.EnableSSAO = projectNode["Render"]["EnableSSAO"].as<bool>();
-        if (projectNode["Render"]["EnableBloom"]) config.Render.EnableBloom = projectNode["Render"]["EnableBloom"].as<bool>();
+        if (projectNode["Render"]["EnableShadows"]) config.Render.EnableShadows = projectNode["Render"]["EnableShadows"].as<bool>();
         if (projectNode["Render"]["AntiAliasingSamples"]) config.Render.AntiAliasingSamples = projectNode["Render"]["AntiAliasingSamples"].as<int>();
-    }
-
-    if (projectNode["Texture"])
-    {
-        if (projectNode["Texture"]["GenerateMipmaps"])
-        {
-            config.Texture.GenerateMipmaps = projectNode["Texture"]["GenerateMipmaps"].as<bool>();
-        }
-        if (projectNode["Texture"]["Filter"])
-        {
-            config.Texture.Filter = (TextureFilter)projectNode["Texture"]["Filter"].as<int>();
-        }
     }
 
     if (projectNode["Mesh"])

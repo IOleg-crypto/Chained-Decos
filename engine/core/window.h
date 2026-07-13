@@ -26,6 +26,11 @@ struct WindowProperties
     int TargetFramesPerSecond = 60; // 60hz is default for all monitors
     std::string IconPath;
 
+    // MSAA sample count requested for the default framebuffer (0 = disabled, typical values 2/4/8).
+    // Must be set before window creation - GL/GLFW cannot change a framebuffer's sample count on an
+    // already-created window/context, only recreate it.
+    int Samples = 0;
+
     // UI / Docking
     bool EnableViewports = true;
     bool EnableDocking = true;
@@ -54,6 +59,9 @@ public:
     virtual void SetFullscreen(bool enabled) = 0;
 
     virtual void SetVSync(bool enabled) = 0;
+    // Toggles GL_MULTISAMPLE for the default framebuffer. Only has a visible effect if the window
+    // was created with WindowProperties::Samples > 0 - the sample count itself is fixed at creation
+    // time and cannot be changed at runtime without recreating the window.
     virtual void SetAntialiasing(bool enabled) = 0;
     virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
     virtual int GetTargetFramesPerSecond() const = 0;

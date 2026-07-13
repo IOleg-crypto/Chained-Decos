@@ -1,7 +1,7 @@
 #ifndef CH_GEOMETRY_GENERATOR_H
 #define CH_GEOMETRY_GENERATOR_H
 
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/api/model_data.h"
 #include <string>
 

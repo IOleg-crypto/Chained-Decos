@@ -6,7 +6,7 @@
 #include "engine/core/engine_module.h"
 #include "engine/graphics/api/storage_buffer.h"
 #include "engine/graphics/camera_types.h"
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include <glm/glm.hpp>
 #include <memory>
