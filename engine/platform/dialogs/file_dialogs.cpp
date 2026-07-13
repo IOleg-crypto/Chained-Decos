@@ -1,10 +1,23 @@
 #include "file_dialogs.h"
 #include <nfd.h>
 
+#if defined(__linux__)
+#include <cstdlib>
+#endif
+
 namespace Chained
 {
     void FileDialogs::Init()
     {
+#if defined(__linux__)
+        // NFD's GTK backend calls gtk_init_check(), which lazily loads the AT-SPI
+        // accessibility bridge (atk-bridge) on first use. That bridge allocates
+        // process-lifetime state it never frees and spams stderr when no
+        // accessibility bus is available (e.g. headless CI) - neither of which we
+        // need for a native file/folder picker. Opting out before NFD_Init() avoids
+        // both the LeakSanitizer false-positive and the AT-SPI DBus warnings.
+        setenv("NO_AT_BRIDGE", "1", 0);
+#endif
         NFD_Init();
     }
 

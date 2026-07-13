@@ -72,9 +72,9 @@ void Camera_GetOrbit(uint64_t entityID, float* yaw, float* pitch, float* distanc
     if (entity && entity.HasComponent<CameraComponent>())
     {
         auto& camera = entity.GetComponent<CameraComponent>();
-        *yaw = camera.OrbitYaw;
-        *pitch = camera.OrbitPitch;
-        *distance = camera.OrbitDistance;
+        if (yaw) *yaw = camera.OrbitYaw;
+        if (pitch) *pitch = camera.OrbitPitch;
+        if (distance) *distance = camera.OrbitDistance;
     }
 }
 bool Camera_GetPrimary(uint64_t entityID)
@@ -99,17 +99,17 @@ void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit)
         entity.GetComponent<CameraComponent>().IsOrbitCamera = isOrbit;
     }
 }
-static thread_local std::u16string s_CameraTagBuffer;
+static thread_local Coral::UCString s_CameraTagBuffer;
 
-const char16_t* Camera_GetTargetTag(uint64_t entityID)
+const Coral::UCChar* Camera_GetTargetTag(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     std::string tag =
         entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().TargetEntityTag : "";
-    s_CameraTagBuffer = ch_utf8_to_u16(tag);
+    s_CameraTagBuffer = ToWide(tag);
     return s_CameraTagBuffer.c_str();
 }
-void Camera_SetTargetTag(uint64_t entityID, const char16_t* tag)
+void Camera_SetTargetTag(uint64_t entityID, const Coral::UCChar* tag)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<CameraComponent>() && tag)

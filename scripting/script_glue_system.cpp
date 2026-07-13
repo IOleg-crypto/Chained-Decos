@@ -2,17 +2,17 @@
 #include "engine/project/project.h"
 
 namespace Chained {
-void Log_Info(const char16_t* message)
+void Log_Info(const Coral::UCChar* message)
 {
-    CH_CORE_INFO("[C#] {}", ch_log_u16(message));
+    CH_CORE_INFO("[C#] {}", ch_u16_to_string(message));
 }
-void Log_Warn(const char16_t* message)
+void Log_Warn(const Coral::UCChar* message)
 {
-    CH_CORE_WARN("[C#] {}", ch_log_u16(message));
+    CH_CORE_WARN("[C#] {}", ch_u16_to_string(message));
 }
-void Log_Error(const char16_t* message)
+void Log_Error(const Coral::UCChar* message)
 {
-    CH_CORE_ERROR("[C#] {}", ch_log_u16(message));
+    CH_CORE_ERROR("[C#] {}", ch_u16_to_string(message));
 }
 void Application_Close()
 {
@@ -20,7 +20,8 @@ void Application_Close()
 }
 int Application_GetFPS()
 {
-    return (int)(1.0f / Application::Get().GetFrameTime());
+    float dt = Application::Get().GetFrameTime();
+    return dt > 0.0f ? (int)(1.0f / dt) : 0;
 }
 float Application_GetFrameTime()
 {

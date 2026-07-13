@@ -4,7 +4,7 @@
 #include "panel.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/components/model_component.h"
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 
 namespace Chained
 {

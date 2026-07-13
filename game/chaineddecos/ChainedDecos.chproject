@@ -22,15 +22,9 @@ Project:
   Animation:
     TargetFPS: 60
   Render:
-    AmbientIntensity: 1
-    DefaultExposure: 1.42999995
     ShadowResolution: 2048
-    EnableSSAO: false
-    EnableBloom: true
+    EnableShadows: true
     AntiAliasingSamples: 4
-  Texture:
-    GenerateMipmaps: true
-    Filter: 5
   Mesh:
     ImportMaterials: true
     CalculateTangents: true

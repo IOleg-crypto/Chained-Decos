@@ -1,9 +1,10 @@
 #include "script_glue_audio.h"
 #include "engine/scene/components.h"
+#include <algorithm>
 namespace Chained {
-static thread_local std::u16string s_AudioTagBuffer;
+static thread_local Coral::UCString s_AudioTagBuffer;
 
-void Audio_Play(const char16_t* path, float volume, float pitch, bool loop)
+void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
 {
     if (Project::GetActive() != nullptr && path)
     {
@@ -32,7 +33,7 @@ void Audio_Play(const char16_t* path, float volume, float pitch, bool loop)
         }
     }
 }
-void Audio_Stop(const char16_t* path)
+void Audio_Stop(const Coral::UCChar* path)
 {
     if (Project::GetActive() != nullptr && path)
     {
@@ -93,21 +94,21 @@ bool AudioComponent_IsPlaying(uint64_t entityID)
     auto& audio = entity.GetComponent<AudioComponent>();
     return audio.IsPlaying && ServiceLocator::Get<Audio>()->IsPlaying(audio.SoundHandle);
 }
-const char16_t* AudioComponent_GetSoundPath(uint64_t entityID)
+const Coral::UCChar* AudioComponent_GetSoundPath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     std::string path = entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().SoundPath : "";
-    s_AudioTagBuffer = ch_utf8_to_u16(path);
+    s_AudioTagBuffer = ToWide(path);
     return s_AudioTagBuffer.c_str();
 }
-const char16_t* SpriteComponent_GetTexturePath(uint64_t entityID)
+const Coral::UCChar* SpriteComponent_GetTexturePath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     std::string path = entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().TexturePath : "";
-    s_AudioTagBuffer = ch_utf8_to_u16(path);
+    s_AudioTagBuffer = ToWide(path);
     return s_AudioTagBuffer.c_str();
 }
-void SpriteComponent_SetTexturePath(uint64_t entityID, const char16_t* path)
+void SpriteComponent_SetTexturePath(uint64_t entityID, const Coral::UCChar* path)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<SpriteComponent>() && path)
@@ -131,8 +132,9 @@ void SpriteComponent_SetTint(uint64_t entityID, glm::vec4 tint)
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<SpriteComponent>())
     {
-        entity.GetComponent<SpriteComponent>().Tint = {(uint8_t)(tint.r * 255), (uint8_t)(tint.g * 255),
-                                                       (uint8_t)(tint.b * 255), (uint8_t)(tint.a * 255)};
+        auto clamped = [](float v) -> uint8_t { return (uint8_t)(std::clamp(v, 0.0f, 1.0f) * 255); };
+        entity.GetComponent<SpriteComponent>().Tint = {clamped(tint.r), clamped(tint.g),
+                                                       clamped(tint.b), clamped(tint.a)};
     }
 }
 bool SpriteComponent_GetFlipX(uint64_t entityID)

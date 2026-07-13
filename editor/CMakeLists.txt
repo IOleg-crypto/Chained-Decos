@@ -10,11 +10,6 @@ target_sources(editor_core PRIVATE ${EDITOR_SOURCES})
 
 target_link_libraries(editor_core PUBLIC
     ChainedEngine::Framework
-    engine_external_imgui
-    nfd
-    assimp
-    Coral.Native
-    engine_core
 )
 
 target_include_directories(editor_core PUBLIC 

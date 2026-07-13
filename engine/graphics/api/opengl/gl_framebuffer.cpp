@@ -1,5 +1,6 @@
 #include "gl_framebuffer.h"
 #include "engine/common/engine_assert.h"
+#include <algorithm>
 #include <glad/gl.h>
 
 namespace Chained
@@ -15,6 +16,12 @@ GLFramebuffer::~GLFramebuffer()
     glDeleteFramebuffers(1, &m_RendererID);
     glDeleteTextures(1, &m_ColorAttachment);
     glDeleteTextures(1, &m_DepthAttachment);
+    if (m_ResolveFBO)
+    {
+        glDeleteFramebuffers(1, &m_ResolveFBO);
+        glDeleteTextures(1, &m_ResolveColorAttachment);
+        glDeleteTextures(1, &m_ResolveDepthAttachment);
+    }
 }
 
 void GLFramebuffer::Invalidate()
@@ -31,6 +38,15 @@ void GLFramebuffer::Invalidate()
         m_ColorAttachment = 0;
         m_DepthAttachment = 0;
     }
+    if (m_ResolveFBO)
+    {
+        glDeleteFramebuffers(1, &m_ResolveFBO);
+        glDeleteTextures(1, &m_ResolveColorAttachment);
+        glDeleteTextures(1, &m_ResolveDepthAttachment);
+        m_ResolveFBO = 0;
+        m_ResolveColorAttachment = 0;
+        m_ResolveDepthAttachment = 0;
+    }
 
     m_IsComplete = false;
 
@@ -40,8 +56,25 @@ void GLFramebuffer::Invalidate()
         return;
     }
 
+    // DepthOnly (shadow map) framebuffers are never multisampled - sample-shadow lookups
+    // need a single-sample sampler2D/sampler2DShadow.
+    GLint maxSamples = 1;
+    glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
+    uint32_t samples = m_Specification.DepthOnly
+                            ? 1
+                            : std::min<uint32_t>(m_Specification.Samples, (uint32_t)maxSamples);
+    bool multisampled = samples > 1;
+
     glGenFramebuffers(1, &m_RendererID);
     glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
+
+    GLenum internalFormat = GL_RGBA8;
+    GLenum dataType = GL_UNSIGNED_BYTE;
+    if (m_Specification.ColorFormat == FramebufferColorFormat::RGBA16F)
+    {
+        internalFormat = GL_RGBA16F;
+        dataType = GL_FLOAT;
+    }
 
     if (m_Specification.DepthOnly)
     {
@@ -68,29 +101,39 @@ void GLFramebuffer::Invalidate()
     }
     else
     {
-        // ── Standard color + depth path ─────────────────────────────────
-        // Color Attachment
-        glGenTextures(1, &m_ColorAttachment);
-        glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
-        GLenum internalFormat = GL_RGBA8;
-        GLenum dataType = GL_UNSIGNED_BYTE;
-        if (m_Specification.ColorFormat == FramebufferColorFormat::RGBA16F)
+        if (multisampled)
         {
-            internalFormat = GL_RGBA16F;
-            dataType = GL_FLOAT;
+            // ── Multisample color + depth path ──────────────────────────
+            GLenum target = GL_TEXTURE_2D_MULTISAMPLE;
+
+            glGenTextures(1, &m_ColorAttachment);
+            glBindTexture(target, m_ColorAttachment);
+            glTexImage2DMultisample(target, samples, internalFormat, m_Specification.Width, m_Specification.Height, GL_TRUE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, m_ColorAttachment, 0);
+
+            glGenTextures(1, &m_DepthAttachment);
+            glBindTexture(target, m_DepthAttachment);
+            glTexImage2DMultisample(target, samples, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, GL_TRUE);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, target, m_DepthAttachment, 0);
         }
+        else
+        {
+            // ── Standard color + depth path ─────────────────────────────────
+            // Color Attachment
+            glGenTextures(1, &m_ColorAttachment);
+            glBindTexture(GL_TEXTURE_2D, m_ColorAttachment);
+            glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_Specification.Width, m_Specification.Height, 0, GL_RGBA,
+                         dataType, nullptr);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_Specification.Width, m_Specification.Height, 0, GL_RGBA,
-                     dataType, nullptr);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ColorAttachment, 0);
-
-        // Depth Attachment
-        glGenTextures(1, &m_DepthAttachment);
-        glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
-        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
+            // Depth Attachment
+            glGenTextures(1, &m_DepthAttachment);
+            glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+            glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
+        }
     }
 
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -102,6 +145,33 @@ void GLFramebuffer::Invalidate()
     else
     {
         m_IsComplete = true;
+    }
+
+    // Multisample attachments can't be sampled with sampler2D - build a same-size single-sample
+    // resolve target that Resolve() blits into, so callers keep reading a plain 2D texture.
+    if (multisampled && m_IsComplete)
+    {
+        glGenFramebuffers(1, &m_ResolveFBO);
+        glBindFramebuffer(GL_FRAMEBUFFER, m_ResolveFBO);
+
+        glGenTextures(1, &m_ResolveColorAttachment);
+        glBindTexture(GL_TEXTURE_2D, m_ResolveColorAttachment);
+        glTexImage2D(GL_TEXTURE_2D, 0, internalFormat, m_Specification.Width, m_Specification.Height, 0, GL_RGBA,
+                     dataType, nullptr);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, m_ResolveColorAttachment, 0);
+
+        glGenTextures(1, &m_ResolveDepthAttachment);
+        glBindTexture(GL_TEXTURE_2D, m_ResolveDepthAttachment);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+        glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_ResolveDepthAttachment, 0);
+
+        GLenum resolveStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+        if (resolveStatus != GL_FRAMEBUFFER_COMPLETE)
+        {
+            CH_CORE_ERROR("MSAA resolve framebuffer is incomplete! Status: 0x{0:X}", resolveStatus);
+        }
     }
 
     glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
@@ -116,6 +186,23 @@ void GLFramebuffer::Bind()
 void GLFramebuffer::Unbind()
 {
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
+}
+
+void GLFramebuffer::Resolve()
+{
+    if (m_Specification.Samples <= 1 || !m_ResolveFBO || !m_IsComplete)
+        return;
+
+    GLint previousFBO = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_ResolveFBO);
+    glBlitFramebuffer(0, 0, m_Specification.Width, m_Specification.Height,
+                       0, 0, m_Specification.Width, m_Specification.Height,
+                       GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+
+    glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
 }
 
 void GLFramebuffer::Resize(uint32_t width, uint32_t height)

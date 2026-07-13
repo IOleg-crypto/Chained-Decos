@@ -4,6 +4,7 @@
 #include "engine/core/engine_module.h"
 #include "scriptengine_services.h"
 #include "engine/scene/scene.h"
+#include "engine/project/project.h"
 #include <Coral/Assembly.hpp>
 #include <string>
 #include <unordered_map>
@@ -41,6 +42,15 @@ public:
     bool CanExecuteFrameScripts() const { return m_Host.IsInitialized() && !m_Host.IsReloadInProgress(); }
 
     void SetEnabled(bool enable) { m_EnableScripting = enable; }
+
+    // Resolves the script assembly DLL path from project config.
+    // Checks assets/bin/, exe directory, and MinGW "lib" prefix variants.
+    static std::filesystem::path ResolveAssemblyPath(const ScriptingSettings& scripting,
+                                                     const std::filesystem::path& projectDir);
+
+    // Attempts to auto-load the script assembly from project config.
+    // Returns true if the assembly was found and loaded.
+    bool TryAutoLoad(const ProjectConfig& config);
 
     Scene* GetContextScene() const { return m_CurrentScene; }
     void SetContextScene(Scene* scene) { m_CurrentScene = scene; }

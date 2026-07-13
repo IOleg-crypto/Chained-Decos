@@ -37,6 +37,9 @@ public:
     static bool Property(const char* label, glm::vec4& value);
     static bool Property(const char* label, uint64_t& value);
 
+    // Renders a glm::vec4 as an RGBA color swatch/picker instead of raw X/Y/Z/W drag fields.
+    static bool PropertyColor(const char* label, glm::vec4& value, bool hdr = false);
+
     static bool Property(const char* label, int& value, const char** items, int itemCount);
 
     // Action widgets.

@@ -4,23 +4,27 @@
 #include "engine/common/base.h"
 #include "engine/common/timestep.h"
 
-namespace Chained {
-class CH_API EngineModule {
-    public:
+namespace Chained
+{
+class CH_API EngineModule
+{
+public:
     virtual ~EngineModule() = default;
 
     virtual void Initialize() = 0;
     virtual void Update(Timestep ts) = 0;
     virtual void Shutdown() = 0;
 
-    bool IsEnabled() const {
+    bool IsEnabled() const
+    {
         return m_Enabled;
     }
-    void SetEnabled(bool enabled) {
+    void SetEnabled(bool enabled)
+    {
         m_Enabled = enabled;
     }
 
-    protected:
+protected:
     bool m_Enabled = true;
 };
 } // namespace Chained

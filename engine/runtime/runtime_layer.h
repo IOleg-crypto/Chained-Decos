@@ -6,6 +6,8 @@
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_context.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
+#include "engine/assets/asset_manager.h"
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -58,6 +60,8 @@ private:
     // Resolved once in the constructor (ServiceLocator is already locked by then —
     // see Application::Application) and reused for the layer's whole lifetime.
     SceneContext m_Context;
+    Renderer* m_Renderer = nullptr;
+    AssetManager* m_AssetManager = nullptr;
 private:
 
     std::string m_ProjectPath;

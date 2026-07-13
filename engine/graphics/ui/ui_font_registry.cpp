@@ -1,9 +1,9 @@
 #include "ui_font_registry.h"
+#include "engine/common/asset_path.h"
 #include "engine/common/base.h"
 #include "engine/project/project.h"
 #include <algorithm>
 #include <array>
-#include <cctype>
 #include <cmath>
 #include <cstdio>
 #include <filesystem>
@@ -13,29 +13,6 @@
 
 namespace Chained
 {
-
-static std::string TrimCopy(const std::string& value)
-{
-    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) {
-        return std::isspace(ch) != 0;
-    });
-    auto end = std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) {
-        return std::isspace(ch) != 0;
-    }).base();
-
-    if (begin >= end)
-    {
-        return {};
-    }
-
-    return std::string(begin, end);
-}
-
-static bool ExistsNoThrow(const std::filesystem::path& path)
-{
-    std::error_code ec;
-    return std::filesystem::exists(path, ec) && !ec;
-}
 
 // Round font size to nearest 0.5 for cache key (avoids floating-point key mismatches)
 static float RoundFontSize(float size)
@@ -53,25 +30,7 @@ std::string UIFontRegistry::MakeKey(const std::string& name, float size)
 
 std::string UIFontRegistry::NormalizeFontName(std::string name)
 {
-    name = TrimCopy(name);
-    if (name.empty())
-    {
-        return name;
-    }
-
-    std::replace(name.begin(), name.end(), '\\', '/');
-
-    while (name.rfind("./", 0) == 0)
-    {
-        name = name.substr(2);
-    }
-
-    if (name.rfind("assets/", 0) == 0)
-    {
-        name = name.substr(7);
-    }
-
-    return name;
+    return NormalizeAssetPath(name);
 }
 
 void UIFontRegistry::LoadProjectFonts()
@@ -95,7 +54,7 @@ void UIFontRegistry::LoadProjectFonts()
 
     for (const auto& fontsDir : candidateDirs)
     {
-        if (!ExistsNoThrow(fontsDir))
+        if (!FileExists(fontsDir))
         {
             continue;
         }
@@ -294,7 +253,7 @@ ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize
     }
 
     std::filesystem::path directPath(normalizedName);
-    if (directPath.is_absolute() && ExistsNoThrow(directPath))
+    if (directPath.is_absolute() && FileExists(directPath))
     {
         return const_cast<UIFontRegistry*>(this)->RegisterFont(normalizedName, directPath.string(), size);
     }
@@ -349,7 +308,7 @@ int UIFontRegistry::PreloadFonts(const std::vector<std::pair<std::string, float>
         else
         {
             std::filesystem::path directPath(fontName);
-            if (directPath.is_absolute() && ExistsNoThrow(directPath))
+            if (directPath.is_absolute() && FileExists(directPath))
             {
                 absolutePath = directPath.string();
             }

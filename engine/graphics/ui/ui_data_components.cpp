@@ -1,0 +1,445 @@
+#include "ui_data_components.h"
+#include "engine/scene/yaml.h"
+#include <yaml-cpp/yaml.h>
+
+void ButtonData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Button;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Interactable" << YAML::Value << IsInteractable;
+    out << YAML::Key << "Auto Size" << YAML::Value << AutoSize;
+}
+
+ButtonData ButtonData::Deserialize(YAML::Node widgetNode)
+{
+    ButtonData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Interactable"]) data.IsInteractable = widgetNode["Interactable"].as<bool>();
+    if (widgetNode["Auto Size"]) data.AutoSize = widgetNode["Auto Size"].as<bool>();
+    return data;
+}
+
+void PanelData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Panel;
+    out << YAML::Key << "Texture Path" << YAML::Value << TexturePath;
+    out << YAML::Key << "Full Screen" << YAML::Value << FullScreen;
+}
+
+PanelData PanelData::Deserialize(YAML::Node widgetNode)
+{
+    PanelData data;
+    if (widgetNode["Texture Path"]) data.TexturePath = widgetNode["Texture Path"].as<std::string>();
+    if (widgetNode["Full Screen"]) data.FullScreen = widgetNode["Full Screen"].as<bool>();
+    return data;
+}
+
+void LabelData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Label;
+    out << YAML::Key << "Text" << YAML::Value << Text;
+    out << YAML::Key << "Auto Size" << YAML::Value << AutoSize;
+}
+
+LabelData LabelData::Deserialize(YAML::Node widgetNode)
+{
+    LabelData data;
+    if (widgetNode["Text"]) data.Text = widgetNode["Text"].as<std::string>();
+    if (widgetNode["Auto Size"]) data.AutoSize = widgetNode["Auto Size"].as<bool>();
+    return data;
+}
+
+void SliderData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Slider;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Value" << YAML::Value << Value;
+    out << YAML::Key << "Min" << YAML::Value << Min;
+    out << YAML::Key << "Max" << YAML::Value << Max;
+}
+
+SliderData SliderData::Deserialize(YAML::Node widgetNode)
+{
+    SliderData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Value"]) data.Value = widgetNode["Value"].as<float>();
+    if (widgetNode["Min"]) data.Min = widgetNode["Min"].as<float>();
+    if (widgetNode["Max"]) data.Max = widgetNode["Max"].as<float>();
+    return data;
+}
+
+void CheckboxData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Checkbox;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Checked" << YAML::Value << Checked;
+}
+
+CheckboxData CheckboxData::Deserialize(YAML::Node widgetNode)
+{
+    CheckboxData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Checked"]) data.Checked = widgetNode["Checked"].as<bool>();
+    return data;
+}
+
+void InputTextData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_InputText;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Text" << YAML::Value << Text;
+    out << YAML::Key << "Placeholder" << YAML::Value << Placeholder;
+    out << YAML::Key << "Max Length" << YAML::Value << MaxLength;
+    out << YAML::Key << "Multiline" << YAML::Value << Multiline;
+    out << YAML::Key << "Read Only" << YAML::Value << ReadOnly;
+    out << YAML::Key << "Password" << YAML::Value << Password;
+}
+
+InputTextData InputTextData::Deserialize(YAML::Node widgetNode)
+{
+    InputTextData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Text"]) data.Text = widgetNode["Text"].as<std::string>();
+    if (widgetNode["Placeholder"]) data.Placeholder = widgetNode["Placeholder"].as<std::string>();
+    if (widgetNode["Max Length"]) data.MaxLength = widgetNode["Max Length"].as<int>();
+    if (widgetNode["Multiline"]) data.Multiline = widgetNode["Multiline"].as<bool>();
+    if (widgetNode["Read Only"]) data.ReadOnly = widgetNode["Read Only"].as<bool>();
+    if (widgetNode["Password"]) data.Password = widgetNode["Password"].as<bool>();
+    return data;
+}
+
+void ComboBoxData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ComboBox;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Items" << YAML::Value << YAML::BeginSeq;
+    for (auto& item : Items) out << item;
+    out << YAML::EndSeq;
+    out << YAML::Key << "Selected Index" << YAML::Value << SelectedIndex;
+}
+
+ComboBoxData ComboBoxData::Deserialize(YAML::Node widgetNode)
+{
+    ComboBoxData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Items"]) for (auto item : widgetNode["Items"]) data.Items.push_back(item.as<std::string>());
+    if (widgetNode["Selected Index"]) data.SelectedIndex = widgetNode["Selected Index"].as<int>();
+    return data;
+}
+
+void ProgressBarData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ProgressBar;
+    out << YAML::Key << "Progress" << YAML::Value << Progress;
+    out << YAML::Key << "Overlay Text" << YAML::Value << OverlayText;
+    out << YAML::Key << "Show Percentage" << YAML::Value << ShowPercentage;
+}
+
+ProgressBarData ProgressBarData::Deserialize(YAML::Node widgetNode)
+{
+    ProgressBarData data;
+    if (widgetNode["Progress"]) data.Progress = widgetNode["Progress"].as<float>();
+    if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
+    if (widgetNode["Show Percentage"]) data.ShowPercentage = widgetNode["Show Percentage"].as<bool>();
+    return data;
+}
+
+void ImageData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Image;
+    out << YAML::Key << "Texture Path" << YAML::Value << TexturePath;
+    out << YAML::Key << "Tint Color" << YAML::Value << TintColor;
+    out << YAML::Key << "Border Color" << YAML::Value << BorderColor;
+}
+
+ImageData ImageData::Deserialize(YAML::Node widgetNode)
+{
+    ImageData data;
+    if (widgetNode["Texture Path"]) data.TexturePath = widgetNode["Texture Path"].as<std::string>();
+    if (widgetNode["Tint Color"]) data.TintColor = widgetNode["Tint Color"].as<Color>();
+    if (widgetNode["Border Color"]) data.BorderColor = widgetNode["Border Color"].as<Color>();
+    return data;
+}
+
+void ImageButtonData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ImageButton;
+    out << YAML::Key << "Texture Path" << YAML::Value << TexturePath;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Tint Color" << YAML::Value << TintColor;
+    out << YAML::Key << "Background Color" << YAML::Value << BackgroundColor;
+    out << YAML::Key << "Frame Padding" << YAML::Value << FramePadding;
+}
+
+ImageButtonData ImageButtonData::Deserialize(YAML::Node widgetNode)
+{
+    ImageButtonData data;
+    if (widgetNode["Texture Path"]) data.TexturePath = widgetNode["Texture Path"].as<std::string>();
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Tint Color"]) data.TintColor = widgetNode["Tint Color"].as<Color>();
+    if (widgetNode["Background Color"]) data.BackgroundColor = widgetNode["Background Color"].as<Color>();
+    if (widgetNode["Frame Padding"]) data.FramePadding = widgetNode["Frame Padding"].as<int>();
+    return data;
+}
+
+void SeparatorData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Separator;
+    out << YAML::Key << "Thickness" << YAML::Value << Thickness;
+    out << YAML::Key << "Line Color" << YAML::Value << LineColor;
+}
+
+SeparatorData SeparatorData::Deserialize(YAML::Node widgetNode)
+{
+    SeparatorData data;
+    if (widgetNode["Thickness"]) data.Thickness = widgetNode["Thickness"].as<float>();
+    if (widgetNode["Line Color"]) data.LineColor = widgetNode["Line Color"].as<Color>();
+    return data;
+}
+
+void RadioButtonData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_RadioButton;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Options" << YAML::Value << YAML::BeginSeq;
+    for (auto& option : Options) out << option;
+    out << YAML::EndSeq;
+    out << YAML::Key << "Selected Index" << YAML::Value << SelectedIndex;
+    out << YAML::Key << "Horizontal" << YAML::Value << Horizontal;
+}
+
+RadioButtonData RadioButtonData::Deserialize(YAML::Node widgetNode)
+{
+    RadioButtonData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Options"]) for (auto option : widgetNode["Options"]) data.Options.push_back(option.as<std::string>());
+    if (widgetNode["Selected Index"]) data.SelectedIndex = widgetNode["Selected Index"].as<int>();
+    if (widgetNode["Horizontal"]) data.Horizontal = widgetNode["Horizontal"].as<bool>();
+    return data;
+}
+
+void ColorPickerData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ColorPicker;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Selected Color" << YAML::Value << SelectedColor;
+    out << YAML::Key << "Show Alpha" << YAML::Value << ShowAlpha;
+    out << YAML::Key << "Show Picker" << YAML::Value << ShowPicker;
+}
+
+ColorPickerData ColorPickerData::Deserialize(YAML::Node widgetNode)
+{
+    ColorPickerData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Selected Color"]) data.SelectedColor = widgetNode["Selected Color"].as<Color>();
+    if (widgetNode["Show Alpha"]) data.ShowAlpha = widgetNode["Show Alpha"].as<bool>();
+    if (widgetNode["Show Picker"]) data.ShowPicker = widgetNode["Show Picker"].as<bool>();
+    return data;
+}
+
+void DragFloatData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_DragFloat;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Value" << YAML::Value << Value;
+    out << YAML::Key << "Speed" << YAML::Value << Speed;
+    out << YAML::Key << "Min" << YAML::Value << Min;
+    out << YAML::Key << "Max" << YAML::Value << Max;
+    out << YAML::Key << "Format" << YAML::Value << Format;
+}
+
+DragFloatData DragFloatData::Deserialize(YAML::Node widgetNode)
+{
+    DragFloatData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Value"]) data.Value = widgetNode["Value"].as<float>();
+    if (widgetNode["Speed"]) data.Speed = widgetNode["Speed"].as<float>();
+    if (widgetNode["Min"]) data.Min = widgetNode["Min"].as<float>();
+    if (widgetNode["Max"]) data.Max = widgetNode["Max"].as<float>();
+    if (widgetNode["Format"]) data.Format = widgetNode["Format"].as<std::string>();
+    return data;
+}
+
+void DragIntData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_DragInt;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Value" << YAML::Value << Value;
+    out << YAML::Key << "Speed" << YAML::Value << Speed;
+    out << YAML::Key << "Min" << YAML::Value << Min;
+    out << YAML::Key << "Max" << YAML::Value << Max;
+    out << YAML::Key << "Format" << YAML::Value << Format;
+}
+
+DragIntData DragIntData::Deserialize(YAML::Node widgetNode)
+{
+    DragIntData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Value"]) data.Value = widgetNode["Value"].as<int>();
+    if (widgetNode["Speed"]) data.Speed = widgetNode["Speed"].as<float>();
+    if (widgetNode["Min"]) data.Min = widgetNode["Min"].as<int>();
+    if (widgetNode["Max"]) data.Max = widgetNode["Max"].as<int>();
+    if (widgetNode["Format"]) data.Format = widgetNode["Format"].as<std::string>();
+    return data;
+}
+
+void TreeNodeData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_TreeNode;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Is Open" << YAML::Value << IsOpen;
+    out << YAML::Key << "Default Open" << YAML::Value << DefaultOpen;
+    out << YAML::Key << "Is Leaf" << YAML::Value << IsLeaf;
+}
+
+TreeNodeData TreeNodeData::Deserialize(YAML::Node widgetNode)
+{
+    TreeNodeData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Is Open"]) data.IsOpen = widgetNode["Is Open"].as<bool>();
+    if (widgetNode["Default Open"]) data.DefaultOpen = widgetNode["Default Open"].as<bool>();
+    if (widgetNode["Is Leaf"]) data.IsLeaf = widgetNode["Is Leaf"].as<bool>();
+    return data;
+}
+
+void TabBarData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_TabBar;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Reorderable" << YAML::Value << Reorderable;
+    out << YAML::Key << "Auto Select New Tabs" << YAML::Value << AutoSelectNewTabs;
+}
+
+TabBarData TabBarData::Deserialize(YAML::Node widgetNode)
+{
+    TabBarData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Reorderable"]) data.Reorderable = widgetNode["Reorderable"].as<bool>();
+    if (widgetNode["Auto Select New Tabs"]) data.AutoSelectNewTabs = widgetNode["Auto Select New Tabs"].as<bool>();
+    return data;
+}
+
+void TabItemData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_TabItem;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Is Open" << YAML::Value << IsOpen;
+    out << YAML::Key << "Selected" << YAML::Value << Selected;
+}
+
+TabItemData TabItemData::Deserialize(YAML::Node widgetNode)
+{
+    TabItemData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Is Open"]) data.IsOpen = widgetNode["Is Open"].as<bool>();
+    if (widgetNode["Selected"]) data.Selected = widgetNode["Selected"].as<bool>();
+    return data;
+}
+
+void CollapsingHeaderData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_CollapsingHeader;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Is Open" << YAML::Value << IsOpen;
+    out << YAML::Key << "Default Open" << YAML::Value << DefaultOpen;
+}
+
+CollapsingHeaderData CollapsingHeaderData::Deserialize(YAML::Node widgetNode)
+{
+    CollapsingHeaderData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Is Open"]) data.IsOpen = widgetNode["Is Open"].as<bool>();
+    if (widgetNode["Default Open"]) data.DefaultOpen = widgetNode["Default Open"].as<bool>();
+    return data;
+}
+
+void PlotLinesData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotLines;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
+    for (auto value : Values) out << value;
+    out << YAML::EndSeq;
+    out << YAML::Key << "Overlay Text" << YAML::Value << OverlayText;
+    out << YAML::Key << "Scale Min" << YAML::Value << ScaleMin;
+    out << YAML::Key << "Scale Max" << YAML::Value << ScaleMax;
+}
+
+PlotLinesData PlotLinesData::Deserialize(YAML::Node widgetNode)
+{
+    PlotLinesData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Values"]) for (auto value : widgetNode["Values"]) data.Values.push_back(value.as<float>());
+    if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
+    if (widgetNode["Scale Min"]) data.ScaleMin = widgetNode["Scale Min"].as<float>();
+    if (widgetNode["Scale Max"]) data.ScaleMax = widgetNode["Scale Max"].as<float>();
+    return data;
+}
+
+void PlotHistogramData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotHistogram;
+    out << YAML::Key << "Label" << YAML::Value << Label;
+    out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
+    for (auto value : Values) out << value;
+    out << YAML::EndSeq;
+    out << YAML::Key << "Overlay Text" << YAML::Value << OverlayText;
+    out << YAML::Key << "Scale Min" << YAML::Value << ScaleMin;
+    out << YAML::Key << "Scale Max" << YAML::Value << ScaleMax;
+}
+
+PlotHistogramData PlotHistogramData::Deserialize(YAML::Node widgetNode)
+{
+    PlotHistogramData data;
+    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
+    if (widgetNode["Values"]) for (auto value : widgetNode["Values"]) data.Values.push_back(value.as<float>());
+    if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
+    if (widgetNode["Scale Min"]) data.ScaleMin = widgetNode["Scale Min"].as<float>();
+    if (widgetNode["Scale Max"]) data.ScaleMax = widgetNode["Scale Max"].as<float>();
+    return data;
+}
+
+void VerticalLayoutGroupData::Serialize(YAML::Emitter& out) const
+{
+    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_VerticalLayoutGroup;
+    out << YAML::Key << "Spacing" << YAML::Value << Spacing;
+    out << YAML::Key << "Padding" << YAML::Value << Padding;
+}
+
+VerticalLayoutGroupData VerticalLayoutGroupData::Deserialize(YAML::Node widgetNode)
+{
+    VerticalLayoutGroupData data;
+    if (widgetNode["Spacing"]) data.Spacing = widgetNode["Spacing"].as<float>();
+    if (widgetNode["Padding"]) data.Padding = widgetNode["Padding"].as<glm::vec2>();
+    return data;
+}
+
+ControlData DeserializeControlData(int widgetType, YAML::Node widgetNode)
+{
+    switch (widgetType)
+    {
+        case WidgetType_Button:              return ButtonData::Deserialize(widgetNode);
+        case WidgetType_Label:               return LabelData::Deserialize(widgetNode);
+        case WidgetType_Slider:              return SliderData::Deserialize(widgetNode);
+        case WidgetType_Checkbox:            return CheckboxData::Deserialize(widgetNode);
+        case WidgetType_ProgressBar:         return ProgressBarData::Deserialize(widgetNode);
+        case WidgetType_Panel:               return PanelData::Deserialize(widgetNode);
+        case WidgetType_Image:               return ImageData::Deserialize(widgetNode);
+        case WidgetType_ComboBox:            return ComboBoxData::Deserialize(widgetNode);
+        case WidgetType_ImageButton:         return ImageButtonData::Deserialize(widgetNode);
+        case WidgetType_InputText:           return InputTextData::Deserialize(widgetNode);
+        case WidgetType_Separator:           return SeparatorData::Deserialize(widgetNode);
+        case WidgetType_RadioButton:         return RadioButtonData::Deserialize(widgetNode);
+        case WidgetType_ColorPicker:         return ColorPickerData::Deserialize(widgetNode);
+        case WidgetType_DragFloat:           return DragFloatData::Deserialize(widgetNode);
+        case WidgetType_DragInt:             return DragIntData::Deserialize(widgetNode);
+        case WidgetType_TreeNode:            return TreeNodeData::Deserialize(widgetNode);
+        case WidgetType_TabBar:              return TabBarData::Deserialize(widgetNode);
+        case WidgetType_TabItem:             return TabItemData::Deserialize(widgetNode);
+        case WidgetType_CollapsingHeader:    return CollapsingHeaderData::Deserialize(widgetNode);
+        case WidgetType_PlotLines:           return PlotLinesData::Deserialize(widgetNode);
+        case WidgetType_PlotHistogram:       return PlotHistogramData::Deserialize(widgetNode);
+        case WidgetType_VerticalLayoutGroup: return VerticalLayoutGroupData::Deserialize(widgetNode);
+        default:                             return std::monostate{};
+    }
+}

@@ -5,6 +5,7 @@
 #include "runtime_layer.h"
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/common/asset_path.h"
 #include "engine/core/events/window_events.h"
 #include "engine/core/service_locator.h"
 #include "engine/core/window.h"
@@ -27,29 +28,13 @@
 
 
 namespace Chained {
-std::string TrimCopy(const std::string &value) {
-    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
-    auto end =
-        std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) { return std::isspace(ch) != 0; }).base();
-
-    if (begin >= end) {
-        return {};
-    }
-
-    return std::string(begin, end);
-}
 
 void AppendTextStyleFontRequest(const TextStyle &style,
                                 std::vector<std::pair<std::string, float>> &out,
                                 std::unordered_set<std::string> &dedupe) {
-    std::string fontName = TrimCopy(style.FontName);
+    std::string fontName = NormalizeAssetPath(style.FontName);
     if (fontName.empty() || fontName == "Default") {
         return;
-    }
-
-    std::replace(fontName.begin(), fontName.end(), '\\', '/');
-    if (fontName.rfind("assets/", 0) == 0) {
-        fontName = fontName.substr(7);
     }
 
     const float fontSize = (style.FontSize > 0.0f) ? style.FontSize : 16.0f;
@@ -63,11 +48,6 @@ void AppendTextStyleFontRequest(const TextStyle &style,
     out.emplace_back(fontName, fontSize);
 }
 
-bool ExistsNoThrow(const std::filesystem::path &path) {
-    std::error_code ec;
-    return std::filesystem::exists(path, ec) && !ec;
-}
-
 RuntimeLayer::RuntimeLayer(const std::string &projectPath) : Layer("RuntimeLayer"), m_ProjectPath(projectPath) {
     m_SceneRenderer = std::make_unique<SceneRenderer>();
 
@@ -77,6 +57,8 @@ RuntimeLayer::RuntimeLayer(const std::string &projectPath) : Layer("RuntimeLayer
     m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
     m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
     m_Context.UI = ServiceLocator::TryGet<UIRenderer>(); // null in headless mode
+    m_Renderer = m_Renderer;
+    m_AssetManager = m_AssetManager;
 }
 
 RuntimeLayer::~RuntimeLayer() {}
@@ -166,7 +148,7 @@ void RuntimeLayer::OnRender(Timestep ts) {
     uint32_t height = (uint32_t)window.GetHeight();
 
     if (!m_Scene) {
-        ServiceLocator::Get<Renderer>()->Clear({0.0f, 0.0f, 0.0f, 1.0f});
+        m_Renderer->Clear({0.0f, 0.0f, 0.0f, 1.0f});
         return;
     }
 
@@ -207,14 +189,14 @@ void RuntimeLayer::OnRender(Timestep ts) {
         SceneRenderOptions options;
 
         m_HDRFramebuffer->Bind();
-        ServiceLocator::Get<Renderer>()->Clear(bgColor);
+        m_Renderer->Clear(bgColor);
         m_SceneRenderer->RenderScene(
             m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip, options);
         m_HDRFramebuffer->Unbind();
 
-        ServiceLocator::Get<Renderer>()->SetViewport(0, 0, (int)width, (int)height);
-        ServiceLocator::Get<Renderer>()->Clear(bgColor);
-        ServiceLocator::Get<Renderer>()->ApplyPostProcessing(
+        m_Renderer->SetViewport(0, 0, (int)width, (int)height);
+        m_Renderer->Clear(bgColor);
+        m_Renderer->ApplyPostProcessing(
             m_HDRFramebuffer->GetColorAttachmentRendererID(),
             m_HDRFramebuffer->GetDepthAttachmentRendererID(),
             camera.value(), nullptr, {});
@@ -225,7 +207,7 @@ void RuntimeLayer::OnRender(Timestep ts) {
         if (primaryCam && primaryCam.HasComponent<ShaderComponent>()) {
             auto &sc = primaryCam.GetComponent<ShaderComponent>();
             if (sc.Enabled && !sc.ShaderPath.empty()) {
-                auto asset = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(sc.ShaderPath);
+                auto asset = m_AssetManager->Get<ShaderAsset>(sc.ShaderPath);
                 if (asset) {
                     overrideShader = asset.get();
                     uniforms = sc.Uniforms;
@@ -235,7 +217,7 @@ void RuntimeLayer::OnRender(Timestep ts) {
     }
     else
     {
-        ServiceLocator::Get<Renderer>()->Clear(bgColor);
+        m_Renderer->Clear(bgColor);
     }
 }
 
@@ -328,7 +310,7 @@ void RuntimeLayer::LoadScene(const std::string &path) {
         }
     }
 
-    if (!ExistsNoThrow(scenePath)) {
+    if (!FileExists(scenePath)) {
         CH_CORE_ERROR("RuntimeSystem: Scene file not found '{}'.", scenePath.string());
         return;
     }
@@ -357,36 +339,13 @@ bool RuntimeLayer::InitProject(const std::string &projectPath) {
     }
 
     auto project = Project::GetActive();
-    std::string moduleName = project->GetConfig().Scripting.ModuleName;
-    if (!moduleName.empty() && !moduleName.ends_with(".dll")) {
-        moduleName += ".dll";
-    }
-
-    // Attempt to resolve the assembly path. MinGW prefixes shared libraries with "lib",
-    // so we check both "ModuleName.dll" and "libModuleName.dll" across multiple directories.
-    std::filesystem::path assemblyPath = Project::GetAssetDirectory() / "bin" / moduleName;
-    if (!std::filesystem::exists(assemblyPath)) {
-        std::filesystem::path libPath = Project::GetAssetDirectory() / "bin" / ("lib" + moduleName);
-        if (std::filesystem::exists(libPath)) {
-            assemblyPath = libPath;
-        } else {
-            // Try build output directory (standard bin/)
-            std::filesystem::path rootBin = Application::GetExecutableDirectory() / moduleName;
-            if (std::filesystem::exists(rootBin)) {
-                assemblyPath = rootBin;
-            } else {
-                std::filesystem::path rootLibBin = Application::GetExecutableDirectory() / ("lib" + moduleName);
-                if (std::filesystem::exists(rootLibBin)) {
-                    assemblyPath = rootLibBin;
-                }
-            }
-        }
-    }
+    auto assemblyPath = ScriptEngine::ResolveAssemblyPath(
+        project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
 
     CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
     // Initialize Scripting for the loaded project
-    if (!ServiceLocator::Get<ScriptEngine>()->ReloadAssembly(assemblyPath.string())) {
+    if (assemblyPath.empty() || !ServiceLocator::Get<ScriptEngine>()->ReloadAssembly(assemblyPath.string())) {
         CH_CORE_WARN("RuntimeSystem: Script reload failed during project initialization (path: {}). Runtime continues "
                      "without scripts.",
                      assemblyPath.string());
@@ -432,35 +391,24 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string &projectPath) {
     CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectoryForProject().string());
     CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 
-    ServiceLocator::Get<AssetManager>()->SetProjectDirectory(project->GetProjectDirectoryForProject());
-    ServiceLocator::Get<AssetManager>()->SetAssetDirectory(Project::GetAssetDirectory());
+    m_AssetManager->SetProjectDirectory(project->GetProjectDirectoryForProject());
+    m_AssetManager->SetAssetDirectory(Project::GetAssetDirectory());
 
-    // CRITICAL: Load engine shaders and resources immediately after project is resolved
-    ServiceLocator::Get<Renderer>()->LoadEngineResources();
-
-    auto& scripting = project->GetConfig().Scripting;
-    if (scripting.AutoLoad && !scripting.ModuleName.empty())
+    // Packaged/exported builds ship assets.pak next to the .chproject (see ProjectExporter)
+    // instead of a loose assets/ folder — mount it if present. Dev runs against a loose
+    // asset directory (no .pak next to the project) simply skip this and read from disk.
     {
-        std::string dllName = scripting.ModuleName;
-        if (dllName.find(".dll") == std::string::npos)
-            dllName += ".dll";
-
-        std::filesystem::path dllPath = scripting.ModuleDirectory / dllName;
-        if (dllPath.is_relative())
-            dllPath = project->GetConfig().ProjectDirectory / dllPath;
-
-        if (std::filesystem::exists(dllPath))
+        std::filesystem::path pakPath = std::filesystem::path(m_ProjectPath).parent_path() / "assets.pak";
+        if (std::filesystem::exists(pakPath))
         {
-             ServiceLocator::Get<ScriptEngine>()->SetEnabled(true);
-             ServiceLocator::Get<ScriptEngine>()->Initialize();
-             ServiceLocator::Get<ScriptEngine>()->LoadAppAssembly(dllPath.string());
-             CH_CORE_INFO("RuntimeSystem: Auto-loaded script assembly '{}'.", dllPath.string());
-        }
-        else
-        {
-            CH_CORE_WARN("RuntimeSystem: Script assembly not found at '{}'.", dllPath.string());
+            m_AssetManager->MountPakArchive(pakPath);
         }
     }
+
+    // CRITICAL: Load engine shaders and resources immediately after project is resolved
+    m_Renderer->LoadEngineResources();
+
+    ServiceLocator::Get<ScriptEngine>()->TryAutoLoad(project->GetConfig());
 
     return true;
 }
@@ -573,22 +521,7 @@ void RuntimeLayer::LoadInitialScene() {
 }
 
 std::string RuntimeLayer::NormalizeScenePath(const std::string &path) const {
-    std::string normalized = TrimCopy(path);
-    if (normalized.empty()) {
-        return normalized;
-    }
-
-    std::replace(normalized.begin(), normalized.end(), '\\', '/');
-
-    while (normalized.rfind("./", 0) == 0) {
-        normalized = normalized.substr(2);
-    }
-
-    if (normalized.rfind("assets/", 0) == 0) {
-        normalized = normalized.substr(7);
-    }
-
-    return normalized;
+    return NormalizeAssetPath(path);
 }
 
 void RuntimeLayer::StopCurrentScene() {
@@ -725,7 +658,7 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height) {
 }
 
 bool RuntimeLayer::IsSceneReadyToStart() const {
-    auto* assetManager = ServiceLocator::Get<AssetManager>();
+    auto* assetManager = m_AssetManager;
     if (!assetManager)
         return true;
     return !assetManager->HasBackgroundWork();
@@ -745,7 +678,7 @@ void RuntimeLayer::DrawLoadingOverlay() {
     ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(0.02f, 0.02f, 0.02f, 0.92f));
 
     if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags)) {
-        const size_t totalPending = ServiceLocator::Get<AssetManager>()->GetLoadingAssetCount();
+        const size_t totalPending = m_AssetManager->GetLoadingAssetCount();
 
         int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;
         std::string dots(static_cast<size_t>(dotsCount), '.');

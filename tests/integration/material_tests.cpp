@@ -1,7 +1,7 @@
 // material_tests.cpp
 // Tests for the MaterialInstance struct (engine/graphics/pipeline/material.h).
 // These tests are pure-CPU and do not require an OpenGL context.
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/pipeline/material.h"
 #include "gtest/gtest.h"
 

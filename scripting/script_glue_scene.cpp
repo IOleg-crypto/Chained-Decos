@@ -5,7 +5,7 @@
 #include "engine/scene/components.h"
 
 namespace Chained {
-CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(const char16_t* tag) {
+CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(const Coral::UCChar* tag) {
     auto *scene = GetActiveScene();
     if (scene && tag) {
         auto entity = scene->FindEntityByTag(ch_u16_to_string(tag));
@@ -23,7 +23,7 @@ CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID) {
     return 0;
 }
 
-CH_SCRIPT_FUNC void Scene_LoadScene(const char16_t* path) {
+CH_SCRIPT_FUNC void Scene_LoadScene(const Coral::UCChar* path) {
     if (!path) return;
     SceneChangeRequestEvent e(ch_u16_to_string(path));
     Application::Get().OnEvent(e);

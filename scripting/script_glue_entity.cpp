@@ -58,16 +58,16 @@ void Transform_SetScale(uint64_t entityID, glm::vec3* inScale)
         ComponentUtils::SetScale(entity.GetComponent<TransformComponent>(), *inScale);
     }
 }
-static thread_local std::u16string s_ModelTagBuffer;
+static thread_local Coral::UCString s_ModelTagBuffer;
 
-const char16_t* Model_GetModelPath(uint64_t entityID)
+const Coral::UCChar* Model_GetModelPath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     std::string path = entity && entity.HasComponent<ModelComponent>() ? entity.GetComponent<ModelComponent>().ModelPath : "";
-    s_ModelTagBuffer = ch_utf8_to_u16(path);
+    s_ModelTagBuffer = ToWide(path);
     return s_ModelTagBuffer.c_str();
 }
-void Model_SetModelPath(uint64_t entityID, const char16_t* inPath)
+void Model_SetModelPath(uint64_t entityID, const Coral::UCChar* inPath)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<ModelComponent>())
@@ -75,7 +75,7 @@ void Model_SetModelPath(uint64_t entityID, const char16_t* inPath)
         entity.GetComponent<ModelComponent>().ModelPath = ch_u16_to_string(inPath);
     }
 }
-void Entity_AddComponent(uint64_t entityID, const char16_t* componentName)
+void Entity_AddComponent(uint64_t entityID, const Coral::UCChar* componentName)
 {
     Entity entity = GetEntity(entityID);
     if (!entity)
@@ -83,14 +83,7 @@ void Entity_AddComponent(uint64_t entityID, const char16_t* componentName)
         return;
     }
     std::string name = ch_u16_to_string(componentName);
-    if (name == "MeshComponent")
-    {
-        name = "ModelComponent";
-    }
-    if (name == "PhysicsComponent")
-    {
-        name = "ColliderComponent";
-    }
+    ResolveComponentName(name);
     for (const auto& [id, metadata] : ComponentRegistry::GetRegistry())
     {
         if (metadata.Name == name || metadata.SerializationKey == name)
@@ -103,7 +96,7 @@ void Entity_AddComponent(uint64_t entityID, const char16_t* componentName)
         }
     }
 }
-int Entity_FindAllWithComponent(const char16_t* componentName, uint64_t* outBuf, int bufSize)
+int Entity_FindAllWithComponent(const Coral::UCChar* componentName, uint64_t* outBuf, int bufSize)
 {
     Scene* scene = GetActiveScene();
     if (!scene)
@@ -111,14 +104,7 @@ int Entity_FindAllWithComponent(const char16_t* componentName, uint64_t* outBuf,
         return 0;
     }
     std::string name = ch_u16_to_string(componentName);
-    if (name == "MeshComponent")
-    {
-        name = "ModelComponent";
-    }
-    if (name == "PhysicsComponent")
-    {
-        name = "ColliderComponent";
-    }
+    ResolveComponentName(name);
     for (const auto& [id, metadata] : ComponentRegistry::GetRegistry())
     {
         if (metadata.Name == name || metadata.SerializationKey == name)
@@ -174,10 +160,8 @@ void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
                 glm::vec3 toSet = *inVelocity;
                 if (rb.Type == RigidBodyComponent::BodyType::Dynamic)
                 {
-                    // Для Dynamic тіл Jolt є авторитетом по Y (гравітація).
-                    // Скрипт може лише задати стрибковий імпульс (Y > 0.5).
-                    // В усіх інших випадках зберігаємо поточний Jolt Y.
-                    if (toSet.y <= 0.5f)
+                    constexpr float kJumpImpulseThreshold = 0.5f;
+                    if (toSet.y <= kJumpImpulseThreshold)
                     {
                         toSet.y = physics->GetWorld()->GetVelocity(rb.Handle).y;
                     }
@@ -246,14 +230,14 @@ void AudioComponent_Stop(uint64_t entityID)
         }
     }
 }
-const char16_t* TagComponent_GetTag(uint64_t entityID)
+const Coral::UCChar* TagComponent_GetTag(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     std::string tag = entity && entity.HasComponent<TagComponent>() ? entity.GetComponent<TagComponent>().Tag : "";
-    s_ModelTagBuffer = ch_utf8_to_u16(tag);
+    s_ModelTagBuffer = ToWide(tag);
     return s_ModelTagBuffer.c_str();
 }
-void Shader_SetFloat(uint64_t entityID, const char16_t* inName, float inValue)
+void Shader_SetFloat(uint64_t entityID, const Coral::UCChar* inName, float inValue)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<ShaderComponent>())
@@ -277,7 +261,7 @@ void Shader_SetFloat(uint64_t entityID, const char16_t* inName, float inValue)
         }
     }
 }
-void Shader_SetVec3(uint64_t entityID, const char16_t* inName, glm::vec3* inValue)
+void Shader_SetVec3(uint64_t entityID, const Coral::UCChar* inName, glm::vec3* inValue)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<ShaderComponent>() && inValue)
@@ -314,7 +298,7 @@ void Shader_SetEnabled(uint64_t entityID, bool enabled)
         entity.GetComponent<ShaderComponent>().Enabled = enabled;
     }
 }
-bool Entity_HasComponent(uint64_t entityID, const char16_t* componentName)
+bool Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName)
 {
     Entity entity = GetEntity(entityID);
     if (!entity)
@@ -322,14 +306,7 @@ bool Entity_HasComponent(uint64_t entityID, const char16_t* componentName)
         return false;
     }
     std::string name = ch_u16_to_string(componentName);
-    if (name == "MeshComponent")
-    {
-        name = "ModelComponent";
-    }
-    if (name == "PhysicsComponent")
-    {
-        name = "ColliderComponent";
-    }
+    ResolveComponentName(name);
     if (name == "AnimationComponent")
     {
         return false;
