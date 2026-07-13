@@ -13,7 +13,7 @@ on:
       - "cmake/*.cmake"
       - ".github/workflows/*.yml"
   pull_request:
-    branches: [main, develop, refactor-branch, opengl]
+    branches: [main, develop, opengl]
     paths:
       - "**/*.cpp"
       - "**/*.h"
@@ -49,10 +49,3 @@ jobs:
     name: Windows Builds
     uses: ./.github/workflows/windows.yml
     secrets: inherit
-
-  quality-gate:
-    name: PR Gate
-    runs-on: ubuntu-latest
-    needs: [format, linux, windows]
-    steps:
-      - run: echo "Format check and native builds passed."

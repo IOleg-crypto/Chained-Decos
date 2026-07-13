@@ -43,3 +43,40 @@ jobs:
       - name: No changed C++ files
         if: steps.changed.outputs.files == ''
         run: echo "No C++ files changed — skipping format check."
+
+  yaml-lint:
+    name: yaml-lint check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 0
+
+      - name: Install yamllint
+        run: pip install yamllint
+
+      - name: Determine changed YAML files
+        id: changed
+        run: |
+          set -euo pipefail
+          BASE_REF="${{ github.event.pull_request.base.sha || 'HEAD~1' }}"
+          if git rev-parse --verify "$BASE_REF" >/dev/null 2>&1; then
+            FILES=$(git diff --name-only --diff-filter=ACMR "$BASE_REF"...HEAD -- '*.yml' '*.yaml' | grep -v '^thirdparty/' || true)
+          else
+            FILES=$(git diff --name-only --diff-filter=ACMR HEAD~1 -- '*.yml' '*.yaml' | grep -v '^thirdparty/' || true)
+          fi
+          echo "files<<EOF" >> "$GITHUB_OUTPUT"
+          echo "$FILES" >> "$GITHUB_OUTPUT"
+          echo "EOF" >> "$GITHUB_OUTPUT"
+
+      - name: Run yamllint
+        if: steps.changed.outputs.files != ''
+        run: |
+          set -euo pipefail
+          echo "${{ steps.changed.outputs.files }}" | xargs -r yamllint -d relaxed
+
+      - name: No changed YAML files
+        if: steps.changed.outputs.files == ''
+        run: echo "No YAML files changed — skipping lint check."
