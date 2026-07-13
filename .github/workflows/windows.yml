@@ -28,6 +28,12 @@ jobs:
           - preset: windows-clang
             build_type: Debug
             unity_build: ON
+          - preset: windows-msvc
+            build_type: Release
+            unity_build: ON
+          - preset: windows-msvc
+            build_type: Debug
+            unity_build: ON
 
     steps:
       - name: Checkout
