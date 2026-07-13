@@ -13,6 +13,16 @@ if(TARGET libzstd_static)
     set_target_properties(libzstd_static PROPERTIES UNITY_BUILD OFF)
 endif()
 
+# --- Create zstd:: namespace aliases for downstream consumers (pak_archive) ---
+# This runs immediately after zstd targets are created, so aliases are ready
+# before pak_archive.cmake is included.
+if(TARGET libzstd_static AND NOT TARGET zstd::libzstd_static)
+    add_library(zstd::libzstd_static ALIAS libzstd_static)
+endif()
+if(TARGET libzstd_shared AND NOT TARGET zstd::libzstd_shared)
+    add_library(zstd::libzstd_shared ALIAS libzstd_shared)
+endif()
+
 set(ZSTD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/zstd/lib CACHE PATH "Zstd include directory" FORCE)
 set(ZSTD_LIBRARY libzstd_static CACHE STRING "Zstd library target" FORCE)
 
