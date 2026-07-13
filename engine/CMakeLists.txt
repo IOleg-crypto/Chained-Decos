@@ -75,19 +75,8 @@ add_library(ChainedEngine::API ALIAS ChainedEngineFramework)
 
 file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
 
-target_include_directories(ChainedEngineFramework INTERFACE
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/include/reflect-cpp/include
-)
-
 target_link_libraries(ChainedEngineFramework INTERFACE
     engine
-    glm
-    engine_external_entt
-    yaml-cpp
-    reflectcpp
-    cereal
 )
 
 target_compile_definitions(ChainedEngineFramework INTERFACE

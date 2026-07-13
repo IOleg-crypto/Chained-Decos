@@ -26,6 +26,11 @@ include(imgui)
 
 # Complex modules
 include(assimp)
+
+# pak_archive needs ZLIB for its deflate compressor; it reuses assimp's vendored zlib
+# (contrib/zlib) rather than requiring a system/vcpkg ZLIB, so it must come after assimp.
+include(pak_archive)
+
 include(coral)
 include(nfd)
 include(external_gtest)
@@ -50,6 +55,7 @@ foreach(_ext_target
     GTest gmock
     Coral.Native
     assimp
+    libgpak
 )
     if(TARGET ${_ext_target})
         set_target_properties(${_ext_target} PROPERTIES UNITY_BUILD OFF)

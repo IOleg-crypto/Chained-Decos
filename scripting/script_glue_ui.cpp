@@ -15,8 +15,8 @@ bool ButtonControl_IsDown(uint64_t entityID)
                                                                : false;
 }
 
-static thread_local std::u16string s_ButtonLabelBuf;
-const char16_t* ButtonControl_GetLabel(uint64_t entityID)
+static thread_local Coral::UCString s_ButtonLabelBuf;
+const Coral::UCChar* ButtonControl_GetLabel(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -24,13 +24,13 @@ const char16_t* ButtonControl_GetLabel(uint64_t entityID)
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ButtonData>(widget.Data))
         {
-            s_ButtonLabelBuf = ch_utf8_to_u16(std::get<ButtonData>(widget.Data).Label);
+            s_ButtonLabelBuf = ToWide(std::get<ButtonData>(widget.Data).Label);
             return s_ButtonLabelBuf.c_str();
         }
     }
     return nullptr;
 }
-void ButtonControl_SetLabel(uint64_t entityID, const char16_t* label)
+void ButtonControl_SetLabel(uint64_t entityID, const Coral::UCChar* label)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>() && label)
@@ -52,8 +52,8 @@ void CheckboxControl_SetChecked(uint64_t entityID, bool checked)
     }
 }
 
-static thread_local std::u16string s_LabelTextBuf;
-const char16_t* LabelControl_GetText(uint64_t entityID)
+static thread_local Coral::UCString s_LabelTextBuf;
+const Coral::UCChar* LabelControl_GetText(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -61,13 +61,13 @@ const char16_t* LabelControl_GetText(uint64_t entityID)
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<LabelData>(widget.Data))
         {
-            s_LabelTextBuf = ch_utf8_to_u16(std::get<LabelData>(widget.Data).Text);
+            s_LabelTextBuf = ToWide(std::get<LabelData>(widget.Data).Text);
             return s_LabelTextBuf.c_str();
         }
     }
     return nullptr;
 }
-void LabelControl_SetText(uint64_t entityID, const char16_t* text)
+void LabelControl_SetText(uint64_t entityID, const Coral::UCChar* text)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>() && text)
@@ -78,8 +78,8 @@ void LabelControl_SetText(uint64_t entityID, const char16_t* text)
     }
 }
 
-static thread_local std::u16string s_SliderLabelBuf;
-const char16_t* SliderControl_GetLabel(uint64_t entityID)
+static thread_local Coral::UCString s_SliderLabelBuf;
+const Coral::UCChar* SliderControl_GetLabel(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -87,13 +87,13 @@ const char16_t* SliderControl_GetLabel(uint64_t entityID)
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
         {
-            s_SliderLabelBuf = ch_utf8_to_u16(std::get<SliderData>(widget.Data).Label);
+            s_SliderLabelBuf = ToWide(std::get<SliderData>(widget.Data).Label);
             return s_SliderLabelBuf.c_str();
         }
     }
     return nullptr;
 }
-void SliderControl_SetLabel(uint64_t entityID, const char16_t* label)
+void SliderControl_SetLabel(uint64_t entityID, const Coral::UCChar* label)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>() && label)
@@ -188,8 +188,8 @@ void ProgressBarControl_SetProgress(uint64_t entityID, float progress)
             std::get<ProgressBarData>(widget.Data).Progress = progress;
     }
 }
-static thread_local std::u16string s_ProgressBarOverlayBuf;
-const char16_t* ProgressBarControl_GetOverlayText(uint64_t entityID)
+static thread_local Coral::UCString s_ProgressBarOverlayBuf;
+const Coral::UCChar* ProgressBarControl_GetOverlayText(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -197,13 +197,13 @@ const char16_t* ProgressBarControl_GetOverlayText(uint64_t entityID)
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ProgressBarData>(widget.Data))
         {
-            s_ProgressBarOverlayBuf = ch_utf8_to_u16(std::get<ProgressBarData>(widget.Data).OverlayText);
+            s_ProgressBarOverlayBuf = ToWide(std::get<ProgressBarData>(widget.Data).OverlayText);
             return s_ProgressBarOverlayBuf.c_str();
         }
     }
     return nullptr;
 }
-void ProgressBarControl_SetOverlayText(uint64_t entityID, const char16_t* text)
+void ProgressBarControl_SetOverlayText(uint64_t entityID, const Coral::UCChar* text)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>() && text)
@@ -249,8 +249,8 @@ void WidgetControl_SetActive(uint64_t entityID, bool active)
         entity.GetComponent<ControlComponent>().IsActive = active;
 }
 
-static thread_local std::u16string s_TextColorBuf;
-const char16_t* WidgetControl_GetTextColor(uint64_t entityID)
+static thread_local Coral::UCString s_TextColorBuf;
+const Coral::UCChar* WidgetControl_GetTextColor(uint64_t entityID)
 {
     // Returns "R G B A" as space-separated integers
     Entity entity = GetEntity(entityID);
@@ -258,7 +258,7 @@ const char16_t* WidgetControl_GetTextColor(uint64_t entityID)
     {
         auto& c = entity.GetComponent<UIControlComponent>().TextStyle.TextColor;
         std::string s = std::to_string(c.r) + " " + std::to_string(c.g) + " " + std::to_string(c.b) + " " + std::to_string(c.a);
-        s_TextColorBuf = ch_utf8_to_u16(s);
+        s_TextColorBuf = ToWide(s);
         return s_TextColorBuf.c_str();
     }
     return nullptr;
@@ -315,7 +315,7 @@ void ComboBoxControl_SetSelectedIndex(uint64_t entityID, int index)
         }
     }
 }
-void ComboBoxControl_AddItem(uint64_t entityID, const char16_t* item)
+void ComboBoxControl_AddItem(uint64_t entityID, const Coral::UCChar* item)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>() && item)
@@ -354,9 +354,9 @@ int ComboBoxControl_GetItemCount(uint64_t entityID)
     }
     return 0;
 }
-static thread_local std::u16string s_UITagBuffer;
+static thread_local Coral::UCString s_UITagBuffer;
 
-const char16_t* ComboBoxControl_GetItem(uint64_t entityID, int index)
+const Coral::UCChar* ComboBoxControl_GetItem(uint64_t entityID, int index)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<UIControlComponent>())
@@ -367,14 +367,14 @@ const char16_t* ComboBoxControl_GetItem(uint64_t entityID, int index)
             auto& combo = std::get<ComboBoxData>(widget.Data);
             if (index >= 0 && index < (int)combo.Items.size())
             {
-                s_UITagBuffer = ch_utf8_to_u16(combo.Items[index]);
+                s_UITagBuffer = ToWide(combo.Items[index]);
                 return s_UITagBuffer.c_str();
             }
         }
     }
     return nullptr;
 }
-void UI_Text(const char16_t* text)
+void UI_Text(const Coral::UCChar* text)
 {
     if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope || !text)
     {
@@ -382,7 +382,6 @@ void UI_Text(const char16_t* text)
     }
 
     std::string strText = ch_u16_to_string(text);
-    CH_CORE_INFO("[UI] UI_Text called from script: '{}'", strText);
 
     auto window = ImGui::GetCurrentContext()->CurrentWindow;
     if (window && !window->SkipItems)

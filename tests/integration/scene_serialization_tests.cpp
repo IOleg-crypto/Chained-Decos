@@ -73,12 +73,11 @@ TEST_F(SceneSerializationDestructiveTest, MissingSceneKey)
 TEST_F(SceneSerializationDestructiveTest, EntityMissingUUID)
 {
     std::string path = "test_assets/no_uuid.chscene";
-    WriteFile(path,
-              "Scene: Test\n"
-              "Entities:\n"
-              "  - Entity:\n"
-              "      TagComponent:\n"
-              "        Tag: NoUUID\n");
+    WriteFile(path, "Scene: Test\n"
+                    "Entities:\n"
+                    "  - Entity:\n"
+                    "      TagComponent:\n"
+                    "        Tag: NoUUID\n");
 
     Scene scene;
     SceneSerializer serializer(&scene);
@@ -126,15 +125,14 @@ TEST_F(SceneSerializationDestructiveTest, DeserializeFromStringInvalidYAML)
 TEST_F(SceneSerializationDestructiveTest, DuplicateEntityUUIDs)
 {
     std::string path = "test_assets/dup_uuid.chscene";
-    WriteFile(path,
-              "Scene: Test\n"
-              "Entities:\n"
-              "  - Entity: 1234567890\n"
-              "    TagComponent:\n"
-              "      Tag: First\n"
-              "  - Entity: 1234567890\n"
-              "    TagComponent:\n"
-              "      Tag: Second\n");
+    WriteFile(path, "Scene: Test\n"
+                    "Entities:\n"
+                    "  - Entity: 1234567890\n"
+                    "    TagComponent:\n"
+                    "      Tag: First\n"
+                    "  - Entity: 1234567890\n"
+                    "    TagComponent:\n"
+                    "      Tag: Second\n");
 
     Scene scene;
     SceneSerializer serializer(&scene);

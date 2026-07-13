@@ -3,3 +3,9 @@
 leak:libcoreclr.so
 leak:libCoral.Native.a
 leak:memfd:doublemapper
+
+# GTK's AT-SPI accessibility bridge allocates process-wide state the first time
+# gtk_init_check() runs and never frees it (by design - it lives for the process
+# lifetime). Triggered via NFD_Init() -> gtk_init_check() in FileDialogs::Init(),
+# which every integration test hits once through Application's constructor.
+leak:atk_bridge_adaptor_init

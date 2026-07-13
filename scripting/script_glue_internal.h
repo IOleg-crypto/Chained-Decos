@@ -5,6 +5,7 @@
 #include "engine/scene/scene.h"
 #include "scriptengine.h"
 #include "scriptengine_services.h"
+#include <Coral/StringHelper.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <imgui.h>
@@ -14,22 +15,38 @@
 namespace Chained
 {
 
-static inline std::string ch_u16_to_string(const char16_t* ptr)
+// Cross-platform string conversion wrappers using Coral::StringHelper.
+// On Windows: UCChar = wchar_t (UTF-16), on Linux/macOS: UCChar = char (UTF-8).
+inline std::string ToUtf8(const Coral::UCChar* str)
 {
-    if (!ptr) return {};
-    std::u16string u16(ptr);
-    std::string result;
-    result.reserve(u16.size());
-    for (char16_t c : u16) result += (c < 0x80) ? (char)c : '?';
-    return result;
+    if (!str) return {};
+    return Coral::StringHelper::ConvertWideToUtf8(str);
 }
 
+inline std::string ToUtf8(std::string_view str)
+{
+    return std::string(str);
+}
+
+inline Coral::UCString ToWide(const std::string& str)
+{
+    return Coral::StringHelper::ConvertUtf8ToWide(str);
+}
+
+// Backward-compat aliases so existing .cpp files compile without changes.
+static inline std::string ch_u16_to_string(const Coral::UCChar* ptr) { return ToUtf8(ptr); }
 static inline std::u16string ch_utf8_to_u16(const std::string& str)
 {
-    std::u16string result;
-    result.reserve(str.size());
-    for (char c : str) result += (char16_t)(unsigned char)c;
-    return result;
+    // This function is kept only for rare call sites that genuinely need std::u16string.
+    // Prefer ToWide() for new code.
+    auto wide = ToWide(str);
+    return std::u16string(wide.begin(), wide.end());
+}
+
+inline void ResolveComponentName(std::string& name)
+{
+    if (name == "MeshComponent") name = "ModelComponent";
+    if (name == "PhysicsComponent") name = "ColliderComponent";
 }
 
 Scene* GetActiveScene();

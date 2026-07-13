@@ -9,29 +9,29 @@
 
 namespace Chained::Core::Input
 {
-    void Init();
-    void Shutdown();
-    void Update(Timestep ts);
-    void ResetAll();
+void Init();
+void Shutdown();
+void Update(Timestep ts);
+void ResetAll();
 
-    bool IsKeyPressed(KeyCode key);
-    bool IsKeyDown(KeyCode key);
-    bool IsKeyReleased(KeyCode key);
-    bool IsKeyUp(KeyCode key);
+bool IsKeyPressed(KeyCode key);
+bool IsKeyDown(KeyCode key);
+bool IsKeyReleased(KeyCode key);
+bool IsKeyUp(KeyCode key);
 
-    bool IsMouseButtonPressed(MouseCode button);
-    bool IsMouseButtonDown(MouseCode button);
-    bool IsMouseButtonReleased(MouseCode button);
-    bool IsMouseButtonUp(MouseCode button);
+bool IsMouseButtonPressed(MouseCode button);
+bool IsMouseButtonDown(MouseCode button);
+bool IsMouseButtonReleased(MouseCode button);
+bool IsMouseButtonUp(MouseCode button);
 
-    glm::vec2 GetMousePosition();
-    glm::vec2 GetMouseDelta();
-    float GetMouseWheelMove();
+glm::vec2 GetMousePosition();
+glm::vec2 GetMouseDelta();
+float GetMouseWheelMove();
 
-    void OnKey(KeyCode key, bool pressed);
-    void OnMouseButton(MouseCode button, bool pressed);
-    void OnMouseMove(float x, float y);
-    void OnMouseScroll(float xOffset, float yOffset);
-}
+void OnKey(KeyCode key, bool pressed);
+void OnMouseButton(MouseCode button, bool pressed);
+void OnMouseMove(float x, float y);
+void OnMouseScroll(float xOffset, float yOffset);
+} // namespace Chained::Core::Input
 
 #endif // CH_INPUT_H

@@ -2,7 +2,7 @@
 #define CH_SHADER_COMPONENT_H
 
 #include "engine/reflection/reflection_rfl.h"
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 
 namespace Chained
 {

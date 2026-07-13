@@ -1,18 +1,19 @@
 # MSVC Compiler Settings
 
-add_compile_options(
-    $<$<CONFIG:Debug>:/Od>
-    $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/DNDEBUG>
-    /Zi /EHsc
-    /MP                  # Multi-processor compilation
-    /Zc:preprocessor     # Modern preprocessor
-    /Gm-                 # Disable minimal rebuild (it's slower)
-    /utf-8               # Use UTF-8 character set
-    /bigobj              # Allow large object files (required for many modules)
-    
-    # Dead Code Elimination: Function-Level Linking
-    $<$<CONFIG:Release>:/Gy>
-)
+# MSVC-specific settings
+    add_compile_options(
+        $<$<CONFIG:Debug>:/Od> $<$<CONFIG:Debug>:/MTd>
+        $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/MT> $<$<CONFIG:Release>:/DNDEBUG>
+        /Zi /EHsc
+        /MP                  # Multi-processor compilation
+        /Zc:preprocessor     # Modern preprocessor
+        /Gm-                 # Disable minimal rebuild (it's slower)
+        /utf-8               # Use UTF-8 character set
+        /bigobj              # Allow large object files (required for many modules)
+        
+        # Dead Code Elimination: Function-Level Linking
+        $<$<CONFIG:Release>:/Gy>
+    )
 
 # Strip unused functions in Release
 add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
@@ -38,3 +39,6 @@ endif()
 # Level 2 Security Hardening
 add_compile_options(/guard:cf /GS)
 add_link_options(/DYNAMICBASE /NXCOMPAT /guard:cf)
+
+
+    

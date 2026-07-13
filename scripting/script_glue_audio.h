@@ -9,9 +9,9 @@
 namespace Chained {
 
     // ── Audio ─────────────────────────────────────────────────────────────
-    CH_SCRIPT_FUNC void Audio_Play(const char16_t* path, float volume, float pitch, bool loop);
+    CH_SCRIPT_FUNC void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop);
 
-    CH_SCRIPT_FUNC void Audio_Stop(const char16_t* path);
+    CH_SCRIPT_FUNC void Audio_Stop(const Coral::UCChar* path);
 
     CH_SCRIPT_FUNC void Audio_StopAll();
 
@@ -21,12 +21,12 @@ namespace Chained {
 
     CH_SCRIPT_FUNC bool AudioComponent_IsPlaying(uint64_t entityID);
 
-    CH_SCRIPT_FUNC const char16_t* AudioComponent_GetSoundPath(uint64_t entityID);
+    CH_SCRIPT_FUNC const Coral::UCChar* AudioComponent_GetSoundPath(uint64_t entityID);
 
     // --- SpriteComponent ---
-    CH_SCRIPT_FUNC const char16_t* SpriteComponent_GetTexturePath(uint64_t entityID);
+    CH_SCRIPT_FUNC const Coral::UCChar* SpriteComponent_GetTexturePath(uint64_t entityID);
 
-    CH_SCRIPT_FUNC void SpriteComponent_SetTexturePath(uint64_t entityID, const char16_t* path);
+    CH_SCRIPT_FUNC void SpriteComponent_SetTexturePath(uint64_t entityID, const Coral::UCChar* path);
 
     CH_SCRIPT_FUNC void SpriteComponent_GetTint(uint64_t entityID, glm::vec4* outTint);
 

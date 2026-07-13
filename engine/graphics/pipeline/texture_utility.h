@@ -3,7 +3,7 @@
 
 #include "engine/graphics/api/shader.h"
 #include "engine/graphics/api/texture.h"
-#include "engine/graphics/pipeline/renderer_types.h"
+#include "engine/graphics/api/renderer_types.h"
 #include <memory>
 
 namespace Chained

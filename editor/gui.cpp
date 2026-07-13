@@ -20,6 +20,8 @@
 #include "scripting/scriptengine.h"
 #include <filesystem>
 #include <string>
+#include <mutex>
+#include "engine/common/thread_pool.h"
 
 namespace Chained
 {
@@ -32,6 +34,8 @@ static struct ExportState
     bool        Success    = false;
     std::string Message;
     std::string OutDir;
+    std::mutex  Mutex;
+    bool        IsExporting = false;
 } s_ExportState;
 
 static void DrawPropertyLabel(const char* label)
@@ -153,18 +157,39 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             AppLaunchRuntimeEvent e;
             Application::Get().OnEvent(e);
         }
-        if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Export Project..."))
+        bool isExporting = false;
         {
-            auto outDir = FileDialogs::PickFolder();
-            if (outDir)
+            std::lock_guard<std::mutex> lock(s_ExportState.Mutex);
+            isExporting = s_ExportState.IsExporting;
+        }
+        if (ImGui::MenuItem(isExporting ? ICON_FA_FILE_EXPORT " Exporting..." : ICON_FA_FILE_EXPORT " Export Project..."))
+        {
+            if (isExporting)
             {
-                auto result = ProjectExporter::ExportTo(*outDir);
-                s_ExportState.Open    = true;
-                s_ExportState.Success = result.Success;
-                s_ExportState.Message = result.Success
-                    ? "Export complete!"
-                    : ("Export failed: " + result.Error);
-                s_ExportState.OutDir  = result.OutDir.string();
+                // Already exporting
+            }
+            else
+            {
+                auto outDir = FileDialogs::PickFolder();
+                if (outDir)
+                {
+                    {
+                        std::lock_guard<std::mutex> lock(s_ExportState.Mutex);
+                        s_ExportState.IsExporting = true;
+                    }
+                    std::string outDirPath = outDir->string();
+                    ServiceLocator::Get<ThreadPool>()->QueueTask([outDirPath]() {
+                        auto result = ProjectExporter::ExportTo(outDirPath);
+                        std::lock_guard<std::mutex> lock(s_ExportState.Mutex);
+                        s_ExportState.Success = result.Success;
+                        s_ExportState.Message = result.Success
+                            ? "Export complete!"
+                            : ("Export failed: " + result.Error);
+                        s_ExportState.OutDir  = result.OutDir.string();
+                        s_ExportState.Open    = true;
+                        s_ExportState.IsExporting = false;
+                    });
+                }
             }
         }
         ImGui::Separator();
@@ -177,8 +202,8 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             auto project = Project::GetActive();
             if (project)
             {
-                std::filesystem::path assemblyPath =
-                    Project::GetAssetDirectory() / "bin" / (project->GetConfig().Scripting.ModuleName + ".dll");
+                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(
+                    project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
                 ServiceLocator::Get<ScriptEngine>()->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
             }
         }
@@ -186,37 +211,40 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
     }
 
     // ── Export result popup ───────────────────────────────────────────────────
-    if (s_ExportState.Open)
     {
-        ImGui::OpenPopup("Export Result");
-        s_ExportState.Open = false;
-    }
-    if (ImGui::BeginPopupModal("Export Result", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-    {
-        if (s_ExportState.Success)
+        std::lock_guard<std::mutex> lock(s_ExportState.Mutex);
+        if (s_ExportState.Open)
         {
-            ImGui::TextColored(ImVec4(0.3f, 0.9f, 0.3f, 1.0f), ICON_FA_CIRCLE_INFO " Success");
+            ImGui::OpenPopup("Export Result");
+            s_ExportState.Open = false;
         }
-        else
+        if (ImGui::BeginPopupModal("Export Result", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
         {
-            ImGui::TextColored(ImVec4(0.9f, 0.3f, 0.3f, 1.0f), ICON_FA_CIRCLE_EXCLAMATION " Failed");
-        }
-        ImGui::Spacing();
-        ImGui::TextWrapped("%s", s_ExportState.Message.c_str());
-        if (!s_ExportState.OutDir.empty())
-        {
+            if (s_ExportState.Success)
+            {
+                ImGui::TextColored(ImVec4(0.3f, 0.9f, 0.3f, 1.0f), ICON_FA_CIRCLE_INFO " Success");
+            }
+            else
+            {
+                ImGui::TextColored(ImVec4(0.9f, 0.3f, 0.3f, 1.0f), ICON_FA_CIRCLE_EXCLAMATION " Failed");
+            }
             ImGui::Spacing();
-            ImGui::Text("Output: ");
-            ImGui::SameLine();
-            ImGui::TextDisabled("%s", s_ExportState.OutDir.c_str());
+            ImGui::TextWrapped("%s", s_ExportState.Message.c_str());
+            if (!s_ExportState.OutDir.empty())
+            {
+                ImGui::Spacing();
+                ImGui::Text("Output: ");
+                ImGui::SameLine();
+                ImGui::TextDisabled("%s", s_ExportState.OutDir.c_str());
+            }
+            ImGui::Spacing();
+            ImGui::Separator();
+            if (ImGui::Button("OK", ImVec2(120.f, 0.f)))
+            {
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
         }
-        ImGui::Spacing();
-        ImGui::Separator();
-        if (ImGui::Button("OK", ImVec2(120.f, 0.f)))
-        {
-            ImGui::CloseCurrentPopup();
-        }
-        ImGui::EndPopup();
     }
 
     ImGui::EndMenuBar();
@@ -338,6 +366,18 @@ bool EditorGUI::Property(const char* label, glm::vec3& value)
 bool EditorGUI::Property(const char* label, glm::vec4& value)
 {
     return DrawVec4(label, value, 0.0f);
+}
+
+bool EditorGUI::PropertyColor(const char* label, glm::vec4& value, bool hdr)
+{
+    return PropertyWidget(label, [&]() {
+        ImGuiColorEditFlags flags = ImGuiColorEditFlags_AlphaBar;
+        if (hdr)
+        {
+            flags |= ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float;
+        }
+        return ImGui::ColorEdit4("##prop", &value.x, flags);
+    });
 }
 
 bool EditorGUI::Property(const char* label, int& value, const char** items, int itemCount)

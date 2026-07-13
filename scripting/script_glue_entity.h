@@ -21,16 +21,16 @@ CH_SCRIPT_FUNC void Transform_GetScale(uint64_t entityID, glm::vec3* outScale);
 CH_SCRIPT_FUNC void Transform_SetScale(uint64_t entityID, glm::vec3* inScale);
 
 // ── Model Component ───────────────────────────────────────────────────
-CH_SCRIPT_FUNC const char16_t* Model_GetModelPath(uint64_t entityID);
+CH_SCRIPT_FUNC const Coral::UCChar* Model_GetModelPath(uint64_t entityID);
 
-CH_SCRIPT_FUNC void Model_SetModelPath(uint64_t entityID, const char16_t* inPath);
+CH_SCRIPT_FUNC void Model_SetModelPath(uint64_t entityID, const Coral::UCChar* inPath);
 
 // ── Registry Management ───────────────────────────────────────────────
-CH_SCRIPT_FUNC void Entity_AddComponent(uint64_t entityID, const char16_t* componentName);
+CH_SCRIPT_FUNC void Entity_AddComponent(uint64_t entityID, const Coral::UCChar* componentName);
 
-CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, const char16_t* componentName);
+CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName);
 
-CH_SCRIPT_FUNC int Entity_FindAllWithComponent(const char16_t* componentName, uint64_t* outBuf, int bufSize);
+CH_SCRIPT_FUNC int Entity_FindAllWithComponent(const Coral::UCChar* componentName, uint64_t* outBuf, int bufSize);
 
 // ── Physics (RigidBody) ───────────────────────────────────────────────
 CH_SCRIPT_FUNC void RigidBody_GetVelocity(uint64_t entityID, glm::vec3* outVelocity);
@@ -49,12 +49,12 @@ CH_SCRIPT_FUNC void AudioComponent_Play(uint64_t entityID);
 CH_SCRIPT_FUNC void AudioComponent_Stop(uint64_t entityID);
 
 // ── Tag Component ─────────────────────────────────────────────────────
-CH_SCRIPT_FUNC const char16_t* TagComponent_GetTag(uint64_t entityID);
+CH_SCRIPT_FUNC const Coral::UCChar* TagComponent_GetTag(uint64_t entityID);
 
 // ── Shader Component ──────────────────────────────────────────────────
-CH_SCRIPT_FUNC void Shader_SetFloat(uint64_t entityID, const char16_t* inName, float inValue);
+CH_SCRIPT_FUNC void Shader_SetFloat(uint64_t entityID, const Coral::UCChar* inName, float inValue);
 
-CH_SCRIPT_FUNC void Shader_SetVec3(uint64_t entityID, const char16_t* inName, glm::vec3* inValue);
+CH_SCRIPT_FUNC void Shader_SetVec3(uint64_t entityID, const Coral::UCChar* inName, glm::vec3* inValue);
 
 CH_SCRIPT_FUNC bool Shader_GetEnabled(uint64_t entityID);
 

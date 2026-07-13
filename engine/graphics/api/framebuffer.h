@@ -32,6 +32,14 @@ public:
 
     virtual void Resize(uint32_t width, uint32_t height) = 0;
 
+    // No-op when Specification.Samples <= 1. Otherwise blits the multisample color/depth
+    // attachments into an internal single-sample resolve target, which is what
+    // GetColorAttachmentRendererID()/GetDepthAttachmentRendererID() return - multisample
+    // textures can't be sampled with a plain sampler2D, so this must run once per frame
+    // after rendering into the framebuffer and before it's read as a texture elsewhere
+    // (e.g. by a composite/post-process pass or ImGui::Image).
+    virtual void Resolve() = 0;
+
     virtual uint32_t GetColorAttachmentRendererID() const = 0;
     virtual uint32_t GetDepthAttachmentRendererID() const = 0;
 

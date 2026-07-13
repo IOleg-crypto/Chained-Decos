@@ -82,27 +82,20 @@ void ContentBrowserProvider::Scan()
         // 2. Type Filter (Directories always shown)
         if (!entry.isDirectory && m_FilterType > 0)
         {
+            static constexpr EditorAssetType kFilterTypes[] = {
+                EditorAssetType::Scene,
+                EditorAssetType::Prefab,
+                EditorAssetType::Model,
+                EditorAssetType::Texture,
+                EditorAssetType::Script,
+                EditorAssetType::Audio
+            };
+            static constexpr int kFilterTypeCount = sizeof(kFilterTypes) / sizeof(kFilterTypes[0]);
+
             bool match = false;
-            switch (m_FilterType)
+            if (m_FilterType - 1 < kFilterTypeCount)
             {
-            case 1:
-                match = (entry.type == EditorAssetType::Scene);
-                break;
-            case 2:
-                match = (entry.type == EditorAssetType::Prefab);
-                break;
-            case 3:
-                match = (entry.type == EditorAssetType::Model);
-                break;
-            case 4:
-                match = (entry.type == EditorAssetType::Texture);
-                break;
-            case 5:
-                match = (entry.type == EditorAssetType::Script);
-                break;
-            case 6:
-                match = (entry.type == EditorAssetType::Audio);
-                break;
+                match = (entry.type == kFilterTypes[m_FilterType - 1]);
             }
             if (!match)
             {

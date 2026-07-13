@@ -7,6 +7,7 @@
 #include "engine/assets/loaders/model_loader.h"
 #include <chrono>
 #include <filesystem>
+#include <fstream>
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/assets/loaders/shader_loader.h"
@@ -198,6 +199,17 @@ std::string AssetManager::ResolvePath(const std::string& path) const
                     resolvedPath = candidate;
                 }
             }
+
+            // Not found loose on disk — try a mounted .pak (exported/packaged builds).
+            // Extracted once to an on-disk cache file so loaders don't need to change.
+            if (resolvedPath.empty() && m_PakArchives)
+            {
+                std::string extracted = ExtractFromPak(pathStr);
+                if (!extracted.empty())
+                {
+                    resolvedPath = extracted;
+                }
+            }
         }
 
         // Fallback
@@ -225,6 +237,72 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     m_PathCache[path] = resolved;
     return resolved;
 }
+
+bool AssetManager::MountPakArchive(const std::filesystem::path& pakPath, std::string_view mountName)
+{
+    auto archive = PakArchive::OpenReadOnly(pakPath);
+    if (!archive)
+    {
+        CH_CORE_ERROR("AssetManager: Failed to open pak archive '{}'", pakPath.string());
+        return false;
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    if (!m_PakArchives)
+    {
+        m_PakArchives = std::make_unique<PakArchiveManager>();
+    }
+    m_PakArchives->Mount(mountName, std::move(archive));
+    CH_CORE_INFO("AssetManager: Mounted pak archive '{}' as '{}'", pakPath.string(), mountName);
+    return true;
+}
+
+std::string AssetManager::ExtractFromPak(const std::string& internalPath) const
+{
+    if (!m_PakArchives || !m_PakArchives->Exists(internalPath))
+    {
+        return "";
+    }
+
+    // Cache extracted files next to the asset directory (falls back to the project
+    // directory when no asset directory is set) so repeated loads/hot-reload checks
+    // hit a real file on disk without re-extracting from the pak every time.
+    std::filesystem::path cacheRoot = !m_AssetDirectory.empty() ? m_AssetDirectory : m_ProjectDirectory;
+    if (cacheRoot.empty())
+    {
+        return "";
+    }
+
+    std::filesystem::path cachePath = cacheRoot / ".pak_cache" / internalPath;
+
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+    std::error_code ec;
+    if (!std::filesystem::exists(cachePath, ec))
+    {
+        std::vector<uint8_t> bytes = m_PakArchives->ReadFile(internalPath);
+
+        std::filesystem::create_directories(cachePath.parent_path(), ec);
+        if (ec)
+        {
+            CH_CORE_ERROR("AssetManager: Failed to create pak cache directory '{}': {}",
+                cachePath.parent_path().string(), ec.message());
+            return "";
+        }
+
+        std::ofstream out(cachePath, std::ios::binary | std::ios::trunc);
+        if (!out)
+        {
+            CH_CORE_ERROR("AssetManager: Failed to write pak cache file '{}'", cachePath.string());
+            return "";
+        }
+        out.write(reinterpret_cast<const char*>(bytes.data()), static_cast<std::streamsize>(bytes.size()));
+    }
+
+    return std::filesystem::absolute(cachePath).lexically_normal().generic_string();
+}
+
+
 
 AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
 {
