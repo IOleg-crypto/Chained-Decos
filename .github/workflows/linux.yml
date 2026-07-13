@@ -12,7 +12,7 @@ env:
 
 jobs:
   build-linux:
-    name: ubuntu-latest / ${{ matrix.preset }} (${{ matrix.build_type }})
+    name: build (ubuntu-latest, ${{ matrix.build_type }}, ${{ matrix.toolchain.compiler }})
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -20,8 +20,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        preset: [linux-clang]
         build_type: [Debug, Release]
+        toolchain:
+          - { preset: linux-clang, compiler: clang }
+          - { preset: linux-gcc, compiler: gcc }
 
     steps:
       - name: Checkout
@@ -53,7 +55,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: ccache
-          key: Linux-${{ matrix.preset }}-${{ matrix.build_type }}
+          key: Linux-${{ matrix.toolchain.preset }}-${{ matrix.build_type }}
           max-size: 5G
 
       - name: Setup Mold Linker
@@ -77,9 +79,16 @@ jobs:
 
       - name: Setup Linux Compilers
         run: |
-          sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
-          echo "CC=clang-18" >> $GITHUB_ENV
-          echo "CXX=clang++-18" >> $GITHUB_ENV
+          set -euo pipefail
+          if [[ "${{ matrix.toolchain.compiler }}" == "clang" ]]; then
+            sudo apt-get install -y clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
+            echo "CC=clang-18" >> $GITHUB_ENV
+            echo "CXX=clang++-18" >> $GITHUB_ENV
+          else
+            sudo apt-get install -y gcc-13 g++-13
+            echo "CC=gcc-13" >> $GITHUB_ENV
+            echo "CXX=g++-13" >> $GITHUB_ENV
+          fi
           echo "LDFLAGS=-fuse-ld=mold" >> $GITHUB_ENV
 
       - name: Setup .NET SDK
@@ -99,10 +108,10 @@ jobs:
       - name: Cache build directory
         uses: actions/cache@v4
         with:
-          path: build/${{ matrix.preset }}
-          key: build-${{ matrix.preset }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/cmake/*.cmake') }}
+          path: build/${{ matrix.toolchain.preset }}
+          key: build-${{ matrix.toolchain.preset }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/cmake/*.cmake') }}
           restore-keys: |
-            build-${{ matrix.preset }}-${{ matrix.build_type }}-
+            build-${{ matrix.toolchain.preset }}-${{ matrix.build_type }}-
 
       - name: Configure
         run: |
@@ -112,10 +121,10 @@ jobs:
             SANITIZERS_FLAG="ON"
           fi
 
-          mkdir -p "build/${{ matrix.preset }}"
+          mkdir -p "build/${{ matrix.toolchain.preset }}"
           PYTHON_EXE=$(python3 -c "import sys; print(sys.executable)")
           
-          cmake --preset ${{ matrix.preset }} \
+          cmake --preset ${{ matrix.toolchain.preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=ccache \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
@@ -125,19 +134,19 @@ jobs:
             -DENABLE_UNITY_BUILD=ON \
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
             -DENABLE_LTO=OFF \
-            -DENABLE_PCH=ON \
-            2>&1 | tee "build/${{ matrix.preset }}/configure.log"
+            -DENABLE_PCH=OFF \
+            2>&1 | tee "build/${{ matrix.toolchain.preset }}/configure.log"
 
       - name: Build
         run: |
           set -euo pipefail
-          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} \
-            2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
+          cmake --build "build/${{ matrix.toolchain.preset }}" --config ${{ matrix.build_type }} \
+            2>&1 | tee "build/${{ matrix.toolchain.preset }}/build_${{ matrix.build_type }}.log"
 
       - name: Test
         run: |
           set -euo pipefail
-          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.toolchain.preset }}"
           export LIBGL_ALWAYS_SOFTWARE=1
           export GALLIUM_DRIVER=llvmpipe
           export MESA_GL_VERSION_OVERRIDE=4.5
@@ -150,9 +159,22 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: Linux-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
+          name: Linux-${{ matrix.toolchain.preset }}-${{ matrix.build_type }}-binaries
           if-no-files-found: ignore
           path: |
-            build/${{ matrix.preset }}/**/*.log
-            build/${{ matrix.preset }}/**/junit_*.xml
+            build/${{ matrix.toolchain.preset }}/**/*.log
+            build/${{ matrix.toolchain.preset }}/**/junit_*.xml
+          retention-days: 7
+
+      - name: Upload Release Binaries
+        if: matrix.build_type == 'Release'
+        uses: actions/upload-artifact@v4
+        with:
+          name: Linux-${{ matrix.toolchain.preset }}-Release-executables
+          if-no-files-found: ignore
+          path: |
+            build/${{ matrix.toolchain.preset }}/bin/Release/ChainedEditor
+            build/${{ matrix.toolchain.preset }}/bin/Release/ChainedRuntime
+            build/${{ matrix.toolchain.preset }}/bin/Release/ChainedDecos
+            build/${{ matrix.toolchain.preset }}/bin/Release/*.so
           retention-days: 7

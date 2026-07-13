@@ -1,4 +1,5 @@
 import argparse
+import filecmp
 import os
 import shutil
 import subprocess
@@ -86,10 +87,40 @@ def build_managed(
 
 
 def _sync_dir(src: Path, dst: Path) -> None:
-    """Replaces dst with a fresh copy of src."""
-    shutil.rmtree(dst, ignore_errors=True)
-    shutil.copytree(src, dst)
-    print(f"  Synced: {src} -> {dst}")
+    """Incrementally syncs src into dst — only copies new/changed files."""
+    if not src.is_dir():
+        return
+
+    # Build sets of relative paths for comparison
+    src_files = {p.relative_to(src) for p in src.rglob("*") if p.is_file()}
+    dst_files = {p.relative_to(dst) for p in dst.rglob("*") if p.is_file()} if dst.is_dir() else set()
+
+    copied = 0
+    removed = 0
+
+    # Copy new and changed files
+    for rel in sorted(src_files):
+        s = src / rel
+        d = dst / rel
+        d.parent.mkdir(parents=True, exist_ok=True)
+        if not d.exists() or not filecmp.cmp(s, d, shallow=False):
+            shutil.copy2(s, d)
+            copied += 1
+
+    # Remove files that no longer exist in source
+    for rel in sorted(dst_files - src_files):
+        (dst / rel).unlink(missing_ok=True)
+        removed += 1
+
+    # Clean up empty directories left behind
+    if dst.is_dir():
+        for dirpath, _, _ in os.walk(dst, topdown=False):
+            try:
+                os.rmdir(dirpath)
+            except OSError:
+                pass  # not empty — leave it
+
+    print(f"  Synced: {src} -> {dst}  ({copied} copied, {removed} removed)")
 
 
 def sync_resources(

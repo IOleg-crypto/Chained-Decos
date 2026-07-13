@@ -8,12 +8,11 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
-  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
   NODE_OPTIONS: "--no-deprecation"
 
 jobs:
   build-windows:
-    name: windows-latest / ${{ matrix.preset }} (${{ matrix.build_type }})
+    name: build (windows-latest, ${{ matrix.build_type }}, ${{ matrix.compiler }})
     runs-on: windows-latest
     defaults:
       run:
@@ -23,15 +22,19 @@ jobs:
       matrix:
         include:
           - preset: windows-clang
+            compiler: clang
             build_type: Release
             unity_build: ON
           - preset: windows-clang
+            compiler: clang
             build_type: Debug
             unity_build: ON
           - preset: windows-msvc
+            compiler: cl
             build_type: Release
             unity_build: ON
           - preset: windows-msvc
+            compiler: cl
             build_type: Debug
             unity_build: ON
 
@@ -119,9 +122,13 @@ jobs:
       - name: Configure
         run: |
           set -euo pipefail
+          SANITIZERS_FLAG="OFF"
+          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "Debug" ]]; then
+            SANITIZERS_FLAG="ON"
+          fi
           mkdir -p "build/${{ matrix.preset }}"
           PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
-          
+
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
@@ -130,9 +137,9 @@ jobs:
             -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
             -DENABLE_UNITY_BUILD=${{ matrix.unity_build }} \
-            -DENABLE_SANITIZERS=OFF \
+            -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
             -DENABLE_LTO=OFF \
-            -DENABLE_PCH=ON \
+            -DENABLE_PCH=OFF \
             2>&1 | tee "build/${{ matrix.preset }}/configure.log"
 
       - name: Build
@@ -145,7 +152,7 @@ jobs:
         run: |
           set -euo pipefail
           BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
-          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --parallel $(nproc) --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit_${{ matrix.build_type }}.xml" \
+          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit_${{ matrix.build_type }}.xml" \
             2>&1 | tee "$BUILD_DIR/ctest_${{ matrix.build_type }}.log"
 
       - name: Upload Artifacts
