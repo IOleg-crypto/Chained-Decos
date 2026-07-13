@@ -36,6 +36,10 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  format:
+    name: Format Check
+    uses: ./.github/workflows/format.yml
+
   linux:
     name: Linux Builds
     uses: ./.github/workflows/linux.yml
@@ -49,6 +53,6 @@ jobs:
   quality-gate:
     name: PR Gate
     runs-on: ubuntu-latest
-    needs: [linux, windows]
+    needs: [format, linux, windows]
     steps:
-      - run: echo "Native builds passed."
+      - run: echo "Format check and native builds passed."
