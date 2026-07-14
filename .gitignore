@@ -95,6 +95,7 @@ build_error.txt
 .opencode
 .claude
 .zcode
+AGENTS.md
 CLAUDE.md
 # CMake install directory
 install/
