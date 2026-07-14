@@ -24,6 +24,12 @@ target_include_directories(zlibstatic INTERFACE
 unset(_zlibstatic_source_dir)
 unset(_zlibstatic_binary_dir)
 
+# Create ZLIB::ZLIB alias so pak_archive/external/CMakeLists.txt can link against it
+# without calling find_package(ZLIB).
+if(NOT TARGET ZLIB::ZLIB)
+    add_library(ZLIB::ZLIB ALIAS zlibstatic)
+endif()
+
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/pak_archive/lib EXCLUDE_FROM_ALL)
 
 if(TARGET libgpak)
