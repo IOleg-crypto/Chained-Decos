@@ -1,10 +1,7 @@
 #include "project_exporter.h"
 
-#include "engine/assets/pak_archive.h"
 #include "engine/core/log.h"
 #include "engine/project/project.h"
-
-#include "gpak_data.h" // GPAK_HEADER_COMPRESSION_ZST / GPAK_COMPRESSION_ZST_MEDIUM
 
 #include <filesystem>
 #include <string>
@@ -216,53 +213,18 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         }
     }
 
-    // ── 4. Pack assets/ into assets.pak ───────────────────────────────────────
-    // Exported builds ship a single compressed archive instead of loose asset files —
-    // AssetManager::MountPakArchive() (called from RuntimeLayer at project load) reads
-    // through it transparently. The editor never calls MountPakArchive() and always
-    // reads loose files, so this only affects exported/packaged games.
+    // ── 4. Copy assets/ ────────────────────────────────────────────────────
     {
         fs::path assetSrc = project->GetAssetDirectory();
         if (fs::exists(assetSrc))
         {
-            fs::path pakDst = outputDir / "assets.pak";
-            auto archive = PakArchive::Create(pakDst);
-            if (!archive)
+            fs::path assetDst = outputDir / "assets";
+            if (!CopyDirRecursive(assetSrc, assetDst, result.Error))
             {
-                result.Error = "Failed to create '" + pakDst.string() + "'";
                 CH_CORE_ERROR("ProjectExporter: {}", result.Error);
                 return result;
             }
-            archive->SetCompression(GPAK_HEADER_COMPRESSION_ZST, GPAK_COMPRESSION_ZST_MEDIUM);
-
-            for (const auto& entry : fs::recursive_directory_iterator(assetSrc, ec))
-            {
-                if (ec) break;
-                if (!entry.is_regular_file()) continue;
-
-                if (entry.path().filename() == "assets.pak") continue;
-
-                const fs::path rel = fs::relative(entry.path(), assetSrc, ec);
-                if (ec) break;
-
-                // gpak internal paths use forward slashes regardless of host platform.
-                std::string internalPath = rel.generic_string();
-                if (!archive->AddFile(entry.path(), internalPath))
-                {
-                    result.Error = "Failed to add '" + entry.path().string() + "' to assets.pak";
-                    CH_CORE_ERROR("ProjectExporter: {}", result.Error);
-                    return result;
-                }
-            }
-            if (ec)
-            {
-                result.Error = "Directory iteration error while packing assets: " + ec.message();
-                CH_CORE_ERROR("ProjectExporter: {}", result.Error);
-                return result;
-            }
-
-            archive.reset(); // flush + close before we're done with it
-            CH_CORE_INFO("ProjectExporter: assets packed into '{}'.", pakDst.string());
+            CH_CORE_INFO("ProjectExporter: assets copied.");
         }
     }
 

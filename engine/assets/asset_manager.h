@@ -2,7 +2,6 @@
 #define CH_ASSET_MANAGER_H
 
 #include "engine/assets/loaders/asset_loader.h"
-#include "engine/assets/pak_archive.h"
 #include "engine/core/engine_module.h"
 #include <filesystem>
 #include <deque>
@@ -39,12 +38,6 @@ public:
     [[nodiscard]] std::string ResolvePath(const std::string& path) const;
     // Resolves a path to an already-loaded asset handle, or 0 when missing.
     AssetHandle ResolveToHandle(const std::string& path) const;
-
-    // Mounts a read-only .pak archive as an asset source, layered above the loose asset
-    // directory (last-mounted-wins). Used by exported/packaged builds — the editor normally
-    // never calls this and always reads loose files from disk. Returns false if the archive
-    // could not be opened.
-    bool MountPakArchive(const std::filesystem::path& pakPath, std::string_view mountName = "assets");
 
     // Get by path — returns a cached asset when available, otherwise loads it.
     template <typename T> std::shared_ptr<T> Get(const std::string& path)
@@ -87,10 +80,6 @@ public:
 private:
     void ReloadAsset(AssetHandle handle, AssetType type);
     void CheckModelHotReload();
-    // If a .pak is mounted and contains `internalPath`, extracts it to an on-disk cache file
-    // (once) and returns the cache path — loaders keep reading plain files unmodified.
-    // Returns an empty string if no pak is mounted or the path isn't in it.
-    std::string ExtractFromPak(const std::string& internalPath) const;
 
 public:
     template <typename T> void Reload(const std::string& path)
@@ -120,9 +109,6 @@ public:
     std::filesystem::path m_AssetDirectory;
     std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_EngineRoot;
-
-    // Non-null once MountPakArchive() succeeds at least once. Left null in the editor.
-    std::unique_ptr<PakArchiveManager> m_PakArchives;
 
     float m_HotReloadInterval = 3.0f;
     float m_HotReloadAccumulator = 0.0f;
