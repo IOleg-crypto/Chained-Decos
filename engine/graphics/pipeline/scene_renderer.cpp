@@ -381,8 +381,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             }
         }
 
-        std::vector<Material> materials;
-        // materials = component.Materials; // TODO: Implement component-level material overrides
+        std::vector<Material> materials = mesh.Materials;
 
         RenderItem item;
         item.Asset = modelAsset.get();
@@ -508,7 +507,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             }
         }
         std::vector<Material> materials;
-        // materials = component.Materials; // TODO: Implement component-level material overrides
 
         RenderItem item;
         item.Asset = primitive.Asset.get();
@@ -644,7 +642,7 @@ Chained::Material SceneRenderer::ResolveMaterialForMesh(int meshIndex, const Cha
 
     int matIdx = model.Meshes[meshIndex].MaterialIndex;
 
-    if (matIdx >= 0 && matIdx < (int)materials.size() && !materials[matIdx].Name.empty())
+    if (matIdx >= 0 && matIdx < (int)materials.size())
     {
         return materials[matIdx];
     }
