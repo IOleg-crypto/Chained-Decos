@@ -16,7 +16,7 @@ void CalculateMaterialProperties(in vec2 texCoord,
         metalness_out *= texture(texture1, texCoord).b;
 
     if (useRoughnessMap == 1)
-        roughness_out *= texture(texture3, texCoord).g;
+        roughness_out *= texture(texture1, texCoord).g;
 
     if (useOcclusionMap == 1)
         occlusion_out = texture(texture4, texCoord).r;
