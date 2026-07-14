@@ -1,6 +1,7 @@
 #ifndef CH_APPLICATION_TYPES_H
 #define CH_APPLICATION_TYPES_H
 
+#include <filesystem>
 #include <string>
 
 namespace Chained
@@ -30,9 +31,13 @@ struct ApplicationSpecification
     bool Headless = false;
     bool EnableScripting = true;
     std::string ImGuiConfigurationPath;
-    
-    ApplicationSpecification() : Name("Chained Application"), ImGuiConfigurationPath("imgui.ini") {}
+
+    ApplicationSpecification()
+        : Name("Chained Application"),
+          ImGuiConfigurationPath("imgui.ini")
+    {
+    }
 };
-}
+} // namespace Chained
 
 #endif // CH_APPLICATION_TYPES_H
