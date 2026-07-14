@@ -115,11 +115,18 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
         if (m_SelectedEntity.HasComponent<ModelComponent>())
         {
             auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
-            auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(mc.ModelPath);
-            if (asset)
+
+            // Initialize component materials from ModelAsset if empty
+            if (mc.Materials.empty())
             {
-                materials = &asset->GetMaterials();
+                auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(mc.ModelPath);
+                if (asset)
+                {
+                    mc.Materials = asset->GetMaterials();
+                }
             }
+
+            materials = &mc.Materials;
         }
 
         if (materials && !materials->empty())
