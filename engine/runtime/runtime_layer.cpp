@@ -394,17 +394,6 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string &projectPath) {
     m_AssetManager->SetProjectDirectory(project->GetProjectDirectoryForProject());
     m_AssetManager->SetAssetDirectory(Project::GetAssetDirectory());
 
-    // Packaged/exported builds ship assets.pak next to the .chproject (see ProjectExporter)
-    // instead of a loose assets/ folder — mount it if present. Dev runs against a loose
-    // asset directory (no .pak next to the project) simply skip this and read from disk.
-    {
-        std::filesystem::path pakPath = std::filesystem::path(m_ProjectPath).parent_path() / "assets.pak";
-        if (std::filesystem::exists(pakPath))
-        {
-            m_AssetManager->MountPakArchive(pakPath);
-        }
-    }
-
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
     m_Renderer->LoadEngineResources();
 

@@ -7,5 +7,4 @@ chained_add_engine_module(engine_assets
         engine_external_stb
         yaml-cpp
         assimp
-        libgpak
 )
