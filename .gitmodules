@@ -86,6 +86,3 @@
     path = thirdparty/reflect-cpp
     url = https://github.com/getml/reflect-cpp.git
 
-[submodule "thirdparty/pak_archive"]
-	path = thirdparty/pak_archive
-	url = https://github.com/AdamFull/pak_archive.git
