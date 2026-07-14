@@ -2,7 +2,6 @@
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/texture_utility.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/assets/types/model_asset.h"

@@ -98,18 +98,6 @@ public:
         }
     }
 
-    static void UpdateModules(Timestep ts)
-    {
-        std::shared_lock<std::shared_mutex> lock(GetMutex());
-        for (auto& module : GetModuleOrder())
-        {
-            if (module->IsEnabled())
-            {
-                module->Update(ts);
-            }
-        }
-    }
-
     static void Shutdown()
     {
         std::vector<std::shared_ptr<EngineModule>> modulesToShutdown;

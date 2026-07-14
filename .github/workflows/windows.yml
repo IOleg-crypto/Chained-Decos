@@ -37,6 +37,7 @@ jobs:
             compiler: cl
             build_type: Debug
             unity_build: ON
+          
 
     steps:
       - name: Checkout

@@ -155,19 +155,6 @@ void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& 
     }
 }
 
-void DrawGrid(int slices, float spacing)
-{
-    float halfSize = (slices * spacing) / 2.0f;
-    glm::vec4 color = {0.5f, 0.5f, 0.5f, 1.0f};
-
-    for (int i = 0; i <= slices; i++)
-    {
-        float pos = -halfSize + (i * spacing);
-        DrawLine({pos, 0, -halfSize}, {pos, 0, halfSize}, color);
-        DrawLine({-halfSize, 0, pos}, {halfSize, 0, pos}, color);
-    }
-}
-
 void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
 {
     auto& rd = ServiceLocator::Get<Renderer>()->GetData();
@@ -177,45 +164,43 @@ void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& co
         return;
     }
 
-    shaderAsset->GetShader()->Bind();
+    auto guard = PipelineStateGuard::Capture();
+    GraphicsDevice::Get().DisableDepthTest();
+    GraphicsDevice::Get().SetBlendEnabled(true);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
-    glm::mat4 mvp = rd.CurrentProj * rd.CurrentView;
-    shaderAsset->GetShader()->SetMatrix("u_ViewProjection", mvp);
+    shaderAsset->GetShader()->Bind();
 
     glm::vec3 planePos = {camera.Position.x, -0.005f, camera.Position.z};
     glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
-    shaderAsset->GetShader()->SetMatrix("matModel", model);
+    model = glm::scale(model, glm::vec3(15000.0f, 1.0f, 15000.0f));
 
-    shaderAsset->GetShader()->SetVec3("cameraPos", camera.Position);
-
-    glm::vec4 col = color;
-    shaderAsset->GetShader()->SetVec4("gridColor", col);
-    shaderAsset->GetShader()->SetFloat("gridSize", spacing);
-    shaderAsset->GetShader()->SetFloat("uTime", rd.Time);
-
-    auto guard = PipelineStateGuard::Capture();
-    guard.WithDepthTest().WithBlend();
-    GraphicsDevice::Get().SetBlendEnabled(true);
-    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
-    GraphicsDevice::Get().DisableDepthTest();
+    shaderAsset->GetShader()->SetMatrix("u_ViewProjection", rd.CurrentProj * rd.CurrentView);
+    shaderAsset->GetShader()->SetMatrix("u_Model", model);
+    shaderAsset->GetShader()->SetVec3("u_CameraPos", camera.Position);
+    shaderAsset->GetShader()->SetVec4("u_GridColor", color);
+    shaderAsset->GetShader()->SetFloat("u_GridSize", spacing);
+    shaderAsset->GetShader()->SetFloat("u_FadeStart", 100.0f);
+    shaderAsset->GetShader()->SetFloat("u_FadeEnd", 8000.0f);
 
     if (!rd.GridPlaneVAO)
     {
-        float vertices[] = {-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f,
-                            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f};
+        float vertices[] = {
+            -0.5f, 0.0f, -0.5f,
+             0.5f, 0.0f, -0.5f,
+             0.5f, 0.0f,  0.5f,
+            -0.5f, 0.0f,  0.5f,
+        };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
 
         rd.GridPlaneVAO = VertexArray::Create();
         rd.GridPlaneVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
         rd.GridPlaneVAO->SetIndexBuffer(ibo);
     }
-
-    glm::mat4 scale = glm::scale(model, glm::vec3(15000.0f, 1.0f, 15000.0f));
-    shaderAsset->GetShader()->SetMatrix("matModel", scale);
 
     GraphicsDevice::Get().DrawIndexed(rd.GridPlaneVAO, 6);
 }
