@@ -10,9 +10,7 @@
 
 namespace Chained
 {
-ShaderStorage::ShaderStorage()
-{
-}
+ShaderStorage::ShaderStorage() = default;
 
 void ShaderStorage::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
 {

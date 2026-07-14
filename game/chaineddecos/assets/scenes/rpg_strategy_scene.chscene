@@ -31,11 +31,11 @@ DebugSettings:
   DrawCollisionModelBox: false
   DrawGrid: true
   DrawSelection: true
-  DrawLights: false
+  DrawLights: true
   DrawSpawnZones: true
   CollisionWireframeMode: 2
 Entities:
-  - Entity: 395222190427971055
+  - Entity: 12536358913100566125
     TagComponent:
       Tag: Cube
     TransformComponent:
@@ -46,7 +46,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: ":cube:"
-  - Entity: 10555712073803984832
+      Materials:
+        []
+  - Entity: 18190296339390754787
     TagComponent:
       Tag: Island
     TransformComponent:
@@ -57,7 +59,246 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/new_model/a109082005619/scene.gltf
-  - Entity: 11305906887924595703
+      Materials:
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/rock_diffuse.jpeg
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/grass_and_ground_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/mountaion_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/Material_25_diffuse.jpeg
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/Material_26_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/Material_27_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/Material_28_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/Material_47_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/Material_48_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/water2_diffuse.jpeg
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/material_diffuse.png
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/new_model/a109082005619\textures/material_diffuse.png
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+  - Entity: 12266545150586966442
     TagComponent:
       Tag: toy_train_platform
     TransformComponent:
@@ -68,11 +309,13 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/wooden_train.glb
+      Materials:
+        []
     AnimationComponent:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: false
-  - Entity: 9747680312018450315
+  - Entity: 14261423646234502105
     TagComponent:
       Tag: SpawnPoint
     ColliderComponent:
@@ -102,7 +345,7 @@ Entities:
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.spawnzone
-  - Entity: 14150302402319106172
+  - Entity: 11101305977757823021
     TagComponent:
       Tag: rail#3d_copy_copy
     ColliderComponent:
@@ -126,7 +369,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 13680703112555672602
+      Materials:
+        []
+  - Entity: 6202601319334219233
     TagComponent:
       Tag: anim_mode
     ColliderComponent:
@@ -150,7 +395,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/bridge.glb
-  - Entity: 4300265007523131286
+      Materials:
+        []
+  - Entity: 15092138054431318052
     TagComponent:
       Tag: wooden_bridge
     ColliderComponent:
@@ -174,6 +421,8 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+      Materials:
+        []
     Rigid BodyComponent:
       Type: 0
       Mass: 1
@@ -184,7 +433,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 742446679548082152
+  - Entity: 1614306314770529439
     TagComponent:
       Tag: anim_mode#3
     ColliderComponent:
@@ -208,7 +457,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/bridge.glb
-  - Entity: 17525274587266257051
+      Materials:
+        []
+  - Entity: 1924135987958968749
     TagComponent:
       Tag: anim_mode#4_copy
     ColliderComponent:
@@ -232,7 +483,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/bridge.glb
-  - Entity: 5735136268707817638
+      Materials:
+        []
+  - Entity: 5386723434038569261
     TagComponent:
       Tag: anim_mode#2
     ColliderComponent:
@@ -256,7 +509,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/bridge.glb
-  - Entity: 18325111338811947499
+      Materials:
+        []
+  - Entity: 8767124810931249856
     TagComponent:
       Tag: train_vagons
     TransformComponent:
@@ -265,7 +520,7 @@ Entities:
       Scale: [1, 1, 1]
     IDComponent:
       {}
-  - Entity: 5924327134309067513
+  - Entity: 7951150821101380640
     TagComponent:
       Tag: rail#3d
     ColliderComponent:
@@ -289,7 +544,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 3521322618675165033
+      Materials:
+        []
+  - Entity: 2078239400810798341
     TagComponent:
       Tag: Empty Entity
     TransformComponent:
@@ -300,11 +557,13 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
+      Materials:
+        []
     AnimationComponent:
       BlendDuration: 0
       IsLooping: false
       PlayOnStart: true
-  - Entity: 4237974062496967
+  - Entity: 11526786927884564534
     TagComponent:
       Tag: arena_two
     ColliderComponent:
@@ -328,6 +587,8 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/container_ship/scene.gltf
+      Materials:
+        []
     Rigid BodyComponent:
       Type: 0
       Mass: 1
@@ -338,7 +599,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 17410381829001870748
+  - Entity: 3387852212772608150
     TagComponent:
       Tag: Camera
     CameraComponent:
@@ -355,8 +616,8 @@ Entities:
       verticalFov: 60
       orthographicSize: 10
     TransformComponent:
-      Translation: [-324.725494, 227.367279, 155.901367]
-      Rotation: [0.428999841, 0.627001882, 0]
+      Translation: [-203.751312, 142.035156, 252.297165]
+      Rotation: [0.206999972, -0.0029995814, 0]
       Scale: [1, 1, 1]
     IDComponent:
       {}
@@ -371,7 +632,7 @@ Entities:
         - Name: color
           Value: 0
       Enabled: true
-  - Entity: 11269652547431253831
+  - Entity: 6505963597749161173
     TagComponent:
       Tag: floor_lol
     ColliderComponent:
@@ -395,6 +656,63 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/stone_floor.glb
+      Materials:
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 0.600000024
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 0.600000024
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 0.600000024
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 1
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
     Rigid BodyComponent:
       Type: 0
       Mass: 1
@@ -405,7 +723,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 13855006903257756805
+  - Entity: 12638027767077675098
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -429,6 +747,8 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
+      Materials:
+        []
     ShaderComponent:
       ShaderPath: ""
       Uniforms:
@@ -444,7 +764,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 14856808511303576773
+  - Entity: 15210544998056121390
     TagComponent:
       Tag: Player
     ColliderComponent:
@@ -472,6 +792,8 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/skeleton/scene.gltf
+      Materials:
+        []
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.gamehud
@@ -500,7 +822,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 18339858492371676182
+  - Entity: 6185108970023146936
     TagComponent:
       Tag: SceneCamera
     CameraComponent:
@@ -522,7 +844,7 @@ Entities:
       Scale: [1, 1, 1]
     IDComponent:
       {}
-  - Entity: 3778596588389816093
+  - Entity: 4797736896461986620
     TagComponent:
       Tag: ghost
     ColliderComponent:
@@ -546,11 +868,13 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
+      Materials:
+        []
     AnimationComponent:
       BlendDuration: 0
       IsLooping: true
       PlayOnStart: true
-  - Entity: 16811487374033359097
+  - Entity: 15707008177708916326
     TagComponent:
       Tag: Arena
     ColliderComponent:
@@ -574,6 +898,133 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/arena.glb
+      Materials:
+        - AlbedoColor: [0.564700007, 0, 0, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.0313000008, 0.917599976, 1, 1]
+          EmissiveColor: [0.0134565448, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.35679999, 0.333299994, 0.305799991, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.360700011, 0.341100007, 0.337199986, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.403899997, 0.278400004, 0.231299996, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.470499992, 0.439200014, 0.403899997, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.470499992, 0.439200014, 0.403899997, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [0.329400003, 0.227400005, 0.188199997, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 1
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
     Rigid BodyComponent:
       Type: 0
       Mass: 1
@@ -584,7 +1035,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 8002062497341777372
+  - Entity: 8663121207814757108
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -608,7 +1059,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 110042586844453829
+      Materials:
+        []
+  - Entity: 2015813295378505497
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -632,7 +1085,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 6869076405993763575
+      Materials:
+        []
+  - Entity: 17425307006463288260
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -656,7 +1111,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 3367438080692168502
+      Materials:
+        []
+  - Entity: 6673355239181883446
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -680,7 +1137,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 14283095779587661304
+      Materials:
+        []
+  - Entity: 4793446233250823944
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -704,7 +1163,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 10442043420466972880
+      Materials:
+        []
+  - Entity: 5927693582322110539
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -728,7 +1189,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 8739655482252259208
+      Materials:
+        []
+  - Entity: 7463405203156662514
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -752,7 +1215,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 13489361666319365841
+      Materials:
+        []
+  - Entity: 1429013614295389907
     TagComponent:
       Tag: rail#3d_copy
     ColliderComponent:
@@ -776,7 +1241,9 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
-  - Entity: 523959897301669125
+      Materials:
+        []
+  - Entity: 1276840017092554089
     TagComponent:
       Tag: Entity_copy
     ColliderComponent:
@@ -800,6 +1267,21 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/stairs.glb
+      Materials:
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
     Rigid BodyComponent:
       Type: 0
       Mass: 1
@@ -810,7 +1292,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 9051552503054294291
+  - Entity: 15003773082273962495
     TagComponent:
       Tag: buildings_6_pack
     ColliderComponent:
@@ -834,6 +1316,8 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models_backup/building/scene.gltf
+      Materials:
+        []
     Rigid BodyComponent:
       Type: 1
       Mass: 1
@@ -844,7 +1328,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 587982174759272990
+  - Entity: 11861807696887036848
     TagComponent:
       Tag: island_minigames
     ColliderComponent:
@@ -868,6 +1352,175 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/minigames/hub_for_minigames_server.glb
+      Materials:
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0.100000001, 0.100000001, 0.100000001, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [1, 1, 1, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0.100000001, 0.100000001, 0.100000001, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0.100000001, 0.100000001, 0.100000001, 1]
+          EmissiveIntensity: 0
+          Metalness: 0
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
+        - AlbedoColor: [1, 1, 1, 1]
+          EmissiveColor: [0, 0, 0, 1]
+          EmissiveIntensity: 0
+          Metalness: 1
+          Roughness: 1
+          AlbedoPath: ""
+          NormalPath: ""
+          MetallicRoughnessPath: ""
+          EmissivePath: ""
+          OcclusionPath: ""
+          ShaderID: 0
+          Transparent: false
+          Alpha: 1
+          Name: ""
     Rigid BodyComponent:
       Type: 0
       Mass: 1
@@ -878,7 +1531,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 15361860728780227474
+  - Entity: 13969012135123552435
     TagComponent:
       Tag: Island_copy
     TransformComponent:
@@ -889,3 +1542,5 @@ Entities:
       {}
     ModelComponent:
       ModelPath: models/tavern/the_thankful_glory_-_fantasy_tavern/scene.gltf
+      Materials:
+        []

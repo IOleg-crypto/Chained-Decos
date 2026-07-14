@@ -1,60 +1,39 @@
 #version 330 core
 
-// Input vertex attributes (from vertex shader)
-in vec3 fragWorldPos;
+in vec3 v_WorldPos;
 
-// Input uniform values
-uniform mat4 mvp;
-uniform vec3 cameraPos;
-uniform vec4 gridColor;
-uniform float gridSize; // Spacing (e.g. 1.0 or 10.0)
-uniform float uTime;
+uniform vec3 u_CameraPos;
+uniform vec4 u_GridColor;   // rgb = color, a = base alpha
+uniform float u_GridSize;   // primary spacing
+uniform float u_FadeStart;  // distance where fade begins
+uniform float u_FadeEnd;    // distance where grid is fully invisible
 
-#include "../include/fog.glsl"
+out vec4 o_Color;
 
-// Output fragment color
-out vec4 finalColor;
-
-float grid(vec2 st, float res)
+float grid(vec2 coord, float spacing)
 {
-    vec2 grid = fract(st / res);
-    vec2 line = step(vec2(1.0 - 0.02 / res), grid) + step(grid, vec2(0.02 / res));
-    return max(line.x, line.y);
-}
-
-// Improved grid with anti-aliasing based on screen derivatives
-float pr_grid(vec2 coord, float spacing) 
-{
-    vec2 grid = abs(fract(coord / spacing - 0.5) - 0.5) / (fwidth(coord / spacing) + 0.001);
-    float line = min(grid.x, grid.y);
-    return 1.0 - min(line, 1.0);
+    vec2 g = abs(fract(coord / spacing - 0.5) - 0.5) / (fwidth(coord / spacing) + 0.001);
+    return 1.0 - min(min(g.x, g.y), 1.0);
 }
 
 void main()
 {
-    // Access world-space XZ for tiling
-    vec2 coord = fragWorldPos.xz;
-    
-    // Primary grid (spacing from uniform)
-    float g1 = pr_grid(coord, gridSize);
-    
-    // Secondary thick grid (every 10 primary units)
-    float g2 = pr_grid(coord, gridSize * 10.0);
-    
-    // Distance from camera to this fragment
-    float dist = length(fragWorldPos - cameraPos);
-    
-    // Fade out based on distance (linear fade from 100m start to 8000m end)
-    float fade = 1.0 - clamp((dist - 100.0) / 7900.0, 0.0, 1.0);
-    // Use quadratic falloff for smoother horizon transition
-    fade = fade * fade;
-    
-    // Mix grid lines
-    float alpha = max(g1 * 0.4, g2 * 0.8);
-    
-    if (alpha * fade < 0.01) discard;
-    
-    // Use the uniform gridColor
-    vec4 result = vec4(gridColor.rgb, alpha * fade * gridColor.a);
-    finalColor = ApplyFog(result, fragWorldPos, cameraPos, uTime);
+    vec2 coord = v_WorldPos.xz;
+
+    // Primary grid lines
+    float g1 = grid(coord, u_GridSize);
+    // Secondary grid lines (every 10th)
+    float g2 = grid(coord, u_GridSize * 10.0);
+
+    // Distance-based fade
+    float dist = length(v_WorldPos - u_CameraPos);
+    float fade = 1.0 - clamp((dist - u_FadeStart) / (u_FadeEnd - u_FadeStart), 0.0, 1.0);
+    fade *= fade; // quadratic for smoother transition
+
+    // Combine: primary lines at 40% alpha, secondary at 80%
+    float alpha = max(g1 * 1, g2 * 0.8) * fade;
+
+    if (alpha < 0.01) discard;
+
+    o_Color = vec4(u_GridColor.rgb, alpha * u_GridColor.a);
 }
