@@ -11,8 +11,6 @@
 #include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/texture_utility.h"
-// removed texture_system.h
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
 #include "imgui.h"
@@ -854,6 +852,12 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     if (options.ShowDebugCollisionModelBox)
     {
         DrawCollisionModelBoxDebug(registry);
+    }
+
+    if (options.DrawGrid)
+    {
+        auto& grid = settings.Grid;
+        DebugRenderer::DrawInfiniteGrid(camera, grid.Spacing, {0.5f, 0.5f, 0.5f, 1.0f});
     }
 
     DebugRenderer::Flush();

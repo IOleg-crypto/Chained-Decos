@@ -3,6 +3,7 @@
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 
+#include "engine/assets/asset_metadata.h"
 #include "engine/assets/loaders/font_loader.h"
 #include "engine/assets/loaders/model_loader.h"
 #include <chrono>

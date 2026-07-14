@@ -40,7 +40,7 @@ namespace Chained
         }
 
         std::string ext = absolutePath.extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+        std::ranges::transform(ext, ext.begin(), ::tolower);
 
         if (ext == ".chshader")
         {

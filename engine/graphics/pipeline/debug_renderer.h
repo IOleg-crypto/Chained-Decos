@@ -17,7 +17,6 @@ namespace Chained
         void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe = true);
         void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe = true);
         void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe = true);
-        void DrawGrid(int slices, float spacing);
         void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
     };
 } // namespace Chained

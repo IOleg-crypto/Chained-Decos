@@ -4,7 +4,6 @@
 #include "engine/assets/asset.h"
 #include "engine/graphics/api/texture.h"
 #include <memory>
-// #include <string>
 #include <cstdint>
 
 namespace Chained

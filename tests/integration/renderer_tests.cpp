@@ -2,6 +2,7 @@
 // Tests for the main Renderer and Renderer2D singletons.
 // These tests require a valid OpenGL context and are skipped on CI.
 #include "engine/app/application.h"
+#include <filesystem>
 #include "engine/core/service_locator.h"
 #include "engine/common/base.h"
 #include "engine/graphics/pipeline/renderer.h"

@@ -2,6 +2,7 @@
 #define CH_ASSET_H
 
 #include "engine/common/uuid.h"
+#include "engine/core/log.h"
 #include <cstdio>
 #include <string>
 #include <atomic>
@@ -20,6 +21,8 @@ enum class AssetType : uint16_t
     Environment,
     Material,
     Font,
+    Scene,
+    Script,
     AnimationGraph // Not existing yet, reserved for future use
 };
 // Asset loading state.
@@ -128,6 +131,12 @@ public:
     UUID GetID() const
     {
         return m_ID;
+    }
+
+    // Assigns the stable UUID handle, typically loaded from a .meta sidecar file.
+    void SetID(UUID id)
+    {
+        m_ID = id;
     }
 
     // Called on the main thread after loading completes; useful for GPU uploads.

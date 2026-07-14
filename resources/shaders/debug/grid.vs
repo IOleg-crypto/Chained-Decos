@@ -1,20 +1,14 @@
 #version 330 core
 
-// Input vertex attributes
-in vec3 vertexPosition;
-in vec2 vertexTexCoord;
-in vec3 vertexNormal;
-in vec4 vertexColor;
+layout (location = 0) in vec3 a_Position;
 
-// Input uniform values
 #include "../include/camera.glsl"
-uniform mat4 matModel;
+uniform mat4 u_Model;
 
-// Output vertex attributes (to fragment shader)
-out vec3 fragWorldPos;
+out vec3 v_WorldPos;
 
 void main()
 {
-    fragWorldPos = (matModel * vec4(vertexPosition, 1.0)).xyz;
-    gl_Position = u_ViewProjection * matModel * vec4(vertexPosition, 1.0);
+    v_WorldPos = (u_Model * vec4(a_Position, 1.0)).xyz;
+    gl_Position = u_ViewProjection * u_Model * vec4(a_Position, 1.0);
 }
