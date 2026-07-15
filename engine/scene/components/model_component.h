@@ -14,7 +14,7 @@ struct ModelComponent
 {
     AssetHandle ModelHandle = AssetHandle(0);
     std::string ModelPath;
-    std::vector<Material> Materials;
+    std::vector<std::string> MaterialPaths;
 
     static const char* GetStaticName()
     {

@@ -1,0 +1,17 @@
+Material:
+  Name: Wood_Proc
+  AlbedoColor:
+    - 0.0249926001
+    - 0.00334157003
+    - 0.00283491006
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 0.135473862
+  Transparent: false
+  Alpha: 1

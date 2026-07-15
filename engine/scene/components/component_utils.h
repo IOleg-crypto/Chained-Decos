@@ -7,7 +7,9 @@
 #include "engine/scene/components/model_component.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/assets/types/material_asset.h"
 #include <glm/gtx/quaternion.hpp>
+#include <filesystem>
 
 namespace Chained::ComponentUtils
 {
@@ -83,11 +85,37 @@ namespace Chained::ComponentUtils
             return;
         }
 
-        auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(mc.ModelPath , ModelAsset::GetStaticType());
-        auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(mc.ModelPath);
+        auto* assets = ServiceLocator::Get<AssetManager>();
+        auto handle = assets->LoadAsset(mc.ModelPath, ModelAsset::GetStaticType());
+        auto asset = assets->Get<ModelAsset>(mc.ModelPath);
         if (asset)
         {
             mc.ModelHandle = asset->GetID();
+
+            // Auto-generate .chmat files if MaterialPaths is empty
+            if (mc.MaterialPaths.empty())
+            {
+                std::filesystem::path modelPath(mc.ModelPath);
+                std::string modelName = modelPath.stem().string();
+                std::filesystem::path modelDir = modelPath.parent_path();
+
+                const auto& materials = asset->GetMaterials();
+                mc.MaterialPaths.resize(materials.size());
+
+                for (int i = 0; i < (int)materials.size(); i++)
+                {
+                    std::string matFileName = modelName + "_material_" + std::to_string(i) + ".chmat";
+                    mc.MaterialPaths[i] = (modelDir / matFileName).generic_string();
+
+                    std::string resolvedMatPath = assets->ResolvePath(mc.MaterialPaths[i]);
+                    if (!std::filesystem::exists(resolvedMatPath))
+                    {
+                        auto matAsset = std::make_shared<MaterialAsset>();
+                        matAsset->SetMaterial(materials[i]);
+                        matAsset->SaveToFile(resolvedMatPath);
+                    }
+                }
+            }
         }
         else
         {

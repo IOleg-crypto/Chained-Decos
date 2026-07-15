@@ -70,17 +70,16 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
     stbtt_BakeFontBitmap(buffer.data(), 0, font.fontSize, pixels.data(), font.atlasWidth, font.atlasHeight, 32, 128,
                          chardata);
 
-    
-    glGenTextures(1, &font.textureId);
-    glBindTexture(GL_TEXTURE_2D, font.textureId);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, font.atlasWidth, font.atlasHeight, 0, GL_RED, GL_UNSIGNED_BYTE,
-                 pixels.data());
+    std::vector<unsigned char> rgbaPixels(font.atlasWidth * font.atlasHeight * 4);
+    for(size_t i = 0; i < pixels.size(); i++) {
+        rgbaPixels[i*4 + 0] = 255; // R
+        rgbaPixels[i*4 + 1] = 255; // G
+        rgbaPixels[i*4 + 2] = 255; // B
+        rgbaPixels[i*4 + 3] = pixels[i]; // A
+    }
 
-    GLint swizzleMask[] = {GL_ONE, GL_ONE, GL_ONE, GL_RED};
-    glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA, swizzleMask);
-
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    font.textureAtlas = Texture::Create(font.atlasWidth, font.atlasHeight, TextureFormat::RGBA8);
+    font.textureAtlas->SetData(rgbaPixels.data(), rgbaPixels.size());
 
     
     float invWidth = 1.0f / font.atlasWidth;
@@ -98,7 +97,10 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
     }
 
     std::static_pointer_cast<FontAsset>(asset)->SetFont(font);
-    CH_CORE_INFO("FontLoader: Imported font atlas for {} (ID={})", resolvedPath, font.textureId);
+    
+    // Fallback to NativeHandle just for logging
+    uint32_t handleId = font.textureAtlas ? font.textureAtlas->GetNativeHandle() : 0;
+    CH_CORE_INFO("FontLoader: Imported font atlas for {} (ID={})", resolvedPath, handleId);
 
     return true;
 }

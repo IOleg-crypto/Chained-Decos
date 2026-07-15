@@ -66,7 +66,6 @@ private:
 
 private:
     glm::mat4 m_ViewMatrix = glm::mat4(1.0f);
-    
     glm::vec3 m_FocalPoint = {0.0f, 0.0f, 0.0f};
     float m_Distance = 10.0f;
     float m_Pitch = 0.0f, m_Yaw = 0.0f;

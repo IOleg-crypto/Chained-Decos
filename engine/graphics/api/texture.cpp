@@ -39,3 +39,8 @@ std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
 }
 
 } // namespace Chained
+namespace Chained {
+    std::shared_ptr<Texture> Texture::WrapNative(uint32_t handle, uint32_t width, uint32_t height) {
+        return std::make_shared<GLTexture>(handle, width, height);
+    }
+}

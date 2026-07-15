@@ -18,9 +18,11 @@ public:
 
 private:
     void DrawMaterialSlot(Material& slot);
+    void SaveMaterials();
 
 private:
     Entity m_SelectedEntity;
+    std::vector<Material> m_Materials;
     int m_SelectedMeshIndex = -1;
     int m_SelectedMaterialIndex = 0;
 };

@@ -1,5 +1,4 @@
 #include "gl_framebuffer.h"
-#include "engine/common/engine_assert.h"
 #include <algorithm>
 #include <glad/gl.h>
 
@@ -174,6 +173,12 @@ void GLFramebuffer::Invalidate()
         }
     }
 
+    if (m_IsComplete)
+    {
+        m_ColorTexture = Texture::WrapNative(m_Specification.Samples > 1 ? m_ResolveColorAttachment : m_ColorAttachment, m_Specification.Width, m_Specification.Height);
+        m_DepthTexture = Texture::WrapNative(m_Specification.Samples > 1 ? m_ResolveDepthAttachment : m_DepthAttachment, m_Specification.Width, m_Specification.Height);
+    }
+    
     glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
 }
 

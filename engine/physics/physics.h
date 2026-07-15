@@ -37,7 +37,7 @@ public:
 
     // EngineModule lifecycle
     virtual void Initialize() override;
-    virtual void Update(Timestep ts) override
+    virtual void Update(Timestep ts)
     {
     }
     virtual void Shutdown() override;

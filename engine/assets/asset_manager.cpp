@@ -6,6 +6,8 @@
 #include "engine/assets/asset_metadata.h"
 #include "engine/assets/loaders/font_loader.h"
 #include "engine/assets/loaders/model_loader.h"
+#include "engine/assets/loaders/audio_loader.h"
+#include "engine/assets/loaders/material_loader.h"
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -28,13 +30,15 @@ void AssetManager::Initialize()
     RegisterLoader(AssetType::Shader, AssetLoader{ShaderLoader::Create, ShaderLoader::Load, false});
     RegisterLoader(AssetType::Environment, AssetLoader{EnvironmentLoader::Create, EnvironmentLoader::Load, true});
     RegisterLoader(AssetType::Font, AssetLoader{FontLoader::Create, FontLoader::Load, false});
+    RegisterLoader(AssetType::Audio, AssetLoader{AudioLoader::Create, AudioLoader::Load, false});
+    RegisterLoader(AssetType::Material, AssetLoader{MaterialLoader::Create, MaterialLoader::Load, false});
 }
 
 void AssetManager::Shutdown()
 {
     while (HasBackgroundWork())
     {
-        Update();
+        FinalizePendingLoads();
         std::this_thread::yield();
     }
     if (auto* tp = ServiceLocator::Get<ThreadPool>())
@@ -55,7 +59,7 @@ void AssetManager::Update(Timestep ts)
         }
     }
 
-    Update();
+    FinalizePendingLoads();
 }
 
 void AssetManager::CheckModelHotReload()
@@ -360,7 +364,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type
     return nullptr;
 }
 
-void AssetManager::Update()
+void AssetManager::FinalizePendingLoads()
 {
     CH_PROFILE_FUNCTION();
 

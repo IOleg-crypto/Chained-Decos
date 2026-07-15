@@ -19,10 +19,13 @@ public:
     virtual void Resize(uint32_t width, uint32_t height) override;
     virtual void Resolve() override;
 
+    virtual std::shared_ptr<Texture> GetColorAttachment() const override { return m_ColorTexture; }
     virtual uint32_t GetColorAttachmentRendererID() const override
     {
         return m_Specification.Samples > 1 ? m_ResolveColorAttachment : m_ColorAttachment;
     }
+    
+    virtual std::shared_ptr<Texture> GetDepthAttachment() const override { return m_DepthTexture; }
     virtual uint32_t GetDepthAttachmentRendererID() const override
     {
         return m_Specification.Samples > 1 ? m_ResolveDepthAttachment : m_DepthAttachment;
@@ -45,6 +48,9 @@ private:
     uint32_t m_ResolveFBO = 0;
     uint32_t m_ResolveColorAttachment = 0;
     uint32_t m_ResolveDepthAttachment = 0;
+
+    std::shared_ptr<Texture> m_ColorTexture;
+    std::shared_ptr<Texture> m_DepthTexture;
 
     FramebufferSpecification m_Specification;
     bool m_IsComplete = false;

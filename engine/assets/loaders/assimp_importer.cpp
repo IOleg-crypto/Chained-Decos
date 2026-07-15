@@ -84,22 +84,17 @@ static glm::vec4 ToColor(const aiColor4D& c)
     return {c.r, c.g, c.b, c.a};
 }
 
-static glm::vec3 InterpolatePosition(double time, const aiNodeAnim* channel, unsigned int& lastKey,
-                                     const glm::vec3& defaultVal)
+template <typename KeyT, typename T, typename ConvertFn, typename InterpolateFn>
+static T InterpolateKeys(double time, const KeyT* keys, unsigned int count, unsigned int& lastKey,
+                         const T& defaultVal, ConvertFn convert, InterpolateFn lerpFn)
 {
-    if (channel->mNumPositionKeys == 0)
-    {
-        return defaultVal;
-    }
-    if (channel->mNumPositionKeys == 1)
-    {
-        return ToVec3(channel->mPositionKeys[0].mValue);
-    }
+    if (count == 0) return defaultVal;
+    if (count == 1) return convert(keys[0].mValue);
 
     unsigned int p1 = lastKey, p2 = lastKey;
-    for (unsigned int k = lastKey; k < channel->mNumPositionKeys - 1; ++k)
+    for (unsigned int k = lastKey; k < count - 1; ++k)
     {
-        if (time < channel->mPositionKeys[k + 1].mTime)
+        if (time < keys[k + 1].mTime)
         {
             p1 = k;
             p2 = k + 1;
@@ -110,90 +105,39 @@ static glm::vec3 InterpolatePosition(double time, const aiNodeAnim* channel, uns
         p2 = k + 1;
     }
 
-    if (time >= channel->mPositionKeys[channel->mNumPositionKeys - 1].mTime)
-    {
-        return ToVec3(channel->mPositionKeys[channel->mNumPositionKeys - 1].mValue);
-    }
+    if (time >= keys[count - 1].mTime)
+        return convert(keys[count - 1].mValue);
 
-    double dt = channel->mPositionKeys[p2].mTime - channel->mPositionKeys[p1].mTime;
-    float factor = (dt > 0.0) ? (float)((time - channel->mPositionKeys[p1].mTime) / dt) : 0.0f;
-    return glm::mix(ToVec3(channel->mPositionKeys[p1].mValue), ToVec3(channel->mPositionKeys[p2].mValue), factor);
+    double dt = keys[p2].mTime - keys[p1].mTime;
+    float factor = (dt > 0.0) ? (float)((time - keys[p1].mTime) / dt) : 0.0f;
+    return lerpFn(convert(keys[p1].mValue), convert(keys[p2].mValue), factor);
+}
+
+static glm::vec3 InterpolatePosition(double time, const aiNodeAnim* channel, unsigned int& lastKey,
+                                     const glm::vec3& defaultVal)
+{
+    return InterpolateKeys(time, channel->mPositionKeys, channel->mNumPositionKeys, lastKey, defaultVal,
+        ToVec3, [](const glm::vec3& a, const glm::vec3& b, float f) { return glm::mix(a, b, f); });
 }
 
 static glm::quat InterpolateRotation(double time, const aiNodeAnim* channel, unsigned int& lastKey,
                                      const glm::quat& defaultVal)
 {
-    if (channel->mNumRotationKeys == 0)
-    {
-        return defaultVal;
-    }
-    if (channel->mNumRotationKeys == 1)
-    {
-        return ToQuat(channel->mRotationKeys[0].mValue);
-    }
-
-    unsigned int p1 = lastKey, p2 = lastKey;
-    for (unsigned int k = lastKey; k < channel->mNumRotationKeys - 1; ++k)
-    {
-        if (time < channel->mRotationKeys[k + 1].mTime)
-        {
-            p1 = k;
-            p2 = k + 1;
-            lastKey = k;
-            break;
-        }
-        p1 = k;
-        p2 = k + 1;
-    }
-
-    if (time >= channel->mRotationKeys[channel->mNumRotationKeys - 1].mTime)
-    {
-        return ToQuat(channel->mRotationKeys[channel->mNumRotationKeys - 1].mValue);
-    }
-
-    double dt = channel->mRotationKeys[p2].mTime - channel->mRotationKeys[p1].mTime;
-    float factor = (dt > 0.0) ? (float)((time - channel->mRotationKeys[p1].mTime) / dt) : 0.0f;
-
-    aiQuaternion interpolated;
-    aiQuaternion::Interpolate(interpolated, channel->mRotationKeys[p1].mValue, channel->mRotationKeys[p2].mValue,
-                              factor);
-    return ToQuat(interpolated);
+    return InterpolateKeys(time, channel->mRotationKeys, channel->mNumRotationKeys, lastKey, defaultVal,
+        ToQuat, [](const glm::quat& a, const glm::quat& b, float f) {
+            aiQuaternion result;
+            aiQuaternion::Interpolate(result,
+                aiQuaternion(a.w, a.x, a.y, a.z),
+                aiQuaternion(b.w, b.x, b.y, b.z), f);
+            return ToQuat(result);
+        });
 }
 
 static glm::vec3 InterpolateScale(double time, const aiNodeAnim* channel, unsigned int& lastKey,
                                   const glm::vec3& defaultVal)
 {
-    if (channel->mNumScalingKeys == 0)
-    {
-        return defaultVal;
-    }
-    if (channel->mNumScalingKeys == 1)
-    {
-        return ToVec3(channel->mScalingKeys[0].mValue);
-    }
-
-    unsigned int p1 = lastKey, p2 = lastKey;
-    for (unsigned int k = lastKey; k < channel->mNumScalingKeys - 1; ++k)
-    {
-        if (time < channel->mScalingKeys[k + 1].mTime)
-        {
-            p1 = k;
-            p2 = k + 1;
-            lastKey = k;
-            break;
-        }
-        p1 = k;
-        p2 = k + 1;
-    }
-
-    if (time >= channel->mScalingKeys[channel->mNumScalingKeys - 1].mTime)
-    {
-        return ToVec3(channel->mScalingKeys[channel->mNumScalingKeys - 1].mValue);
-    }
-
-    double dt = channel->mScalingKeys[p2].mTime - channel->mScalingKeys[p1].mTime;
-    float factor = (dt > 0.0) ? (float)((time - channel->mScalingKeys[p1].mTime) / dt) : 0.0f;
-    return glm::mix(ToVec3(channel->mScalingKeys[p1].mValue), ToVec3(channel->mScalingKeys[p2].mValue), factor);
+    return InterpolateKeys(time, channel->mScalingKeys, channel->mNumScalingKeys, lastKey, defaultVal,
+        ToVec3, [](const glm::vec3& a, const glm::vec3& b, float f) { return glm::mix(a, b, f); });
 }
 
 PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int samplingFPS)
@@ -201,98 +145,71 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
     CH_PROFILE_FUNCTION();
     PendingModelData data{};
 
-    try
-    {
-        Assimp::Importer importer;
-        std::string exts;
-        importer.GetExtensionList(exts);
-        CH_CORE_INFO("AssimpImporter: Supported extensions: {0}", exts);
-        CH_CORE_INFO("AssimpImporter: Attempting to import '{0}'", path.string());
+    Assimp::Importer importer;
+    importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
+    importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
-        importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-        importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
+    std::string ext = path.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
 
-        std::string ext = path.extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
+    unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
+                         aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
+                         aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes;
 
-        unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
-                             aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                             aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes;
+    if (ext != ".gltf" && ext != ".glb")
+        flags |= aiProcess_FlipUVs;
 
-        if (ext != ".gltf" && ext != ".glb")
-        {
-            flags |= aiProcess_FlipUVs;
-        }
+    const aiScene* scene = nullptr;
 
-        const aiScene* scene = nullptr;
-        CH_CORE_INFO("AssimpImporter: Invoking ReadFile for '{0}'", path.string());
-
+    auto tryLoad = [&](const char* desc, auto loadFn) -> bool {
         try
         {
-            scene = importer.ReadFile(path.string(), flags);
-        } catch (const std::exception& e)
-        {
-            CH_CORE_WARN("AssimpImporter: ReadFile threw for '{0}': {1}. Trying memory loading as fallback...",
-                         path.string(), e.what());
-        } catch (...)
-        {
-            CH_CORE_WARN("AssimpImporter: ReadFile threw for '{0}' with an unknown exception. Trying memory loading as "
-                         "fallback...",
-                         path.string());
+            scene = loadFn();
+            return scene && scene->mRootNode;
         }
-
-        if (!scene || !scene->mRootNode)
+        catch (const std::exception& e)
         {
-            CH_CORE_WARN("AssimpImporter: ReadFile failed for '{0}': {1}. Trying memory loading as fallback...",
-                         path.string(), importer.GetErrorString());
-            std::ifstream file(path, std::ios::binary | std::ios::ate);
-            if (file.is_open())
+            CH_CORE_WARN("AssimpImporter: {} threw for '{}': {}", desc, path.string(), e.what());
+            return false;
+        }
+        catch (...)
+        {
+            CH_CORE_WARN("AssimpImporter: {} threw for '{}' with unknown exception", desc, path.string());
+            return false;
+        }
+    };
+
+    tryLoad("ReadFile", [&]() { return importer.ReadFile(path.string(), flags); });
+
+    if (!scene || !scene->mRootNode)
+    {
+        CH_CORE_WARN("AssimpImporter: ReadFile failed for '{}', trying memory fallback...", path.string());
+        std::ifstream file(path, std::ios::binary | std::ios::ate);
+        if (file.is_open())
+        {
+            std::streamsize size = file.tellg();
+            if (size > 0)
             {
-                std::streamsize size = file.tellg();
-                if (size > 0)
-                {
-                    file.seekg(0);
-                    std::vector<char> buffer(static_cast<size_t>(size) + 1024, 0);
-                    file.read(buffer.data(), size);
-                    try
-                    {
-                        scene = importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags,
-                                                            path.extension().string().c_str());
-                    } catch (const std::exception& e)
-                    {
-                        CH_CORE_ERROR("AssimpImporter: ReadFileFromMemory threw for '{0}': {1}", path.string(),
-                                      e.what());
-                        return data;
-                    } catch (...)
-                    {
-                        CH_CORE_ERROR("AssimpImporter: ReadFileFromMemory threw for '{0}' with an unknown exception",
-                                      path.string());
-                        return data;
-                    }
-                }
+                file.seekg(0);
+                std::vector<char> buffer(static_cast<size_t>(size), 0);
+                file.read(buffer.data(), size);
+                tryLoad("ReadFileFromMemory", [&]() {
+                    return importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags,
+                                                      path.extension().string().c_str());
+                });
             }
         }
+    }
 
-        if (!scene || !scene->mRootNode)
-        {
-            CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: {}", path.filename().string(),
-                          importer.GetErrorString());
-            return data;
-        }
-
-        AssimpImporter instance(path, samplingFPS, scene);
-        data = instance.Execute();
-        return data;
-
-    } catch (const std::exception& e)
+    if (!scene || !scene->mRootNode)
     {
-        CH_CORE_ERROR("AssimpImporter: Unhandled exception importing '{}': {}", path.string(), e.what());
-        return data;
-    } catch (...)
-    {
-        CH_CORE_ERROR("AssimpImporter: Unhandled unknown exception importing '{}'", path.string());
+        CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: {}", path.filename().string(),
+                      importer.GetErrorString());
         return data;
     }
+
+    AssimpImporter instance(path, samplingFPS, scene);
+    return instance.Execute();
 }
 
 AssimpImporter::AssimpImporter(const std::filesystem::path& path, int samplingFPS, const aiScene* scene)
@@ -519,20 +436,23 @@ void AssimpImporter::ProcessMaterials()
         aiMaterial* am = m_Scene->mMaterials[i];
         RawMaterial& rm = m_Data.materials[i];
 
+        aiString matName;
+        if (am->Get(AI_MATKEY_NAME, matName) == AI_SUCCESS)
+        {
+            rm.name = matName.C_Str();
+        }
+
         aiColor4D col(1.0f, 1.0f, 1.0f, 1.0f);
-        bool colorFound = false;
         if (aiGetMaterialColor(am, AI_MATKEY_BASE_COLOR, &col) == AI_SUCCESS)
         {
             rm.albedoColor = ToColor(col);
-            colorFound = true;
         }
         else if (aiGetMaterialColor(am, AI_MATKEY_COLOR_DIFFUSE, &col) == AI_SUCCESS)
         {
             rm.albedoColor = ToColor(col);
-            colorFound = true;
         }
 
-        if (colorFound && rm.albedoColor.a < 0.001f)
+        if (rm.albedoColor.a < 0.001f)
         {
             rm.albedoColor.a = 1.0f;
         }
@@ -593,31 +513,16 @@ void AssimpImporter::ProcessMaterials()
             return "";
         };
 
-        rm.albedoPath = getTex(aiTextureType_DIFFUSE);
-        if (rm.albedoPath.empty())
-        {
-            rm.albedoPath = getTex(aiTextureType_BASE_COLOR);
-        }
+        auto getTexWithFallback = [&](aiTextureType primary, aiTextureType fallback) -> std::string {
+            std::string path = getTex(primary);
+            return path.empty() ? getTex(fallback) : path;
+        };
 
-        rm.normalPath = getTex(aiTextureType_NORMALS);
-        if (rm.normalPath.empty())
-        {
-            rm.normalPath = getTex(aiTextureType_HEIGHT);
-        }
-
+        rm.albedoPath = getTexWithFallback(aiTextureType_DIFFUSE, aiTextureType_BASE_COLOR);
+        rm.normalPath = getTexWithFallback(aiTextureType_NORMALS, aiTextureType_HEIGHT);
         rm.emissivePath = getTex(aiTextureType_EMISSIVE);
-
-        rm.metallicRoughnessPath = getTex(aiTextureType_METALNESS);
-        if (rm.metallicRoughnessPath.empty())
-        {
-            rm.metallicRoughnessPath = getTex(aiTextureType_UNKNOWN);
-        }
-
-        rm.occlusionPath = getTex(aiTextureType_LIGHTMAP);
-        if (rm.occlusionPath.empty())
-        {
-            rm.occlusionPath = getTex(aiTextureType_AMBIENT_OCCLUSION);
-        }
+        rm.metallicRoughnessPath = getTexWithFallback(aiTextureType_METALNESS, aiTextureType_UNKNOWN);
+        rm.occlusionPath = getTexWithFallback(aiTextureType_LIGHTMAP, aiTextureType_AMBIENT_OCCLUSION);
 
         int blendMode = 0;
         if (aiGetMaterialInteger(am, AI_MATKEY_BLEND_FUNC, &blendMode) == AI_SUCCESS)

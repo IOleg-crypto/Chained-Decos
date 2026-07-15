@@ -75,6 +75,7 @@ void main()
     float effectiveAmbient = max(ambient, MIN_AMBIENT);
 
     vec3 accumulatedLighting = diffColor * (effectiveAmbient + skyAmbient) * occlusion;
+    accumulatedLighting += specColor * skyAmbient * occlusion;
 
     vec3 dirLight = CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffColor, specColor, shininess);
     float shadow = ShadowCalculationPCF(fragPosLightSpace);

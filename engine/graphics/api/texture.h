@@ -41,6 +41,7 @@ public:
     // GPU resource factory
     static std::shared_ptr<Texture> Create(uint32_t width, uint32_t height, TextureFormat format = TextureFormat::RGBA8);
     static std::shared_ptr<Texture> CreateCubemap(uint32_t size, TextureFormat format = TextureFormat::RGBA16F);
+    static std::shared_ptr<Texture> WrapNative(uint32_t handle, uint32_t width, uint32_t height);
     
     // Asset loading (Hazel-style)
     static std::shared_ptr<Texture> CreateFromFile(const std::string& path);
