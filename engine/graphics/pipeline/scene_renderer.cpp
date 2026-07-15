@@ -189,15 +189,15 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         {
             auto* shadowPass = static_cast<ShadowPass*>(pass.get());
             auto& rendererData = ServiceLocator::Get<Renderer>()->GetData();
-            rendererData.ShadowsEnabled = shadowPass->HasShadows();
-            rendererData.LightSpaceMatrix = shadowPass->GetLightSpaceMatrix();
+            rendererData.Shadow.Enabled = shadowPass->HasShadows();
+            rendererData.Shadow.LightSpaceMatrix = shadowPass->GetLightSpaceMatrix();
             if (shadowPass->HasShadows() && shadowPass->GetShadowMap())
             {
-                rendererData.ShadowMapTextureID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
+                rendererData.Shadow.MapTextureID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
             }
             else
             {
-                rendererData.ShadowMapTextureID = 0;
+                rendererData.Shadow.MapTextureID = 0;
             }
         }
     }
@@ -379,7 +379,7 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             }
         }
 
-        std::vector<Material> materials = mesh.Materials;
+        std::vector<Material> materials = modelAsset->GetMaterials();
 
         RenderItem item;
         item.Asset = modelAsset.get();
@@ -857,7 +857,8 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     if (options.DrawGrid)
     {
         auto& grid = settings.Grid;
-        DebugRenderer::DrawInfiniteGrid(camera, grid.Spacing, {0.5f, 0.5f, 0.5f, 1.0f});
+        // Set default white color for grid
+        DebugRenderer::DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f});
     }
 
     DebugRenderer::Flush();

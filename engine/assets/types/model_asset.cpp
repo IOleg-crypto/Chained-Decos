@@ -229,6 +229,9 @@ void ModelAsset::OnLoaded()
             newModel.Materials[materialIndex].EmissiveIntensity = rawMaterial.emissiveIntensity;
             newModel.Materials[materialIndex].Metalness = rawMaterial.metalness;
             newModel.Materials[materialIndex].Roughness = rawMaterial.roughness;
+            newModel.Materials[materialIndex].Transparent = rawMaterial.transparent;
+            newModel.Materials[materialIndex].Alpha = rawMaterial.albedoColor.a;
+            newModel.Materials[materialIndex].Name = rawMaterial.name;
 
             loadTex(materialIndex, rawMaterial.albedoPath, 0);
             if (!rawMaterial.albedoPath.empty() && rawMaterial.albedoPath.front() != '*')

@@ -124,9 +124,7 @@ jobs:
         run: |
           set -euo pipefail
           SANITIZERS_FLAG="OFF"
-          if [[ "${{ matrix.compiler }}" == "clang" && "${{ matrix.build_type }}" == "Debug" ]]; then
-            SANITIZERS_FLAG="ON"
-          fi
+          # Disable ASan on Windows Clang due to static CRT conflicts (libucrtd.lib vs clang_rt.asan)
           mkdir -p "build/${{ matrix.preset }}"
           PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
 

@@ -70,6 +70,7 @@ struct RawMesh
 
 struct RawMaterial
 {
+    std::string name;
     std::string albedoPath;
     glm::vec4 albedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
 
@@ -88,7 +89,7 @@ struct RawMaterial
 
     template<class Archive>
     void serialize(Archive& archive) {
-        archive(albedoPath, albedoColor, emissivePath, emissiveColor, emissiveIntensity, normalPath, metallicRoughnessPath, occlusionPath, metalness, roughness, transparent);
+        archive(name, albedoPath, albedoColor, emissivePath, emissiveColor, emissiveIntensity, normalPath, metallicRoughnessPath, occlusionPath, metalness, roughness, transparent);
     }
 };
 

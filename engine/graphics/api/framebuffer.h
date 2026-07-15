@@ -2,6 +2,7 @@
 #define CH_FRAMEBUFFER_H
 
 #include <memory>
+#include "engine/graphics/api/texture.h"
 
 
 namespace Chained
@@ -40,7 +41,9 @@ public:
     // (e.g. by a composite/post-process pass or ImGui::Image).
     virtual void Resolve() = 0;
 
+    virtual std::shared_ptr<Texture> GetColorAttachment() const = 0;
     virtual uint32_t GetColorAttachmentRendererID() const = 0;
+    virtual std::shared_ptr<Texture> GetDepthAttachment() const = 0;
     virtual uint32_t GetDepthAttachmentRendererID() const = 0;
 
     virtual const FramebufferSpecification& GetSpecification() const = 0;

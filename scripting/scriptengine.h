@@ -20,7 +20,6 @@ public:
     virtual ~ScriptEngine() override;
 
     void Initialize() override;
-    void Update(Timestep ts) override {}
     void Shutdown() override;
 
 

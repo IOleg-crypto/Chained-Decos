@@ -437,7 +437,15 @@ void EditorLayer::OnEvent(Event& e)
     // 2. Project Management
     dispatcher.Dispatch<ProjectOpenedEvent>([this](auto& e) { return m_ProjectManager->OnProjectOpened(e); });
     dispatcher.Dispatch<AppLaunchRuntimeEvent>([this](auto& e) {
-        EditorLayer::Get().GetProjectManager().LaunchStandalone(GetActiveScene());
+        // Enter play mode first if not already
+        if (GetSceneState() != SceneState::Play)
+        {
+            m_SceneManager->SetSceneState(SceneState::Play);
+        }
+        else
+        {
+            m_SceneManager->SetSceneState(SceneState::Edit);
+        }
         return true;
     });
 

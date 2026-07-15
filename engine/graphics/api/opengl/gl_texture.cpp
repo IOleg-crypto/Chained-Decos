@@ -91,9 +91,22 @@ GLTexture::GLTexture(uint32_t size, TextureFormat format)
     m_IsReady = true;
 }
 
+GLTexture::GLTexture(uint32_t handle, uint32_t width, uint32_t height)
+    : m_RendererID(handle),
+      m_Width(width),
+      m_Height(height),
+      m_Format(TextureFormat::RGBA8),
+      m_Type(TextureType::Texture2D),
+      m_IsReady(true),
+      m_OwnsResource(false)
+{
+    m_InternalFormat = GL_RGBA8;
+    m_DataFormat = GL_RGBA;
+}
+
 GLTexture::~GLTexture()
 {
-    glDeleteTextures(1, &m_RendererID);
+    if (m_OwnsResource) { glDeleteTextures(1, &m_RendererID); }
 }
 
 void GLTexture::SetData(void* data, uint32_t size)
@@ -129,3 +142,4 @@ void GLTexture::Bind(uint32_t slot) const
 }
 
 } // namespace Chained
+

@@ -74,7 +74,7 @@ void ShadowPass::Execute(const RenderContext& ctx)
     m_LightSpaceMatrix         = lightProjection * lightView;
 
     // Set shadow bias on renderer
-    ServiceLocator::Get<Renderer>()->GetData().ShadowBias = 0.003f;
+    ServiceLocator::Get<Renderer>()->GetData().Shadow.Bias = 0.003f;
 
     auto* shader = m_DepthShaderAsset->GetShader().get();
     shader->Bind();

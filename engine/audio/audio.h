@@ -28,7 +28,7 @@ class Audio : public EngineModule
 {
 public:
     virtual void Initialize() override;
-    virtual void Update(Timestep ts) override;
+    void Update(Timestep ts);
     virtual void Shutdown() override;
 
 public:

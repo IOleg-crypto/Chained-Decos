@@ -29,7 +29,7 @@ public:
 
     void Initialize() override;
     void Shutdown() override;
-    void Update(Timestep ts) override;
+    void Update(Timestep ts);
 
     // Draws a UI canvas for the given scene.
     void DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize, bool editMode = false);

@@ -1,0 +1,21 @@
+Material:
+  Name: Helicopter
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 1
+  Roughness: 1
+  Transparent: false
+  Alpha: 1
+  AlbedoMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/pilot/animated_civilian_helicopter\textures/Helicopter_baseColor.jpeg
+  NormalMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/pilot/animated_civilian_helicopter\textures/Helicopter_normal.png
+  MetallicRoughnessMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/pilot/animated_civilian_helicopter\textures/Helicopter_metallicRoughness.png
+  OcclusionMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/pilot/animated_civilian_helicopter\textures/Helicopter_metallicRoughness.png
