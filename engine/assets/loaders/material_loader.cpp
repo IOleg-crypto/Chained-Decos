@@ -1,4 +1,5 @@
 #include "engine/assets/loaders/material_loader.h"
+#include "engine/assets/types/material_asset.h"
 #include "engine/core/log.h"
 #include <yaml-cpp/yaml.h>
 #include <fstream>
