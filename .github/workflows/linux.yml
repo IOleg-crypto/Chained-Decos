@@ -131,10 +131,10 @@ jobs:
             -DPython_EXECUTABLE="${PYTHON_EXE}" \
             -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_UNITY_BUILD=OFF \
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
             -DENABLE_LTO=OFF \
-            -DENABLE_PCH=OFF \
+            -DENABLE_PCH=ON \
             2>&1 | tee "build/${{ matrix.toolchain.preset }}/configure.log"
 
       - name: Build

@@ -24,19 +24,19 @@ jobs:
           - preset: windows-clang
             compiler: clang
             build_type: Release
-            unity_build: ON
+            unity_build: OFF
           - preset: windows-clang
             compiler: clang
             build_type: Debug
-            unity_build: ON
+            unity_build: OFF
           - preset: windows-msvc
             compiler: cl
             build_type: Release
-            unity_build: ON
+            unity_build: OFF
           - preset: windows-msvc
             compiler: cl
             build_type: Debug
-            unity_build: ON
+            unity_build: OFF
           
 
     steps:
