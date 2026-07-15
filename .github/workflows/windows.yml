@@ -37,6 +37,14 @@ jobs:
             compiler: cl
             build_type: Debug
             unity_build: OFF
+          - preset: windows-gcc
+            compiler: gcc
+            build_type: Release
+            unity_build: OFF
+          - preset: windows-gcc
+            compiler: gcc
+            build_type: Debug
+            unity_build: OFF
           
 
     steps:
@@ -63,13 +71,13 @@ jobs:
         run: git submodule update --init --recursive --depth 1
 
       - name: Setup MSYS2
-        if: contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc')
+        if: "contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc') || contains(matrix.preset, 'gcc') && !contains(matrix.preset, 'linux')"
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
           update: false
           path-type: inherit
-          install: mingw-w64-x86_64-clang lld
+          install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make
 
       - name: Setup MSVC
         if: contains(matrix.preset, 'msvc')
@@ -110,6 +118,8 @@ jobs:
             clang --version | head -n 1
           elif [[ "${{ matrix.preset }}" == *"msvc"* ]]; then
             cl || true
+          elif [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+            gcc --version | head -n 1
           fi
 
       - name: Cache build directory

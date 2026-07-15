@@ -113,7 +113,9 @@ function(chained_add_game TARGET_NAME)
         foreach(LIB_TARGET IN ITEMS ${TARGET_NAME} ${TARGET_NAME}Module)
             if(LIB_TARGET STREQUAL ${TARGET_NAME})
                 add_library(${LIB_TARGET} STATIC ${GAME_SOURCES})
-                # No special output name needed for static lib
+                # Rename static lib so its .lib doesn't clash with the IMPLIB generated
+                # by the exe on MSVC (both would be ChainedDecos.lib otherwise → LNK1181).
+                set_target_properties(${LIB_TARGET} PROPERTIES OUTPUT_NAME "${TARGET_NAME}Game")
             else()
                 add_library(${LIB_TARGET} SHARED ${GAME_SOURCES})
                 target_compile_definitions(${LIB_TARGET} PRIVATE GAME_BUILD_DLL)
