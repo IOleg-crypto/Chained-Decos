@@ -192,6 +192,7 @@ private:
         return s_Order;
     }
 
+
     static std::shared_mutex& GetMutex()
     {
         static std::shared_mutex s_Mutex;

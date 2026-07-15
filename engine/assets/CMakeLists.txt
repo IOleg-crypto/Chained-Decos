@@ -5,6 +5,7 @@ chained_add_engine_module(engine_assets
         engine_graphics_api
         engine_external_glad
         engine_external_stb
+        engine_external_miniaudio
         yaml-cpp
         assimp
 )

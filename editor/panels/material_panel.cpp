@@ -8,6 +8,8 @@
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/assets/types/material_asset.h"
+#include <filesystem>
 
 namespace Chained
 {
@@ -116,17 +118,16 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
         {
             auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
 
-            // Initialize component materials from ModelAsset if empty
-            if (mc.Materials.empty())
+            if (m_Materials.empty() && !mc.ModelPath.empty())
             {
                 auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(mc.ModelPath);
-                if (asset)
+                if (asset && asset->IsReady())
                 {
-                    mc.Materials = asset->GetMaterials();
+                    m_Materials = asset->GetMaterials();
                 }
             }
 
-            materials = &mc.Materials;
+            materials = &m_Materials;
         }
 
         if (materials && !materials->empty())
@@ -153,8 +154,10 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
 
             ImGui::SameLine();
 
-            // Material Properties
-            ImGui::BeginChild("MaterialProperties");
+            // Material Properties — leave room for Save button
+            float availH = ImGui::GetContentRegionAvail().y;
+            float buttonArea = 50.0f;
+            ImGui::BeginChild("MaterialProperties", ImVec2(0, availH - buttonArea));
             if (m_SelectedMaterialIndex < (int)materials->size())
             {
                 Material& selected = (*materials)[m_SelectedMaterialIndex];
@@ -169,6 +172,20 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
                 m_SelectedMaterialIndex = 0;
             }
             ImGui::EndChild();
+
+            // Save button
+            ImGui::Separator();
+            if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Materials", ImVec2(-1, 0)))
+            {
+                SaveMaterials();
+                ImGui::OpenPopup("Materials Saved");
+            }
+
+            if (ImGui::BeginPopup("Materials Saved"))
+            {
+                ImGui::Text("Materials saved successfully!");
+                ImGui::EndPopup();
+            }
         }
         else
         {
@@ -186,13 +203,62 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
     ImGui::End();
 }
 
+void MaterialPanel::SaveMaterials()
+{
+    if (!m_SelectedEntity || !m_SelectedEntity.HasComponent<ModelComponent>())
+        return;
+    if (m_Materials.empty())
+        return;
+
+    auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
+    std::filesystem::path modelPath(mc.ModelPath);
+    std::string modelName = modelPath.stem().string();
+    std::filesystem::path modelDir = modelPath.parent_path();
+
+    auto* assets = ServiceLocator::Get<AssetManager>();
+
+    for (int i = 0; i < (int)m_Materials.size(); i++)
+    {
+        std::string matFileName = modelName + "_material_" + std::to_string(i) + ".chmat";
+        std::string matPath;
+
+        if (i < (int)mc.MaterialPaths.size() && !mc.MaterialPaths[i].empty())
+        {
+            matPath = mc.MaterialPaths[i];
+        }
+        else
+        {
+            matPath = (modelDir / matFileName).generic_string();
+        }
+
+        auto matAsset = std::make_shared<MaterialAsset>();
+        matAsset->SetMaterial(m_Materials[i]);
+        matAsset->SaveToFile(assets->ResolvePath(matPath));
+
+        if (i >= (int)mc.MaterialPaths.size())
+        {
+            mc.MaterialPaths.resize(i + 1);
+        }
+        mc.MaterialPaths[i] = matPath;
+    }
+
+    // Write back to ModelAsset so renderer picks up changes immediately
+    auto modelAsset = assets->Get<ModelAsset>(mc.ModelPath);
+    if (modelAsset)
+    {
+        modelAsset->GetMaterials() = m_Materials;
+    }
+}
+
 void MaterialPanel::OnEvent(Event& e)
 {
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
+        SaveMaterials();
         m_SelectedEntity = Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry());
         m_SelectedMeshIndex = ev.GetMeshIndex();
         m_SelectedMaterialIndex = 0;
+        m_Materials.clear();
         return false;
     });
 }
@@ -201,8 +267,10 @@ void MaterialPanel::SetContext(const std::shared_ptr<Scene>& context)
 {
     if (m_Context != context)
     {
+        SaveMaterials();
         Panel::SetContext(context);
         m_SelectedEntity = {};
+        m_Materials.clear();
     }
 }
 

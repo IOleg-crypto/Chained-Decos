@@ -3,6 +3,7 @@
 
 #include "engine/assets/loaders/asset_loader.h"
 #include "engine/core/engine_module.h"
+#include "engine/common/timestep.h"
 #include <filesystem>
 #include <deque>
 #include <memory>
@@ -18,10 +19,9 @@ class AssetManager : public EngineModule
 public:
     AssetManager();
     ~AssetManager();
-
-    virtual void Initialize() override;
-    virtual void Shutdown() override;
-    virtual void Update(Timestep ts) override;
+    virtual void Initialize();
+    virtual void Shutdown();
+    void Update(Timestep ts);
 
     // Registers the loader for a specific asset type.
     void RegisterLoader(AssetType type, AssetLoader loader);
@@ -71,37 +71,35 @@ public:
     [[nodiscard]] bool HasBackgroundWork() const;
 
     // Finalizes completed async loads and calls OnLoaded() within a small per-frame budget.
-    void Update();
+    // Called every frame from Update(Timestep); exposed for tests and explicit drains (e.g. Shutdown).
+    void FinalizePendingLoads();
 
     // Interval (seconds) between .chasset staleness checks. 0 = disabled.
     void SetHotReloadInterval(float seconds) { m_HotReloadInterval = seconds; }
     float GetHotReloadInterval() const { return m_HotReloadInterval; }
 
-private:
-    void ReloadAsset(AssetHandle handle, AssetType type);
-    void CheckModelHotReload();
-
-public:
     template <typename T> void Reload(const std::string& path)
     {
         AssetHandle handle = ResolveToHandle(path);
         ReloadAsset(handle, T::GetStaticType());
     }
 
-
     std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
     std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
-public:
 
-    // Asset cache.
+private:
+    void ReloadAsset(AssetHandle handle, AssetType type);
+    void CheckModelHotReload();
+
+    // Asset cache. Guarded by m_AssetLock.
     std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
     std::unordered_map<AssetType, AssetLoader> m_Loaders;
 
-    // Path-to-handle mapping for quick lookup and a path resolution cache.
+    // Path-to-handle mapping for quick lookup and a path resolution cache. Guarded by m_AssetLock.
     mutable std::unordered_map<std::string, AssetHandle> m_PathToHandle;
     mutable std::unordered_map<std::string, std::string> m_PathCache;
 
-    // Async loading support.
+    // Async loading support. m_PendingAssets guarded by m_PendingMutex.
     std::deque<std::shared_ptr<Asset>> m_PendingAssets;
     mutable std::mutex m_PendingMutex;
     mutable std::recursive_mutex m_AssetLock;

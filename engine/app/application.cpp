@@ -9,6 +9,7 @@
 #include "engine/audio/audio.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_registry.h"
 #include "engine/platform/dialogs/file_dialogs.h"
@@ -73,6 +74,7 @@ Application::Application(const ApplicationSpecification& spec)
     {
         ServiceLocator::Provide<Renderer>(new Renderer());
         ServiceLocator::Provide<UIRenderer>(new UIRenderer());
+        ServiceLocator::Provide<DebugRendererService>(new DebugRendererService());
     }
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());

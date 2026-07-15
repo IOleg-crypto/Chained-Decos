@@ -1,0 +1,20 @@
+Material:
+  Name: Hull
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 1
+  Roughness: 1
+  Transparent: false
+  Alpha: 1
+  AlbedoMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/container_ship\textures/Hull_baseColor.png
+  NormalMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/container_ship\textures/Hull_normal.png
+  MetallicRoughnessMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/container_ship\textures/Hull_metallicRoughness.png

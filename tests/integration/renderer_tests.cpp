@@ -58,9 +58,9 @@ TEST_F(RendererTest, SceneLifecycle)
 
     renderer->BeginScene(camera, 0.1f, 1000.0f);
 
-    EXPECT_FLOAT_EQ(renderer->GetData().CurrentCameraPosition.x, 10.0f);
-    EXPECT_FLOAT_EQ(renderer->GetData().CurrentCameraPosition.y, 5.0f);
-    EXPECT_FLOAT_EQ(renderer->GetData().CurrentCameraPosition.z, 2.0f);
+    EXPECT_FLOAT_EQ(renderer->GetData().Frame.CameraPosition.x, 10.0f);
+    EXPECT_FLOAT_EQ(renderer->GetData().Frame.CameraPosition.y, 5.0f);
+    EXPECT_FLOAT_EQ(renderer->GetData().Frame.CameraPosition.z, 2.0f);
 
     renderer->EndScene();
 }
@@ -91,17 +91,17 @@ TEST_F(RendererTest, LightManagement)
     EXPECT_EQ(renderer->GetData().Lighting.LightCount, 0);
 }
 
-// Verifies that DiagnosticMode float can be pushed into the renderer's data block.
-TEST_F(RendererTest, DiagnosticMode)
+// Verifies that Frame.DiagnosticMode float can be pushed into the renderer's data block.
+TEST_F(RendererTest, FrameDiagnosticMode)
 {
     auto* renderer = GetRenderer();
     ASSERT_NE(renderer, nullptr);
 
     renderer->SetDiagnosticMode(2.0f);
-    EXPECT_FLOAT_EQ(renderer->GetData().DiagnosticMode, 2.0f);
+    EXPECT_FLOAT_EQ(renderer->GetData().Frame.DiagnosticMode, 2.0f);
 
     renderer->SetDiagnosticMode(0.0f);
-    EXPECT_FLOAT_EQ(renderer->GetData().DiagnosticMode, 0.0f);
+    EXPECT_FLOAT_EQ(renderer->GetData().Frame.DiagnosticMode, 0.0f);
 }
 
 // Verifies environment settings application

@@ -798,7 +798,6 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
     }
 
     // Light icons
-    if (settings.DebugFlags.DrawLights)
     {
         auto lightView = registry.view<TransformComponent, LightComponent>();
         for (auto entity : lightView)

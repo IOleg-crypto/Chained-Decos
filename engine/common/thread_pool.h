@@ -27,8 +27,6 @@ public:
         Stop();
     }
 
-    void Update(Timestep ts) override {}
-
     // Enqueues a task and returns a future for the result.
     template <class F, class... Args>
     auto Enqueue(F&& f, Args&&... args) -> std::future<typename std::invoke_result<F, Args...>::type>

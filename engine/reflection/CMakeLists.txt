@@ -6,4 +6,5 @@ chained_add_engine_module(engine_reflection
         engine_common
         reflectcpp
         glm
+        engine_external_entt
 )

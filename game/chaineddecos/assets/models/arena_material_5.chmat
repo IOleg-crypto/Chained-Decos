@@ -1,0 +1,17 @@
+Material:
+  Name: Stairs
+  AlbedoColor:
+    - 0.470499992
+    - 0.439200014
+    - 0.403899997
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 1
+  Transparent: false
+  Alpha: 1

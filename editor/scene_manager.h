@@ -38,6 +38,8 @@ public:
     void SetSceneState(SceneState state);
     SceneState GetSceneState() const;
     std::shared_ptr<Scene> GetActiveScene() const;
+    std::shared_ptr<Scene> GetRuntimeScene() const { return m_RuntimeScene; }
+    std::shared_ptr<Scene> GetEditorScene() const { return m_EditorScene; }
 
     void OnUpdate(Timestep ts);
     void OnViewportResize(uint32_t width, uint32_t height);

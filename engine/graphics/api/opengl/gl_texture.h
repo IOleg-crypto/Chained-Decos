@@ -12,6 +12,7 @@ class GLTexture : public Texture
 public:
     GLTexture(uint32_t width, uint32_t height, TextureFormat format);
     GLTexture(uint32_t size, TextureFormat format); // Cubemap constructor
+    GLTexture(uint32_t handle, uint32_t width, uint32_t height);
     virtual ~GLTexture();
 
     virtual uint32_t GetWidth() const override { return m_Width; }
@@ -30,6 +31,7 @@ private:
     TextureFormat m_Format;
     TextureType m_Type;
     bool m_IsReady = false;
+    bool m_OwnsResource = true;
 
     GLenum m_InternalFormat, m_DataFormat;
 };

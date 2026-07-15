@@ -22,4 +22,9 @@ void GLUniformBuffer::SetData(const void* data, uint32_t size, uint32_t offset)
     glBindBuffer(GL_UNIFORM_BUFFER, m_RendererID);
     glBufferSubData(GL_UNIFORM_BUFFER, offset, size, data);
 }
+
+void GLUniformBuffer::BindBase(uint32_t binding)
+{
+    glBindBufferBase(GL_UNIFORM_BUFFER, binding, m_RendererID);
+}
 } // namespace Chained

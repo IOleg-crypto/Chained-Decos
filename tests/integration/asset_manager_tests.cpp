@@ -186,7 +186,7 @@ TEST_F(AssetManagerTest, AsyncLoadQueuesFinalizeAndCompletesOnUpdate)
 
     ASSERT_GT(m_AssetManager->GetPendingFinalizeCount(), 0u);
 
-    m_AssetManager->Update();
+    m_AssetManager->Update(Timestep(0.016f));
 
     EXPECT_EQ(loader->LoadCalls, 1);
     EXPECT_EQ(asset->GetState(), AssetState::Ready);
@@ -223,7 +223,7 @@ TEST_F(AssetManagerTest, MultipleAsyncLoads)
 
     EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), (size_t)count);
 
-    m_AssetManager->Update();
+    m_AssetManager->Update(Timestep(0.016f));
 
     EXPECT_EQ(m_AssetManager->GetPendingFinalizeCount(), 0u);
     for (auto& asset : assets)

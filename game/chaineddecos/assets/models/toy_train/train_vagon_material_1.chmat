@@ -1,0 +1,17 @@
+Material:
+  Name: veh_vagon1_01_diff.tga
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 0.823941708
+  Transparent: false
+  Alpha: 1

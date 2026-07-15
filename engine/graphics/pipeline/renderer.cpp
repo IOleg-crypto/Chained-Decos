@@ -36,24 +36,23 @@ void Renderer::Initialize()
     m_Data->Lighting.LightsDirty = true;
 
     // Initialize Engine static resources
-    if (!m_Data->FullscreenQuadVAO)
+    if (!m_Data->Geometry.FullscreenQuadVAO)
     {
         float vertices[] = {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
                             1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f};
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
-        m_Data->FullscreenQuadVAO = VertexArray::Create();
+        m_Data->Geometry.FullscreenQuadVAO = VertexArray::Create();
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float2, "vertexTexCoord"}});
-        m_Data->FullscreenQuadVAO->AddVertexBuffer(vbo);
+        m_Data->Geometry.FullscreenQuadVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
-        m_Data->FullscreenQuadVAO->SetIndexBuffer(ibo);
+        m_Data->Geometry.FullscreenQuadVAO->SetIndexBuffer(ibo);
     }
 
     // Initialize UBOs
     m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
 
-    InitializeResources();
     InitializeSkybox();
 
     LoadEngineResources();
@@ -83,7 +82,6 @@ void Renderer::Shutdown()
         return;
     }
 
-    CleanupResources();
     CleanupSkybox();
 
     if (m_Data->Lighting.LightSSBO)
@@ -92,17 +90,15 @@ void Renderer::Shutdown()
     }
     if (m_Data->Shaders) m_Data->Shaders.reset();
     if (m_Data->GlobalUBO) m_Data->GlobalUBO.reset();
-    if (m_Data->GridPlaneVAO) m_Data->GridPlaneVAO.reset();
 
-    m_Data->FullscreenQuadVAO.reset();
+    m_Data->Geometry.FullscreenQuadVAO.reset();
     m_Data->CameraUBO.reset();
-    m_Data->BillboardVAO.reset();
-    m_Data->SpriteVAO.reset();
+    m_Data->Geometry.BillboardVAO.reset();
+    m_Data->Geometry.SpriteVAO.reset();
 
-    m_Data->InstancedVAOCache.clear();
-    m_Data->InstanceBuffer.reset();
-    m_Data->LineVBO.reset();
-    m_Data->LineVAO.reset();
+    m_Data->Instancing.VAOCache.clear();
+    m_Data->Instancing.Buffer.reset();
+    m_Data->Instancing.Buffer.reset();
 
     GraphicsDevice::Get().Shutdown();
 }
@@ -117,7 +113,7 @@ Renderer::~Renderer() = default;
 
 void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
 {
-    m_Data->CurrentCameraPosition = camera.Position;
+    m_Data->Frame.CameraPosition = camera.Position;
 
     // Update light SSBO once per frame
     if (m_Data->Lighting.LightsDirty && m_Data->Lighting.LightSSBO)
@@ -130,12 +126,12 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     auto lightingShaderAsset = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
     if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
-        m_Data->CurrentShaderId = lightingShaderAsset->GetShader()->GetNativeHandle();
+        m_Data->Frame.CurrentShaderId = lightingShaderAsset->GetShader()->GetNativeHandle();
     }
 
     // --- Direct glm::mat4 Management (Pure OpenGL style) ---
     // 1. Calculate View Transform
-    m_Data->CurrentView = glm::lookAt(camera.Position, camera.Target, camera.Up);
+    m_Data->Frame.View = glm::lookAt(camera.Position, camera.Target, camera.Up);
 
     // 2. Calculate Projection Transform
     int width = m_ViewportWidth;
@@ -143,26 +139,27 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     float aspect = (height > 0) ? (float)width / (float)height : 1.0f;
     if (camera.Projection == ProjectionType::Perspective)
     {
-        m_Data->CurrentProj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
+        m_Data->Frame.Proj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
     }
     else
     {
         float top = camera.FovDegrees / 2.0f;
         float right = top * aspect;
-        m_Data->CurrentProj = glm::ortho(-right, right, -top, top, nearClip, farClip);
+        m_Data->Frame.Proj = glm::ortho(-right, right, -top, top, nearClip, farClip);
     }
 
     // Upload to UBO
     CameraData cameraData;
-    cameraData.ViewProjection = m_Data->CurrentProj * m_Data->CurrentView;
-    cameraData.Projection = m_Data->CurrentProj;
-    cameraData.View = m_Data->CurrentView;
+    cameraData.ViewProjection = m_Data->Frame.Proj * m_Data->Frame.View;
+    cameraData.Projection = m_Data->Frame.Proj;
+    cameraData.View = m_Data->Frame.View;
     m_Data->CameraUBO->SetData(&cameraData, sizeof(CameraData));
+    m_Data->CameraUBO->BindBase(0);
 }
 
 void Renderer::EndScene()
 {
-    m_Data->CurrentShaderId = 0;
+    m_Data->Frame.CurrentShaderId = 0;
 }
 
 void Renderer::Clear(const glm::vec4& color)
@@ -182,7 +179,7 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0)
     {
-        shaderId = m_Data->CurrentShaderId;
+        shaderId = m_Data->Frame.CurrentShaderId;
     }
     if (shaderId == 0)
     {
@@ -235,7 +232,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0)
     {
-        shaderId = m_Data->CurrentShaderId;
+        shaderId = m_Data->Frame.CurrentShaderId;
     }
     if (shaderId == 0)
     {
@@ -257,26 +254,26 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     shader->Bind();
 
     // Set up matrices
-    glm::mat4 mvp = m_Data->CurrentProj * m_Data->CurrentView;
+    glm::mat4 mvp = m_Data->Frame.Proj * m_Data->Frame.View;
     shader->SetMatrix("u_ViewProjection", mvp);
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
 
     // 1. Manage/Reuse Instance Buffer
     uint32_t dataSize = (uint32_t)(transforms.size() * sizeof(glm::mat4));
-    if (!m_Data->InstanceBuffer || m_Data->InstanceBufferCapacity < dataSize)
+    if (!m_Data->Instancing.Buffer || m_Data->Instancing.Capacity < dataSize)
     {
         // Reallocate if needed (starting at 1024 instances or required size)
-        m_Data->InstanceBufferCapacity = std::max(dataSize, (uint32_t)(1024 * sizeof(glm::mat4)));
-        m_Data->InstanceBuffer = VertexBuffer::Create(m_Data->InstanceBufferCapacity);
-        m_Data->InstanceBuffer->SetLayout({{VertexAttributeType::Mat4, "a_InstanceTransform", false, true}});
+        m_Data->Instancing.Capacity = std::max(dataSize, (uint32_t)(1024 * sizeof(glm::mat4)));
+        m_Data->Instancing.Buffer = VertexBuffer::Create(m_Data->Instancing.Capacity);
+        m_Data->Instancing.Buffer->SetLayout({{VertexAttributeType::Mat4, "a_InstanceTransform", false, true}});
 
         // Clear VAO cache because the VBO handle changed
-        m_Data->InstancedVAOCache.clear();
+        m_Data->Instancing.VAOCache.clear();
     }
-    m_Data->InstanceBuffer->SetData(transforms.data(), dataSize);
+    m_Data->Instancing.Buffer->SetData(transforms.data(), dataSize);
 
     // 2. Get or Create Cached Instanced VAO
-    auto& instancedVAO = m_Data->InstancedVAOCache[mesh.VAO.get()];
+    auto& instancedVAO = m_Data->Instancing.VAOCache[mesh.VAO.get()];
     if (!instancedVAO)
     {
         instancedVAO = VertexArray::Create();
@@ -284,7 +281,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
         {
             instancedVAO->AddVertexBuffer(vbo);
         }
-        instancedVAO->AddVertexBuffer(m_Data->InstanceBuffer);
+        instancedVAO->AddVertexBuffer(m_Data->Instancing.Buffer);
         instancedVAO->SetIndexBuffer(mesh.VAO->GetIndexBuffer());
     }
 
@@ -328,9 +325,9 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->Bind();
 
     // Always remove translation from view matrix for skybox
-    glm::mat4 view = glm::mat4(glm::mat3(m_Data->CurrentView));
+    glm::mat4 view = glm::mat4(glm::mat3(m_Data->Frame.View));
     shaderAsset->GetShader()->SetMatrix("u_View", view);
-    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->CurrentProj);
+    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->Frame.Proj);
 
     shaderAsset->GetShader()->SetFloat("u_Exposure", exposure);
     shaderAsset->GetShader()->SetFloat("u_Brightness", brightness);
@@ -417,7 +414,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     model[2] = glm::vec4(look * size, 0.0f);
     model[3] = glm::vec4(position, 1.0f);
 
-    shader->SetMatrix("mvp", m_Data->CurrentProj * m_Data->CurrentView * model);
+    shader->SetMatrix("mvp", m_Data->Frame.Proj * m_Data->Frame.View * model);
     shader->SetVec4("colDiffuse", tint);
 
     GraphicsDevice::Get().SetTexture(0, textureId);
@@ -430,7 +427,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
     GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None); // Using abstraction layer safe call
 
-    if (!m_Data->BillboardVAO)
+    if (!m_Data->Geometry.BillboardVAO)
     {
         float vertices[] = {
             // x,     y,     z,     u,    v,    nx,   ny,   nz
@@ -444,15 +441,15 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
 
-        m_Data->BillboardVAO = VertexArray::Create();
-        m_Data->BillboardVAO->AddVertexBuffer(vbo);
+        m_Data->Geometry.BillboardVAO = VertexArray::Create();
+        m_Data->Geometry.BillboardVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
-        m_Data->BillboardVAO->SetIndexBuffer(ibo);
+        m_Data->Geometry.BillboardVAO->SetIndexBuffer(ibo);
     }
 
-    m_Data->BillboardVAO->Bind();
-    GraphicsDevice::Get().DrawIndexed(m_Data->BillboardVAO, 6);
-    m_Data->BillboardVAO->Unbind();
+    m_Data->Geometry.BillboardVAO->Bind();
+    GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.BillboardVAO, 6);
+    m_Data->Geometry.BillboardVAO->Unbind();
 
     GraphicsDevice::Get().SetCullMode(cullWasEnabled ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);
     GraphicsDevice::Get().SetBlendEnabled(blendWasEnabled);
@@ -499,11 +496,11 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         glm::mat4 identity = glm::mat4(1.0f);
         shader->SetMatrix("mvp", identity);
 
-        glm::mat4 invViewProj = glm::inverse(m_Data->CurrentProj * m_Data->CurrentView);
+        glm::mat4 invViewProj = glm::inverse(m_Data->Frame.Proj * m_Data->Frame.View);
         shader->SetMatrix("matInverseViewProj", invViewProj);
         shader->SetVec3("viewPos", camera.Position);
 
-        float currentSeconds = (float)m_Data->Time.GetSeconds();
+        float currentSeconds = (float)m_Data->Frame.Time.GetSeconds();
         shader->SetFloat("uTimeF", currentSeconds);
         shader->SetFloat("uTime", currentSeconds);
         shader->SetFloat("time", currentSeconds);
@@ -553,11 +550,11 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
 
         GraphicsDevice::Get().DisableDepthTest();
 
-        if (m_Data->FullscreenQuadVAO)
+        if (m_Data->Geometry.FullscreenQuadVAO)
         {
-            m_Data->FullscreenQuadVAO->Bind();
-            GraphicsDevice::Get().DrawIndexed(m_Data->FullscreenQuadVAO, 6);
-            m_Data->FullscreenQuadVAO->Unbind();
+            m_Data->Geometry.FullscreenQuadVAO->Bind();
+            GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.FullscreenQuadVAO, 6);
+            m_Data->Geometry.FullscreenQuadVAO->Unbind();
         }
 
         GraphicsDevice::Get().EnableDepthTest();
@@ -603,12 +600,12 @@ void Renderer::SetMainLight(const LightingSettings& settings)
 
 void Renderer::SetDiagnosticMode(float mode)
 {
-    m_Data->DiagnosticMode = mode;
+    m_Data->Frame.DiagnosticMode = mode;
 }
 
 void Renderer::UpdateTime(Timestep time)
 {
-    m_Data->Time = time;
+    m_Data->Frame.Time = time;
 }
 
 void Renderer::Update(Timestep ts)
@@ -630,9 +627,9 @@ void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
     glm::vec4 skyColor = lightColor;
     skyColor.w = lighting.Ambient * 0.35f;
 
-    shader->SetVec3("viewPos", m_Data->CurrentCameraPosition);
-    shader->SetFloat("uTime", static_cast<float>(m_Data->Time));
-    shader->SetFloat("uMode", m_Data->DiagnosticMode);
+    shader->SetVec3("viewPos", m_Data->Frame.CameraPosition);
+    shader->SetFloat("uTime", static_cast<float>(m_Data->Frame.Time));
+    shader->SetFloat("uMode", m_Data->Frame.DiagnosticMode);
     glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f
                                  ? glm::normalize(lighting.Direction)
                                  : glm::vec3(0.0f, -1.0f, 0.0f);
@@ -648,12 +645,12 @@ void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
         m_Data->Lighting.LightSSBO->BindBase(0);
 
     // Shadow uniforms
-    shader->SetInt("u_ShadowsEnabled", m_Data->ShadowsEnabled ? 1 : 0);
-    shader->SetMatrix("u_LightSpaceMatrix", m_Data->LightSpaceMatrix);
-    shader->SetFloat("u_ShadowBias", m_Data->ShadowBias);
-    if (m_Data->ShadowsEnabled && m_Data->ShadowMapTextureID > 0)
+    shader->SetInt("u_ShadowsEnabled", m_Data->Shadow.Enabled ? 1 : 0);
+    shader->SetMatrix("u_LightSpaceMatrix", m_Data->Shadow.LightSpaceMatrix);
+    shader->SetFloat("u_ShadowBias", m_Data->Shadow.Bias);
+    if (m_Data->Shadow.Enabled && m_Data->Shadow.MapTextureID > 0)
     {
-        GraphicsDevice::Get().SetTexture(6, m_Data->ShadowMapTextureID);
+        GraphicsDevice::Get().SetTexture(6, m_Data->Shadow.MapTextureID);
         shader->SetInt("u_ShadowMap", 6);
     }
 
@@ -686,21 +683,6 @@ void Renderer::InitializeSkybox()
     m_Data->Skybox.SkyboxSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(50.0f, 64, 64));
 }
 
-void Renderer::InitializeResources()
-{
-    m_Data->Resources.UnitCubeModel = std::make_unique<Model>();
-    m_Data->Resources.UnitCubeModel->Meshes.push_back(GeometryGenerator::GenerateUnitCube());
-
-    m_Data->Resources.UnitSphereModel = std::make_unique<Model>();
-    m_Data->Resources.UnitSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(1.0f, 32, 32));
-
-    m_Data->Resources.UnitCapsuleModel = std::make_unique<Model>();
-    m_Data->Resources.UnitCapsuleModel->Meshes.push_back(GeometryGenerator::GenerateCapsule(1.0f, 2.0f, 32, 32));
-
-    m_Data->Resources.WireCubeModel = std::make_unique<Model>();
-    m_Data->Resources.WireCubeModel->Meshes.push_back(GeometryGenerator::GenerateWireCube());
-}
-
 void Renderer::CleanupSkybox()
 {
     m_Data->Skybox.SkyboxCubeModel.reset();
@@ -710,10 +692,6 @@ void Renderer::CleanupSkybox()
 
 void Renderer::CleanupResources()
 {
-    m_Data->Resources.UnitCubeModel.reset();
-    m_Data->Resources.UnitSphereModel.reset();
-    m_Data->Resources.UnitCapsuleModel.reset();
-    m_Data->Resources.WireCubeModel.reset();
 }
 
 void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX, bool flipY)
@@ -732,7 +710,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    shader->SetMatrix("mvp", m_Data->CurrentProj * m_Data->CurrentView * transform);
+    shader->SetMatrix("mvp", m_Data->Frame.Proj * m_Data->Frame.View * transform);
     shader->SetMatrix("matModel", transform);
     shader->SetVec4("u_Tint", tint);
     shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));
@@ -744,7 +722,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
     GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
 
-    if (!m_Data->SpriteVAO)
+    if (!m_Data->Geometry.SpriteVAO)
     {
         float vertices[] = {
             // x,     y,     z,     u,    v,    nx,   ny,   nz
@@ -758,17 +736,17 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
 
-        m_Data->SpriteVAO = VertexArray::Create();
-        m_Data->SpriteVAO->AddVertexBuffer(vbo);
+        m_Data->Geometry.SpriteVAO = VertexArray::Create();
+        m_Data->Geometry.SpriteVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
-        m_Data->SpriteVAO->SetIndexBuffer(ibo);
+        m_Data->Geometry.SpriteVAO->SetIndexBuffer(ibo);
     }
 
-    if (m_Data->SpriteVAO)
+    if (m_Data->Geometry.SpriteVAO)
     {
-        m_Data->SpriteVAO->Bind();
-        GraphicsDevice::Get().DrawIndexed(m_Data->SpriteVAO, 6);
-        m_Data->SpriteVAO->Unbind();
+        m_Data->Geometry.SpriteVAO->Bind();
+        GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.SpriteVAO, 6);
+        m_Data->Geometry.SpriteVAO->Unbind();
     }
 
     GraphicsDevice::Get().SetCullMode(cullWasEnabled ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);

@@ -2,9 +2,9 @@
 #define CH_FONT_ASSET_H
 
 #include "engine/assets/asset.h"
-// #include <string>
 #include <cstdint>
 #include <memory>
+#include "engine/graphics/api/texture.h"
 
 namespace Chained
 {
@@ -16,7 +16,7 @@ struct NativeFontChar
 
 struct NativeFont
 {
-    uint32_t textureId = 0;
+    std::shared_ptr<Texture> textureAtlas = nullptr;
     int atlasWidth = 0;
     int atlasHeight = 0;
     NativeFontChar chars[128]; // ASCII for now
