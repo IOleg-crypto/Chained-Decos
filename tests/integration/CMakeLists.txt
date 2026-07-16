@@ -42,14 +42,6 @@ target_include_directories(engine_tests_integration PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
-# Windows: match engine CRT (/MTd) for static libs
-if(WIN32 AND MSVC)
-    target_link_options(engine_tests_integration PRIVATE
-        "LINKER:/NODEFAULTLIB:libcmtd"
-        "LINKER:/DEFAULTLIB:msvcrtdd"
-    )
-endif()
-
 include(GoogleTest)
 gtest_discover_tests(engine_tests_integration
     CONFIGURATION_VAR CMAKE_BUILD_TYPE
