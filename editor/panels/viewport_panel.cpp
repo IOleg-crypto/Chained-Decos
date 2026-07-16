@@ -1,30 +1,29 @@
 #include "viewport_panel.h"
-#include "engine/core/service_locator.h"
-#include "engine/assets/types/texture_asset.h"
-#include "thirdparty/IconsFontAwesome6.h"
-#include "engine/core/input.h"
-#include "engine/core/key_codes.h"
-#include "engine/graphics/api/framebuffer.h"
 #include "editor/editor_colors.h"
 #include "editor/layer.h"
+#include "editor/scene_picking.h"
 #include "editor/viewport/ui_manipulator.h"
-#include "events.h"
-#include "engine/core/events/events.h"
-#include "engine/graphics/api/graphics_device.h"
-#include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/graphics/ui/ui_renderer.h"
-#include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
-#include "engine/scene/prefab_serializer.h"
+#include "engine/core/events/events.h"
+#include "engine/core/input.h"
+#include "engine/core/key_codes.h"
+#include "engine/core/service_locator.h"
+#include "engine/graphics/api/framebuffer.h"
+#include "engine/graphics/api/graphics_device.h"
+#include "engine/graphics/pipeline/debug_renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/pipeline/scene_renderer.h"
+#include "engine/graphics/ui/ui_renderer.h"
 #include "engine/project/project.h"
+#include "engine/scene/prefab_serializer.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
-#include "editor/scene_picking.h"
+#include "events.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "scripting/scriptengine.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "undo/entity_commands.h"
 
 namespace Chained
@@ -43,11 +42,11 @@ static Camera3D MakeCameraFromController(EditorCameraController& controller)
     camera.FovDegrees = glm::degrees(controller.GetPerspectiveVerticalFOV());
     camera.OrthographicSize = controller.GetOrthographicSize();
     camera.NearClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
-        ? controller.GetPerspectiveNearClip()
-        : controller.GetOrthographicNearClip();
+                          ? controller.GetPerspectiveNearClip()
+                          : controller.GetOrthographicNearClip();
     camera.FarClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
-        ? controller.GetPerspectiveFarClip()
-        : controller.GetOrthographicFarClip();
+                         ? controller.GetPerspectiveFarClip()
+                         : controller.GetOrthographicFarClip();
     return camera;
 }
 
@@ -164,8 +163,13 @@ static uint32_t GetConfiguredMSAASamples()
     return samples > 1 ? (uint32_t)samples : 1u;
 }
 
-ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr, EditorState& state, ImVec2& editorViewportSize)
-    : m_CommandHistory(cmd), m_SceneManager(sceneMgr), m_ProjectManager(projMgr), m_EditorState(state), m_EditorViewportSize(editorViewportSize)
+ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr,
+                             EditorState& state, ImVec2& editorViewportSize)
+    : m_CommandHistory(cmd),
+      m_SceneManager(sceneMgr),
+      m_ProjectManager(projMgr),
+      m_EditorState(state),
+      m_EditorViewportSize(editorViewportSize)
 {
     m_Name = "Viewport";
 
@@ -174,13 +178,10 @@ ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, 
     spec.Height = 720;
     spec.ColorFormat = FramebufferColorFormat::RGBA8;
 
-    if (Application::Get().GetWindow().GetNativeWindow()) {
-        spec.Width = Application::Get().GetWindow().GetWidth() > 0
-                         ? Application::Get().GetWindow().GetWidth()
-                         : 1280;
-        spec.Height = Application::Get().GetWindow().GetHeight() > 0
-                          ? Application::Get().GetWindow().GetHeight()
-                          : 720;
+    if (Application::Get().GetWindow().GetNativeWindow())
+    {
+        spec.Width = Application::Get().GetWindow().GetWidth() > 0 ? Application::Get().GetWindow().GetWidth() : 1280;
+        spec.Height = Application::Get().GetWindow().GetHeight() > 0 ? Application::Get().GetWindow().GetHeight() : 720;
     }
 
     m_ViewportFramebuffer = Framebuffer::Create(spec);
@@ -195,14 +196,17 @@ ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, 
     m_CameraController = std::make_unique<EditorCameraController>();
 }
 
-ViewportPanel::~ViewportPanel() {
+ViewportPanel::~ViewportPanel()
+{
     delete m_SceneRenderer;
 }
 
-
 void ViewportPanel::OnImGuiRender(bool readOnly)
 {
-    if (!m_IsOpen) return;
+    if (!m_IsOpen)
+    {
+        return;
+    }
 
     auto activeScene = m_SceneManager.GetActiveScene();
 
@@ -243,10 +247,10 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         return;
     }
     uint32_t finalTextureID = m_ViewportFramebuffer->GetColorAttachmentRendererID();
-    
+
     // Capture the EXACT screen position where the image starts to prevent gizmo offset
     viewportScreenPos = ImGui::GetCursorScreenPos();
-    
+
     ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
 
     // 4. Drag & Drop
@@ -272,7 +276,8 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
             }
         }
 
-        if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) && Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
+        if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) &&
+            Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
         {
             Entity selected = m_EditorState.SelectedEntity;
             if (selected)
@@ -292,7 +297,7 @@ void ViewportPanel::OnUpdate(Timestep ts)
     SceneState state = m_SceneManager.GetSceneState();
     if (state == SceneState::Edit || state == SceneState::Simulate)
     {
-    auto activeScene = m_SceneManager.GetActiveScene();
+        auto activeScene = m_SceneManager.GetActiveScene();
         // Use m_Hovered that was set in the PREVIOUS frame's ImGuiRender.
         // Also allow update if right mouse is held (user clicked into viewport from outside).
         bool mouseInViewport = m_Hovered || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
@@ -303,7 +308,8 @@ void ViewportPanel::OnUpdate(Timestep ts)
             m_CameraController->SetBoostMultiplier(editorSettings.CameraBoostMultiplier);
             m_CameraController->SetDisableZoom(editorSettings.DisableCameraZoom);
 
-            Entity primaryCamera = SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
+            Entity primaryCamera =
+                SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
             m_CameraController->OnUpdate(primaryCamera, ts, m_ViewportSize);
         }
     }
@@ -346,18 +352,22 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
 {
     if (viewportSize.x != m_ViewportSize.x || viewportSize.y != m_ViewportSize.y)
     {
-        m_ViewportSize = { viewportSize.x, viewportSize.y };
+        m_ViewportSize = {viewportSize.x, viewportSize.y};
         if (m_ViewportSize.x > 0 && m_ViewportSize.y > 0)
         {
             if (m_ViewportFramebuffer)
+            {
                 m_ViewportFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            }
             if (m_HDRFramebuffer)
+            {
                 m_HDRFramebuffer->Resize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            }
 
             // Keep Renderer in sync so frustum & projection use correct aspect ratio
             ServiceLocator::Get<Renderer>()->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
-            m_EditorViewportSize = { m_ViewportSize.x, m_ViewportSize.y };
+            m_EditorViewportSize = {m_ViewportSize.x, m_ViewportSize.y};
             m_CameraController->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
 
             if (activeScene)
@@ -402,7 +412,9 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
 void ViewportPanel::RenderViewportScene(Scene* activeScene)
 {
     if (!m_HDRFramebuffer || !m_HDRFramebuffer->IsValid())
+    {
         return;
+    }
 
     m_HDRFramebuffer->Bind();
     ClearSceneBackground(activeScene);
@@ -422,32 +434,26 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
         camera = activeCameraOpt.value();
     }
 
-    
-
     if (glm::distance(glm::vec3(camera.Position), glm::vec3(camera.Target)) < 0.001f)
     {
-        camera.Position.z += 1.0f; 
+        camera.Position.z += 1.0f;
     }
 
-    
-    camera.ViewMatrix = glm::lookAt(
-        glm::vec3(camera.Position), 
-        glm::vec3(camera.Target), 
-        glm::vec3(camera.Up)
-    );
-    
+    camera.ViewMatrix = glm::lookAt(glm::vec3(camera.Position), glm::vec3(camera.Target), glm::vec3(camera.Up));
+
     float aspect = (float)m_ViewportSize.x / std::max((float)m_ViewportSize.y, 1.0f);
     if (camera.Projection == ProjectionType::Perspective)
     {
-        camera.ProjectionMatrix = glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
+        camera.ProjectionMatrix =
+            glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
     }
     else // Orthographic
     {
         float orthoSize = camera.OrthographicSize;
-        camera.ProjectionMatrix = glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize, camera.NearClip, camera.FarClip);
+        camera.ProjectionMatrix =
+            glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize, camera.NearClip, camera.FarClip);
     }
 
-    
     SceneRenderOptions options;
     auto& currentDebugFlags = activeScene->GetSettings().DebugFlags;
     options.DrawGrid = currentDebugFlags.DrawGrid;
@@ -455,13 +461,15 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
-    m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip, camera.FarClip, options);
+    m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip,
+                                 camera.FarClip, options);
 
     // Render proper editor icons (camera, light, spawn) with loaded textures
     if (m_SceneManager.GetSceneState() != SceneState::Play)
     {
         RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
-        //ServiceLocator<Renderer>()->GetSceneManager()->RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
+        // ServiceLocator<Renderer>()->GetSceneManager()->RenderEditorIcons(activeScene->GetRegistry(),
+        // activeScene->GetSettings(), camera);
     }
 
     m_HDRFramebuffer->Unbind();
@@ -470,18 +478,16 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     m_HDRFramebuffer->Resolve();
 
     if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
+    {
         return;
+    }
 
     m_ViewportFramebuffer->Bind();
-    GraphicsDevice::Get().Clear({0, 0, 0, 255}); 
+    GraphicsDevice::Get().Clear({0, 0, 0, 255});
 
-    ServiceLocator::Get<Renderer>()->ApplyPostProcessing(
-        m_HDRFramebuffer->GetColorAttachmentRendererID(),
-        m_HDRFramebuffer->GetDepthAttachmentRendererID(), 
-        camera,
-        nullptr, 
-        {}
-    );
+    ServiceLocator::Get<Renderer>()->ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
+                                                         m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
+                                                         nullptr, {});
 
     m_ViewportFramebuffer->Unbind();
 }
@@ -535,18 +541,18 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     ImGui::SetCursorScreenPos(viewportScreenPos);
 
     // 1. Gizmo handling (using absolute screen coordinates)
-    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos,
-                            viewportSize, camera);
+    m_Gizmo.RenderAndHandle(!isUISelected ? m_CurrentTool : GizmoType::NONE, viewportScreenPos, viewportSize, camera);
 
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
     ServiceLocator::Get<UIRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
-                                                m_SceneManager.GetSceneState() == SceneState::Edit);
+                                                  m_SceneManager.GetSceneState() == SceneState::Edit);
 
     // 3. Selection Highlight
     if (isUISelected && selectedEntity && m_SceneManager.GetSceneState() == SceneState::Edit)
     {
-        auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos);
+        auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize,
+                                                                     viewportScreenPos);
 
         ImVec2 p1 = ImVec2(rect.x, rect.y);
         ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -568,14 +574,16 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
 {
     // Object picking logic
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-    bool isUIChildHovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+    bool isUIChildHovered =
+        ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
     bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
     bool isDragging = m_UIManipulator.IsActive();
     bool isGizmoDragging = m_Gizmo.IsDragging();
     bool isGizmoHovered = m_Gizmo.IsHovered();
     SceneState sceneState = m_SceneManager.GetSceneState();
 
-    if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && isUIChildHovered && isClicked && !isGizmoDragging && !isGizmoHovered && !isDragging)
+    if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && isUIChildHovered && isClicked &&
+        !isGizmoDragging && !isGizmoHovered && !isDragging)
     {
         ImVec2 mousePos = ImGui::GetMousePos();
         ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
@@ -590,10 +598,15 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         {
             Entity entity(entityID, &activeScene->GetRegistry());
             auto& cc = uiView.get<ControlComponent>(entityID);
-            if (!cc.IsActive) continue;
+            if (!cc.IsActive)
+            {
+                continue;
+            }
 
-            auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
-            if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height)
+            auto rect =
+                ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
+            if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
+                mousePos.y <= rect.y + rect.height)
             {
                 bestHit = entity;
             }
@@ -621,10 +634,9 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         {
             // Only deselect if the mouse is genuinely inside the viewport area
             ImVec2 mousePos = ImGui::GetMousePos();
-            bool mouseInViewport = (mousePos.x >= viewportScreenPos.x &&
-                                    mousePos.x <= viewportScreenPos.x + viewportSize.x &&
-                                    mousePos.y >= viewportScreenPos.y &&
-                                    mousePos.y <= viewportScreenPos.y + viewportSize.y);
+            bool mouseInViewport =
+                (mousePos.x >= viewportScreenPos.x && mousePos.x <= viewportScreenPos.x + viewportSize.x &&
+                 mousePos.y >= viewportScreenPos.y && mousePos.y <= viewportScreenPos.y + viewportSize.y);
             if (mouseInViewport)
             {
                 EntitySelectedEvent e(entt::null, activeScene);
@@ -657,23 +669,47 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
 
         // Snapping toggle
         bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (snapping) ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveSnapBlue);
-        if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28})) m_Gizmo.SetSnapping(!snapping);
-        if (snapping) ImGui::PopStyleColor();
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Enable Grid Snapping");
+        if (snapping)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveSnapBlue);
+        }
+        if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28}))
+        {
+            m_Gizmo.SetSnapping(!snapping);
+        }
+        if (snapping)
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Enable Grid Snapping");
+        }
 
         ImGui::SameLine(0, 5);
         float gridSize = m_Gizmo.GetGridSize();
         ImGui::SetNextItemWidth(45);
-        if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f")) m_Gizmo.SetGridSize(gridSize);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Grid Snap Size");
+        if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f"))
+        {
+            m_Gizmo.SetGridSize(gridSize);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Grid Snap Size");
+        }
 
         ImGui::SameLine(0, 10);
 
         // Local/World toggle
         bool isLocal = m_Gizmo.IsLocalSpace();
-        if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28})) m_Gizmo.SetLocalSpace(!isLocal);
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Toggle Local/World Space");
+        if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28}))
+        {
+            m_Gizmo.SetLocalSpace(!isLocal);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Toggle Local/World Space");
+        }
 
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
@@ -686,37 +722,55 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         bool isSimulating = (sceneState == SceneState::Simulate);
         ImGui::SameLine(0, 10);
 
-        if (isPlaying) ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
-        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
-        {
         if (isPlaying)
         {
-            m_SceneManager.SetSceneState(SceneState::Edit);
+            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
         }
-        else
+        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
         {
-            m_SceneManager.SetSceneState(SceneState::Play);
+            if (isPlaying)
+            {
+                m_SceneManager.SetSceneState(SceneState::Edit);
+            }
+            else
+            {
+                m_SceneManager.SetSceneState(SceneState::Play);
+            }
         }
+        if (isPlaying)
+        {
+            ImGui::PopStyleColor();
         }
-        if (isPlaying) ImGui::PopStyleColor();
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
+        }
 
         ImGui::SameLine(0, 5);
 
-        if (isSimulating) ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange); // Orange for simulate
-        if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
-        {
         if (isSimulating)
         {
-            m_SceneManager.SetSceneState(SceneState::Edit);
+            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange); // Orange for simulate
         }
-        else
+        if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
         {
-            m_SceneManager.SetSceneState(SceneState::Simulate);
+            if (isSimulating)
+            {
+                m_SceneManager.SetSceneState(SceneState::Edit);
+            }
+            else
+            {
+                m_SceneManager.SetSceneState(SceneState::Simulate);
+            }
         }
+        if (isSimulating)
+        {
+            ImGui::PopStyleColor();
         }
-        if (isSimulating) ImGui::PopStyleColor();
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");
+        }
 
         ImGui::SameLine(0, 5);
         // Reload Scripts (Ctrl+R)
@@ -725,32 +779,39 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
             auto project = Project::GetActive();
             if (project)
             {
-                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(
-                    project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
+                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
+                                                                      project->GetConfig().ProjectDirectory);
                 auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
                 scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
             }
         }
-        if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
+        }
 
-    ImGui::SameLine(0, 15);
-    ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-    ImGui::SameLine(0, 15);
+        ImGui::SameLine(0, 15);
+        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
+        ImGui::SameLine(0, 15);
 
-    // Run scene in new window (for play mode testing)
-    if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
-    {
-        AppLaunchRuntimeEvent e;
-        Application::Get().OnEvent(e);
-    }
-    if (ImGui::IsItemHovered()) ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
+        // Run scene in new window (for play mode testing)
+        if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
+        {
+            AppLaunchRuntimeEvent e;
+            Application::Get().OnEvent(e);
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
+        }
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
 }
 
-void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSettings &settings, const Camera3D &camera) {
+void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera)
+{
     const glm::vec3 activeCameraPos = camera.Position;
 
     auto tryLoadIcon = [&](const char* path, std::shared_ptr<TextureAsset>& cachedIcon) {
@@ -773,7 +834,9 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
 
     auto getIconHandle = [](const std::shared_ptr<TextureAsset>& icon) -> uint32_t {
         if (icon && icon->GetTexture())
+        {
             return icon->GetTexture()->GetNativeHandle();
+        }
         return 0;
     };
 
@@ -788,7 +851,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
             continue;
         }
 
-        const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.70f, 0.040f);
+        const float iconSize = iconSizeFromDistance(iconPos, 0.25f, 1.0f, 0.12f);
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
         uint32_t handle = getIconHandle(m_EditorIcons.CameraIcon);
         if (handle != 0)
@@ -804,7 +867,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
         {
             auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-            const float iconSize = iconSizeFromDistance(iconPos, 0.10f, 0.85f, 0.045f);
+            const float iconSize = iconSizeFromDistance(iconPos, 0.36f, 0.85f, 2.f);
 
             glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
                                    light.LightColor.b / 255.0f, 0.95f};
@@ -831,6 +894,22 @@ void ViewportPanel::RenderEditorIcons(entt::registry &registry, const SceneSetti
             else if (light.Type == LightType::Spot)
             {
                 DebugRenderer::DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
+            }
+        }
+    }
+    {
+        // Spawn Component
+        auto spawnView = registry.view<TransformComponent, SpawnComponent>();
+        for (auto entity : spawnView)
+        {
+            auto [transform, spawn] = spawnView.get<TransformComponent, SpawnComponent>(entity);
+            const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
+            const float iconSize = iconSizeFromDistance(iconPos, 0.36f, 0.85f, 2.f);
+            glm::vec4 spawnTint = {1.0f, 1.0f, 1.0f, 0.95f};
+            uint32_t handle = getIconHandle(m_EditorIcons.SpawnIcon);
+            if (handle != 0)
+            {
+                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, spawnTint);
             }
         }
     }

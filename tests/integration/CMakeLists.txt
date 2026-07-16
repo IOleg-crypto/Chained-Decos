@@ -6,7 +6,6 @@ set(INTEGRATION_SOURCES
     scriptengine_tests.cpp
     renderer_tests.cpp
     audio_tests.cpp
-    event_input_tests.cpp
     importer_tests.cpp
     integration_tests.cpp
     asset_manager_tests.cpp
@@ -14,7 +13,8 @@ set(INTEGRATION_SOURCES
     material_tests.cpp
     hierarchy_tests.cpp
     serialization_tests.cpp
-    event_tests.cpp
+    smoke_tests.cpp
+    regression_tests.cpp
     test_environment.cpp
     test_main.cpp
 )

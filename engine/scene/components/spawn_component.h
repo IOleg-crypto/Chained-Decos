@@ -1,14 +1,11 @@
-#ifndef CH_GAME_COMPONENTS_H
-#define CH_GAME_COMPONENTS_H
-
+#ifndef CH_SPAWN_COMPONENT_H
+#define CH_SPAWN_COMPONENT_H
 #include "engine/assets/asset.h"
-#include "engine/reflection/reflection_rfl.h"
+#include "engine/scene/component_registry.h"
 #include <glm/glm.hpp>
-#include <string>
 
 namespace Chained
 {
-
 // --- SPAWN COMPONENT ---
 struct SpawnComponent
 {
@@ -32,31 +29,5 @@ struct SpawnComponent
     };
 };
 CH_MARK_RFL(SpawnComponent);
-
-// --- PLAYER COMPONENT ---
-struct PlayerComponent
-{
-    float MovementSpeed = 15.0f;
-    float JumpForce = 10.0f;
-    float LookSensitivity = 0.9f;
-
-    static const char* GetStaticName()
-    {
-        return "PlayerComponent";
-    }
-
-    struct UI
-    {
-        UIMeta MovementSpeed = {.Tooltip = "Movement speed of the player"};
-        UIMeta JumpForce = {.Tooltip = "Jump force upward impulse"};
-        UIMeta LookSensitivity = {.Tooltip = "Mouse or camera look sensitivity"};
-    };
-};
-CH_MARK_RFL(PlayerComponent);
-
-
-
-
 } // namespace Chained
-
-#endif // CH_GAME_COMPONENTS_H
+#endif // CH_SPAWN_COMPONENT_H
