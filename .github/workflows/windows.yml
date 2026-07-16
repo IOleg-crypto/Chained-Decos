@@ -122,14 +122,6 @@ jobs:
             gcc --version | head -n 1
           fi
 
-      - name: Cache build directory
-        uses: actions/cache@v4
-        with:
-          path: build/${{ matrix.preset }}
-          key: build-${{ matrix.preset }}-${{ matrix.build_type }}-${{ hashFiles('**/CMakeLists.txt', '**/cmake/*.cmake') }}
-          restore-keys: |
-            build-${{ matrix.preset }}-${{ matrix.build_type }}-
-
       - name: Configure
         run: |
           set -euo pipefail
