@@ -175,3 +175,87 @@ TEST_F(SceneTest, DestructiveOperations)
     Entity invalidEntity; // Default constructor creates null entity
     EXPECT_NO_THROW({ scene.DestroyEntity(invalidEntity); });
 }
+
+TEST_F(SceneTest, EntityTagUniqueness)
+{
+    Scene scene;
+    scene.CreateEntity("SameTag");
+    scene.CreateEntity("SameTag");
+
+    Entity found = scene.FindEntityByTag("SameTag");
+    EXPECT_TRUE(found);
+
+    int count = 0;
+    auto& reg = scene.GetRegistry();
+    for (auto entity : reg.view<TagComponent>())
+    {
+        Entity e(entity, &reg);
+        if (e.GetName() == "SameTag")
+            ++count;
+    }
+    EXPECT_EQ(count, 2);
+}
+
+TEST_F(SceneTest, CopyEntityDeepCopy)
+{
+    Scene scene;
+    Entity src = scene.CreateEntity("Original");
+    src.GetComponent<TransformComponent>().Translation = {1.0f, 2.0f, 3.0f};
+    src.AddComponent<LightComponent>();
+    src.AddComponent<SpriteComponent>();
+
+    Entity dst = {scene.CopyEntity(src), scene.GetRegistryPtr()};
+
+    auto& srcTransform = src.GetComponent<TransformComponent>();
+    auto& dstTransform = dst.GetComponent<TransformComponent>();
+    EXPECT_FLOAT_EQ(dstTransform.Translation.x, 1.0f);
+    EXPECT_FLOAT_EQ(dstTransform.Translation.y, 2.0f);
+    EXPECT_FLOAT_EQ(dstTransform.Translation.z, 3.0f);
+
+    srcTransform.Translation = {10.0f, 20.0f, 30.0f};
+    EXPECT_FLOAT_EQ(dstTransform.Translation.x, 1.0f);
+
+    EXPECT_TRUE(dst.HasComponent<LightComponent>());
+    EXPECT_TRUE(dst.HasComponent<SpriteComponent>());
+}
+
+TEST_F(SceneTest, AddMultipleComponentTypes)
+{
+    Scene scene;
+    Entity entity = scene.CreateEntity("MultiComponent");
+
+    entity.AddComponent<CameraComponent>();
+    entity.AddComponent<LightComponent>();
+    entity.AddComponent<SpriteComponent>();
+
+    EXPECT_TRUE(entity.HasComponent<CameraComponent>());
+    EXPECT_TRUE(entity.HasComponent<LightComponent>());
+    EXPECT_TRUE(entity.HasComponent<SpriteComponent>());
+}
+
+TEST_F(SceneTest, DestroyEntityInIteration)
+{
+    Scene scene;
+    for (int i = 0; i < 5; ++i)
+    {
+        scene.CreateEntity("E" + std::to_string(i));
+    }
+
+    std::vector<entt::entity> toDestroy;
+    auto& reg = scene.GetRegistry();
+    for (auto entity : reg.view<TagComponent>())
+    {
+        Entity e(entity, &reg);
+        if (e.GetName() == "E2")
+            toDestroy.push_back(entity);
+    }
+
+    for (auto handle : toDestroy)
+    {
+        scene.DestroyEntity(Entity(handle, &reg));
+    }
+
+    EXPECT_FALSE(scene.FindEntityByTag("E2"));
+    EXPECT_TRUE(scene.FindEntityByTag("E0"));
+    EXPECT_TRUE(scene.FindEntityByTag("E4"));
+}

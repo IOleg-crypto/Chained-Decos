@@ -5,7 +5,7 @@
 namespace Chained
 {
 // Forward declare the game's registration function
-// This lives in the ChainedDecos static library
+// This lives in the game static library
 extern void RegisterGameComponents();
 
 Application* CreateApplication(ApplicationCommandLineArgs args)

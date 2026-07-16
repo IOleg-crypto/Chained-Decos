@@ -4,7 +4,6 @@
 #include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/entity.h"
-#include "game/chaineddecos/src/components/game_components.h"
 #include "engine/physics/physics.h"
 #include "engine/core/service_locator.h"
 

@@ -3,6 +3,7 @@
 // These tests are pure-CPU and do not require an OpenGL context.
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/pipeline/material.h"
+#include "engine/assets/loaders/material_loader.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
@@ -44,3 +45,15 @@ TEST(MaterialTest, StateModification)
     EXPECT_TRUE(material.Transparent);
     EXPECT_FLOAT_EQ(material.Alpha, 0.5f);
 }
+
+TEST(MaterialTest, LoadMaterial)
+{
+    auto material = MaterialLoader::Create();
+    MaterialLoader::Load(material, "resources/materials/default.mat");
+    EXPECT_EQ(material->GetType(), AssetType::Material);
+}
+
+
+
+
+

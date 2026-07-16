@@ -3,6 +3,7 @@
 
 #include "engine/reflection/reflection_rfl.h"
 #include "engine/graphics/api/renderer_types.h"
+#include "engine/assets/asset.h"
 
 namespace Chained
 {
