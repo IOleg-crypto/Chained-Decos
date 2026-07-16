@@ -68,6 +68,26 @@ endif()
 
 if(MINGW)
     add_compile_options(-Wa,-mbig-obj)
+
+    # Serialize link steps under MinGW. Ninja otherwise links several heavy
+    # Debug targets concurrently, and each linker process holds large archives
+    # in memory at once — the combined footprint is what exhausts RAM. A
+    # single-slot link pool keeps compilation fully parallel but links one
+    # target at a time.
+    set_property(GLOBAL PROPERTY JOB_POOLS link_pool=1)
+    set(CMAKE_JOB_POOL_LINK link_pool)
+endif()
+
+# Bound compile concurrency for RAM-hungry toolchains. A fresh Debug build spawns
+# one compiler process per core; template-heavy TUs (reflect-cpp / ctre.hpp under
+# MSVC, or -g archives under MinGW) each use 2-4+ GB, so a full-core build
+# exhausts RAM ("cc1.exe: out of memory" / MSVC "C1060: out of heap space").
+# This pool caps simultaneous compiles regardless of the -j / --parallel value.
+# Tune via -DCH_COMPILE_JOBS=N (rule of thumb: 1 per ~2-3 GB of RAM).
+if(MINGW OR MSVC)
+    set(CH_COMPILE_JOBS "6" CACHE STRING "Max parallel compile jobs (RAM-bound toolchains)")
+    set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_pool=${CH_COMPILE_JOBS})
+    set(CMAKE_JOB_POOL_COMPILE compile_pool)
 endif()
 
 
