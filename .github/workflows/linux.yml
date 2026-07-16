@@ -67,15 +67,21 @@ jobs:
           python3 -m pip install jinja2
 
       - name: Install Linux Dependencies
-        uses: awalsh128/cache-apt-pkgs-action@latest
-        with:
-          packages: >-
-            build-essential
-            libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev
-            libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          # xorg-dev is the GLFW-recommended meta-package: it pulls the full set of
+          # X11 development headers/libs (libx11, xrandr, xinerama, xcursor, xi, xext,
+          # and the X protocol headers) that find_package(X11) needs. Installing it
+          # directly (rather than via a cache-apt action) avoids cache-restore gaps
+          # where a package is "installed" per the manifest but its files are absent.
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            xorg-dev \
+            libgl1-mesa-dev libglu1-mesa-dev \
+            libasound2-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
             xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
-          version: 1.0
 
       - name: Setup Linux Compilers
         run: |
