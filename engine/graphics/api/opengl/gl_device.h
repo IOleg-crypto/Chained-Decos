@@ -35,6 +35,11 @@ public:
 
     virtual void SetLineWidth(float width) override;
 
+    // Framebuffer operations
+    virtual uint32_t GetFramebufferBinding() const override;
+    virtual void BindFramebuffer(uint32_t fbo) override;
+    virtual void ClearDepth() override;
+
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
     virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount, uint32_t indexCount = 0) override;
     virtual void DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;

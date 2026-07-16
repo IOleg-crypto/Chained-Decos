@@ -1,6 +1,6 @@
 #include "project_settings_panel.h"
 #include "engine/core/platform.h"
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "imgui.h"
 #include "layer.h"
@@ -95,8 +95,8 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###IconBrowse"))
             {
-                std::vector<FileDialogFilter> filters = {{"Image Files", "png,jpg,jpeg"}};
-                auto result = Chained::FileDialogs::OpenFile(filters);
+                std::vector<DialogFilter> filters = {{"Image Files", "png,jpg,jpeg"}};
+                auto result = Chained::Dialogs::OpenFile(filters);
                 if (result)
                 {
                     config.IconPath = project->GetRelativePathForProject(result->string());
@@ -145,7 +145,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button("...###ModuleDirBrowse"))
             {
-                auto result = Chained::FileDialogs::PickFolder();
+                auto result = Chained::Dialogs::PickFolder();
                 if (result)
                 {
                     config.Scripting.ModuleDirectory = project->GetRelativePathForProject(result->string());

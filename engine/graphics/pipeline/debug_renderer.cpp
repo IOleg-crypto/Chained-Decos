@@ -10,56 +10,51 @@
 namespace Chained
 {
 
-void DebugRendererService::Initialize()
+void DebugRenderer::Initialize()
 {
-    Resources.UnitCubeModel = std::make_unique<Model>();
-    Resources.UnitCubeModel->Meshes.push_back(GeometryGenerator::GenerateUnitCube());
+    m_Resources.UnitCubeModel = std::make_unique<Model>();
+    m_Resources.UnitCubeModel->Meshes.push_back(GeometryGenerator::GenerateUnitCube());
 
-    Resources.UnitSphereModel = std::make_unique<Model>();
-    Resources.UnitSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(1.0f, 32, 32));
+    m_Resources.UnitSphereModel = std::make_unique<Model>();
+    m_Resources.UnitSphereModel->Meshes.push_back(GeometryGenerator::GenerateSphere(1.0f, 32, 32));
 
-    Resources.UnitCapsuleModel = std::make_unique<Model>();
-    Resources.UnitCapsuleModel->Meshes.push_back(GeometryGenerator::GenerateCapsule(1.0f, 2.0f, 32, 32));
+    m_Resources.UnitCapsuleModel = std::make_unique<Model>();
+    m_Resources.UnitCapsuleModel->Meshes.push_back(GeometryGenerator::GenerateCapsule(1.0f, 2.0f, 32, 32));
 
-    Resources.WireCubeModel = std::make_unique<Model>();
-    Resources.WireCubeModel->Meshes.push_back(GeometryGenerator::GenerateWireCube());
+    m_Resources.WireCubeModel = std::make_unique<Model>();
+    m_Resources.WireCubeModel->Meshes.push_back(GeometryGenerator::GenerateWireCube());
 }
 
-void DebugRendererService::Shutdown()
+void DebugRenderer::Shutdown()
 {
-    GridPlaneVAO.reset();
-    
-    Resources.UnitCubeModel.reset();
-    Resources.UnitSphereModel.reset();
-    Resources.UnitCapsuleModel.reset();
-    Resources.WireCubeModel.reset();
+    m_GridPlaneVAO.reset();
 
-    Lines.VBO.reset();
-    Lines.VAO.reset();
-    Lines.Vertices.clear();
+    m_Resources.UnitCubeModel.reset();
+    m_Resources.UnitSphereModel.reset();
+    m_Resources.UnitCapsuleModel.reset();
+    m_Resources.WireCubeModel.reset();
+
+    m_Lines.VBO.reset();
+    m_Lines.VAO.reset();
+    m_Lines.Vertices.clear();
 }
 
-namespace DebugRenderer
+void DebugRenderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
 {
-void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)
-{
-    auto* dbg = ServiceLocator::Get<DebugRendererService>();
-    if (!dbg) return;
-    dbg->Lines.Vertices.push_back({start, color});
-    dbg->Lines.Vertices.push_back({end, color});
+    m_Lines.Vertices.push_back({start, color});
+    m_Lines.Vertices.push_back({end, color});
 }
 
-void Flush()
+void DebugRenderer::Flush(Renderer& renderer)
 {
-    auto* dbg = ServiceLocator::Get<DebugRendererService>();
-    if (!dbg || dbg->Lines.Vertices.empty()) return;
+    if (m_Lines.Vertices.empty()) return;
 
-    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
+    auto& rd = renderer.GetData();
 
     auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug");
     if (!debugShader || !debugShader->GetShader())
     {
-        dbg->Lines.Vertices.clear();
+        m_Lines.Vertices.clear();
         return;
     }
 
@@ -69,27 +64,27 @@ void Flush()
     glm::mat4 vp = rd.Frame.Proj * rd.Frame.View;
     shader->SetMatrix("u_ViewProj", vp);
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
-    shader->SetVec4("u_Color", glm::vec4(1.0f)); // color is per-vertex
+    shader->SetVec4("u_Color", glm::vec4(1.0f));
 
-    uint32_t dataSize = (uint32_t)(dbg->Lines.Vertices.size() * sizeof(LineVertex));
+    uint32_t dataSize = (uint32_t)(m_Lines.Vertices.size() * sizeof(LineVertex));
 
-    if (!dbg->Lines.VBO || dbg->Lines.VBOSize < dataSize)
+    if (!m_Lines.VBO || m_Lines.VBOSize < dataSize)
     {
-        dbg->Lines.VBOSize = std::max(dataSize, (uint32_t)(1024 * sizeof(LineVertex)));
-        dbg->Lines.VBO = VertexBuffer::Create(dbg->Lines.VBOSize);
-        dbg->Lines.VBO->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float4, "vertexColor"}});
-        dbg->Lines.VAO = VertexArray::Create();
-        dbg->Lines.VAO->AddVertexBuffer(dbg->Lines.VBO);
+        m_Lines.VBOSize = std::max(dataSize, (uint32_t)(1024 * sizeof(LineVertex)));
+        m_Lines.VBO = VertexBuffer::Create(m_Lines.VBOSize);
+        m_Lines.VBO->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float4, "vertexColor"}});
+        m_Lines.VAO = VertexArray::Create();
+        m_Lines.VAO->AddVertexBuffer(m_Lines.VBO);
     }
 
-    dbg->Lines.VBO->SetData(dbg->Lines.Vertices.data(), dataSize);
-    GraphicsDevice::Get().DrawLines(dbg->Lines.VAO, (uint32_t)dbg->Lines.Vertices.size());
-    dbg->Lines.Vertices.clear();
+    m_Lines.VBO->SetData(m_Lines.Vertices.data(), dataSize);
+    GraphicsDevice::Get().DrawLines(m_Lines.VAO, (uint32_t)m_Lines.Vertices.size());
+    m_Lines.Vertices.clear();
 }
 
-void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe)
+void DebugRenderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, Renderer& renderer, bool useWireframe)
 {
-    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
+    auto& rd = renderer.GetData();
     auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug");
     if (!debugShader || !debugShader->GetShader()) return;
 
@@ -107,7 +102,7 @@ void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& tra
     if (mesh.VAO)
     {
         auto guard = PipelineStateGuard::Capture();
-        guard.WithBlend().WithPolygonMode();
+        guard.WithBlend();
         GraphicsDevice::Get().SetBlendEnabled(true);
         GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
@@ -125,41 +120,35 @@ void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& tra
     }
 }
 
-void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe)
+void DebugRenderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, Renderer& renderer, bool useWireframe)
 {
-    auto* dbg = ServiceLocator::Get<DebugRendererService>();
-    if (!dbg) return;
     glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), size);
-    if (useWireframe && dbg->Resources.WireCubeModel && !dbg->Resources.WireCubeModel->Meshes.empty())
-        DrawMeshWire(dbg->Resources.WireCubeModel->Meshes[0], color, model, true);
-    else if (dbg->Resources.UnitCubeModel && !dbg->Resources.UnitCubeModel->Meshes.empty())
-        DrawMeshWire(dbg->Resources.UnitCubeModel->Meshes[0], color, model, useWireframe);
+    if (useWireframe && m_Resources.WireCubeModel && !m_Resources.WireCubeModel->Meshes.empty())
+        DrawMeshWire(m_Resources.WireCubeModel->Meshes[0], color, model, renderer, true);
+    else if (m_Resources.UnitCubeModel && !m_Resources.UnitCubeModel->Meshes.empty())
+        DrawMeshWire(m_Resources.UnitCubeModel->Meshes[0], color, model, renderer, useWireframe);
 }
 
-void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe)
+void DebugRenderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, Renderer& renderer, bool useWireframe)
 {
-    auto* dbg = ServiceLocator::Get<DebugRendererService>();
-    if (!dbg || !dbg->Resources.UnitCapsuleModel) return;
+    if (!m_Resources.UnitCapsuleModel) return;
     glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius, height, radius));
-    for (auto& mesh : dbg->Resources.UnitCapsuleModel->Meshes)
-        DrawMeshWire(mesh, color, model, useWireframe);
+    for (auto& mesh : m_Resources.UnitCapsuleModel->Meshes)
+        DrawMeshWire(mesh, color, model, renderer, useWireframe);
 }
 
-void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe)
+void DebugRenderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, Renderer& renderer, bool useWireframe)
 {
-    auto* dbg = ServiceLocator::Get<DebugRendererService>();
-    if (!dbg || !dbg->Resources.UnitSphereModel) return;
+    if (!m_Resources.UnitSphereModel) return;
     glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
-    for (auto& mesh : dbg->Resources.UnitSphereModel->Meshes)
-        DrawMeshWire(mesh, color, model, useWireframe);
+    for (auto& mesh : m_Resources.UnitSphereModel->Meshes)
+        DrawMeshWire(mesh, color, model, renderer, useWireframe);
 }
 
-void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color)
+void DebugRenderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color, Renderer& renderer)
 {
-    auto* dbg = ServiceLocator::Get<DebugRendererService>();
-    auto& rd = ServiceLocator::Get<Renderer>()->GetData();
-    if (!dbg) return;
-    
+    auto& rd = renderer.GetData();
+
     auto shaderAsset = rd.Shaders->LoadOrGet("Grid");
     if (!shaderAsset || !shaderAsset->GetShader()) return;
 
@@ -183,7 +172,7 @@ void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& co
     shaderAsset->GetShader()->SetFloat("u_FadeStart", 0.0f);
     shaderAsset->GetShader()->SetFloat("u_FadeEnd", 8000.0f);
 
-    if (!dbg->GridPlaneVAO)
+    if (!m_GridPlaneVAO)
     {
         float vertices[] = {
             -0.5f, 0.0f, -0.5f,
@@ -196,13 +185,13 @@ void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& co
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
 
-        dbg->GridPlaneVAO = VertexArray::Create();
-        dbg->GridPlaneVAO->AddVertexBuffer(vbo);
+        m_GridPlaneVAO = VertexArray::Create();
+        m_GridPlaneVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
-        dbg->GridPlaneVAO->SetIndexBuffer(ibo);
+        m_GridPlaneVAO->SetIndexBuffer(ibo);
     }
 
-    GraphicsDevice::Get().DrawIndexed(dbg->GridPlaneVAO, 6);
+    GraphicsDevice::Get().DrawIndexed(m_GridPlaneVAO, 6);
 }
-} // namespace DebugRenderer
+
 } // namespace Chained

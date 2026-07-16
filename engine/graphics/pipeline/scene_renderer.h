@@ -6,7 +6,6 @@
 #include "engine/core/profiler.h"
 #include "engine/scene/entity.h"
 #include "engine/graphics/pipeline/render_pass.h"
-#include "engine/graphics/pipeline/renderer.h"
 #include <entt/entt.hpp>
 #include <memory>
 #include <vector>
@@ -20,6 +19,8 @@ namespace Chained
 {
 struct Frustum;
 class AssetManager;
+class Renderer; // forward declaration — full include in .cpp only
+class ShaderAsset; // forward declaration
 
 enum class RenderPassStage
 {

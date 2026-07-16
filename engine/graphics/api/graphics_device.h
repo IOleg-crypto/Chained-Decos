@@ -93,6 +93,11 @@ public:
 
     virtual void SetLineWidth(float width) = 0;
 
+    // Framebuffer operations
+    virtual uint32_t GetFramebufferBinding() const = 0;
+    virtual void BindFramebuffer(uint32_t fbo) = 0;
+    virtual void ClearDepth() = 0;
+
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) = 0;
     virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount,
                                       uint32_t indexCount = 0) = 0;
@@ -168,7 +173,7 @@ public:
         GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
         return *this;
     }
-    PipelineStateGuard& WithPolygonMode()
+    PipelineStateGuard& WithWireframeMode()
     {
         GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Line);
         return *this;

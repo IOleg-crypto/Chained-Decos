@@ -1,4 +1,4 @@
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "gui.h"
 #include "editor/project/project_exporter.h"
 #include "engine/core/service_locator.h"
@@ -75,8 +75,8 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
         }
         if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open Project", "Ctrl+O"))
         {
-            std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-            auto result = Chained::FileDialogs::OpenFile(filters);
+            std::vector<DialogFilter> filters = {{"Chained Scene", "chscene"}};
+            auto result = Chained::Dialogs::OpenFile(filters);
             if (result)
             {
                 EditorLayer::Get().GetSceneManager().OpenScene(*result);
@@ -170,7 +170,7 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             }
             else
             {
-                auto outDir = FileDialogs::PickFolder();
+                auto outDir = Dialogs::PickFolder();
                 if (outDir)
                 {
                     {
@@ -429,12 +429,12 @@ bool EditorGUI::FilePropertyImpl(const char* label, std::string& value,
     ImGui::SameLine();
     if (ImGui::Button(ICON_FA_FOLDER_OPEN, {buttonSize, buttonSize}))
     {
-        std::vector<FileDialogFilter> filters;
+        std::vector<DialogFilter> filters;
         if (filter != nullptr && filter[0] != '\0')
         {
             filters.push_back({"Files", filter});
         }
-        auto result = Chained::FileDialogs::OpenFile(filters);
+        auto result = Chained::Dialogs::OpenFile(filters);
         if (result)
         {
             value = Project::GetRelativePath(*result);

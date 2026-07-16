@@ -1,9 +1,9 @@
 #include "shadow_pass.h"
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/project/project.h"
-#include <glad/gl.h>
 #include <glm/gtc/matrix_transform.hpp>
 
 namespace Chained
@@ -74,23 +74,21 @@ void ShadowPass::Execute(const RenderContext& ctx)
     m_LightSpaceMatrix         = lightProjection * lightView;
 
     // Set shadow bias on renderer
-    ServiceLocator::Get<Renderer>()->GetData().Shadow.Bias = 0.003f;
+    ServiceLocator::Get<Renderer>()->GetLighting().GetShadowData().Bias = 0.003f;
 
     auto* shader = m_DepthShaderAsset->GetShader().get();
     shader->Bind();
     shader->SetMatrix("u_LightSpaceMatrix", m_LightSpaceMatrix);
 
     // Save current FBO binding
-    GLint previousFBO = 0;
-    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
+    uint32_t previousFBO = GraphicsDevice::Get().GetFramebufferBinding();
 
     m_ShadowMap->Bind();
     GraphicsDevice::Get().SetViewport(0, 0, shadowRes, shadowRes);
-    glClear(GL_DEPTH_BUFFER_BIT);
+    GraphicsDevice::Get().ClearDepth();
 
     // Depth bias to prevent shadow acne (surface-shadow self-intersection)
-    glEnable(GL_POLYGON_OFFSET_FILL);
-    glPolygonOffset(2.0f, 1.0f);
+    GraphicsDevice::Get().SetPolygonOffset(true, 2.0f, 1.0f);
 
     // Render all opaque items into the depth buffer using the depth shader.
     for (const auto& item : ctx.Renderer->GetOpaqueQueue())
@@ -100,11 +98,11 @@ void ShadowPass::Execute(const RenderContext& ctx)
                                 m_DepthShaderAsset.get(), {}, RenderPassStage::Opaque);
     }
 
-    glDisable(GL_POLYGON_OFFSET_FILL);
+    GraphicsDevice::Get().SetPolygonOffset(false);
 
     // Restore previous FBO binding
     m_ShadowMap->Unbind();
-    glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
+    GraphicsDevice::Get().BindFramebuffer(previousFBO);
 }
 
 void ShadowPass::Shutdown()

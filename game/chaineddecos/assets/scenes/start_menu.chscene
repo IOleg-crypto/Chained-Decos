@@ -35,13 +35,13 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 13792495758608502978
-    TagComponent:
-      Tag: start_game_info_copy
+  - Entity: 13481680069909931381
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_game_title
     IDComponent:
       {}
     WidgetComponent:
@@ -81,9 +81,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 3592394642311937924
-    TagComponent:
-      Tag: start_button_start
+  - Entity: 11000620169424659302
     ManagedScriptComponent:
       Scripts:
         []
@@ -91,11 +89,13 @@ Entities:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_button_start
     IDComponent:
       {}
     Scene TransitionComponent:
       TargetScenePath: scenes/runtimescene.chscene
-      Triggered: false
+      Triggered: true
     WidgetComponent:
       Box Style:
         BG Color: [56, 178, 166, 255]
@@ -134,16 +134,16 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 8967684901185613025
-    TagComponent:
-      Tag: start_button_exit
+  - Entity: 4720631858198445255
     ManagedScriptComponent:
       Scripts:
-        - ClassName: ChainedDecos.Scripts.ExitScript
+        []
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_button_exit
     IDComponent:
       {}
     WidgetComponent:
@@ -151,14 +151,14 @@ Entities:
         BG Color: [30, 33, 40, 255]
         Hover Color: [200, 70, 70, 255]
         Pressed Color: [150, 204, 50, 255]
-        Rounding: 10
+        Rounding: 32
         Border Size: 1
-        Border Color: [255, 255, 255, 28]
-        Gradient: false
+        Border Color: [237, 255, 255, 28]
+        Gradient: true
         Padding: 4
         Hover Scale: 1.03000009
         Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
+        Transition Speed: 2
       Text Style:
         Font Name: Default
         Font Size: 24
@@ -184,13 +184,13 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 10662426866865254270
-    TagComponent:
-      Tag: start_game_info
+  - Entity: 15128292665000326445
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_game_info
     IDComponent:
       {}
     WidgetComponent:
@@ -230,21 +230,18 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 7757107931123451970
-    TagComponent:
-      Tag: start_menu_game_info
-    ManagedScriptComponent:
-      Scripts:
-        []
+  - Entity: 2300139054871226892
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_menu_game_info
     IDComponent:
       {}
     Scene TransitionComponent:
       TargetScenePath: scenes/info_scene.chscene
-      Triggered: false
+      Triggered: true
     WidgetComponent:
       Box Style:
         BG Color: [30, 33, 40, 255]
@@ -283,13 +280,13 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 10564570184020839641
-    TagComponent:
-      Tag: start_game_menu_options
+  - Entity: 4521095331783326583
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_game_menu_options
     IDComponent:
       {}
     Scene TransitionComponent:

@@ -41,6 +41,9 @@ public:
     std::shared_ptr<Scene> GetRuntimeScene() const { return m_RuntimeScene; }
     std::shared_ptr<Scene> GetEditorScene() const { return m_EditorScene; }
 
+    /// @brief Set the event callback that scenes will use to dispatch events (e.g. SceneChangeRequestEvent).
+    void SetSceneEventCallback(const Scene::EventCallbackFn& callback) { m_SceneEventCallback = callback; }
+
     void OnUpdate(Timestep ts);
     void OnViewportResize(uint32_t width, uint32_t height);
 
@@ -68,8 +71,15 @@ private:
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
 
+    // Result of an async scene load: the scene on success, or an error message on failure.
+    struct SceneLoadResult
+    {
+        std::shared_ptr<Scene> Scene;
+        std::string Error;
+    };
+
     // Async state
-    std::future<std::shared_ptr<Scene>> m_SceneOpenFuture;
+    std::future<SceneLoadResult> m_SceneOpenFuture;
     std::filesystem::path m_PendingSceneOpenPath;
 
     bool m_IsPlayModeLoading = false;
@@ -94,6 +104,9 @@ private:
 
     // Resolved once by EditorLayer and handed down — see SceneContext for why.
     SceneContext m_Context;
+
+    // Event callback forwarded to runtime scenes for SceneTransitionComponent support.
+    Scene::EventCallbackFn m_SceneEventCallback;
 };
 
 } // namespace Chained

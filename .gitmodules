@@ -86,3 +86,9 @@
     path = thirdparty/reflect-cpp
     url = https://github.com/getml/reflect-cpp.git
 
+[submodule "thirdparty/portable-file-dialogs"]
+    path = thirdparty/portable-file-dialogs
+    url = https://github.com/samhocevar/portable-file-dialogs.git
+[submodule "cmake/external/thirdparty/portable-file-dialogs"]
+	path = cmake/external/thirdparty/portable-file-dialogs
+	url = https://github.com/samhocevar/portable-file-dialogs.git

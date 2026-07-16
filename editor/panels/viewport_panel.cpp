@@ -879,21 +879,21 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
                 if (light.Type == LightType::Directional)
                 {
                     glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-                    DebugRenderer::DrawLine(iconPos, iconPos + dir, lightTint);
+                    ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
                 }
             }
             else if (light.Type == LightType::Directional)
             {
                 glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-                DebugRenderer::DrawLine(iconPos, iconPos + dir, lightTint);
+                ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
             }
             else if (light.Type == LightType::Point)
             {
-                DebugRenderer::DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint);
+                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint, *ServiceLocator::Get<Renderer>());
             }
             else if (light.Type == LightType::Spot)
             {
-                DebugRenderer::DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint);
+                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint, *ServiceLocator::Get<Renderer>());
             }
         }
     }
