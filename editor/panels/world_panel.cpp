@@ -4,7 +4,7 @@
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "editor/project/project_serializer.h"
 #include "scene/scene.h"
@@ -111,8 +111,8 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             ImGui::SameLine();
             if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BGSelect"))
             {
-                std::vector<FileDialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
-                auto result = Chained::FileDialogs::OpenFile(filters);
+                std::vector<DialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
+                auto result = Chained::Dialogs::OpenFile(filters);
                 if (result)
                 {
                     std::filesystem::path p = *result;
@@ -208,8 +208,8 @@ void WorldPanel::OnImGuiRender(bool readOnly)
     {
         if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
         {
-            std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Chained::FileDialogs::OpenFile(filters);
+            std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
+            auto result = Chained::Dialogs::OpenFile(filters);
             if (result)
             {
                 if (auto project = Project::GetActive())
@@ -224,8 +224,8 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
         {
-            std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Chained::FileDialogs::SaveFile(filters);
+            std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
+            auto result = Chained::Dialogs::SaveFile(filters);
             if (result)
             {
                 auto newEnv = std::make_shared<EnvironmentAsset>();
@@ -379,8 +379,8 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         ImGui::SameLine();
         if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
         {
-            std::vector<FileDialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
-            auto result = Chained::FileDialogs::OpenFile(filters);
+            std::vector<DialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
+            auto result = Chained::Dialogs::OpenFile(filters);
             if (result)
             {
                 std::filesystem::path p = *result;

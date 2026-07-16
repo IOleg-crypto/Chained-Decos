@@ -4,7 +4,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/core/service_locator.h"
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 #include "thirdparty/IconsFontAwesome6.h"
@@ -246,7 +246,7 @@ void ProjectSelectorUI::OnImGuiRender()
             ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::ProjectCardBorderActive);
             if (ImGui::Button(ICON_FA_FOLDER_OPEN "  Browse", ImVec2(64, 0)))
             {
-                auto picked = FileDialogs::PickFolder();
+                auto picked = Dialogs::PickFolder();
                 if (picked)
                 {
                     std::string s = picked->string();

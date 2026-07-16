@@ -1,79 +1,147 @@
-#include "file_dialogs.h"
-#include <nfd.h>
-
-#if defined(__linux__)
-#include <cstdlib>
-#endif
+#include "dialogs.h"
+#include "portable-file-dialogs.h"
+#include <sstream>
 
 namespace Chained
 {
-    void FileDialogs::Init()
+    namespace
     {
-#if defined(__linux__)
-        // NFD's GTK backend calls gtk_init_check(), which lazily loads the AT-SPI
-        // accessibility bridge (atk-bridge) on first use. That bridge allocates
-        // process-lifetime state it never frees and spams stderr when no
-        // accessibility bus is available (e.g. headless CI) - neither of which we
-        // need for a native file/folder picker. Opting out before NFD_Init() avoids
-        // both the LeakSanitizer false-positive and the AT-SPI DBus warnings.
-        setenv("NO_AT_BRIDGE", "1", 0);
-#endif
-        NFD_Init();
+        // portable-file-dialogs expects each filter as a pair of
+        // [human-readable name, space-separated glob patterns], e.g. {"Textures", "*.png *.jpg"}.
+        // Our DialogFilter::Spec is authored as a bare, comma-separated extension list
+        // ("png,jpg,tga" or "chscene"), so translate it into the glob form PFD understands.
+        // Already-globbed specs ("*.png", "*") are passed through untouched.
+        std::string NormalizeSpec(const std::string& spec)
+        {
+            if (spec.empty())
+                return "*";
+
+            // If the caller already provided wildcard globs, trust them as-is.
+            if (spec.find('*') != std::string::npos)
+                return spec;
+
+            std::string result;
+            std::stringstream stream(spec);
+            std::string ext;
+            while (std::getline(stream, ext, ','))
+            {
+                // Trim surrounding whitespace and a leading dot ("."chscene / ".png").
+                size_t start = ext.find_first_not_of(" \t.");
+                size_t end = ext.find_last_not_of(" \t");
+                if (start == std::string::npos)
+                    continue;
+                ext = ext.substr(start, end - start + 1);
+                if (ext.empty())
+                    continue;
+
+                if (!result.empty())
+                    result += ' ';
+                result += "*." + ext;
+            }
+
+            return result.empty() ? "*" : result;
+        }
+
+        // Builds the flat [name, spec, name, spec, ...] vector PFD consumes, converting each
+        // spec to glob form and always appending an "All Files" escape hatch.
+        std::vector<std::string> BuildPfdFilters(const std::vector<DialogFilter>& filters)
+        {
+            std::vector<std::string> pfdFilters;
+            for (const auto& filter : filters)
+            {
+                pfdFilters.push_back(filter.Name);
+                pfdFilters.push_back(NormalizeSpec(filter.Spec));
+            }
+            pfdFilters.push_back("All Files");
+            pfdFilters.push_back("*");
+            return pfdFilters;
+        }
     }
 
-    void FileDialogs::Shutdown()
+    std::optional<std::filesystem::path> Dialogs::OpenFile(const std::vector<DialogFilter>& filters)
     {
-        NFD_Quit();
+        pfd::open_file dialog("Open File", "", BuildPfdFilters(filters));
+        auto result = dialog.result();
+
+        if (result.empty())
+            return std::nullopt;
+
+        return std::filesystem::path(result[0]);
     }
 
-    std::optional<std::filesystem::path> FileDialogs::OpenFile(const std::vector<FileDialogFilter>& filters)
+    std::optional<std::filesystem::path> Dialogs::SaveFile(const std::vector<DialogFilter>& filters)
     {
-        nfdu8char_t* outPath = nullptr;
-        std::vector<nfdu8filteritem_t> nfdFilters;
-        for (const auto& filter : filters)
-        {
-            nfdFilters.push_back({filter.Name.c_str(), filter.Spec.c_str()});
-        }
+        pfd::save_file dialog("Save File", "", BuildPfdFilters(filters));
+        auto result = dialog.result();
 
-        nfdresult_t result = NFD_OpenDialogU8(&outPath, nfdFilters.data(), (nfdfiltersize_t)nfdFilters.size(), nullptr);
-        if (result == NFD_OKAY)
-        {
-            std::filesystem::path path = outPath;
-            NFD_FreePathU8(outPath);
-            return path;
-        }
-        return std::nullopt;
+        if (result.empty())
+            return std::nullopt;
+
+        return std::filesystem::path(result);
     }
 
-    std::optional<std::filesystem::path> FileDialogs::SaveFile(const std::vector<FileDialogFilter>& filters)
+    std::optional<std::filesystem::path> Dialogs::PickFolder()
     {
-        nfdu8char_t* outPath = nullptr;
-        std::vector<nfdu8filteritem_t> nfdFilters;
-        for (const auto& filter : filters)
-        {
-            nfdFilters.push_back({filter.Name.c_str(), filter.Spec.c_str()});
-        }
+        pfd::select_folder dialog("Select Folder");
+        auto result = dialog.result();
 
-        nfdresult_t result = NFD_SaveDialogU8(&outPath, nfdFilters.data(), (nfdfiltersize_t)nfdFilters.size(), nullptr, NULL);
-        if (result == NFD_OKAY)
-        {
-            std::filesystem::path path = outPath;
-            NFD_FreePathU8(outPath);
-            return path;
-        }
-        return std::nullopt;
+        if (result.empty())
+            return std::nullopt;
+
+        return std::filesystem::path(result);
     }
 
-    std::optional<std::filesystem::path> FileDialogs::PickFolder()
+    MessageBoxResult Dialogs::ShowMessage(
+        const std::string& title,
+        const std::string& text,
+        MessageBoxChoice choice,
+        MessageBoxIcon icon)
     {
-        nfdu8char_t* outPath = nullptr;
-        nfdresult_t result = NFD_PickFolderU8(&outPath, nullptr);
-        if (result == NFD_OKAY)
+        pfd::choice pfdChoice;
+        switch (choice)
         {
-            std::filesystem::path path = outPath;
-            NFD_FreePathU8(outPath);
-            return path;
+            case MessageBoxChoice::Ok:          pfdChoice = pfd::choice::ok; break;
+            case MessageBoxChoice::OkCancel:    pfdChoice = pfd::choice::ok_cancel; break;
+            case MessageBoxChoice::YesNo:       pfdChoice = pfd::choice::yes_no; break;
+            case MessageBoxChoice::YesNoCancel: pfdChoice = pfd::choice::yes_no_cancel; break;
         }
-        return std::nullopt;
+
+        pfd::icon pfdIcon;
+        switch (icon)
+        {
+            case MessageBoxIcon::Info:     pfdIcon = pfd::icon::info; break;
+            case MessageBoxIcon::Warning:  pfdIcon = pfd::icon::warning; break;
+            case MessageBoxIcon::Error:    pfdIcon = pfd::icon::error; break;
+            case MessageBoxIcon::Question: pfdIcon = pfd::icon::question; break;
+        }
+
+        pfd::message dialog(title, text, pfdChoice, pfdIcon);
+        auto result = dialog.result();
+
+        switch (result)
+        {
+            case pfd::button::ok:     return MessageBoxResult::Ok;
+            case pfd::button::cancel: return MessageBoxResult::Cancel;
+            case pfd::button::yes:    return MessageBoxResult::Yes;
+            case pfd::button::no:     return MessageBoxResult::No;
+            default:                  return MessageBoxResult::Cancel;
+        }
+    }
+
+    void Dialogs::Notify(
+        const std::string& title,
+        const std::string& message,
+        MessageBoxIcon icon)
+    {
+        pfd::icon pfdIcon;
+        switch (icon)
+        {
+            case MessageBoxIcon::Info:     pfdIcon = pfd::icon::info; break;
+            case MessageBoxIcon::Warning:  pfdIcon = pfd::icon::warning; break;
+            case MessageBoxIcon::Error:    pfdIcon = pfd::icon::error; break;
+            case MessageBoxIcon::Question: pfdIcon = pfd::icon::question; break;
+        }
+
+        pfd::notify(title, message, pfdIcon);
     }
 }

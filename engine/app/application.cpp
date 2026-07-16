@@ -12,7 +12,7 @@
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_registry.h"
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 
 #include "scripting/scriptengine.h"
@@ -35,7 +35,7 @@ Application::Application(const ApplicationSpecification& spec)
 
     Log::Init();
     Core::Input::Init();
-    FileDialogs::Init();
+    Dialogs::Init();
     ComponentRegistry::RegisterEngineComponents();
 
     unsigned int threads = std::thread::hardware_concurrency();
@@ -74,7 +74,7 @@ Application::Application(const ApplicationSpecification& spec)
     {
         ServiceLocator::Provide<Renderer>(new Renderer());
         ServiceLocator::Provide<UIRenderer>(new UIRenderer());
-        ServiceLocator::Provide<DebugRendererService>(new DebugRendererService());
+        ServiceLocator::Provide<DebugRenderer>(new DebugRenderer());
     }
     ServiceLocator::Provide<Audio>(new Audio());
     ServiceLocator::Provide<Physics>(new Physics());
@@ -111,7 +111,7 @@ Application::~Application()
     Project::SetActive(nullptr);
 
     ServiceLocator::Shutdown();
-    FileDialogs::Shutdown();
+    Dialogs::Shutdown();
     Core::Input::Shutdown();
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();

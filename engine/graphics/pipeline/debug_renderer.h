@@ -14,6 +14,8 @@
 namespace Chained
 {
 
+class Renderer;
+
 struct LineVertex
 {
     glm::vec3 Position;
@@ -36,31 +38,29 @@ struct StaticResources
     std::unique_ptr<Model> WireCubeModel;
 };
 
-class CH_API DebugRendererService : public EngineModule
+class CH_API DebugRenderer : public EngineModule
 {
 public:
-    DebugRendererService() = default;
-    virtual ~DebugRendererService() override = default;
+    DebugRenderer() = default;
+    virtual ~DebugRenderer() override = default;
 
-    LineState        Lines;
-    StaticResources  Resources;
-    std::shared_ptr<VertexArray> GridPlaneVAO;
+    void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
+    void Flush(Renderer& renderer);
+    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, Renderer& renderer, bool useWireframe = true);
+    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, Renderer& renderer, bool useWireframe = true);
+    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, Renderer& renderer, bool useWireframe = true);
+    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, Renderer& renderer, bool useWireframe = true);
+    void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color, Renderer& renderer);
 
 protected:
     virtual void Initialize() override;
     virtual void Shutdown() override;
-};
 
-namespace DebugRenderer
-{
-    void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
-    void Flush();
-    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, bool useWireframe = true);
-    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, bool useWireframe = true);
-    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, bool useWireframe = true);
-    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, bool useWireframe = true);
-    void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color);
-} // namespace DebugRenderer
+private:
+    LineState        m_Lines;
+    StaticResources  m_Resources;
+    std::shared_ptr<VertexArray> m_GridPlaneVAO;
+};
 
 } // namespace Chained
 

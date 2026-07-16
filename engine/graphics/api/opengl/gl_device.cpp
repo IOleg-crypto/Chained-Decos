@@ -262,4 +262,21 @@ GraphicsDevice::PolygonMode GLDevice::GetPolygonMode() const
     return m_StateCache.PolyMode;
 }
 
+uint32_t GLDevice::GetFramebufferBinding() const
+{
+    GLint fbo = 0;
+    glGetIntegerv(GL_FRAMEBUFFER_BINDING, &fbo);
+    return static_cast<uint32_t>(fbo);
+}
+
+void GLDevice::BindFramebuffer(uint32_t fbo)
+{
+    glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+}
+
+void GLDevice::ClearDepth()
+{
+    glClear(GL_DEPTH_BUFFER_BIT);
+}
+
 } // namespace Chained
