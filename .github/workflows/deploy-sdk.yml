@@ -127,14 +127,6 @@ jobs:
           install: >-
             mingw-w64-x86_64-clang lld
 
-      - name: Cache build directory
-        uses: actions/cache@v4
-        with:
-          path: build/${{ matrix.preset }}
-          key: deploy-build-${{ matrix.preset }}-${{ hashFiles('**/CMakeLists.txt', '**/cmake/*.cmake') }}
-          restore-keys: |
-            deploy-build-${{ matrix.preset }}-
-
       - name: Configure CMake
         run: |
           set -euo pipefail
