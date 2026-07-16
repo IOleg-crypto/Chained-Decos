@@ -1,5 +1,6 @@
 #ifndef SCRIPT_GLUE_ENTITY_H
 #define SCRIPT_GLUE_ENTITY_H
+#include "engine/scene/components.h"
 #include "script_glue_internal.h"
 #include <algorithm>
 #include <string>
@@ -87,4 +88,4 @@ CH_SCRIPT_FUNC uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID);
 CH_SCRIPT_FUNC void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying);
 
 } // namespace Chained
-#endif
+#endif

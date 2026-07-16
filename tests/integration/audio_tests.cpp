@@ -1,4 +1,5 @@
 #include "engine/audio/audio.h"
+#include "engine/assets/loaders/audio_loader.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
@@ -21,3 +22,10 @@ TEST(AudioTest, TinyBufferPlaybackAndStopAllAreSafe)
     EXPECT_NO_THROW(audio.StopAll());
 }
 
+TEST(AudioTest, LoadAudio)
+{
+    auto audio = AudioLoader::Create();
+    AudioLoader::Load(audio, "resources/audio/default.wav");
+    EXPECT_EQ(audio->GetType(), AssetType::Audio);
+
+}

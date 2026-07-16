@@ -1,21 +1,35 @@
-# Minimal test — just GTest, no engine at all
-add_executable(engine_tests_minimal
-    minimal_test.cpp
+# Unit tests — fast, no full engine runtime required
+# Links against specific engine modules, not the full engine facade.
+
+set(UNIT_SOURCES
+    test_main_unit.cpp
+    uuid_tests.cpp
+    timestep_tests.cpp
+    color_tests.cpp
+    thread_pool_tests.cpp
+    event_tests.cpp
+    event_input_tests.cpp
+    layer_stack_tests.cpp
+    service_locator_tests.cpp
 )
 
-target_link_libraries(engine_tests_minimal PRIVATE
+add_executable(engine_tests_unit ${UNIT_SOURCES})
+
+target_link_libraries(engine_tests_unit PRIVATE
+    engine_common
+    engine_core
     gtest
     gtest_main
 )
 
-target_include_directories(engine_tests_minimal PRIVATE
-    ${CMAKE_SOURCE_DIR}/thirdparty/googletest/googletest/include
+target_include_directories(engine_tests_unit PRIVATE
+    ${CMAKE_SOURCE_DIR}
 )
 
 include(GoogleTest)
-gtest_discover_tests(engine_tests_minimal
+gtest_discover_tests(engine_tests_unit
     CONFIGURATION_VAR CMAKE_BUILD_TYPE
     DISCOVERY_MODE POST_BUILD
     DISCOVERY_TIMEOUT 30
-    PROPERTIES LABELS "Minimal"
+    PROPERTIES LABELS "Unit"
 )

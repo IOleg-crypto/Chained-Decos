@@ -20,5 +20,7 @@
 #include "components/tag_component.h"
 #include "components/transform_component.h"
 #include "components/ui_action_component.h"
+#include "components/player_component.h"
+#include "components/spawn_component.h"
 
 #endif // CH_COMPONENTS_H
