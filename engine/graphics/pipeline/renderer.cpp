@@ -1,5 +1,6 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
+#include "engine/graphics/pipeline/shader_uniform_utils.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
@@ -35,6 +36,12 @@ void Renderer::Initialize()
     m_Data->Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
     m_Data->Lighting.LightsDirty = true;
 
+    // Initialize UBOs (must be before managers that reference them)
+    m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
+
+    m_Lighting = std::make_unique<LightingManager>(m_Data->Lighting, m_Data->Shadow);
+    m_Frame    = std::make_unique<FrameManager>(m_Data->Frame, m_Data->CameraUBO);
+
     // Initialize Engine static resources
     if (!m_Data->Geometry.FullscreenQuadVAO)
     {
@@ -49,9 +56,6 @@ void Renderer::Initialize()
         auto ibo = IndexBuffer::Create(indices, 6);
         m_Data->Geometry.FullscreenQuadVAO->SetIndexBuffer(ibo);
     }
-
-    // Initialize UBOs
-    m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
 
     InitializeSkybox();
 
@@ -98,7 +102,6 @@ void Renderer::Shutdown()
 
     m_Data->Instancing.VAOCache.clear();
     m_Data->Instancing.Buffer.reset();
-    m_Data->Instancing.Buffer.reset();
 
     GraphicsDevice::Get().Shutdown();
 }
@@ -113,53 +116,20 @@ Renderer::~Renderer() = default;
 
 void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
 {
-    m_Data->Frame.CameraPosition = camera.Position;
-
-    // Update light SSBO once per frame
-    if (m_Data->Lighting.LightsDirty && m_Data->Lighting.LightSSBO)
-    {
-        m_Data->Lighting.LightSSBO->SetData(m_Data->Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
-        m_Data->Lighting.LightsDirty = false;
-    }
+    m_Lighting->UploadLights();
+    m_Frame->BeginScene(camera, m_ViewportWidth, m_ViewportHeight, nearClip, farClip);
 
     // Track the default lighting shader handle for DrawMesh fallback
     auto lightingShaderAsset = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
     if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
-        m_Data->Frame.CurrentShaderId = lightingShaderAsset->GetShader()->GetNativeHandle();
+        m_Frame->SetCurrentShaderId(lightingShaderAsset->GetShader()->GetNativeHandle());
     }
-
-    // --- Direct glm::mat4 Management (Pure OpenGL style) ---
-    // 1. Calculate View Transform
-    m_Data->Frame.View = glm::lookAt(camera.Position, camera.Target, camera.Up);
-
-    // 2. Calculate Projection Transform
-    int width = m_ViewportWidth;
-    int height = m_ViewportHeight;
-    float aspect = (height > 0) ? (float)width / (float)height : 1.0f;
-    if (camera.Projection == ProjectionType::Perspective)
-    {
-        m_Data->Frame.Proj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
-    }
-    else
-    {
-        float top = camera.FovDegrees / 2.0f;
-        float right = top * aspect;
-        m_Data->Frame.Proj = glm::ortho(-right, right, -top, top, nearClip, farClip);
-    }
-
-    // Upload to UBO
-    CameraData cameraData;
-    cameraData.ViewProjection = m_Data->Frame.Proj * m_Data->Frame.View;
-    cameraData.Projection = m_Data->Frame.Proj;
-    cameraData.View = m_Data->Frame.View;
-    m_Data->CameraUBO->SetData(&cameraData, sizeof(CameraData));
-    m_Data->CameraUBO->BindBase(0);
 }
 
 void Renderer::EndScene()
 {
-    m_Data->Frame.CurrentShaderId = 0;
+    m_Frame->EndScene();
 }
 
 void Renderer::Clear(const glm::vec4& color)
@@ -179,7 +149,7 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0)
     {
-        shaderId = m_Data->Frame.CurrentShaderId;
+        shaderId = m_Frame->GetData().CurrentShaderId;
     }
     if (shaderId == 0)
     {
@@ -232,7 +202,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0)
     {
-        shaderId = m_Data->Frame.CurrentShaderId;
+        shaderId = m_Frame->GetData().CurrentShaderId;
     }
     if (shaderId == 0)
     {
@@ -254,7 +224,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     shader->Bind();
 
     // Set up matrices
-    glm::mat4 mvp = m_Data->Frame.Proj * m_Data->Frame.View;
+    glm::mat4 mvp = m_Frame->GetData().Proj * m_Frame->GetData().View;
     shader->SetMatrix("u_ViewProjection", mvp);
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
 
@@ -325,17 +295,15 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->Bind();
 
     // Always remove translation from view matrix for skybox
-    glm::mat4 view = glm::mat4(glm::mat3(m_Data->Frame.View));
+    glm::mat4 view = glm::mat4(glm::mat3(m_Frame->GetData().View));
     shaderAsset->GetShader()->SetMatrix("u_View", view);
-    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->Frame.Proj);
+    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Frame->GetData().Proj);
 
     shaderAsset->GetShader()->SetFloat("u_Exposure", exposure);
     shaderAsset->GetShader()->SetFloat("u_Brightness", brightness);
     shaderAsset->GetShader()->SetFloat("u_Contrast", contrast);
     shaderAsset->GetShader()->SetInt("u_IsHDR", isHDR ? 1 : 0);
     shaderAsset->GetShader()->SetInt("u_VFlipped", flipped ? 1 : 0);
-
-    ApplyFogUniforms(shaderAsset.get());
 
     // 3. Bind Textures and Draw Mesh
     if (skyboxMode == 2)
@@ -414,7 +382,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     model[2] = glm::vec4(look * size, 0.0f);
     model[3] = glm::vec4(position, 1.0f);
 
-    shader->SetMatrix("mvp", m_Data->Frame.Proj * m_Data->Frame.View * model);
+    shader->SetMatrix("mvp", m_Frame->GetData().Proj * m_Frame->GetData().View * model);
     shader->SetVec4("colDiffuse", tint);
 
     GraphicsDevice::Get().SetTexture(0, textureId);
@@ -496,50 +464,19 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         glm::mat4 identity = glm::mat4(1.0f);
         shader->SetMatrix("mvp", identity);
 
-        glm::mat4 invViewProj = glm::inverse(m_Data->Frame.Proj * m_Data->Frame.View);
+        glm::mat4 invViewProj = glm::inverse(m_Frame->GetData().Proj * m_Frame->GetData().View);
         shader->SetMatrix("matInverseViewProj", invViewProj);
         shader->SetVec3("viewPos", camera.Position);
 
-        float currentSeconds = (float)m_Data->Frame.Time.GetSeconds();
+        float currentSeconds = (float)m_Frame->GetData().Time.GetSeconds();
         shader->SetFloat("uTimeF", currentSeconds);
         shader->SetFloat("uTime", currentSeconds);
         shader->SetFloat("time", currentSeconds);
-        shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-        shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
-
-        ApplyFogUniforms(shaderAsset.get());
+        shader->SetFloat("uExposure", m_Lighting->GetData().CurrentLighting.Exposure);
+        shader->SetFloat("uGamma", m_Lighting->GetData().CurrentLighting.Gamma);
 
         // 2. Set Custom Uniforms using type-safe std::visit
-        for (const auto& u : uniforms)
-        {
-            std::visit(
-                [&](auto&& arg) {
-                    using T = std::decay_t<decltype(arg)>;
-                    if constexpr (std::is_same_v<T, float>)
-                    {
-                        shader->SetFloat(u.Name, arg);
-                    }
-                    else if constexpr (std::is_same_v<T, glm::vec2>)
-                    {
-                        shader->SetVec2(u.Name, arg);
-                    }
-                    else if constexpr (std::is_same_v<T, glm::vec3>)
-                    {
-                        shader->SetVec3(u.Name, arg);
-                    }
-                    else if constexpr (std::is_same_v<T, glm::vec4>)
-                    {
-                        shader->SetVec4(u.Name, arg);
-                    }
-                    else if constexpr (std::is_same_v<T, Color>)
-                    {
-                        // Clean on-the-fly normalization for Color structures
-                        glm::vec4 colorVec = {arg.r / 255.0f, arg.g / 255.0f, arg.b / 255.0f, arg.a / 255.0f};
-                        shader->SetVec4(u.Name, colorVec);
-                    }
-                },
-                u.Value);
-        }
+        ApplyShaderUniforms(shader.get(), uniforms);
 
         // 3. Bind Textures
         GraphicsDevice::Get().SetTexture(0, screenTextureId);
@@ -562,116 +499,9 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
     }
 }
 
-void Renderer::SetLight(int index, const RenderLight& light)
-{
-    if (index >= 0 && index < LightingData::MaxLights)
-    {
-        m_Data->Lighting.Lights[index] = light;
-        m_Data->Lighting.LightsDirty = true;
-    }
-}
-
-void Renderer::SetLightCount(int count)
-{
-    m_Data->Lighting.LightCount = count;
-}
-
-void Renderer::ClearLights()
-{
-    for (int i = 0; i < LightingData::MaxLights; i++)
-    {
-        m_Data->Lighting.Lights[i].enabled = 0;
-    }
-    m_Data->Lighting.LightCount = 0;
-    m_Data->Lighting.LightsDirty = true;
-}
-
-void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
-{
-    m_Data->Lighting.CurrentLighting = settings.Lighting;
-    m_Data->Lighting.CurrentFog = settings.Fog;
-    m_Data->CurrentEnv = settings;
-}
-
-void Renderer::SetMainLight(const LightingSettings& settings)
-{
-    m_Data->Lighting.CurrentLighting = settings;
-}
-
-void Renderer::SetDiagnosticMode(float mode)
-{
-    m_Data->Frame.DiagnosticMode = mode;
-}
-
-void Renderer::UpdateTime(Timestep time)
-{
-    m_Data->Frame.Time = time;
-}
-
 void Renderer::Update(Timestep ts)
 {
-    UpdateTime(ts);
-}
-
-void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
-{
-    if (!shaderAsset || !shaderAsset->GetShader())
-        return;
-
-    const auto& lighting = m_Data->Lighting.CurrentLighting;
-    auto shader = shaderAsset->GetShader();
-    shader->Bind();
-
-    glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
-                            lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
-    glm::vec4 skyColor = lightColor;
-    skyColor.w = lighting.Ambient * 0.35f;
-
-    shader->SetVec3("viewPos", m_Data->Frame.CameraPosition);
-    shader->SetFloat("uTime", static_cast<float>(m_Data->Frame.Time));
-    shader->SetFloat("uMode", m_Data->Frame.DiagnosticMode);
-    glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f
-                                 ? glm::normalize(lighting.Direction)
-                                 : glm::vec3(0.0f, -1.0f, 0.0f);
-    shader->SetVec3("lightDir", lightDirNorm);
-    shader->SetVec4("lightColor", lightColor);
-    shader->SetFloat("ambient", lighting.Ambient);
-    shader->SetVec4("skyAmbientColor", skyColor);
-        shader->SetInt("uLightCount", m_Data->Lighting.LightCount);
-    shader->SetFloat("uExposure", lighting.Exposure);
-    shader->SetFloat("uGamma", lighting.Gamma);
-
-    if (m_Data->Lighting.LightSSBO)
-        m_Data->Lighting.LightSSBO->BindBase(0);
-
-    // Shadow uniforms
-    shader->SetInt("u_ShadowsEnabled", m_Data->Shadow.Enabled ? 1 : 0);
-    shader->SetMatrix("u_LightSpaceMatrix", m_Data->Shadow.LightSpaceMatrix);
-    shader->SetFloat("u_ShadowBias", m_Data->Shadow.Bias);
-    if (m_Data->Shadow.Enabled && m_Data->Shadow.MapTextureID > 0)
-    {
-        GraphicsDevice::Get().SetTexture(6, m_Data->Shadow.MapTextureID);
-        shader->SetInt("u_ShadowMap", 6);
-    }
-
-    ApplyFogUniforms(shaderAsset);
-}
-
-void Renderer::ApplyFogUniforms(ShaderAsset* shader)
-{
-    const auto& fog = m_Data->Lighting.CurrentFog;
-    int enabled = fog.Enabled ? 1 : 0;
-    int mode = (int)fog.Mode;
-    glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
-                       fog.FogColor.a / 255.0f};
-
-    shader->GetShader()->SetInt("fogEnabled", enabled);
-    shader->GetShader()->SetVec4("fogColor", color);
-    shader->GetShader()->SetFloat("fogDensity", fog.Density);
-    shader->GetShader()->SetFloat("fogStart", fog.Start);
-    shader->GetShader()->SetFloat("fogEnd", fog.End);
-    shader->GetShader()->SetInt("fogMode", mode);
-    shader->GetShader()->SetFloat("fogHeightFalloff", fog.HeightFalloff);
+    m_Frame->SetTime(ts);
 }
 
 void Renderer::InitializeSkybox()
@@ -710,7 +540,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    shader->SetMatrix("mvp", m_Data->Frame.Proj * m_Data->Frame.View * transform);
+    shader->SetMatrix("mvp", m_Frame->GetData().Proj * m_Frame->GetData().View * transform);
     shader->SetMatrix("matModel", transform);
     shader->SetVec4("u_Tint", tint);
     shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));

@@ -203,6 +203,16 @@ void Scene::OnRuntimeStart(const SceneContext& ctx)
 
     SceneResources::OnRuntimeStart(this);
 
+    // Reset any stale SceneTransitionComponent::Triggered flags that may have been
+    // serialized as `true` in the scene file — transitions should only fire on user input.
+    {
+        auto transitionView = m_Registry->view<SceneTransitionComponent>();
+        for (auto entity : transitionView)
+        {
+            transitionView.get<SceneTransitionComponent>(entity).Triggered = false;
+        }
+    }
+
     // Start animations
     auto& registry = GetRegistry();
     auto view = registry.view<AnimationComponent>();

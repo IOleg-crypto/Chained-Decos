@@ -10,7 +10,7 @@ public class ExitScript : Script
         ButtonControl? btn = Entity.GetComponent<ButtonControl>();
         if (btn != null)
         {
-            if (btn.IsDown)
+            if (btn.IsClicked)
             {
                 Log.Info($"[ExitScript] btn.IsDown is TRUE on frame update (deltaTime: {deltaTime}). Calling Application.Close().");
                 Application.Close();

@@ -9,7 +9,7 @@
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/graphics/pipeline/frustum.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
-#include "engine/graphics/api/graphics_device.h"
+#include "engine/graphics/pipeline/shader_uniform_utils.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
@@ -148,7 +148,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     if (environment)
     {
         const auto& envSettings = environment->GetSettings();
-        auto& rendererLighting = ServiceLocator::Get<Renderer>()->GetData().Lighting;
+        auto& rendererLighting = ServiceLocator::Get<Renderer>()->GetLighting().GetData();
         rendererLighting.CurrentLighting = envSettings.Lighting;
         rendererLighting.CurrentFog = envSettings.Fog;
         m_CurrentEnv = envSettings;
@@ -188,17 +188,12 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         if (pass->GetName() == "ShadowPass")
         {
             auto* shadowPass = static_cast<ShadowPass*>(pass.get());
-            auto& rendererData = ServiceLocator::Get<Renderer>()->GetData();
-            rendererData.Shadow.Enabled = shadowPass->HasShadows();
-            rendererData.Shadow.LightSpaceMatrix = shadowPass->GetLightSpaceMatrix();
+            auto* renderer = ServiceLocator::Get<Renderer>();
+            uint32_t shadowTexID = 0;
             if (shadowPass->HasShadows() && shadowPass->GetShadowMap())
-            {
-                rendererData.Shadow.MapTextureID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
-            }
-            else
-            {
-                rendererData.Shadow.MapTextureID = 0;
-            }
+                shadowTexID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
+            renderer->SetShadowState(shadowPass->HasShadows(), shadowTexID,
+                                      shadowPass->GetLightSpaceMatrix(), 0.003f);
         }
     }
 
@@ -258,7 +253,7 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
 {
-    auto& lighting = ServiceLocator::Get<Renderer>()->GetData().Lighting;
+    auto& lighting = ServiceLocator::Get<Renderer>()->GetLighting().GetData();
 
     for (auto& l : lighting.Lights)
     {
@@ -681,38 +676,7 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
         shader->SetMatrices("boneMatrices", boneMatrices.data(), std::min((int)boneMatrices.size(), 128));
     }
 
-    
-    for (const auto& u : shaderUniformOverrides)
-    {
-        std::visit(
-            [&](auto&& arg) {
-                using T = std::decay_t<decltype(arg)>;
-
-                if constexpr (std::is_same_v<T, float>)
-                {
-                    shader->SetFloat(u.Name, arg);
-                }
-                else if constexpr (std::is_same_v<T, glm::vec2>)
-                {
-                    shader->SetVec2(u.Name, arg);
-                }
-                else if constexpr (std::is_same_v<T, glm::vec3>)
-                {
-                    shader->SetVec3(u.Name, arg);
-                }
-                else if constexpr (std::is_same_v<T, glm::vec4>)
-                {
-                    shader->SetVec4(u.Name, arg);
-                }
-                else if constexpr (std::is_same_v<T, Chained::Color>)
-                {
-                    
-                    glm::vec4 colorVec = {arg.r / 255.0f, arg.g / 255.0f, arg.b / 255.0f, arg.a / 255.0f};
-                    shader->SetVec4(u.Name, colorVec);
-                }
-            },
-            u.Value);
-    }
+    ApplyShaderUniforms(shader.get(), shaderUniformOverrides);
 }
 void SceneRenderer::BindMaterialUniforms(ShaderAsset* shaderAsset, const Material& material, int meshIndex,
                                          const Model& model)
@@ -825,7 +789,7 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
 
     // Save current state
     auto guard = PipelineStateGuard::Capture();
-    guard.WithDepthTest().WithBlend().WithPolygonMode();
+    guard.WithDepthTest().WithBlend().WithWireframeMode();
 
     // Setup for debug drawing
     GraphicsDevice::Get().DisableDepthTest();
@@ -857,11 +821,10 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     if (options.DrawGrid)
     {
         auto& grid = settings.Grid;
-        // Set default white color for grid
-        DebugRenderer::DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f});
+        ServiceLocator::Get<DebugRenderer>()->DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f}, *ServiceLocator::Get<Renderer>());
     }
 
-    DebugRenderer::Flush();
+    ServiceLocator::Get<DebugRenderer>()->Flush(*ServiceLocator::Get<Renderer>());
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
@@ -913,19 +876,19 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                 if (collider.Type == ColliderType::Box)
                 {
-                    DebugRenderer::DrawCubeWires(baseTransform, collider.Size * entityScale, color, isWireframe);
+                    ServiceLocator::Get<DebugRenderer>()->DrawCubeWires(baseTransform, collider.Size * entityScale, color, *ServiceLocator::Get<Renderer>(), isWireframe);
                 }
                 else if (collider.Type == ColliderType::Sphere)
                 {
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    DebugRenderer::DrawSphereWires(baseTransform, collider.Radius * maxScale, color, isWireframe);
+                    ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(baseTransform, collider.Radius * maxScale, color, *ServiceLocator::Get<Renderer>(), isWireframe);
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
 
                     float radiusScale = glm::max(entityScale.x, entityScale.z);
-                    DebugRenderer::DrawCapsuleWires(baseTransform, collider.Radius * radiusScale,
-                                                    collider.Height * entityScale.y, color, isWireframe);
+                    ServiceLocator::Get<DebugRenderer>()->DrawCapsuleWires(baseTransform, collider.Radius * radiusScale,
+                                                    collider.Height * entityScale.y, color, *ServiceLocator::Get<Renderer>(), isWireframe);
                 }
             }
             else if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
@@ -940,7 +903,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                         glm::mat4 finalMat = meshTrans * inst.localTransform;
                         if (inst.meshIndex >= 0 && inst.meshIndex < model.Meshes.size())
                         {
-                            DebugRenderer::DrawMeshWire(model.Meshes[inst.meshIndex], color, finalMat, isWireframe);
+                            ServiceLocator::Get<DebugRenderer>()->DrawMeshWire(model.Meshes[inst.meshIndex], color, finalMat, *ServiceLocator::Get<Renderer>(), isWireframe);
                         }
                     }
                 }
@@ -996,8 +959,8 @@ void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
                 // Note: transform.WorldTransform already includes entity scale,
                 // but the localBox is also scaled if the importer applied scale?
                 // Usually localBox is untransformed.
-                DebugRenderer::DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size,
-                                             color);
+                ServiceLocator::Get<DebugRenderer>()->DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size,
+                                             color, *ServiceLocator::Get<Renderer>());
             }
         }
     }

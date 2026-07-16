@@ -1,6 +1,7 @@
 #include "composite_pass.h"
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
+#include "engine/graphics/pipeline/renderer.h"
 
 namespace Chained
 {

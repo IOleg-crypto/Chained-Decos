@@ -1,13 +1,11 @@
 #include "scene_manager.h"
-#include "engine/app/application.h"
-#include "scripting/scriptengine_services.h"
-#include "scriptengine.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/common/thread_pool.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/core/service_locator.h"
-#include "engine/common/thread_pool.h"
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_events.h"
@@ -15,15 +13,17 @@
 #include "layer.h"
 #include "scripting/scene_scripting_manager.h"
 
-
 namespace Chained
 {
 
-EditorSceneManager::EditorSceneManager(CommandHistory& cmd, EditorProjectManager& proj,
-                                       EditorConfig& config, ImVec2& viewportSize, EditorState& state,
-                                       const SceneContext& sceneContext)
-    : m_CommandHistory(cmd), m_ProjectManager(proj), m_Config(config),
-      m_ViewportSize(viewportSize), m_EditorState(state), m_Context(sceneContext)
+EditorSceneManager::EditorSceneManager(CommandHistory& cmd, EditorProjectManager& proj, EditorConfig& config,
+                                       ImVec2& viewportSize, EditorState& state, const SceneContext& sceneContext)
+    : m_CommandHistory(cmd),
+      m_ProjectManager(proj),
+      m_Config(config),
+      m_ViewportSize(viewportSize),
+      m_EditorState(state),
+      m_Context(sceneContext)
 {
 }
 
@@ -34,8 +34,8 @@ void EditorSceneManager::NewScene()
 
 void EditorSceneManager::OpenScene()
 {
-    std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = Chained::FileDialogs::OpenFile(filters);
+    std::vector<DialogFilter> filters = {{".chscene", "chscene"}};
+    auto result = Chained::Dialogs::OpenFile(filters);
     if (result)
     {
         OpenScene(*result);
@@ -51,7 +51,7 @@ void EditorSceneManager::OpenScene(const std::filesystem::path& path)
                      m_PendingSceneOpenPath.string());
         return;
     }
-    
+
     // Query state directly from the manager (i.e. from the scene)
     m_IsPlayModeSceneLoad = GetSceneState() == SceneState::Play;
     StartSceneOpenTransition(path);
@@ -78,8 +78,8 @@ void EditorSceneManager::SaveScene()
 
 void EditorSceneManager::SaveSceneAs()
 {
-    std::vector<FileDialogFilter> filters = {{"Chained Scene", "chscene"}};
-    auto result = Chained::FileDialogs::SaveFile(filters);
+    std::vector<DialogFilter> filters = {{"Chained Scene", "chscene"}};
+    auto result = Chained::Dialogs::SaveFile(filters);
     if (result)
     {
         auto scene = GetActiveScene();
@@ -118,13 +118,13 @@ void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
 {
     CancelPlayModeTransition();
     CancelSceneOpenTransition();
-    
+
     m_EditorScene = scene;
     if (m_EditorScene)
     {
         m_EditorScene->TransitionToState(SceneState::Edit, m_Context);
     }
-    
+
     m_EditorState.SelectedEntity = {};
 }
 
@@ -255,22 +255,23 @@ void EditorSceneManager::StartSceneOpenTransition(const std::filesystem::path& p
 
     try
     {
-        m_SceneOpenFuture = ServiceLocator::Get<ThreadPool>()->Enqueue([this, scenePath]() -> std::shared_ptr<Scene> {
+        m_SceneOpenFuture = ServiceLocator::Get<ThreadPool>()->Enqueue([this, scenePath]() -> SceneLoadResult {
             auto newScene = std::make_shared<Scene>();
             SceneSerializer serializer(newScene.get());
             if (!serializer.Deserialize(scenePath.string()))
             {
-                return std::shared_ptr<Scene>{};
+                return SceneLoadResult{nullptr, serializer.GetLastError()};
             }
-            return newScene;
+            return SceneLoadResult{newScene, {}};
         });
 
         m_IsSceneOpenLoading = true;
         CH_CORE_INFO("Editor: Loading scene '{}' on a worker thread.", scenePath.string());
-    } 
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("Editor: Failed to start scene load: {}", e.what());
+        Dialogs::ShowError("Scene loading failed",
+                           "Could not start loading '" + scenePath.string() + "':\n\n" + e.what());
         CancelSceneOpenTransition();
     }
 }
@@ -289,6 +290,20 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         {
             try
             {
+                SceneLoadResult loadResult = m_SceneOpenFuture.get();
+
+                if (!loadResult.Scene)
+                {
+                    std::string reason = loadResult.Error.empty()
+                                             ? "The scene file is corrupt or is not a valid Chained scene."
+                                             : loadResult.Error;
+                    CH_CORE_ERROR("Editor: Scene load failed for '{}': {}", m_PendingSceneOpenPath.string(), reason);
+                    Dialogs::ShowError("Scene loading failed",
+                                       "Failed to load scene:\n" + m_PendingSceneOpenPath.string() + "\n\n" + reason);
+                    CancelSceneOpenTransition();
+                    return;
+                }
+
                 if (m_IsPlayModeSceneLoad)
                 {
                     if (m_RuntimeScene)
@@ -298,36 +313,26 @@ void EditorSceneManager::UpdateSceneOpenTransition()
                         m_RuntimeScene->OnRuntimeStop(m_Context);
                     }
 
-                    m_RuntimeScene = m_SceneOpenFuture.get();
-                    if (!m_RuntimeScene)
-                    {
-                        CH_CORE_ERROR("Editor: Runtime Scene load returned null for '{}'.",
-                                      m_PendingSceneOpenPath.string());
-                        CancelSceneOpenTransition();
-                        return;
-                    }
+                    m_RuntimeScene = loadResult.Scene;
                 }
                 else
                 {
-                    m_EditorScene = m_SceneOpenFuture.get();
-                    if (!m_EditorScene)
-                    {
-                        CH_CORE_ERROR("Editor: Scene load returned null for '{}'.", m_PendingSceneOpenPath.string());
-                        CancelSceneOpenTransition();
-                        return;
-                    }
+                    m_EditorScene = loadResult.Scene;
                 }
                 m_SceneOpenSceneReady = true;
-            } 
-            catch (const std::exception& e)
+            } catch (const std::exception& e)
             {
                 CH_CORE_ERROR("Editor: Scene load failed with exception: {}", e.what());
+                Dialogs::ShowError("Scene loading failed",
+                                   "Failed to load scene:\n" + m_PendingSceneOpenPath.string() + "\n\n" + e.what());
                 CancelSceneOpenTransition();
                 return;
-            } 
-            catch (...)
+            } catch (...)
             {
                 CH_CORE_ERROR("Editor: Scene load failed with unknown exception.");
+                Dialogs::ShowError("Scene loading failed", "Failed to load scene:\n" +
+                                                               m_PendingSceneOpenPath.string() +
+                                                               "\n\nAn unknown error occurred.");
                 CancelSceneOpenTransition();
                 return;
             }
@@ -357,6 +362,18 @@ void EditorSceneManager::UpdateSceneOpenTransition()
 
         if (m_IsPlayModeSceneLoad)
         {
+            // Bind event callback so SceneTransitionComponents can dispatch SceneChangeRequestEvent
+            if (m_SceneEventCallback)
+            {
+                m_RuntimeScene->SetEventCallback(m_SceneEventCallback);
+            }
+
+            // Clear stale button press flags from the previous scene before starting runtime.
+            if (auto* uiRenderer = ServiceLocator::TryGet<UIRenderer>())
+            {
+                uiRenderer->ResetButtonStates(m_RuntimeScene.get());
+            }
+
             // TransitionToState already calls OnRuntimeStart() via OnStateEnter
             m_RuntimeScene->TransitionToState(SceneState::Play, m_Context);
 
@@ -387,7 +404,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
         if (ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
         {
             static float logTimer = 0.0f;
-            logTimer += 0.016f; 
+            logTimer += 0.016f;
             if (logTimer > 1.0f)
             {
                 CH_CORE_INFO("Editor: Transition to '{}' waiting for {} assets...", m_PendingSceneOpenPath.string(),
@@ -428,20 +445,18 @@ void EditorSceneManager::StartPlayModeTransition()
         {
             CH_CORE_INFO("Editor: Scene copy successful. Resulting pointer: {}", (void*)m_RuntimeScene.get());
             m_PlayModeSceneReady = true;
-            m_IsPlayModeLoading = true; 
+            m_IsPlayModeLoading = true;
         }
         else
         {
             CH_CORE_ERROR("Editor: Failed to copy scene for play mode - result was null.");
             CancelPlayModeTransition();
         }
-    } 
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
         CancelPlayModeTransition();
-    } 
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("Editor: Unknown exception copying scene.");
         CancelPlayModeTransition();
@@ -457,8 +472,19 @@ void EditorSceneManager::UpdatePlayModeTransition()
 
     if (m_PlayModeSceneReady && m_RuntimeScene)
     {
-        m_RuntimeScene->OnViewportResize((uint32_t)m_ViewportSize.x,
-                                         (uint32_t)m_ViewportSize.y);
+        m_RuntimeScene->OnViewportResize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+
+        // Bind event callback so SceneTransitionComponents can dispatch SceneChangeRequestEvent
+        if (m_SceneEventCallback)
+        {
+            m_RuntimeScene->SetEventCallback(m_SceneEventCallback);
+        }
+
+        // Clear stale button press flags from the previous scene before starting runtime.
+        if (auto* uiRenderer = ServiceLocator::TryGet<UIRenderer>())
+        {
+            uiRenderer->ResetButtonStates(m_RuntimeScene.get());
+        }
 
         // Configure state directly on the cloned runtime scene.
         // TransitionToState already calls OnRuntimeStart() via OnStateEnter.
@@ -537,7 +563,7 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
                 }
             }
             return true;
-        
+
         case KeyCode::Z:
             if (GetSceneState() != SceneState::Play)
             {

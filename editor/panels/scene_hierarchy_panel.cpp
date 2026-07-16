@@ -1,4 +1,4 @@
-#include "engine/platform/dialogs/file_dialogs.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "scene_hierarchy_panel.h"
 #include "editor/undo/command_history.h"
 #include "editor/types.h"
@@ -314,8 +314,8 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Save as Prefab..."))
         {
-            std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-            auto path = Chained::FileDialogs::SaveFile(filters);
+            std::vector<DialogFilter> filters = {{"Chained Prefab", "chprefab"}};
+            auto path = Chained::Dialogs::SaveFile(filters);
             if (path)
             {
                 if (path->extension().empty()) path->replace_extension(".chprefab");
@@ -350,8 +350,8 @@ void SceneHierarchyPanel::DrawContextMenu()
 
     if (ImGui::MenuItem(ICON_FA_FILE_IMPORT " Load Prefab..."))
     {
-        std::vector<FileDialogFilter> filters = {{"Chained Prefab", "chprefab"}};
-        auto path = Chained::FileDialogs::OpenFile(filters);
+        std::vector<DialogFilter> filters = {{"Chained Prefab", "chprefab"}};
+        auto path = Chained::Dialogs::OpenFile(filters);
         if (path)
         {
             PrefabSerializer::Deserialize(m_Context.get(), path->string());

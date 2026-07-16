@@ -88,6 +88,10 @@ EditorLayer::EditorLayer()
     m_ProjectManager = std::make_unique<EditorProjectManager>();
     m_SceneManager = std::make_unique<EditorSceneManager>(
         m_CommandHistory, *m_ProjectManager, m_Config, m_ViewportSize, m_EditorState, m_Context);
+
+    // Forward scene events (e.g. SceneChangeRequestEvent) back to EditorLayer::OnEvent
+    m_SceneManager->SetSceneEventCallback([this](Event& e) { OnEvent(e); });
+
     m_Panels = std::make_unique<EditorPanels>(*this);
 
     m_Layout = std::make_unique<EditorLayout>(*m_Panels);

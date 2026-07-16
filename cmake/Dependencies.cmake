@@ -28,8 +28,8 @@ include(imgui)
 include(assimp)
 
 include(coral)
-include(nfd)
 include(external_gtest)
+include(portable-file-dialogs)
 # No time for networking right now
 
 # include(protobuf) # Required for GNS
@@ -47,7 +47,6 @@ foreach(_ext_target
     imgui imguizmo
     glfw glad
     Jolt
-    nfd
     GTest gmock
     Coral.Native
     assimp
