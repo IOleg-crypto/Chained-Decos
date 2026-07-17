@@ -24,8 +24,11 @@ bool ProjectExporter::CopyDirRecursive(const fs::path& src, const fs::path& dst,
 
     for (const auto& entry : fs::recursive_directory_iterator(src, ec))
     {
-        if (ec) break;
-        const fs::path rel  = fs::relative(entry.path(), src, ec);
+        if (ec)
+        {
+            break;
+        }
+        const fs::path rel = fs::relative(entry.path(), src, ec);
         const fs::path dest = dst / rel;
         if (entry.is_directory())
         {
@@ -63,8 +66,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         return result;
     }
 
-    const auto& cfg  = project->GetConfig();
-    std::error_code  ec;
+    const auto& cfg = project->GetConfig();
+    std::error_code ec;
 
     // ── 0. Prepare output directory ──────────────────────────────────────────
     fs::create_directories(outputDir, ec);
@@ -96,15 +99,17 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
                 // Pick whichever subfolder contains the game exe.
                 for (const auto& sub : fs::directory_iterator(candidate, ec))
                 {
-                    if (!sub.is_directory()) continue;
+                    if (!sub.is_directory())
+                    {
+                        continue;
+                    }
                     // Look for the runtime exe (name = project name, no "editor" suffix)
                     for (const auto& f : fs::directory_iterator(sub.path(), ec))
                     {
                         std::string fname = f.path().filename().string();
                         // Match e.g. "ChainedDecos.exe" (not "ChainedDecosEditor.exe" or tests)
-                        if (fname.find("Editor") == std::string::npos &&
-                            fname.find("editor") == std::string::npos &&
-                            fname.find("test")   == std::string::npos &&
+                        if (fname.find("Editor") == std::string::npos && fname.find("editor") == std::string::npos &&
+                            fname.find("test") == std::string::npos &&
                             (fname.ends_with(".exe") || fname.find('.') == std::string::npos))
                         {
                             exeDir = sub.path();
@@ -115,7 +120,7 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
             }
             search = search.parent_path();
         }
-        foundExeDir:;
+    foundExeDir:;
     }
 
     CH_CORE_INFO("ProjectExporter: resolved exe dir = '{}'", exeDir.string());
@@ -127,9 +132,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         for (const auto& f : fs::directory_iterator(exeDir, ec))
         {
             std::string fname = f.path().filename().string();
-            if (fname.find("Editor") == std::string::npos &&
-                fname.find("editor") == std::string::npos &&
-                fname.find("test")   == std::string::npos &&
+            if (fname.find("Editor") == std::string::npos && fname.find("editor") == std::string::npos &&
+                fname.find("test") == std::string::npos &&
                 (fname.ends_with(".exe") || (!fname.empty() && fname.find('.') == std::string::npos)))
             {
                 candidates.push_back(f.path());
@@ -138,7 +142,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
 
         if (candidates.empty())
         {
-            result.Error = "Could not find game executable in '" + exeDir.string() + "'. "
+            result.Error = "Could not find game executable in '" + exeDir.string() +
+                           "'. "
                            "Please build the project first.";
             CH_CORE_ERROR("ProjectExporter: {}", result.Error);
             return result;
@@ -147,8 +152,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         // Use the first candidate (usually the only one)
         const fs::path& srcExe = candidates[0];
         // Rename to the project name in the output folder
-        std::string    gameExeName = cfg.Name + srcExe.extension().string();
-        fs::path       dstExe      = outputDir / gameExeName;
+        std::string gameExeName = cfg.Name + srcExe.extension().string();
+        fs::path dstExe = outputDir / gameExeName;
         fs::copy_file(srcExe, dstExe, fs::copy_options::overwrite_existing, ec);
         if (ec)
         {
@@ -162,18 +167,24 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
     // ── 2. Copy all *.dll next to the exe (scripting + mono + dotnet) ────────
     for (const auto& f : fs::directory_iterator(exeDir, ec))
     {
-        if (!f.is_regular_file()) continue;
+        if (!f.is_regular_file())
+        {
+            continue;
+        }
         const std::string ext = f.path().extension().string();
         if (ext == ".dll" || ext == ".so" || ext == ".dylib" || ext == ".json" || ext == ".pdb")
         {
             fs::path dst = outputDir / f.path().filename();
             fs::copy_file(f.path(), dst, fs::copy_options::overwrite_existing, ec);
-            if (ec) { ec.clear(); } // non-fatal: best-effort
+            if (ec)
+            {
+                ec.clear();
+            } // non-fatal: best-effort
         }
     }
 
     // Some runtimes also place .dll in subdirs (e.g. nethost/)
-    for (const std::string& subDirName : { "nethost", "dotnet", "scripts" })
+    for (const std::string& subDirName : {"nethost", "dotnet", "scripts"})
     {
         fs::path subSrc = exeDir / subDirName;
         if (fs::exists(subSrc))
@@ -190,14 +201,22 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         fs::path srcProject;
         for (const auto& f : fs::directory_iterator(exeDir, ec))
         {
-            if (f.path().extension() == ".chproject") { srcProject = f.path(); break; }
+            if (f.path().extension() == ".chproject")
+            {
+                srcProject = f.path();
+                break;
+            }
         }
         if (srcProject.empty())
         {
             // Fall back: find in the game/chaineddecos directory
             for (const auto& f : fs::directory_iterator(projectDir, ec))
             {
-                if (f.path().extension() == ".chproject") { srcProject = f.path(); break; }
+                if (f.path().extension() == ".chproject")
+                {
+                    srcProject = f.path();
+                    break;
+                }
             }
         }
 
@@ -205,7 +224,11 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         {
             fs::path dst = outputDir / srcProject.filename();
             fs::copy_file(srcProject, dst, fs::copy_options::overwrite_existing, ec);
-            if (ec) { CH_CORE_WARN("ProjectExporter: could not copy .chproject: {}", ec.message()); ec.clear(); }
+            if (ec)
+            {
+                CH_CORE_WARN("ProjectExporter: could not copy .chproject: {}", ec.message());
+                ec.clear();
+            }
         }
         else
         {

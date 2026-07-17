@@ -184,12 +184,10 @@ void Update(entt::registry& reg, Timestep ts)
         // Ensure the audio is loaded
         if (!audio.SoundPath.empty())
         {
-            if (audio.SoundHandle == 0)
+            if (audio.SoundHandle == 0 || !ServiceLocator::Get<Audio>()->IsSoundLoaded(audio.SoundHandle))
             {
-                if (!ServiceLocator::Get<Audio>()->IsSoundLoaded(audio.SoundHandle))
-                {
-                    audio.SoundHandle = ServiceLocator::Get<Audio>()->LoadSound(audio.SoundPath);
-                }
+                CH_CORE_INFO("AudioComponent: Loading sound: {}", audio.SoundPath);
+                audio.SoundHandle = ServiceLocator::Get<Audio>()->LoadSound(audio.SoundPath);
             }
         }
 
@@ -228,6 +226,13 @@ void OnRuntimeStart(Scene* scene)
         IPhysicsWorld* world = physics.GetWorld();
         CH_CORE_INFO("SceneResources::OnRuntimeStart - World pointer obtained: {}", (void*)world);
         registry.ctx().emplace<IPhysicsWorld*>(world);
+    }
+
+    auto view = registry.view<AudioComponent>();
+    for (auto entity : view)
+    {
+        auto& audio = view.get<AudioComponent>(entity);
+        audio.IsPlaying = false;
     }
 
     CH_CORE_INFO("SceneResources::OnRuntimeStart - Done");
