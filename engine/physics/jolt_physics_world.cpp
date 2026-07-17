@@ -9,9 +9,12 @@
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
+#include <Jolt/Physics/Collision/Shape/ScaledShape.h>
 #include <Jolt/Physics/Collision/Shape/SphereShape.h>
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/RegisterTypes.h>
+
+#include <chrono>
 
 namespace Chained
 {
@@ -163,55 +166,88 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             break;
         }
 
+        // The cache holds the bare, unscaled BVH keyed by model path. Scale (ScaledShape)
+        // and offset (RotatedTranslatedShape) are layered on afterwards as cheap decorators,
+        // so every instance of the same model — regardless of scale or offset — reuses one BVH.
+        JPH::ShapeRefC baseShape;
+        bool cached = false;
         if (!desc.CacheKey.empty())
         {
             auto it = m_MeshShapeCache.find(desc.CacheKey);
             if (it != m_MeshShapeCache.end())
             {
-                shape = it->second;
+                baseShape = it->second;
+                cached = true;
+            }
+        }
+
+        if (!cached)
+        {
+            const auto buildStart = std::chrono::steady_clock::now();
+            JPH::TriangleList joltTris;
+            joltTris.reserve(desc.Triangles.size());
+            for (const auto& t : desc.Triangles)
+            {
+                JPH::Triangle tri(JPH::Float3(t.V0.x, t.V0.y, t.V0.z), JPH::Float3(t.V1.x, t.V1.y, t.V1.z),
+                                  JPH::Float3(t.V2.x, t.V2.y, t.V2.z));
+                JPH::Vec3 v0 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[0]);
+                JPH::Vec3 v1 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[1]);
+                JPH::Vec3 v2 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[2]);
+                JPH::Vec3 e1 = v1 - v0;
+                JPH::Vec3 e2 = v2 - v0;
+                if (e1.Cross(e2).LengthSq() < 1e-20f)
+                {
+                    continue;
+                }
+                joltTris.push_back(tri);
+            }
+
+            if (joltTris.empty())
+            {
+                CH_CORE_WARN("Physics: All mesh triangles degenerate — falling back to unit box.");
+                shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
                 break;
             }
-        }
 
-        JPH::TriangleList joltTris;
-        joltTris.reserve(desc.Triangles.size());
-        for (const auto& t : desc.Triangles)
-        {
-            JPH::Triangle tri(JPH::Float3(t.V0.x, t.V0.y, t.V0.z), JPH::Float3(t.V1.x, t.V1.y, t.V1.z),
-                              JPH::Float3(t.V2.x, t.V2.y, t.V2.z));
-            JPH::Vec3 v0 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[0]);
-            JPH::Vec3 v1 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[1]);
-            JPH::Vec3 v2 = JPH::Vec3::sLoadFloat3Unsafe(tri.mV[2]);
-            JPH::Vec3 e1 = v1 - v0;
-            JPH::Vec3 e2 = v2 - v0;
-            if (e1.Cross(e2).LengthSq() < 1e-20f)
+            JPH::MeshShapeSettings s(std::move(joltTris));
+            s.mBuildQuality = JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed;
+            auto result = s.Create();
+            if (result.HasError())
             {
-                continue;
+                CH_CORE_ERROR("Physics: MeshShape build failed: {} — falling back to unit box.",
+                              result.GetError().c_str());
+                shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+                break;
             }
-            joltTris.push_back(tri);
-        }
 
-        if (joltTris.empty())
-        {
-            CH_CORE_WARN("Physics: All mesh triangles degenerate — falling back to unit box.");
-            shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-            break;
-        }
-
-        JPH::MeshShapeSettings s(std::move(joltTris));
-        s.mBuildQuality = JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed;
-        auto result = s.Create();
-        if (result.HasError())
-        {
-            CH_CORE_ERROR("Physics: MeshShape build failed: {} — falling back to unit box.", result.GetError().c_str());
-            shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        }
-        else
-        {
-            shape = result.Get();
+            baseShape = result.Get();
             if (!desc.CacheKey.empty())
             {
-                m_MeshShapeCache[desc.CacheKey] = shape;
+                m_MeshShapeCache[desc.CacheKey] = baseShape;
+            }
+
+            const auto buildEnd = std::chrono::steady_clock::now();
+            const double buildMs =
+                std::chrono::duration<double, std::milli>(buildEnd - buildStart).count();
+            CH_CORE_INFO("Physics: Built mesh BVH ({} tris) in {:.2f} ms{} [key='{}']", joltTris.size(), buildMs,
+                         desc.CacheKey.empty() ? " (uncached)" : " (cached)", desc.CacheKey);
+        }
+
+        // Apply per-instance scale as a decorator (identity scale needs no wrapper).
+        shape = baseShape;
+        if (desc.MeshScale != glm::vec3(1.0f))
+        {
+            JPH::ScaledShapeSettings scaledSettings(
+                baseShape, JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
+            auto scaledResult = scaledSettings.Create();
+            if (!scaledResult.HasError())
+            {
+                shape = scaledResult.Get();
+            }
+            else
+            {
+                CH_CORE_WARN("Physics: ScaledShape build failed: {} — using unscaled mesh.",
+                             scaledResult.GetError().c_str());
             }
         }
         break;

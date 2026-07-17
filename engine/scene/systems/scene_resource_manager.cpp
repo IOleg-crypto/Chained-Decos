@@ -385,8 +385,12 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
         const auto& rawMeshes = modelAsset->GetRawMeshes();
         const auto& instances = modelAsset->GetInstances();
 
-        
-        glm::vec3 colliderOffset = collider->Offset;
+        // Scale and offset are NOT baked into the triangles: scale is applied via a
+        // ScaledShape and offset via a translated decorator in CreateBody. This keeps the
+        // triangle data (and therefore the built BVH) identical for every instance of the
+        // same model, so they can share a single cached shape keyed by model path.
+        desc.MeshScale = transform.Scale;
+        desc.CacheKey = modelPath;
 
         for (const auto& inst : instances)
         {
@@ -401,8 +405,8 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
                 continue;
             }
 
-            
-            glm::mat4 meshToLocal = glm::scale(glm::mat4(1.0f), transform.Scale) * inst.localTransform;
+            // Model-local only — no entity scale, no collider offset.
+            const glm::mat4& meshToLocal = inst.localTransform;
 
             for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
             {
@@ -425,15 +429,9 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
                 glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
 
                 PhysicsTriangle tri;
-                
                 tri.V0 = glm::vec3(meshToLocal * glm::vec4(v0, 1.0f));
                 tri.V1 = glm::vec3(meshToLocal * glm::vec4(v1, 1.0f));
                 tri.V2 = glm::vec3(meshToLocal * glm::vec4(v2, 1.0f));
-
-                
-                tri.V0 += colliderOffset;
-                tri.V1 += colliderOffset;
-                tri.V2 += colliderOffset;
 
                 desc.Triangles.push_back(tri);
             }
