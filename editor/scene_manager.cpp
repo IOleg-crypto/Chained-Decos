@@ -4,7 +4,7 @@
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene.h"
@@ -369,7 +369,7 @@ void EditorSceneManager::UpdateSceneOpenTransition()
             }
 
             // Clear stale button press flags from the previous scene before starting runtime.
-            if (auto* uiRenderer = ServiceLocator::TryGet<UIRenderer>())
+            if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
             {
                 uiRenderer->ResetButtonStates(m_RuntimeScene.get());
             }
@@ -481,7 +481,7 @@ void EditorSceneManager::UpdatePlayModeTransition()
         }
 
         // Clear stale button press flags from the previous scene before starting runtime.
-        if (auto* uiRenderer = ServiceLocator::TryGet<UIRenderer>())
+        if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
         {
             uiRenderer->ResetButtonStates(m_RuntimeScene.get());
         }

@@ -13,7 +13,7 @@
 #include "engine/core/profiler.h"
 #include "engine/common/thread_pool.h"
 #include "engine/graphics/api/graphics_device.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/project/project.h"
 #include "panels/property_editor.h"
@@ -78,7 +78,7 @@ EditorLayer::EditorLayer()
     // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
     m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
     m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
-    m_Context.UI = ServiceLocator::TryGet<UIRenderer>(); // null in headless mode
+    m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>(); // null in headless mode
 
     // Default debug settings
     GetDebugRenderFlags().DrawColliders = true;
@@ -327,9 +327,29 @@ void EditorLayer::OnUpdate(Timestep ts)
     // We just call OnUpdate on the active scene
     if (auto scene = GetActiveScene())
     {
-        // If scene is in Play mode, ask ScriptEngine to execute scripts
-        if (scene->GetSceneState() == SceneState::Play)
+        // Detect Edit->Play transition. The same physical click that pressed the
+        // Play toolbar button is still reported by ImGui::IsMouseClicked this
+        // frame, so suppress UI input once to stop it leaking into game widgets.
+        SceneState state = scene->GetSceneState();
+        if (state == SceneState::Play && m_PrevSceneState != SceneState::Play)
         {
+            m_SuppressNextUIInput = true;
+        }
+        m_PrevSceneState = state;
+
+        // If scene is in Play mode, ask ScriptEngine to execute scripts
+        if (state == SceneState::Play)
+        {
+            // Process UI input before scripts read widget state, unconditionally
+            // each frame (see WidgetRenderer::ProcessInput). Keeps a one-frame
+            // click edge from sticking when the viewport canvas isn't drawn.
+            if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+            {
+                bool suppress = m_SuppressNextUIInput;
+                m_SuppressNextUIInput = false;
+                uiRenderer->ProcessInput(scene.get(), suppress);
+            }
+
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
             if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
             {

@@ -151,6 +151,8 @@ namespace Chained
         internal static unsafe delegate* unmanaged<bool, void> Window_SetFullscreen_Ptr;
         internal static unsafe delegate* unmanaged<bool, void> Window_SetVSync_Ptr;
         internal static unsafe delegate* unmanaged<bool, void> Window_SetAntialiasing_Ptr;
+        internal static unsafe delegate* unmanaged<int, void> Window_SetAntiAliasingSamples_Ptr;
+        internal static unsafe delegate* unmanaged<char*> Window_GetSupportedResolution_Ptr;
 #pragma warning restore 0649
 
         /// <summary>Sets the window size.</summary>
@@ -179,6 +181,21 @@ namespace Chained
         {
             if (Window_SetAntialiasing_Ptr == null) return;
             Window_SetAntialiasing_Ptr(enabled);
+        }
+
+        /// <summary>Sets the MSAA sample count (0, 2, 4, or 8). Recreates the HDR framebuffer with the new sample count.</summary>
+        public static unsafe void SetAntiAliasingSamples(int samples)
+        {
+            if (Window_SetAntiAliasingSamples_Ptr == null) return;
+            Window_SetAntiAliasingSamples_Ptr(samples);
+        }
+
+        /// <summary>Returns all supported resolutions as a semicolon-separated string (e.g. "1920x1080;1280x720").</summary>
+        public static unsafe string GetSupportedResolutions()
+        {
+            if (Window_GetSupportedResolution_Ptr == null) return "";
+            char* ptr = Window_GetSupportedResolution_Ptr();
+            return ptr != null ? new string(ptr) : "";
         }
     }
 

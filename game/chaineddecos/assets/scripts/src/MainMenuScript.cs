@@ -15,16 +15,11 @@ namespace ChainedDecos.Scripts
         public override void OnUpdate(float deltaTime)
         {
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
-            if (btn != null && btn.IsPressed)
+            if (btn != null && btn.IsClicked)
             {
                 if (!string.IsNullOrEmpty(TargetScene))
                 {
-                    Log.Info($"MainMenuScript: Loading scene: {TargetScene}");
                     Scene.LoadScene(TargetScene);
-                }
-                else
-                {
-                    Log.Warn("MainMenuScript: TargetScene is empty!");
                 }
             }
         }

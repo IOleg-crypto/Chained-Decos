@@ -1,6 +1,6 @@
 #include "ui_manipulator.h"
 #include "engine/core/log.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/scene.h"
@@ -27,7 +27,7 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
     auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
     Scene* scene = (sceneCtx && *sceneCtx) ? *sceneCtx : nullptr;
-    auto* uiRenderer = ServiceLocator::Get<UIRenderer>();
+    auto* uiRenderer = ServiceLocator::Get<WidgetRenderer>();
     UIRect rect = (scene && uiRenderer) ? uiRenderer->GetEntityRect(scene, selectedEntity, viewportSize, viewportPos)
                                         : UIRect{};
 

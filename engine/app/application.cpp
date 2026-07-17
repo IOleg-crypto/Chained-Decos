@@ -8,7 +8,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/audio/audio.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/component_registry.h"
@@ -73,7 +73,7 @@ Application::Application(const ApplicationSpecification& spec)
     if (!m_Specification.Headless)
     {
         ServiceLocator::Provide<Renderer>(new Renderer());
-        ServiceLocator::Provide<UIRenderer>(new UIRenderer());
+        ServiceLocator::Provide<WidgetRenderer>(new WidgetRenderer());
         ServiceLocator::Provide<DebugRenderer>(new DebugRenderer());
     }
     ServiceLocator::Provide<Audio>(new Audio());

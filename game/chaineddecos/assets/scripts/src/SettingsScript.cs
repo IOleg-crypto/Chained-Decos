@@ -5,18 +5,63 @@ namespace ChainedDecos.Scripts
 {
     public class SettingsScript : Script
     {
-        public override void OnCreate()
+        private bool m_WasApplied = false;
+
+        public override void OnStart()
         {
-            Log.Info("SettingsScript: Initialized");
+            PopulateResolutions();
+            Log.Info("Resolutions populated");
+            PopulateAntiAliasing();
+            Log.Info("Anti-aliasing populated");
+        }
+
+        private void PopulateResolutions()
+        {
+            Entity? resEnt = Scene.FindEntityByTag("resolution");
+            ComboBoxControl? combo = resEnt?.GetComponent<ComboBoxControl>();
+            if (combo == null) return;
+
+            combo.ClearItems();
+            string resolutions = AppWindow.GetSupportedResolutions();
+            if (string.IsNullOrEmpty(resolutions)) return;
+
+            foreach (string res in resolutions.Split(';'))
+            {
+                if (!string.IsNullOrEmpty(res))
+                    combo.AddItem(res);
+            }
+        }
+
+        private void PopulateAntiAliasing()
+        {
+            Entity? aaEnt = Scene.FindEntityByTag("anti_aliasing_combobox");
+            ComboBoxControl? combo = aaEnt?.GetComponent<ComboBoxControl>();
+            if (combo == null) return;
+
+            combo.ClearItems();
+            combo.AddItem("None");
+            combo.AddItem("2x MSAA");
+            combo.AddItem("4x MSAA");
+            combo.AddItem("8x MSAA");
+            combo.SelectedIndex = 2;
         }
 
         public override void OnUpdate(float deltaTime)
         {
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
-            if (btn?.IsPressed ?? false)
+            if (btn == null) return;
+
+            bool isPressed = btn.IsClicked;
+
+            if (isPressed && !m_WasApplied)
             {
-                Log.Info("SettingsScript: Apply button pressed, applying settings...");
+                m_WasApplied = true;
                 ApplySettings();
+                Log.Info("Settings applied");
+            }
+            else if (!btn.IsDown)
+            {
+                m_WasApplied = false;
             }
         }
 
@@ -27,18 +72,15 @@ namespace ChainedDecos.Scripts
             if (resEnt != null)
             {
                 ComboBoxControl? combo = resEnt.GetComponent<ComboBoxControl>();
-                if (combo != null)
+                if (combo != null && combo.ItemCount > 0)
                 {
                     string? resStr = combo.GetItem(combo.SelectedIndex);
                     if (!string.IsNullOrEmpty(resStr))
                     {
                         string[] parts = resStr.Split('x');
-                        if (parts.Length == 2)
+                        if (parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h))
                         {
-                            int w = int.Parse(parts[0]);
-                            int h = int.Parse(parts[1]);
                             AppWindow.SetSize(w, h);
-                            Log.Info($"SettingsScript: Set Resolution to {w}x{h}");
                         }
                     }
                 }
@@ -50,10 +92,7 @@ namespace ChainedDecos.Scripts
             {
                 CheckboxControl? check = fullEnt.GetComponent<CheckboxControl>();
                 if (check != null)
-                {
                     AppWindow.SetFullscreen(check.IsChecked);
-                    Log.Info($"SettingsScript: Set Fullscreen to {check.IsChecked}");
-                }
             }
 
             // 3. VSync (Checkbox)
@@ -62,25 +101,22 @@ namespace ChainedDecos.Scripts
             {
                 CheckboxControl? check = vsyncEnt.GetComponent<CheckboxControl>();
                 if (check != null)
-                {
                     AppWindow.SetVSync(check.IsChecked);
-                    Log.Info($"SettingsScript: Set VSync to {check.IsChecked}");
-                }
             }
 
-            // 4. Anti-aliasing (Checkbox)
-            Entity? aaEnt = Scene.FindEntityByTag("option_aa");
+            // 4. Anti-aliasing (ComboBox)
+            Entity? aaEnt = Scene.FindEntityByTag("anti_aliasing_combobox");
             if (aaEnt != null)
             {
-                CheckboxControl? check = aaEnt.GetComponent<CheckboxControl>();
-                if (check != null)
+                ComboBoxControl? combo = aaEnt.GetComponent<ComboBoxControl>();
+                if (combo != null && combo.ItemCount > 0)
                 {
-                    AppWindow.SetAntialiasing(check.IsChecked);
-                    Log.Info($"SettingsScript: Set Anti-aliasing to {check.IsChecked}");
+                    int[] aaValues = { 0, 2, 4, 8 };
+                    int idx = combo.SelectedIndex;
+                    if (idx >= 0 && idx < aaValues.Length)
+                        AppWindow.SetAntiAliasingSamples(aaValues[idx]);
                 }
             }
-
-            Log.Info("SettingsScript: Settings Applied Successfully!");
         }
     }
 }

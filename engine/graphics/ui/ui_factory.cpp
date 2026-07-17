@@ -25,6 +25,11 @@ bool UIFactory::Create(const std::string& type, Entity entity)
     return false;
 }
 
+void UIFactory::Clear()
+{
+    s_Builders.clear();
+}
+
 void UIFactory::Initialize()
 {
     if (!s_Builders.empty())
@@ -36,7 +41,7 @@ void UIFactory::Initialize()
     Register("Panel", [](Entity e) { e.AddComponent<UIControlComponent>().Data = PanelData{}; });
     Register("Label", [](Entity e) { e.AddComponent<UIControlComponent>().Data = LabelData{}; });
     Register("Slider", [](Entity e) { e.AddComponent<UIControlComponent>().Data = SliderData{}; });
-    Register("CheckBox", [](Entity e) { e.AddComponent<UIControlComponent>().Data = CheckboxData{}; });
+    Register("Checkbox", [](Entity e) { e.AddComponent<UIControlComponent>().Data = CheckboxData{}; });
     Register("InputText", [](Entity e) { e.AddComponent<UIControlComponent>().Data = InputTextData{}; });
     Register("ComboBox", [](Entity e) { e.AddComponent<UIControlComponent>().Data = ComboBoxData{}; });
     Register("ProgressBar", [](Entity e) { e.AddComponent<UIControlComponent>().Data = ProgressBarData{}; });
@@ -51,8 +56,14 @@ void UIFactory::Initialize()
     Register("TabBar", [](Entity e) { e.AddComponent<UIControlComponent>().Data = TabBarData{}; });
     Register("TabItem", [](Entity e) { e.AddComponent<UIControlComponent>().Data = TabItemData{}; });
     Register("CollapsingHeader", [](Entity e) { e.AddComponent<UIControlComponent>().Data = CollapsingHeaderData{}; });
-    Register("PlotLines", [](Entity e) { e.AddComponent<UIControlComponent>().Data = PlotLinesData{}; });
-    Register("PlotHistogram", [](Entity e) { e.AddComponent<UIControlComponent>().Data = PlotHistogramData{}; });
+    Register("PlotLines", [](Entity e) {
+        PlotData d; d.Mode = PlotMode::Lines;
+        e.AddComponent<UIControlComponent>().Data = d;
+    });
+    Register("PlotHistogram", [](Entity e) {
+        PlotData d; d.Mode = PlotMode::Histogram;
+        e.AddComponent<UIControlComponent>().Data = d;
+    });
     Register("VerticalLayoutGroup",
              [](Entity e) { e.AddComponent<UIControlComponent>().Data = VerticalLayoutGroupData{}; });
     Register("UIAction", [](Entity e) { e.AddComponent<UIActionComponent>(); });

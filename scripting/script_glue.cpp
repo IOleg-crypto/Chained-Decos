@@ -194,6 +194,8 @@ void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
     assembly.AddInternalCall("Chained.AppWindow", "Window_SetFullscreen_Ptr",     (void*)&Window_SetFullscreen);
     assembly.AddInternalCall("Chained.AppWindow", "Window_SetVSync_Ptr",          (void*)&Window_SetVSync);
     assembly.AddInternalCall("Chained.AppWindow", "Window_SetAntialiasing_Ptr",   (void*)&Window_SetAntialiasing);
+    assembly.AddInternalCall("Chained.AppWindow", "Window_SetAntiAliasingSamples_Ptr", (void*)&Window_SetAntiAliasingSamples);
+    assembly.AddInternalCall("Chained.AppWindow", "Window_GetSupportedResolution_Ptr", (void*)&Window_GetSupportedResolution);
 
     // ── Physics ─────────────────────────────────────────────────────
     assembly.AddInternalCall("Chained.Physics", "Physics_GetGravity_Ptr", (void*)&Physics_GetGravity);

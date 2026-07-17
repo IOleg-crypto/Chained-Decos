@@ -11,7 +11,7 @@
 #include "engine/core/window.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/imgui/imgui_layer.h"
 #include "engine/physics/physics.h"
 #include "engine/project/project.h"
@@ -61,7 +61,7 @@ RuntimeLayer::RuntimeLayer(const std::string& projectPath)
     // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
     m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
     m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
-    m_Context.UI = ServiceLocator::TryGet<UIRenderer>(); // null in headless mode
+    m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>(); // null in headless mode
     m_Renderer = ServiceLocator::Get<Renderer>();
     m_AssetManager = ServiceLocator::Get<AssetManager>();
 }
@@ -90,7 +90,7 @@ void RuntimeLayer::OnAttach()
     InitProject(m_ProjectPath);
 
     if (ImFont* projectDefaultFont =
-            ServiceLocator::Get<UIRenderer>()->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+            ServiceLocator::Get<WidgetRenderer>()->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
     {
         io.FontDefault = projectDefaultFont;
         CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
@@ -140,17 +140,27 @@ void RuntimeLayer::OnUpdate(Timestep ts)
             // Clear stale button press flags from the previous scene before starting runtime.
             // Without this, a button press that triggered the scene change would still be "pressed"
             // on the first frame of the new scene, causing immediate unintended transitions.
-            ServiceLocator::Get<UIRenderer>()->ResetButtonStates(m_Scene.get());
+            ServiceLocator::Get<WidgetRenderer>()->ResetButtonStates(m_Scene.get());
             // TransitionToState handles OnRuntimeStart internally — this is the single call site.
             m_Scene->TransitionToState(SceneState::Play, m_Context);
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
+            m_SuppressNextUIInput = true;
             CH_CORE_INFO("RuntimeSystem: Scene assets are ready, entering runtime.");
         }
     }
 
     if (m_Scene && m_RuntimeStarted)
     {
+        // Process UI input BEFORE scripts run, unconditionally each frame. This
+        // guarantees PressedThisFrame is reset every frame regardless of whether
+        // the canvas is drawn this frame (BeginChild can be skipped when the
+        // window is collapsed/clipped), so a one-frame click edge never sticks
+        // and re-fires script actions on subsequent frames.
+        bool suppress = m_SuppressNextUIInput;
+        m_SuppressNextUIInput = false;
+        ServiceLocator::Get<WidgetRenderer>()->ProcessInput(m_Scene.get(), suppress);
+
         m_Scene->OnUpdateRuntime(ts, m_Context);
     }
 
@@ -218,6 +228,7 @@ void RuntimeLayer::OnRender(Timestep ts)
         m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip,
                                      options);
         m_HDRFramebuffer->Unbind();
+        m_HDRFramebuffer->Resolve();
 
         m_Renderer->SetViewport(0, 0, (int)width, (int)height);
         m_Renderer->Clear(bgColor);
@@ -278,7 +289,7 @@ void RuntimeLayer::OnImGuiRender()
                 {
                     ImVec2 canvasPos = ImGui::GetCursorScreenPos();
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-                    ServiceLocator::Get<UIRenderer>()->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                    ServiceLocator::Get<WidgetRenderer>()->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     m_Scene->OnRenderUI();
                 }
                 ImGui::EndChild();
@@ -398,7 +409,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     // Discover project fonts once before any scene loads.
-    ServiceLocator::Get<UIRenderer>()->LoadProjectFonts();
+    ServiceLocator::Get<WidgetRenderer>()->LoadProjectFonts();
 
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
@@ -641,7 +652,7 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
     }
 
     const int loadedCount =
-        ServiceLocator::Get<UIRenderer>()->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+        ServiceLocator::Get<WidgetRenderer>()->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
     if (loadedCount <= 0)
     {
         return;
@@ -710,6 +721,11 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
         }
     }
 
+    // Suppress UI input for the entire loading phase so that a stale ImGui
+    // IsMouseClicked edge (from the click that triggered the scene change) cannot
+    // fire button callbacks during the loading-overlay frames before Play starts.
+    m_SuppressNextUIInput = true;
+
     PreloadSceneFonts(ImGui::GetFrameCount() > 0);
 
     m_IsBoostingUploads = true;
@@ -738,13 +754,24 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
         return;
     }
 
+    auto project = Project::GetActive();
+    int samples = project ? project->GetConfig().Render.AntiAliasingSamples : 4;
+    uint32_t configuredSamples = samples > 1 ? (uint32_t)samples : 1u;
+
+    if (m_HDRFramebuffer && configuredSamples != m_HDRFramebufferSamples)
+    {
+        m_HDRFramebuffer.reset();
+    }
+
     if (!m_HDRFramebuffer)
     {
         FramebufferSpecification hdrSpec;
         hdrSpec.Width = width;
         hdrSpec.Height = height;
+        hdrSpec.Samples = configuredSamples;
         hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
         m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
+        m_HDRFramebufferSamples = configuredSamples;
     }
     else
     {

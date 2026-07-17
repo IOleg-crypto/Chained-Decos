@@ -45,6 +45,7 @@ public:
     virtual void SetGravity(float gravity) override;
 
     virtual bool IsBodyGrounded(PhysicsBodyHandle handle) const override;
+    virtual bool IsBodyActive(PhysicsBodyHandle handle) const override;
 
     /// Clear all grounded state (call before/after world reset).
     virtual void ClearGroundedState() override;

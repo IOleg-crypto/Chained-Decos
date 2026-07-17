@@ -5,18 +5,22 @@
 
 #include <variant>
 
-namespace YAML {
+namespace YAML
+{
 class Emitter;
 class Node;
-}
+} // namespace YAML
 
-using namespace Chained;
+namespace Chained
+{
 
 enum WidgetType : int
 {
     WidgetType_None = 0,
     WidgetType_Button = 1,
+    // 2 was removed (legacy)
     WidgetType_Label = 3,
+    // 4 was removed (legacy)
     WidgetType_Slider = 5,
     WidgetType_Checkbox = 6,
     WidgetType_ProgressBar = 7,
@@ -106,7 +110,7 @@ struct InputTextData
 struct ComboBoxData
 {
     std::string Label = "Combo";
-    std::vector<std::string> Items = {"Option 1", "Option 2", "Option 3"};
+    std::vector<std::string> Items;
     int SelectedIndex = 0;
 
     void Serialize(YAML::Emitter& out) const;
@@ -245,8 +249,15 @@ struct CollapsingHeaderData
     static CollapsingHeaderData Deserialize(YAML::Node widgetNode);
 };
 
-struct PlotLinesData
+enum class PlotMode : uint8_t
 {
+    Lines,
+    Histogram,
+};
+
+struct PlotData
+{
+    PlotMode Mode = PlotMode::Lines;
     std::string Label = "Plot";
     std::vector<float> Values = {0.0f, 0.5f, 1.0f, 0.5f, 0.0f};
     std::string OverlayText = "";
@@ -255,21 +266,12 @@ struct PlotLinesData
     glm::vec2 GraphSize = {0, 80};
 
     void Serialize(YAML::Emitter& out) const;
-    static PlotLinesData Deserialize(YAML::Node widgetNode);
+    static PlotData Deserialize(YAML::Node widgetNode);
 };
 
-struct PlotHistogramData
-{
-    std::string Label = "Histogram";
-    std::vector<float> Values = {0.2f, 0.5f, 0.8f, 0.4f, 0.6f};
-    std::string OverlayText = "";
-    float ScaleMin = 0.0f;
-    float ScaleMax = 1.0f;
-    glm::vec2 GraphSize = {0, 80};
-
-    void Serialize(YAML::Emitter& out) const;
-    static PlotHistogramData Deserialize(YAML::Node widgetNode);
-};
+// Backward-compatible aliases for existing code
+using PlotLinesData = PlotData;
+using PlotHistogramData = PlotData;
 
 struct VerticalLayoutGroupData
 {
@@ -280,32 +282,14 @@ struct VerticalLayoutGroupData
     static VerticalLayoutGroupData Deserialize(YAML::Node widgetNode);
 };
 
-using ControlData = std::variant<
-    std::monostate,
-    ButtonData,
-    PanelData,
-    LabelData,
-    SliderData,
-    CheckboxData,
-    InputTextData,
-    ComboBoxData,
-    ProgressBarData,
-    ImageData,
-    ImageButtonData,
-    SeparatorData,
-    RadioButtonData,
-    ColorPickerData,
-    DragFloatData,
-    DragIntData,
-    TreeNodeData,
-    TabBarData,
-    TabItemData,
-    CollapsingHeaderData,
-    PlotLinesData,
-    PlotHistogramData,
-    VerticalLayoutGroupData
->;
+using ControlData =
+    std::variant<std::monostate, ButtonData, PanelData, LabelData, SliderData, CheckboxData, InputTextData,
+                 ComboBoxData, ProgressBarData, ImageData, ImageButtonData, SeparatorData, RadioButtonData,
+                 ColorPickerData, DragFloatData, DragIntData, TreeNodeData, TabBarData, TabItemData,
+                 CollapsingHeaderData, PlotData, VerticalLayoutGroupData>;
 
 ControlData DeserializeControlData(int widgetType, YAML::Node widgetNode);
+
+} // namespace Chained
 
 #endif

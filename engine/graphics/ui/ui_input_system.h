@@ -7,11 +7,11 @@
 namespace Chained
 {
 
-class UIInputSystem
-{
-public:
-    void Update(entt::registry& registry, const UILayoutSystem& layout, int inputCooldown);
-};
+// Processes mouse input against UI widgets each frame.
+// Resets all widget flags, then hit-tests active widgets by Z-order.
+// When suppress is true, flags are reset but no input is processed
+// (used on the first frame after a scene load).
+void UpdateUIInput(entt::registry& registry, const UILayoutSystem& layout, bool suppress = false);
 
 } // namespace Chained
 

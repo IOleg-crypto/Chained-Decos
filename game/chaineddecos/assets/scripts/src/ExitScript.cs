@@ -3,23 +3,16 @@ using Chained;
 
 namespace ChainedDecos.Scripts
 {
-public class ExitScript : Script
-{
-    public override void OnUpdate(float deltaTime)
+    public class ExitScript : Script
     {
-        ButtonControl? btn = Entity.GetComponent<ButtonControl>();
-        if (btn != null)
+        public override void OnUpdate(float deltaTime)
         {
-            if (btn.IsClicked)
+            ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+            if (btn != null && btn.IsClicked)
             {
-                Log.Info($"[ExitScript] btn.IsDown is TRUE on frame update (deltaTime: {deltaTime}). Calling Application.Close().");
+                Log.Info("Exit button clicked");
                 Application.Close();
             }
         }
-        else
-        {
-            Log.Warn("[ExitScript] ButtonControl is null!");
-        }
     }
-}
 }
