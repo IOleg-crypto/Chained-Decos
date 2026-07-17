@@ -35,117 +35,63 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 17250625338590050243
-    TagComponent:
-      Tag: back_button
+  - Entity: 17578713992548607061
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: title_map_selection
     IDComponent:
       {}
-    Scene TransitionComponent:
-      TargetScenePath: ""
-      Triggered: false
     WidgetComponent:
       Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [56, 178, 166, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 8
-        Border Size: 1
-        Border Color: [255, 255, 255, 28]
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
         Gradient: false
         Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
       Text Style:
         Font Name: Default
-        Font Size: 18
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
-        Letter Spacing: 1
+        Font Size: 40
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
+        Letter Spacing: 2
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 1
-      Label: Back
-      Interactable: true
+      Widget Type: 3
+      Text: Select Map
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-665.581421, 380.477661]
-        OffsetMax: [-565.581421, 420.477661]
+        OffsetMin: [-674.3255, -385.501434]
+        OffsetMax: [-391.005341, -345.501465]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 15799784606898686376
-    TagComponent:
-      Tag: btn_map_bravo
+  - Entity: 1168406300525845564
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    IDComponent:
-      {}
-    Scene TransitionComponent:
-      TargetScenePath: ""
-      Triggered: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [56, 178, 166, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 10
-        Border Size: 1
-        Border Color: [255, 255, 255, 28]
-        Gradient: false
-        Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
-      Text Style:
-        Font Name: Default
-        Font Size: 22
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
-        Letter Spacing: 1.20000005
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Training Grounds
-      Interactable: true
-      Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-518.681274, -6.00951385]
-        OffsetMax: [-182.591827, 81.208374]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 14078549875669586548
     TagComponent:
       Tag: btn_map_alpha
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: ""
+      TargetScenePath: scenes/rpg_strategy_scene.chscene
       Triggered: false
     WidgetComponent:
       Box Style:
@@ -185,46 +131,100 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 4128968418240395316
-    TagComponent:
-      Tag: title_map_selection
+  - Entity: 14259086352753581463
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
+    TagComponent:
+      Tag: btn_map_bravo
     IDComponent:
       {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/test_platform_scene.chscene
+      Triggered: false
     WidgetComponent:
       Box Style:
-        BG Color: [0, 0, 0, 0]
-        Hover Color: [0, 0, 0, 0]
-        Pressed Color: [0, 0, 0, 0]
-        Rounding: 0
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 10
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
         Gradient: false
         Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: Default
-        Font Size: 40
-        Text Color: [110, 231, 211, 255]
-        Shadow: true
-        Letter Spacing: 2
+        Font Size: 22
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Letter Spacing: 1.20000005
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 3
-      Text: Select Map
+      Widget Type: 1
+      Label: Training Grounds
+      Interactable: true
       Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-674.3255, -385.501434]
-        OffsetMax: [-391.005341, -345.501465]
+        OffsetMin: [-518.681274, -6.00951385]
+        OffsetMax: [-182.591827, 81.208374]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+  - Entity: 8212823074540799871
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: back_button
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/start_menu.chscene
+      Triggered: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: Default
+        Font Size: 18
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Back
+      Interactable: true
+      Auto Size: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-665.581421, 380.477661]
+        OffsetMax: [-565.581421, 420.477661]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]

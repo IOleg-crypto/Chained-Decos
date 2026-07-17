@@ -1,12 +1,12 @@
 #include "world_panel.h"
 #include "editor/layer.h"
+#include "editor/project/project_serializer.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
-#include "editor/project/project_serializer.h"
 #include "scene/scene.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include <filesystem>
@@ -15,8 +15,8 @@
 namespace Chained
 {
 
-static bool DrawDragFloat(const char* label, float* value, float speed = 0.1f, float min = 0.0f,
-                           float max = 0.0f, const char* format = "%.3f")
+static bool DrawDragFloat(const char* label, float* value, float speed = 0.1f, float min = 0.0f, float max = 0.0f,
+                          const char* format = "%.3f")
 {
     ImGui::AlignTextToFramePadding();
     ImGui::Text("%s", label);
@@ -135,177 +135,179 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         }
         ImGui::Unindent(10.0f);
     }
-
-    if (ImGui::CollapsingHeader(ICON_FA_MICROCHIP "  Physics", ImGuiTreeNodeFlags_DefaultOpen))
+    if (m_Context->GetSettings().Mode == BackgroundMode::Environment3D)
     {
-        ImGui::Indent(10.0f);
-        if (readOnly)
+        if (ImGui::CollapsingHeader(ICON_FA_MICROCHIP "  Physics", ImGuiTreeNodeFlags_DefaultOpen))
         {
-            ImGui::BeginDisabled();
-        }
-
-        if (auto project = Project::GetActive())
-        {
-            auto& settings = project->GetConfig().Physics;
-
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Gravity");
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##Gravity", &settings.Gravity, 0.1f);
-
-            if (ImGui::IsItemDeactivatedAfterEdit())
+            ImGui::Indent(10.0f);
+            if (readOnly)
             {
-                // Apply gravity to the running physics world immediately
-                SceneState state = EditorLayer::Get().GetSceneState();
-                if (state == SceneState::Play || state == SceneState::Simulate)
+                ImGui::BeginDisabled();
+            }
+
+            if (auto project = Project::GetActive())
+            {
+                auto& settings = project->GetConfig().Physics;
+
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Gravity");
+                ImGui::SameLine(100);
+                ImGui::SetNextItemWidth(-1);
+                ImGui::DragFloat("##Gravity", &settings.Gravity, 0.1f);
+
+                if (ImGui::IsItemDeactivatedAfterEdit())
                 {
-                    if (auto* physics = ServiceLocator::TryGet<Physics>())
+                    // Apply gravity to the running physics world immediately
+                    SceneState state = EditorLayer::Get().GetSceneState();
+                    if (state == SceneState::Play || state == SceneState::Simulate)
                     {
-                        if (auto* world = physics->GetWorld())
+                        if (auto* physics = ServiceLocator::TryGet<Physics>())
                         {
-                            world->SetGravity(settings.Gravity);
+                            if (auto* world = physics->GetWorld())
+                            {
+                                world->SetGravity(settings.Gravity);
+                            }
                         }
                     }
+                    SaveProjectConfig();
                 }
-                SaveProjectConfig();
-            }
 
-            float fps = 1.0f / settings.FixedTimestep;
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Fixed FPS");
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
-            {
-                settings.FixedTimestep = 1.0f / fps;
-            }
-
-            if (ImGui::IsItemDeactivatedAfterEdit())
-            {
-                SaveProjectConfig();
-            }
-        }
-        else
-        {
-            ImGui::TextDisabled("No active project.");
-        }
-
-        if (readOnly)
-        {
-            ImGui::EndDisabled();
-        }
-        ImGui::Unindent(10.0f);
-    }
-
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
-
-    auto env = m_Context->GetSettings().Environment;
-
-    if (!readOnly)
-    {
-        if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
-        {
-            std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Chained::Dialogs::OpenFile(filters);
-            if (result)
-            {
-                if (auto project = Project::GetActive())
+                float fps = 1.0f / settings.FixedTimestep;
+                ImGui::AlignTextToFramePadding();
+                ImGui::Text("Fixed FPS");
+                ImGui::SameLine(100);
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
                 {
-                    auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string());
-                    m_Context->GetSettings().Environment =
-                        ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(result->string());
+                    settings.FixedTimestep = 1.0f / fps;
+                }
+
+                if (ImGui::IsItemDeactivatedAfterEdit())
+                {
+                    SaveProjectConfig();
                 }
             }
-        }
-
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
-        {
-            std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Chained::Dialogs::SaveFile(filters);
-            if (result)
+            else
             {
-                auto newEnv = std::make_shared<EnvironmentAsset>();
-                newEnv->SetPath(result->string());
-                m_Context->GetSettings().Environment = newEnv;
+                ImGui::TextDisabled("No active project.");
             }
-        }
-    }
 
-    if (env)
-    {
+            if (readOnly)
+            {
+                ImGui::EndDisabled();
+            }
+            ImGui::Unindent(10.0f);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        auto env = m_Context->GetSettings().Environment;
+
         if (!readOnly)
         {
-            ImGui::TextDisabled(ICON_FA_FILE_SIGNATURE " %s",
-                                std::filesystem::path(env->GetPath()).filename().string().c_str());
-            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
-
-            if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save"))
+            if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
             {
-                const auto& settings = env->GetSettings();
-
-                YAML::Emitter out;
-                out << YAML::BeginMap;
-                out << YAML::Key << "Environment" << YAML::BeginMap;
-                out << YAML::Key << "Lighting" << YAML::BeginMap;
-                out << YAML::Key << "Direction" << YAML::BeginMap;
-                out << YAML::Key << "X" << YAML::Value << settings.Lighting.Direction.x;
-                out << YAML::Key << "Y" << YAML::Value << settings.Lighting.Direction.y;
-                out << YAML::Key << "Z" << YAML::Value << settings.Lighting.Direction.z;
-                out << YAML::EndMap;
-
-                out << YAML::Key << "LightColor" << YAML::BeginMap;
-                out << YAML::Key << "R" << YAML::Value << (int)settings.Lighting.LightColor.r;
-                out << YAML::Key << "G" << YAML::Value << (int)settings.Lighting.LightColor.g;
-                out << YAML::Key << "B" << YAML::Value << (int)settings.Lighting.LightColor.b;
-                out << YAML::Key << "A" << YAML::Value << (int)settings.Lighting.LightColor.a;
-                out << YAML::EndMap;
-                out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
-                out << YAML::Key << "Exposure" << YAML::Value << settings.Lighting.Exposure;
-                out << YAML::Key << "Gamma" << YAML::Value << settings.Lighting.Gamma;
-                out << YAML::EndMap;
-
-                out << YAML::Key << "Skybox" << YAML::BeginMap;
-                out << YAML::Key << "TexturePath" << YAML::Value << settings.Skybox.TexturePath;
-                out << YAML::Key << "Exposure" << YAML::Value << settings.Skybox.Exposure;
-                out << YAML::Key << "Brightness" << YAML::Value << settings.Skybox.Brightness;
-                out << YAML::Key << "Contrast" << YAML::Value << settings.Skybox.Contrast;
-                out << YAML::EndMap;
-
-                out << YAML::Key << "Fog" << YAML::BeginMap;
-                out << YAML::Key << "Enabled" << YAML::Value << settings.Fog.Enabled;
-                out << YAML::Key << "Color" << YAML::BeginMap;
-                out << YAML::Key << "R" << YAML::Value << (int)settings.Fog.FogColor.r;
-                out << YAML::Key << "G" << YAML::Value << (int)settings.Fog.FogColor.g;
-                out << YAML::Key << "B" << YAML::Value << (int)settings.Fog.FogColor.b;
-                out << YAML::Key << "A" << YAML::Value << (int)settings.Fog.FogColor.a;
-                out << YAML::EndMap;
-                out << YAML::Key << "Density" << YAML::Value << settings.Fog.Density;
-                out << YAML::Key << "Start" << YAML::Value << settings.Fog.Start;
-                out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
-                out << YAML::Key << "HeightFalloff" << YAML::Value << settings.Fog.HeightFalloff;
-                out << YAML::EndMap;
-
-                out << YAML::EndMap;
-
-                out << YAML::EndMap;
-                out << YAML::EndMap;
-
-                std::string path = env->GetPath();
-                std::filesystem::path fullPath(path);
-                std::filesystem::create_directories(fullPath.parent_path());
-                std::ofstream fout(fullPath);
-                if (fout.is_open())
+                std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
+                auto result = Chained::Dialogs::OpenFile(filters);
+                if (result)
                 {
-                    fout << out.c_str();
+                    if (auto project = Project::GetActive())
+                    {
+                        auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string());
+                        m_Context->GetSettings().Environment =
+                            ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(result->string());
+                    }
+                }
+            }
+
+            ImGui::SameLine();
+            if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
+            {
+                std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
+                auto result = Chained::Dialogs::SaveFile(filters);
+                if (result)
+                {
+                    auto newEnv = std::make_shared<EnvironmentAsset>();
+                    newEnv->SetPath(result->string());
+                    m_Context->GetSettings().Environment = newEnv;
                 }
             }
         }
 
-        DrawEnvironmentSettings(env, readOnly);
+        if (env)
+        {
+            if (!readOnly)
+            {
+                ImGui::TextDisabled(ICON_FA_FILE_SIGNATURE " %s",
+                                    std::filesystem::path(env->GetPath()).filename().string().c_str());
+                ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+
+                if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save"))
+                {
+                    const auto& settings = env->GetSettings();
+
+                    YAML::Emitter out;
+                    out << YAML::BeginMap;
+                    out << YAML::Key << "Environment" << YAML::BeginMap;
+                    out << YAML::Key << "Lighting" << YAML::BeginMap;
+                    out << YAML::Key << "Direction" << YAML::BeginMap;
+                    out << YAML::Key << "X" << YAML::Value << settings.Lighting.Direction.x;
+                    out << YAML::Key << "Y" << YAML::Value << settings.Lighting.Direction.y;
+                    out << YAML::Key << "Z" << YAML::Value << settings.Lighting.Direction.z;
+                    out << YAML::EndMap;
+
+                    out << YAML::Key << "LightColor" << YAML::BeginMap;
+                    out << YAML::Key << "R" << YAML::Value << (int)settings.Lighting.LightColor.r;
+                    out << YAML::Key << "G" << YAML::Value << (int)settings.Lighting.LightColor.g;
+                    out << YAML::Key << "B" << YAML::Value << (int)settings.Lighting.LightColor.b;
+                    out << YAML::Key << "A" << YAML::Value << (int)settings.Lighting.LightColor.a;
+                    out << YAML::EndMap;
+                    out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
+                    out << YAML::Key << "Exposure" << YAML::Value << settings.Lighting.Exposure;
+                    out << YAML::Key << "Gamma" << YAML::Value << settings.Lighting.Gamma;
+                    out << YAML::EndMap;
+
+                    out << YAML::Key << "Skybox" << YAML::BeginMap;
+                    out << YAML::Key << "TexturePath" << YAML::Value << settings.Skybox.TexturePath;
+                    out << YAML::Key << "Exposure" << YAML::Value << settings.Skybox.Exposure;
+                    out << YAML::Key << "Brightness" << YAML::Value << settings.Skybox.Brightness;
+                    out << YAML::Key << "Contrast" << YAML::Value << settings.Skybox.Contrast;
+                    out << YAML::EndMap;
+
+                    out << YAML::Key << "Fog" << YAML::BeginMap;
+                    out << YAML::Key << "Enabled" << YAML::Value << settings.Fog.Enabled;
+                    out << YAML::Key << "Color" << YAML::BeginMap;
+                    out << YAML::Key << "R" << YAML::Value << (int)settings.Fog.FogColor.r;
+                    out << YAML::Key << "G" << YAML::Value << (int)settings.Fog.FogColor.g;
+                    out << YAML::Key << "B" << YAML::Value << (int)settings.Fog.FogColor.b;
+                    out << YAML::Key << "A" << YAML::Value << (int)settings.Fog.FogColor.a;
+                    out << YAML::EndMap;
+                    out << YAML::Key << "Density" << YAML::Value << settings.Fog.Density;
+                    out << YAML::Key << "Start" << YAML::Value << settings.Fog.Start;
+                    out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
+                    out << YAML::Key << "HeightFalloff" << YAML::Value << settings.Fog.HeightFalloff;
+                    out << YAML::EndMap;
+
+                    out << YAML::EndMap;
+
+                    out << YAML::EndMap;
+                    out << YAML::EndMap;
+
+                    std::string path = env->GetPath();
+                    std::filesystem::path fullPath(path);
+                    std::filesystem::create_directories(fullPath.parent_path());
+                    std::ofstream fout(fullPath);
+                    if (fout.is_open())
+                    {
+                        fout << out.c_str();
+                    }
+                }
+            }
+
+            DrawEnvironmentSettings(env, readOnly);
+        }
     }
 
     ImGui::End();

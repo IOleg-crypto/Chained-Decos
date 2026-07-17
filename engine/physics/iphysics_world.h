@@ -29,7 +29,9 @@ struct PhysicsBodyDesc
     ColliderType Shape = ColliderType::Box;
     glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f}; // Box: half-extents. Sphere: x=radius. Capsule: x=radius, y=half-height.
     std::vector<PhysicsTriangle> Triangles;    // Only used when Shape == ColliderType::Mesh.
-    std::string CacheKey;                       // Optional: enables mesh shape caching (e.g. "modelPath|sx,sy,sz").
+    glm::vec3 MeshScale = {1.0f, 1.0f, 1.0f};  // Mesh only: scale applied via ScaledShape so the cached BVH stays scale-independent.
+                                               // Triangles must therefore be supplied in unscaled model-local space.
+    std::string CacheKey;                       // Optional: enables mesh shape caching. With MeshScale decoupled this can be just the model path.
 
     // Body properties
     float Mass = 1.0f;
