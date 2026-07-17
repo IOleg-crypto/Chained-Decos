@@ -70,6 +70,10 @@ public:
     /// whose contact normal points upward (i.e. the body is "grounded").
     virtual bool IsBodyGrounded(PhysicsBodyHandle handle) const = 0;
 
+    /// Returns true if the body is awake (actively simulated). Sleeping bodies retain
+    /// their last grounded state and do not produce fresh contact callbacks.
+    virtual bool IsBodyActive(PhysicsBodyHandle handle) const = 0;
+
     /// Clears the grounded-state tracker so it can be rebuilt from contacts during the next Step().
     virtual void ClearGroundedState() = 0;
 };

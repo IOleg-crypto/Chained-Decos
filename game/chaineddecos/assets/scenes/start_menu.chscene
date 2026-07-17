@@ -35,7 +35,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 11641374066679370111
+  - Entity: 7181617129540868980
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -81,7 +81,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 5811669107940369827
+  - Entity: 14554799796176409474
     ManagedScriptComponent:
       Scripts:
         []
@@ -134,10 +134,10 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 16144996158769947797
+  - Entity: 9944874189850593126
     ManagedScriptComponent:
       Scripts:
-        []
+        - ClassName: chaineddecos.scripts.exitscript
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -184,7 +184,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 15252971153103303129
+  - Entity: 994213202598751817
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -230,7 +230,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 10462024602812415928
+  - Entity: 709063992744735662
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -280,7 +280,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 9604344890808205540
+  - Entity: 15203188944849863247
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]

@@ -30,6 +30,10 @@ CH_SCRIPT_FUNC void Window_SetVSync(bool enabled);
 
 CH_SCRIPT_FUNC void Window_SetAntialiasing(bool enabled);
 
+CH_SCRIPT_FUNC void Window_SetAntiAliasingSamples(int samples);
+
+CH_SCRIPT_FUNC const Coral::UCChar* Window_GetSupportedResolution();
+
 // ── Physics ────────────────────────────────────────────────────────
 CH_SCRIPT_FUNC float Physics_GetGravity();
 

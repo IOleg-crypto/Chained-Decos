@@ -1,6 +1,6 @@
 
 #include "engine/core/service_locator.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/iphysics_world.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
@@ -15,13 +15,13 @@ namespace
 {
 // Mirrors how RuntimeLayer/EditorLayer build a SceneContext in production code —
 // see scene_context.h. UI is expected to be null here: the test harness boots
-// Application with Headless = true (test_environment.cpp), so UIRenderer never exists.
+// Application with Headless = true (test_environment.cpp), so WidgetRenderer never exists.
 SceneContext MakeTestSceneContext()
 {
     SceneContext ctx;
     ctx.PhysicsSystem = ServiceLocator::Get<Physics>();
     ctx.Scripting = ServiceLocator::Get<ScriptEngine>();
-    ctx.UI = ServiceLocator::TryGet<UIRenderer>();
+    ctx.UI = ServiceLocator::TryGet<WidgetRenderer>();
     return ctx;
 }
 } // namespace

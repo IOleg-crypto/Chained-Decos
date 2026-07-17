@@ -8,6 +8,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/material_asset.h"
+#include "engine/graphics/ui/ui_types.h"
 #include <glm/gtx/quaternion.hpp>
 #include <filesystem>
 
@@ -61,7 +62,7 @@ namespace Chained::ComponentUtils
 
     // --- UI Layout Logic ---
 
-    static inline Rectangle CalculateRect(const RectTransform& rt, glm::vec2 viewportSize, glm::vec2 viewportOffset = {0.0f, 0.0f})
+    static inline UIRect CalculateRect(const RectTransform& rt, glm::vec2 viewportSize, glm::vec2 viewportOffset = {0.0f, 0.0f})
     {
         glm::vec2 clAnchMin = glm::clamp(rt.AnchorMin, 0.0f, 1.0f);
         glm::vec2 clAnchMax = glm::clamp(rt.AnchorMax, 0.0f, 1.0f);
@@ -72,7 +73,7 @@ namespace Chained::ComponentUtils
         glm::vec2 pMin = {anchorMinPos.x + rt.OffsetMin.x, anchorMinPos.y + rt.OffsetMin.y};
         glm::vec2 pMax = {anchorMaxPos.x + rt.OffsetMax.x, anchorMaxPos.y + rt.OffsetMax.y};
 
-        return Rectangle{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
+        return UIRect{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
     }
 
     // --- Mesh logic ---

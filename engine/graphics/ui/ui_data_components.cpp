@@ -2,6 +2,9 @@
 #include "engine/scene/yaml.h"
 #include <yaml-cpp/yaml.h>
 
+namespace Chained
+{
+
 void ButtonData::Serialize(YAML::Emitter& out) const
 {
     out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_Button;
@@ -353,9 +356,12 @@ CollapsingHeaderData CollapsingHeaderData::Deserialize(YAML::Node widgetNode)
     return data;
 }
 
-void PlotLinesData::Serialize(YAML::Emitter& out) const
+void PlotData::Serialize(YAML::Emitter& out) const
 {
-    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotLines;
+    if (Mode == PlotMode::Lines)
+        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotLines;
+    else
+        out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotHistogram;
     out << YAML::Key << "Label" << YAML::Value << Label;
     out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
     for (auto value : Values) out << value;
@@ -365,32 +371,9 @@ void PlotLinesData::Serialize(YAML::Emitter& out) const
     out << YAML::Key << "Scale Max" << YAML::Value << ScaleMax;
 }
 
-PlotLinesData PlotLinesData::Deserialize(YAML::Node widgetNode)
+PlotData PlotData::Deserialize(YAML::Node widgetNode)
 {
-    PlotLinesData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Values"]) for (auto value : widgetNode["Values"]) data.Values.push_back(value.as<float>());
-    if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
-    if (widgetNode["Scale Min"]) data.ScaleMin = widgetNode["Scale Min"].as<float>();
-    if (widgetNode["Scale Max"]) data.ScaleMax = widgetNode["Scale Max"].as<float>();
-    return data;
-}
-
-void PlotHistogramData::Serialize(YAML::Emitter& out) const
-{
-    out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotHistogram;
-    out << YAML::Key << "Label" << YAML::Value << Label;
-    out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
-    for (auto value : Values) out << value;
-    out << YAML::EndSeq;
-    out << YAML::Key << "Overlay Text" << YAML::Value << OverlayText;
-    out << YAML::Key << "Scale Min" << YAML::Value << ScaleMin;
-    out << YAML::Key << "Scale Max" << YAML::Value << ScaleMax;
-}
-
-PlotHistogramData PlotHistogramData::Deserialize(YAML::Node widgetNode)
-{
-    PlotHistogramData data;
+    PlotData data;
     if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
     if (widgetNode["Values"]) for (auto value : widgetNode["Values"]) data.Values.push_back(value.as<float>());
     if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
@@ -437,9 +420,21 @@ ControlData DeserializeControlData(int widgetType, YAML::Node widgetNode)
         case WidgetType_TabBar:              return TabBarData::Deserialize(widgetNode);
         case WidgetType_TabItem:             return TabItemData::Deserialize(widgetNode);
         case WidgetType_CollapsingHeader:    return CollapsingHeaderData::Deserialize(widgetNode);
-        case WidgetType_PlotLines:           return PlotLinesData::Deserialize(widgetNode);
-        case WidgetType_PlotHistogram:       return PlotHistogramData::Deserialize(widgetNode);
+        case WidgetType_PlotLines:
+        {
+            auto data = PlotData::Deserialize(widgetNode);
+            data.Mode = PlotMode::Lines;
+            return data;
+        }
+        case WidgetType_PlotHistogram:
+        {
+            auto data = PlotData::Deserialize(widgetNode);
+            data.Mode = PlotMode::Histogram;
+            return data;
+        }
         case WidgetType_VerticalLayoutGroup: return VerticalLayoutGroupData::Deserialize(widgetNode);
         default:                             return std::monostate{};
     }
 }
+
+} // namespace Chained

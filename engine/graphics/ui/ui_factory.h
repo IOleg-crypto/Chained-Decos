@@ -23,6 +23,9 @@ public:
     // Initializes the factory with all standard engine UI components.
     static void Initialize();
 
+    // Clears all registered builders (call before re-initializing for a new project).
+    static void Clear();
+
 private:
     static std::unordered_map<std::string, UIBuilderFunc> s_Builders;
 };

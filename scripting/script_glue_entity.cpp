@@ -1,11 +1,11 @@
 #include "script_glue_entity.h"
 #include "engine/audio/audio.h"
+#include "engine/core/service_locator.h"
+#include "engine/physics/physics.h"
 #include "engine/scene/component_registry.h"
 #include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/entity.h"
-#include "engine/physics/physics.h"
-#include "engine/core/service_locator.h"
 
 namespace Chained
 {
@@ -62,7 +62,8 @@ static thread_local Coral::UCString s_ModelTagBuffer;
 const Coral::UCChar* Model_GetModelPath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    std::string path = entity && entity.HasComponent<ModelComponent>() ? entity.GetComponent<ModelComponent>().ModelPath : "";
+    std::string path =
+        entity && entity.HasComponent<ModelComponent>() ? entity.GetComponent<ModelComponent>().ModelPath : "";
     s_ModelTagBuffer = ToWide(path);
     return s_ModelTagBuffer.c_str();
 }
@@ -173,24 +174,27 @@ void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
 bool RigidBody_IsGrounded(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<RigidBodyComponent>() ? entity.GetComponent<RigidBodyComponent>().IsGrounded
-                                                               : false;
+    if (!entity || !entity.HasComponent<RigidBodyComponent>())
+        return false;
+        
+    auto& rb = entity.GetComponent<RigidBodyComponent>();
+    return rb.IsGrounded;
 }
-bool RigidBody_IsKinematic(uint64_t entityID)
+uint32_t RigidBody_IsKinematic(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<RigidBodyComponent>()
-               ? (entity.GetComponent<RigidBodyComponent>().Type == RigidBodyComponent::BodyType::Kinematic)
-               : false;
+    return (entity && entity.HasComponent<RigidBodyComponent>() &&
+            entity.GetComponent<RigidBodyComponent>().Type == RigidBodyComponent::BodyType::Kinematic)
+               ? 1u
+               : 0u;
 }
 void RigidBody_SetKinematic(uint64_t entityID, bool isKinematic)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<RigidBodyComponent>())
     {
-        entity.GetComponent<RigidBodyComponent>().Type = isKinematic
-            ? RigidBodyComponent::BodyType::Kinematic
-            : RigidBodyComponent::BodyType::Dynamic;
+        entity.GetComponent<RigidBodyComponent>().Type =
+            isKinematic ? RigidBodyComponent::BodyType::Kinematic : RigidBodyComponent::BodyType::Dynamic;
     }
 }
 void AudioComponent_Play(uint64_t entityID)
@@ -401,66 +405,88 @@ bool Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName)
 float PlayerComponent_GetMovementSpeed(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<Chained::PlayerComponent>() ? entity.GetComponent<Chained::PlayerComponent>().MovementSpeed : 0.0f;
+    return entity && entity.HasComponent<Chained::PlayerComponent>()
+               ? entity.GetComponent<Chained::PlayerComponent>().MovementSpeed
+               : 0.0f;
 }
 void PlayerComponent_SetMovementSpeed(uint64_t entityID, float value)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<Chained::PlayerComponent>())
+    {
         entity.GetComponent<Chained::PlayerComponent>().MovementSpeed = value;
+    }
 }
 float PlayerComponent_GetJumpForce(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<Chained::PlayerComponent>() ? entity.GetComponent<Chained::PlayerComponent>().JumpForce : 0.0f;
+    return entity && entity.HasComponent<Chained::PlayerComponent>()
+               ? entity.GetComponent<Chained::PlayerComponent>().JumpForce
+               : 0.0f;
 }
 void PlayerComponent_SetJumpForce(uint64_t entityID, float value)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<Chained::PlayerComponent>())
+    {
         entity.GetComponent<Chained::PlayerComponent>().JumpForce = value;
+    }
 }
 float PlayerComponent_GetLookSensitivity(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<Chained::PlayerComponent>() ? entity.GetComponent<Chained::PlayerComponent>().LookSensitivity : 0.0f;
+    return entity && entity.HasComponent<Chained::PlayerComponent>()
+               ? entity.GetComponent<Chained::PlayerComponent>().LookSensitivity
+               : 0.0f;
 }
 void PlayerComponent_SetLookSensitivity(uint64_t entityID, float value)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<Chained::PlayerComponent>())
+    {
         entity.GetComponent<Chained::PlayerComponent>().LookSensitivity = value;
+    }
 }
 
 // ── SpawnComponent ────────────────────────────────────────────────────
 bool SpawnComponent_IsActive(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<Chained::SpawnComponent>() ? entity.GetComponent<Chained::SpawnComponent>().IsActive : false;
+    return entity && entity.HasComponent<Chained::SpawnComponent>()
+               ? entity.GetComponent<Chained::SpawnComponent>().IsActive
+               : false;
 }
 void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<Chained::SpawnComponent>() && outPoint)
+    {
         *outPoint = entity.GetComponent<Chained::SpawnComponent>().SpawnPoint;
+    }
 }
 bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<Chained::SpawnComponent>() ? entity.GetComponent<Chained::SpawnComponent>().RenderSpawnZoneInScene : false;
+    return entity && entity.HasComponent<Chained::SpawnComponent>()
+               ? entity.GetComponent<Chained::SpawnComponent>().RenderSpawnZoneInScene
+               : false;
 }
 void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<Chained::SpawnComponent>() && outSize)
+    {
         *outSize = entity.GetComponent<Chained::SpawnComponent>().ZoneSize;
+    }
 }
 
 // ── AnimationComponent ──────────────────────────────────────────────────
 int AnimationComponent_GetCurrentAnimationIndex(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().CurrentAnimationIndex : -1;
+    return entity && entity.HasComponent<AnimationComponent>()
+               ? entity.GetComponent<AnimationComponent>().CurrentAnimationIndex
+               : -1;
 }
 void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index)
 {
@@ -475,7 +501,9 @@ void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index)
 uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<AnimationComponent>() ? (entity.GetComponent<AnimationComponent>().IsPlaying ? 1 : 0) : 0;
+    return entity && entity.HasComponent<AnimationComponent>()
+               ? (entity.GetComponent<AnimationComponent>().IsPlaying ? 1 : 0)
+               : 0;
 }
 void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying)
 {

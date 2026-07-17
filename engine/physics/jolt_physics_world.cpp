@@ -401,9 +401,25 @@ bool JoltPhysicsWorld::IsBodyGrounded(PhysicsBodyHandle handle) const
     return m_GroundedBodies.count(static_cast<uint32_t>(handle)) > 0;
 }
 
+bool JoltPhysicsWorld::IsBodyActive(PhysicsBodyHandle handle) const
+{
+    if (handle == 0)
+        return false;
+    return m_PhysicsSystem.GetBodyInterface().IsActive(JPH::BodyID(static_cast<uint32_t>(handle)));
+}
+
 void JoltPhysicsWorld::ClearGroundedState()
 {
-    m_GroundedBodies.clear();
+    std::unordered_set<uint32_t> nextGrounded;
+    auto& bi = m_PhysicsSystem.GetBodyInterface();
+    for (uint32_t handle : m_GroundedBodies)
+    {
+        if (!bi.IsActive(JPH::BodyID(handle)))
+        {
+            nextGrounded.insert(handle);
+        }
+    }
+    m_GroundedBodies = std::move(nextGrounded);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -420,14 +436,20 @@ static void RegisterGroundContact(std::unordered_set<uint32_t>* tracker,
                                    const JPH::ContactManifold& manifold)
 {
     if (!tracker) return;
-    // Normal points from body2 to body1; upward contact means body1 is on top of body2.
+    
     JPH::Vec3 normal = manifold.mWorldSpaceNormal;
-    // If the normal Y > 0.5 → body2 is the ground under body1
-    if (normal.GetY() > 0.5f)
-        tracker->insert(body1.GetID().GetIndexAndSequenceNumber());
-    // If normal Y < -0.5 → body1 is the ground under body2
-    else if (normal.GetY() < -0.5f)
-        tracker->insert(body2.GetID().GetIndexAndSequenceNumber());
+    uint32_t id1 = body1.GetID().GetIndexAndSequenceNumber();
+    uint32_t id2 = body2.GetID().GetIndexAndSequenceNumber();
+
+    // In Jolt, mWorldSpaceNormal points from body1 to body2.
+    // If normal Y > 0.5, body2 is ABOVE body1. Thus body2 is grounded on body1.
+    if (normal.GetY() > 0.5f) {
+        tracker->insert(id2);
+    }
+    // If normal Y < -0.5, body1 is ABOVE body2. Thus body1 is grounded on body2.
+    else if (normal.GetY() < -0.5f) {
+        tracker->insert(id1);
+    }
 }
 
 void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(

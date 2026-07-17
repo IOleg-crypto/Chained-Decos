@@ -74,6 +74,8 @@ private:
 
     std::string m_PendingScenePath;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
+    uint32_t m_HDRFramebufferSamples = 0;
+    bool m_SuppressNextUIInput = false;
 };
 } // namespace Chained
 

@@ -212,53 +212,63 @@ ImFont* UIFontRegistry::EnsureDefaultProjectFont(float pixelSize, bool allowRunt
     return nullptr;
 }
 
-ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize) const
+ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize)
 {
     const std::string normalizedName = NormalizeFontName(relativeName);
     if (normalizedName.empty() || normalizedName == "Default")
     {
-        return nullptr; // caller should use ImGui default
+        return nullptr;
     }
 
     const float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
     const std::string key = MakeKey(normalizedName, size);
 
-    // Avoid mutating ImGui font atlas at runtime. If a custom font wasn't preloaded
-    // before the first frame, caller should gracefully fallback to default font.
-    if (ImGui::GetFrameCount() > 0)
-    {
-        auto it = m_Fonts.find(key);
-        if (it != m_Fonts.end())
-        {
-            return it->second;
-        }
-        return nullptr;
-    }
-
-    // Fast path: already in atlas
+    // Already in atlas — fast path.
     auto it = m_Fonts.find(key);
     if (it != m_Fonts.end())
     {
         return it->second;
     }
 
-    // Slow path: need to register for this size.
-    // NOTE: This only works before ImGui font atlas is built (before first frame).
-    // At runtime this returns nullptr — font must be pre-registered.
+    // Don't mutate ImGui font atlas at runtime.
+    if (ImGui::GetFrameCount() > 0)
+    {
+        return nullptr;
+    }
+
+    // Lazy registration — only valid before font atlas is built (pre-first-frame).
     auto pathIt = m_KnownPaths.find(normalizedName);
     if (pathIt != m_KnownPaths.end())
     {
-        // Cast away const — lazy loading into atlas (only valid pre-build)
-        return const_cast<UIFontRegistry*>(this)->RegisterFont(normalizedName, pathIt->second, size);
+        return RegisterFont(normalizedName, pathIt->second, size);
     }
 
     std::filesystem::path directPath(normalizedName);
     if (directPath.is_absolute() && FileExists(directPath))
     {
-        return const_cast<UIFontRegistry*>(this)->RegisterFont(normalizedName, directPath.string(), size);
+        return RegisterFont(normalizedName, directPath.string(), size);
     }
 
     CH_CORE_WARN("UIFontRegistry: Font '{}' not discovered. Check assets/font or assets/fonts.", normalizedName);
+    return nullptr;
+}
+
+const ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize) const
+{
+    const std::string normalizedName = NormalizeFontName(relativeName);
+    if (normalizedName.empty() || normalizedName == "Default")
+    {
+        return nullptr;
+    }
+
+    const float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
+    const std::string key = MakeKey(normalizedName, size);
+
+    auto it = m_Fonts.find(key);
+    if (it != m_Fonts.end())
+    {
+        return it->second;
+    }
     return nullptr;
 }
 

@@ -14,7 +14,7 @@
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/project/project.h"
 #include "engine/scene/prefab_serializer.h"
 #include "engine/scene/scene.h"
@@ -545,13 +545,13 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
-    ServiceLocator::Get<UIRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
+    ServiceLocator::Get<WidgetRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
                                                   m_SceneManager.GetSceneState() == SceneState::Edit);
 
     // 3. Selection Highlight
     if (isUISelected && selectedEntity && m_SceneManager.GetSceneState() == SceneState::Edit)
     {
-        auto rect = ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize,
+        auto rect = ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize,
                                                                      viewportScreenPos);
 
         ImVec2 p1 = ImVec2(rect.x, rect.y);
@@ -604,7 +604,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             }
 
             auto rect =
-                ServiceLocator::Get<UIRenderer>()->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
+                ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
                 mousePos.y <= rect.y + rect.height)
             {

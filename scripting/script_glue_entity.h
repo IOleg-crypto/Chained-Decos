@@ -40,7 +40,7 @@ CH_SCRIPT_FUNC void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVeloci
 
 CH_SCRIPT_FUNC bool RigidBody_IsGrounded(uint64_t entityID);
 
-CH_SCRIPT_FUNC bool RigidBody_IsKinematic(uint64_t entityID);
+CH_SCRIPT_FUNC uint32_t RigidBody_IsKinematic(uint64_t entityID);
 
 CH_SCRIPT_FUNC void RigidBody_SetKinematic(uint64_t entityID, bool isKinematic);
 

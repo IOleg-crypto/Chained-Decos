@@ -129,10 +129,11 @@ namespace ChainedDecos.Scripts
                 // Jolt є єдиним авторитетом для Y (гравітація, пружність).
                 // Скрипт контролює лише X та Z.
                 // Стрибок: ставимо позитивний Y — physics.cpp пропустить його (> 0.5).
-                if (Input.IsKeyPressed(Key.Space) && rb.IsGrounded)
+                bool wantsJump = Input.IsKeyPressed(Key.Space);
+
+                if (wantsJump && rb.IsGrounded)
                 {
                     rb.Velocity = new Vector3(velocity.X, effectiveJumpForce, velocity.Z);
-                    Log.Info("C# Jump triggered!");
                 }
                 else
                 {

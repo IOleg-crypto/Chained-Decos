@@ -34,7 +34,11 @@ public:
 
     // Returns the ImFont* for the given relative font name and pixel size.
     // If not found or not loaded, returns nullptr (ImGui will use its default font).
-    ImFont* GetFont(const std::string& relativeName, float pixelSize) const;
+    // Non-const version allows lazy registration of fonts discovered but not yet loaded.
+    ImFont* GetFont(const std::string& relativeName, float pixelSize);
+
+    // Const version — returns nullptr if font is not yet loaded (no lazy registration).
+    const ImFont* GetFont(const std::string& relativeName, float pixelSize) const;
 
     // Returns the default font (first registered, or ImGui built-in default).
     ImFont* GetDefaultFont() const { return m_DefaultFont; }
