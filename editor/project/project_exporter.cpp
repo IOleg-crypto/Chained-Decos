@@ -164,7 +164,7 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
     {
         if (!f.is_regular_file()) continue;
         const std::string ext = f.path().extension().string();
-        if (ext == ".dll" || ext == ".so" || ext == ".dylib" || ext == ".runtimeconfig.json")
+        if (ext == ".dll" || ext == ".so" || ext == ".dylib" || ext == ".json" || ext == ".pdb")
         {
             fs::path dst = outputDir / f.path().filename();
             fs::copy_file(f.path(), dst, fs::copy_options::overwrite_existing, ec);
@@ -173,7 +173,7 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
     }
 
     // Some runtimes also place .dll in subdirs (e.g. nethost/)
-    for (const std::string& subDirName : { "nethost", "dotnet" })
+    for (const std::string& subDirName : { "nethost", "dotnet", "scripts" })
     {
         fs::path subSrc = exeDir / subDirName;
         if (fs::exists(subSrc))

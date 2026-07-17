@@ -35,7 +35,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 13481680069909931381
+  - Entity: 11641374066679370111
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -81,7 +81,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 11000620169424659302
+  - Entity: 5811669107940369827
     ManagedScriptComponent:
       Scripts:
         []
@@ -94,7 +94,7 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: scenes/runtimescene.chscene
+      TargetScenePath: scenes/map_selection.chscene
       Triggered: true
     WidgetComponent:
       Box Style:
@@ -134,7 +134,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 4720631858198445255
+  - Entity: 16144996158769947797
     ManagedScriptComponent:
       Scripts:
         []
@@ -184,7 +184,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 15128292665000326445
+  - Entity: 15252971153103303129
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -230,7 +230,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 2300139054871226892
+  - Entity: 10462024602812415928
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -280,7 +280,7 @@ Entities:
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 4521095331783326583
+  - Entity: 9604344890808205540
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
