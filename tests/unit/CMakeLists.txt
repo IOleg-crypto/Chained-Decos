@@ -22,6 +22,12 @@ target_link_libraries(engine_tests_unit PRIVATE
     gtest_main
 )
 
+# MinGW/gcc: statically link the gcc/stdc++ runtime so the test exe can start
+# during test discovery without libstdc++-6.dll / libgcc_s / libwinpthread on PATH.
+if(MINGW)
+    target_link_options(engine_tests_unit PRIVATE -static-libgcc -static-libstdc++)
+endif()
+
 target_include_directories(engine_tests_unit PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
@@ -29,7 +35,7 @@ target_include_directories(engine_tests_unit PRIVATE
 include(GoogleTest)
 gtest_discover_tests(engine_tests_unit
     CONFIGURATION_VAR CMAKE_BUILD_TYPE
-    DISCOVERY_MODE POST_BUILD
+    DISCOVERY_MODE PRE_TEST
     DISCOVERY_TIMEOUT 30
     PROPERTIES LABELS "Unit"
 )
