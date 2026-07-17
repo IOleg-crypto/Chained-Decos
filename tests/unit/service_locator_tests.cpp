@@ -1,29 +1,50 @@
-#include "engine/core/service_locator.h"
 #include "engine/core/engine_module.h"
+#include "engine/core/service_locator.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
 
 namespace
 {
+// The ServiceLocator OWNS provided modules and deletes them during Shutdown().
+// Tests therefore route the shutdown flag through an external bool that outlives
+// the module, so assertions after Shutdown() don't read freed memory.
 class TestModuleA : public EngineModule
 {
 public:
     bool initialized = false;
-    bool shutdownCalled = false;
+    bool* shutdownFlag = nullptr;
 
-    void Initialize() override { initialized = true; }
-    void Shutdown() override { shutdownCalled = true; }
+    void Initialize() override
+    {
+        initialized = true;
+    }
+    void Shutdown() override
+    {
+        if (shutdownFlag)
+        {
+            *shutdownFlag = true;
+        }
+    }
 };
 
 class TestModuleB : public EngineModule
 {
 public:
     bool initialized = false;
-    bool shutdownCalled = false;
+    bool* shutdownFlag = nullptr;
 
-    void Initialize() override { initialized = true; }
-    void Shutdown() override { shutdownCalled = true; }
+    void Initialize() override
+    {
+        initialized = true;
+    }
+    void Shutdown() override
+    {
+        if (shutdownFlag)
+        {
+            *shutdownFlag = true;
+        }
+    }
 };
 } // namespace
 
@@ -73,13 +94,14 @@ TEST_F(ServiceLocatorTest, IsAvailableAfterProvide)
 
 TEST_F(ServiceLocatorTest, ShutdownCallsShutdownOnModules)
 {
+    bool shutdownCalled = false;
     auto* module = new TestModuleA();
+    module->shutdownFlag = &shutdownCalled;
     ServiceLocator::Provide(module);
 
-    auto* raw = ServiceLocator::Get<TestModuleA>();
     ServiceLocator::Shutdown();
 
-    EXPECT_TRUE(raw->shutdownCalled);
+    EXPECT_TRUE(shutdownCalled);
 }
 
 TEST_F(ServiceLocatorTest, ShutdownClearsServices)
@@ -92,13 +114,19 @@ TEST_F(ServiceLocatorTest, ShutdownClearsServices)
 
 TEST_F(ServiceLocatorTest, MultipleModulesShutdownInReverseOrder)
 {
-    ServiceLocator::Provide(new TestModuleA());
-    ServiceLocator::Provide(new TestModuleB());
+    bool shutdownA = false;
+    bool shutdownB = false;
 
-    auto* rawA = ServiceLocator::Get<TestModuleA>();
-    auto* rawB = ServiceLocator::Get<TestModuleB>();
+    auto* moduleA = new TestModuleA();
+    moduleA->shutdownFlag = &shutdownA;
+    ServiceLocator::Provide(moduleA);
+
+    auto* moduleB = new TestModuleB();
+    moduleB->shutdownFlag = &shutdownB;
+    ServiceLocator::Provide(moduleB);
+
     ServiceLocator::Shutdown();
 
-    EXPECT_TRUE(rawB->shutdownCalled);
-    EXPECT_TRUE(rawA->shutdownCalled);
+    EXPECT_TRUE(shutdownB);
+    EXPECT_TRUE(shutdownA);
 }
