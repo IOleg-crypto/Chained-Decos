@@ -826,6 +826,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
     tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorIcons.CameraIcon);
     tryLoadIcon("engine/resources/icons/light_bulb.png", m_EditorIcons.LightIcon);
     tryLoadIcon("engine/resources/icons/leaf_icon.png", m_EditorIcons.SpawnIcon);
+    tryLoadIcon("engine/resources/icons/audio.png", m_EditorIcons.AudioIcon);
 
     auto iconSizeFromDistance = [&](const glm::vec3& worldPos, float minSize, float maxSize, float scale) {
         const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
@@ -851,7 +852,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             continue;
         }
 
-        const float iconSize = iconSizeFromDistance(iconPos, 0.25f, 1.0f, 0.12f);
+        const float iconSize = iconSizeFromDistance(iconPos, 0.6f, 2.5f, 0.15f);
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
         uint32_t handle = getIconHandle(m_EditorIcons.CameraIcon);
         if (handle != 0)
@@ -889,11 +890,13 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             }
             else if (light.Type == LightType::Point)
             {
-                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint, *ServiceLocator::Get<Renderer>());
+                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f,
+                                                                      lightTint, *ServiceLocator::Get<Renderer>());
             }
             else if (light.Type == LightType::Spot)
             {
-                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint, *ServiceLocator::Get<Renderer>());
+                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f,
+                                                                      lightTint, *ServiceLocator::Get<Renderer>());
             }
         }
     }
@@ -910,6 +913,22 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             if (handle != 0)
             {
                 ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, spawnTint);
+            }
+        }
+    }
+    {
+        // Audio Component
+        auto audioView = registry.view<TransformComponent, AudioComponent>();
+        for (auto entity : audioView)
+        {
+            auto [transform, audio] = audioView.get<TransformComponent, AudioComponent>(entity);
+            const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
+            const float iconSize = iconSizeFromDistance(iconPos, 0.36f, 0.85f, 2.f);
+            glm::vec4 audioTint = {1.0f, 1.0f, 1.0f, 0.95f};
+            uint32_t handle = getIconHandle(m_EditorIcons.AudioIcon);
+            if (handle != 0)
+            {
+                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, audioTint);
             }
         }
     }
