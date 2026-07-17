@@ -515,37 +515,43 @@ If `Chained Decos` ever suffers a frame-rate drop (a lag spike), do not optimize
 
 ## Testing
 
-There are two test layers.
+Native tests use GoogleTest + CTest and are split into two targets (see `tests/CMakeLists.txt`):
 
-Native tests (GoogleTest + CTest):
+- **`engine_tests_unit`** — fast, no full engine runtime. Links only `engine_common` / `engine_core` and covers UUID, timestep, color, thread pool, events/input, layer stack, and the service locator. Sources under `tests/unit/`.
+- **`engine_tests_integration`** — slower, links the full engine facade (e.g. the scripting host). Sources under `tests/integration/`.
+
+Both register their cases with `gtest_discover_tests(... DISCOVERY_MODE PRE_TEST)`, and on MinGW they statically link the gcc/stdc++ runtime (`-static-libgcc -static-libstdc++`) so discovery can launch the test exe without the MinGW DLLs on `PATH`.
 
 ```bash
-# Build native test target
-cmake --build --preset windows-clang --target EngineTests --parallel
+# Build both test targets (default build already includes them when BUILD_TESTS=ON)
+cmake --build --preset windows-clang --target engine_tests_unit --parallel
+cmake --build --preset windows-clang --target engine_tests_integration --parallel
 
-# Windows MSVC variant
-cmake --build --preset windows-msvc --target EngineTests --parallel
+# Windows MSVC / Linux variants: swap the preset name
+cmake --build --preset windows-msvc  --target engine_tests_unit --parallel
+cmake --build --preset linux-clang   --target engine_tests_unit --parallel
 
-# Linux variant
-cmake --build --preset linux-clang --target EngineTests --parallel
-
-# Run native tests
+# Run all discovered tests
 ctest --test-dir build/windows-clang --output-on-failure
 
-# Windows MSVC variant
-ctest --test-dir build/windows-msvc --output-on-failure
+# Run only one layer by label (Unit / Integration)
+ctest --test-dir build/windows-clang -L Unit --output-on-failure
+ctest --test-dir build/windows-clang -L Integration --output-on-failure
 
-# Linux variant
-ctest --test-dir build/linux-clang --output-on-failure
+# Windows MSVC / Linux variants
+ctest --test-dir build/windows-msvc --output-on-failure
+ctest --test-dir build/linux-clang  --output-on-failure
 ```
 
 ## CI/CD
 
-CI workflow (.github/workflows/ci.yml):
+CI workflow (.github/workflows/ci.yml) fans out to three reusable workflows:
 
-- Dispatches native builds to `.github/workflows/linux.yml` and `.github/workflows/windows.yml`.
-- Runs CTest for native tests.
-- Uses software rendering setup for Linux test execution (xvfb + Mesa environment variables).
+- **Format Check** (`format.yml`): runs `clang-format-18 --dry-run -Werror` over the C++ files changed in the PR (thirdparty excluded). A single style violation fails the job, so format locally before pushing.
+- **Linux Builds** (`linux.yml`): builds the `Debug` and `Release` matrix, then runs CTest under `xvfb` + Mesa software rendering (`LIBGL_ALWAYS_SOFTWARE=1`, `llvmpipe`).
+- **Windows Builds** (`windows.yml`): builds the `Debug` matrix and runs CTest.
+
+Debug configurations are built with `-DENABLE_SANITIZERS=ON` (AddressSanitizer + UndefinedBehaviorSanitizer), so use-after-free, invalid vptr, and similar memory bugs fail the test job deterministically even when the code compiles and "works" locally in Release. CTest output is captured as JUnit XML for reporting.
 
 Deploy workflow (.github/workflows/deploy-sdk.yml):
 
