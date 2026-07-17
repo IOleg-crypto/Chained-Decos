@@ -5,7 +5,7 @@ namespace Chained
 {
 class Physics;
 class ScriptEngine;
-class UIRenderer;
+class WidgetRenderer;
 
 /// @brief Explicit set of engine service pointers a Scene needs for its lifecycle
 /// (state transitions, runtime start/stop, per-frame update).
@@ -23,13 +23,13 @@ class UIRenderer;
 /// an extra parameter — e.g. SceneResources::OnRigidBodyConstruct, which is invoked
 /// with a fixed (registry&, entity) signature. Scene::OnRuntimeStop erases it again.
 ///
-/// UI may be null in headless mode (UIRenderer is not created when
+/// UI may be null in headless mode (WidgetRenderer is not created when
 /// ApplicationSpecification::Headless is true) — always null-check before use.
 struct SceneContext
 {
     Physics* PhysicsSystem = nullptr;
     ScriptEngine* Scripting = nullptr;
-    UIRenderer* UI = nullptr;
+    WidgetRenderer* UI = nullptr;
 };
 
 } // namespace Chained

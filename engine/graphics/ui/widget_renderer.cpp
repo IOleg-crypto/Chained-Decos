@@ -1,8 +1,8 @@
-// ui_renderer.cpp
+// widget_renderer.cpp
 // Chained Engine — ImGui-based UI rendering for in-game widgets and HUD.
 // Draws WidgetComponent hierarchy, handles Z-order sorting, scissor clipping, and font management.
 
-#include "ui_renderer.h"
+#include "widget_renderer.h"
 #include "engine/core/service_locator.h"
 #include <algorithm>
 
@@ -16,27 +16,26 @@
 
 namespace Chained {
 
-UIRenderer::UIRenderer() {}
+WidgetRenderer::WidgetRenderer() {}
 
-void UIRenderer::Initialize() {
+void WidgetRenderer::Initialize() {
     CH_CORE_INFO("[UI] Initializing UI Renderer...");
     m_Initialized = true;
 }
 
-void UIRenderer::Shutdown() {}
+void WidgetRenderer::Shutdown() {}
 
-void UIRenderer::Update(Timestep ts) {}
+void WidgetRenderer::Update(Timestep ts) {}
 
-void UIRenderer::LoadProjectFonts() {
+void WidgetRenderer::LoadProjectFonts() {
     m_FontRegistry.LoadProjectFonts();
 }
 
-UIRect UIRenderer::GetEntityRect(Scene *scene, Entity entity, const ImVec2 &viewportSize, const ImVec2 &viewportPos) {
-    // Entity may not have an explicit handle accessor, so we use the implicit cast to entt::entity
+UIRect WidgetRenderer::GetEntityRect(Scene *scene, Entity entity, const ImVec2 &viewportSize, const ImVec2 &viewportPos) {
     return m_LayoutSystem.GetEntityRect((entt::entity)entity);
 }
 
-void UIRenderer::ResetButtonStates(Scene *scene) {
+void WidgetRenderer::ResetButtonStates(Scene *scene) {
     if (!scene)
         return;
 
@@ -45,9 +44,14 @@ void UIRenderer::ResetButtonStates(Scene *scene) {
     for (entt::entity id : view) {
         view.get<UIControlComponent>(id).PressedThisFrame = false;
     }
+
+    // We do NOT clear m_HasCanvasRect here anymore!
+    // The previous canvas rect from Edit mode is perfectly valid for evaluating
+    // hit-tests during the 1-frame suppress window. If we clear it, the hit-test
+    // fails, PrevIsDown becomes false, and the next frame registers a fake human click.
 }
 
-std::vector<entt::entity> UIRenderer::SortUIEntities(entt::registry &registry) {
+std::vector<entt::entity> WidgetRenderer::SortUIEntities(entt::registry &registry) {
     auto view = registry.view<ControlComponent>();
     std::vector<entt::entity> sorted(view.begin(), view.end());
 
@@ -59,7 +63,7 @@ std::vector<entt::entity> UIRenderer::SortUIEntities(entt::registry &registry) {
     return sorted;
 }
 
-bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2 &screenPos, const ImVec2 &size, bool editMode) {
+bool WidgetRenderer::RenderUIComponent(Entity entity, const ImVec2 &screenPos, const ImVec2 &size, bool editMode) {
     if (!entity.HasComponent<UIControlComponent>())
         return false;
 
@@ -68,7 +72,27 @@ bool UIRenderer::RenderUIComponent(Entity entity, const ImVec2 &screenPos, const
     return RenderControl(m_FontRegistry, entity, control, screenPos, size);
 }
 
-void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const ImVec2 &referenceSize, bool editMode) {
+void WidgetRenderer::ProcessInput(Scene *scene, bool suppressInput) {
+    if (!scene)
+        return;
+
+    // Input hit-testing needs widget layout rects. Reuse the canvas geometry
+    // captured by the previous DrawCanvas; until the canvas has been drawn once
+    // there is nothing on screen to click, so just reset flags via suppress.
+    auto &registry = scene->GetRegistry();
+
+    if (!m_HasCanvasRect) {
+        // No canvas rect yet — reset flags only, skip hit-testing.
+        UpdateUIInput(registry, m_LayoutSystem, /*suppress=*/true);
+        return;
+    }
+
+    ImVec2 refSize = (m_CanvasSize.x > 0) ? m_CanvasSize : ImGui::GetIO().DisplaySize;
+    m_LayoutSystem.Update(scene, refSize, m_CanvasPos);
+    UpdateUIInput(registry, m_LayoutSystem, suppressInput);
+}
+
+void WidgetRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const ImVec2 &referenceSize, bool editMode) {
     CH_CORE_ASSERT(scene, "Scene is null!");
 
     ImVec2 refSize = (referenceSize.x > 0) ? referenceSize : ImGui::GetIO().DisplaySize;
@@ -77,13 +101,14 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
 
     auto &registry = scene->GetRegistry();
 
-    // 1. Update and synchronize internal UI systems
+    // Cache canvas geometry so next frame's ProcessInput can hit-test without
+    // depending on this render path executing.
+    m_CanvasPos = referencePosition;
+    m_CanvasSize = refSize;
+    m_HasCanvasRect = true;
+
+    // 1. Update layout, then render (input is handled separately in ProcessInput).
     m_LayoutSystem.Update(scene, refSize, referencePosition);
-
-    if (m_InputCooldownFrames > 0)
-        m_InputCooldownFrames--;
-
-    m_InputSystem.Update(registry, m_LayoutSystem, m_InputCooldownFrames);
     m_AnimationSystem.Update(registry, ImGui::GetIO().DeltaTime);
 
     // 2. Render UI elements
@@ -94,14 +119,12 @@ void UIRenderer::DrawCanvas(Scene *scene, const ImVec2 &referencePosition, const
     ImGui::PushClipRect(canvasClipMin, canvasClipMax, true);
 
     for (entt::entity id : uiEntities) {
-        // FIX 1: Pass entt::registry pointer as required by the Entity constructor
         Entity entity(id, scene->GetRegistryPtr());
 
         auto &control = registry.get<ControlComponent>(id);
         if (!control.IsActive)
             continue;
 
-        // FIX 2: Use local id directly instead of entity.GetHandle()
         UIRect rect = m_LayoutSystem.GetEntityRect(id);
         ImVec2 screenPos = {rect.x, rect.y};
         ImVec2 size = {rect.width, rect.height};

@@ -11,28 +11,12 @@
 namespace Chained
 {
 
-void UIInputSystem::Update(entt::registry& registry, const UILayoutSystem& layout, int inputCooldown)
+void UpdateUIInput(entt::registry& registry, const UILayoutSystem& layout, bool suppress)
 {
-    ImVec2 mousePos = ImGui::GetMousePos();
-    bool mouseDown = ImGui::IsMouseDown(0);
-    bool mouseClicked = ImGui::IsMouseClicked(0);
-
-    // Collect active entities and sort by ZOrder descending so the topmost widget
-    // is processed first — this lets us consume the click on the first hit.
     auto view = registry.view<UIControlComponent, ControlComponent>();
 
-    std::vector<entt::entity> sorted;
-    sorted.reserve(view.size_hint());
-    for (auto entityID : view)
-    {
-        if (view.get<ControlComponent>(entityID).IsActive)
-            sorted.push_back(entityID);
-    }
-    std::sort(sorted.begin(), sorted.end(), [&](entt::entity a, entt::entity b) {
-        return view.get<ControlComponent>(a).ZOrder > view.get<ControlComponent>(b).ZOrder;
-    });
-
-    // Reset all flags before processing so stale state never leaks across frames.
+    // Reset per-frame flags. PrevIsDown is NOT reset here — it carries over so the
+    // edge detector (!PrevIsDown && IsDown) works correctly the next frame.
     for (auto entityID : view)
     {
         auto& widget = view.get<UIControlComponent>(entityID);
@@ -41,7 +25,25 @@ void UIInputSystem::Update(entt::registry& registry, const UILayoutSystem& layou
         widget.PressedThisFrame = false;
     }
 
-    bool clickConsumed = false;
+    ImVec2 mousePos = ImGui::GetMousePos();
+    bool mouseDown = ImGui::IsMouseDown(0);
+
+    // Collect active entities for Z-order sorted processing.
+    std::vector<entt::entity> sorted;
+    sorted.reserve(view.size_hint());
+    for (auto entityID : view)
+    {
+        if (view.get<ControlComponent>(entityID).IsActive)
+            sorted.push_back(entityID);
+    }
+
+    // Sort by Z-order: highest (topmost) first.
+    std::sort(sorted.begin(), sorted.end(), [&](entt::entity a, entt::entity b) {
+        return view.get<ControlComponent>(a).ZOrder > view.get<ControlComponent>(b).ZOrder;
+    });
+
+    // Input consumption flags — only the topmost hovered element receives events.
+    bool hoverConsumed = false;
 
     for (auto entityID : sorted)
     {
@@ -51,14 +53,35 @@ void UIInputSystem::Update(entt::registry& registry, const UILayoutSystem& layou
         bool isOver = mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width &&
                       mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height;
 
-        widget.IsHovered = isOver;
-        widget.IsDown = isOver && mouseDown && inputCooldown == 0;
+        bool wasDown = widget.PrevIsDown;
 
-        if (isOver && mouseClicked && inputCooldown == 0 && !clickConsumed)
+        if (isOver && !hoverConsumed)
         {
-            widget.PressedThisFrame = true;
-            clickConsumed = true;
+            widget.IsHovered = true;
+            hoverConsumed = true;
+
+            if (mouseDown)
+            {
+                widget.IsDown = true;
+            }
+
+            // Own edge detection: click = rising edge of IsDown
+            if (widget.IsDown && !wasDown)
+            {
+                widget.PressedThisFrame = true;
+            }
         }
+        
+        // Suppress inputs globally at the end (e.g. crossing Edit->Play boundary).
+        // This ensures PrevIsDown is still properly updated so human hold-overs 
+        // don't trigger false edges on the frame AFTER suppression ends.
+        if (suppress)
+        {
+            widget.PressedThisFrame = false;
+        }
+
+        // Update previous state for next frame's edge detection.
+        widget.PrevIsDown = widget.IsDown;
     }
 }
 

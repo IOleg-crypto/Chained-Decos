@@ -93,6 +93,13 @@ private:
     
     std::string m_PendingSceneTransitionPath;
     ImVec2 m_ViewportSize = {1280, 720};
+
+    // Tracks the scene state seen on the previous frame so we can detect the
+    // Edit->Play transition. On the first Play frame we suppress UI input so the
+    // physical mouse click that pressed the Play toolbar button (still reported
+    // as IsMouseClicked this frame) does not leak through to game widgets.
+    SceneState m_PrevSceneState = SceneState::Edit;
+    bool m_SuppressNextUIInput = false;
     
     static inline EditorLayer* s_Instance = nullptr;
 };

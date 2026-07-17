@@ -87,9 +87,10 @@ namespace Chained
                     s_EntityScripts[entityId] = scriptList;
                 }
                 scriptList.Add(script);
-                s_ActiveScripts.Add(script);
                 
-                // Defer OnCreate to next OnUpdate to avoid re-entrant Coral calls
+                // Defer OnCreate to next OnUpdate to avoid re-entrant Coral calls.
+                // Do NOT add to s_ActiveScripts yet — the script graduates there
+                // only after OnStart completes, so OnUpdate never runs prematurely.
                 s_ScriptsNeedingCreate.Add(script);
             }
             catch (Exception ex)
@@ -230,6 +231,9 @@ namespace Chained
                     {
                         Console.WriteLine($"[ScriptEngine] ERROR: Exception in OnStart for {script.GetType().Name}: {ex.Message}");
                     }
+                    // Graduate to active only after OnStart — prevents OnUpdate from
+                    // running on the same frame as OnCreate (which caused button auto-fire).
+                    s_ActiveScripts.Add(script);
                 }
             }
 

@@ -4,10 +4,18 @@ namespace Chained {
 bool ButtonControl_IsClicked(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<UIControlComponent>()
-               ? entity.GetComponent<UIControlComponent>().PressedThisFrame
-               : false;
+    if (entity && entity.HasComponent<UIControlComponent>())
+    {
+        auto& widget = entity.GetComponent<UIControlComponent>();
+        if (widget.PressedThisFrame)
+        {
+            widget.PressedThisFrame = false; // consume on read
+            return true;
+        }
+    }
+    return false;
 }
+
 bool ButtonControl_IsDown(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);

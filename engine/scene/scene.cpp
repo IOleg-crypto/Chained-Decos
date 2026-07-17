@@ -7,7 +7,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/ui_factory.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/animation_systems.h"
 #include "engine/scene/components/control_component.h"
@@ -182,11 +182,6 @@ void Scene::OnRuntimeStart(const SceneContext& ctx)
     ctx.PhysicsSystem->InitializeBodies(this);
 
     ctx.Scripting->SetContextScene(this);
-
-    if (ctx.UI)
-    {
-        ctx.UI->ResetInputCooldown();
-    }
 
     // Start scripts only when in full gameplay state
     if (m_State == SceneState::Play)

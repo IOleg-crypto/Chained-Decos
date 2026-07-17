@@ -84,7 +84,7 @@ UIRect UILayoutSystem::CalculateRecursive(Entity entity, const UIRect& canvasRec
         }
     }
 
-    // Auto-size logic for labels (moved from UIRenderer)
+    // Auto-size logic for labels (moved from WidgetRenderer)
     if (entity.HasComponent<UIControlComponent>())
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
@@ -100,12 +100,11 @@ UIRect UILayoutSystem::CalculateRecursive(Entity entity, const UIRect& canvasRec
         }
     }
 
-    Rectangle r = ComponentUtils::CalculateRect(control.Transform, {parentRect.width, parentRect.height},
+    UIRect r = ComponentUtils::CalculateRect(control.Transform, {parentRect.width, parentRect.height},
                                                 {parentRect.x, parentRect.y});
     
-    UIRect result = {r.x, r.y, r.width, r.height};
-    m_RectCache[id] = result;
-    return result;
+    m_RectCache[id] = r;
+    return r;
 }
 
 } // namespace Chained

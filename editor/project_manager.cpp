@@ -5,7 +5,7 @@
 #include "engine/project/project.h"
 #include "project/project_serializer.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/ui/ui_renderer.h"
+#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/scene/scene_events.h"
 #include "scripting/scriptengine.h"
 #include "engine/assets/asset_manager.h"
@@ -330,7 +330,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
  
          // Load engine shaders and resources
         ServiceLocator::Get<Renderer>()->LoadEngineResources();
-        ServiceLocator::Get<UIRenderer>()->LoadProjectFonts();
+        ServiceLocator::Get<WidgetRenderer>()->LoadProjectFonts();
 
         m_LastProjectPath = e.GetPath();
 

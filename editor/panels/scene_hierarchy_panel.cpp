@@ -416,7 +416,7 @@ void SceneHierarchyPanel::DrawContextMenu()
 
         static const WidgetEntry basicWidgets[] = {
             {"Panel", "Panel"}, {"Button", "Button"}, {"Label", "Label"},
-            {"Slider", "Slider"}, {"Checkbox", "CheckBox"}, {"InputText", "InputText"},
+            {"Slider", "Slider"}, {"Checkbox", "Checkbox"}, {"InputText", "InputText"},
             {"ComboBox", "ComboBox"}, {"ProgressBar", "ProgressBar"},
         };
         static const WidgetEntry visualWidgets[] = {

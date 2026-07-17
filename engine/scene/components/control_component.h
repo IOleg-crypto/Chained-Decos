@@ -78,6 +78,7 @@ struct UIControlComponent
     // Runtime state flags
     bool IsHovered = false;
     bool IsDown = false;
+    bool PrevIsDown = false;       // used for self-tracked edge detection
     bool PressedThisFrame = false;
     bool ValueChanged = false;
 

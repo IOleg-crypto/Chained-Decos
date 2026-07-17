@@ -127,7 +127,6 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         return;
     }
 
-    // ── КРОК 1: Синхронізація швидкостей та телепортів з ECS у Jolt перед симуляцією ──
     auto& registry = scene->GetRegistry();
     auto view = registry.view<TransformComponent, RigidBodyComponent>();
 
@@ -143,11 +142,8 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 
         if (rb.Type == RigidBodyComponent::BodyType::Dynamic)
         {
-            // Jolt є єдиним авторитетом для Y (гравітація).
-            // Скрипт контролює X, Z. Для стрибка — rb.Velocity.y > 0.5 (явний імпульс).
             glm::vec3 currentJoltVelocity = world->GetVelocity(rb.Handle);
             glm::vec3 finalVelocity = rb.Velocity;
-            // Завжди берємо Y з Jolt, окрім стрибкового імпульсу зі скрипту
             if (rb.Velocity.y <= 0.5f)
             {
                 finalVelocity.y = currentJoltVelocity.y;
@@ -156,15 +152,12 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         }
         else if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
         {
-            // Кінематичне тіло: скрипт рухає transform напряму.
-            // Потрібно синхронізувати позицію в Jolt, щоб контакти спрацювали.
             world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
             world->SetVelocity(rb.Handle, rb.Velocity);
             transform.IsDirty = false;
-            continue; // позиція вже синхронізована, skip загального IsDirty нижче
+            continue;
         }
 
-        // Для Dynamic: обробляємо телепортацію (IsDirty з редактора/коду)
         if (transform.IsDirty)
         {
             world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
@@ -172,7 +165,6 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         }
     }
 
-    // ── КРОК 2: Фізичний крок симуляції Jolt ──
     int steps = 0;
     while (ctx.Accumulator >= kFixedDt && steps < kMaxStepsPerFrame)
     {
@@ -185,10 +177,10 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
 
     if (ctx.Accumulator >= kFixedDt)
     {
-        ctx.Accumulator = 0.0f; // Захист від накопичення затримок (зависання дебагера тощо)
+        ctx.Accumulator = 0.0f;
     }
 
-    // ── КРОК 3: Оновлюємо компоненти за результатами повної симуляції кадрів ──
+
     if (stepped)
     {
         UpdateColliders(scene);
@@ -215,14 +207,23 @@ void Physics::UpdateColliders(Scene* scene)
             continue;
         }
 
+        bool isActive = world->IsBodyActive(rb.Handle);
+
         if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
         {
-            // Кінематика: позиція контролюється скриптом, але IsGrounded потрібен.
-            rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
+            // Kinematic: position is controlled by script, but IsGrounded is still needed.
+            // Only update IsGrounded for active bodies; sleeping bodies do not move,
+            // so their grounded state remains correct from the previous frame.
+            if (isActive)
+                rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
             continue;
         }
 
-        // Dynamic: читаємо позицію, швидкість та стан заземлення з Jolt
+        // Dynamic: read position, velocity and grounded state from Jolt
+        // For sleeping bodies - position hasn't changed, IsGrounded is kept from previous frame.
+        if (!isActive)
+            continue;
+
         glm::vec3 pos;
         glm::quat rot;
         world->GetTransform(rb.Handle, pos, rot);

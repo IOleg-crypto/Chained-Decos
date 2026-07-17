@@ -11,7 +11,7 @@ class UIFontRegistry;
 
 // Free function to render any UI control based on its variant type.
 // Eliminates the boilerplate single-function Dispatcher struct.
-bool RenderControl(const UIFontRegistry& fontRegistry,
+bool RenderControl(UIFontRegistry& fontRegistry,
                    Entity entity, UIControlComponent& control, const ImVec2& screenPos, const ImVec2& size);
 
 } // namespace Chained

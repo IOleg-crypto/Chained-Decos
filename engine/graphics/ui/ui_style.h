@@ -29,10 +29,6 @@ enum class CanvasScaleMode : uint8_t
     ScaleWithScreenSize,
 };
 
-struct Rectangle
-{
-    float x, y, width, height;
-};
 struct CanvasSettings
 {
     glm::vec2 ReferenceResolution = {1920.0f, 1080.0f};
