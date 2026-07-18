@@ -42,6 +42,10 @@ if(MSVC)
     target_compile_options(engine_scripting PRIVATE /bigobj)
 elseif(MINGW)
     target_compile_options(engine_scripting PRIVATE -Wa,-mbig-obj)
+    # See cmake/external/coral.cmake: MinGW -O0 codegen can misalign the stack
+    # on the call path into CoreCLR, causing Debug-only access violations on
+    # CI. -Og overrides the global Debug -O0 for this bridge module only.
+    target_compile_options(engine_scripting PRIVATE $<$<CONFIG:Debug>:-Og>)
 endif()
 
 
