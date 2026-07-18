@@ -25,6 +25,10 @@ public:
     // Centralized font loading in the DLL to avoid cross-module atlas corruption
     void* AddFontFromFile(const std::string& path, float size, const void* config = nullptr, const void* ranges = nullptr);
 
+    // Clear all fonts from the atlas so they can be re-added at a new size/typeface.
+    // Follow with AddFontFromFile(...) + RefreshFontAtlasTexture() to apply.
+    void ClearFonts();
+
     void BlockEvents(bool block)
     {
         m_BlockEvents = block;

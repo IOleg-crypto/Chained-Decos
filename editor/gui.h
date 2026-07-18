@@ -20,6 +20,9 @@ public:
     // Draws the main editor menu bar for the provided panel set.
     static void DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels);
 
+    // Draws the standalone Editor Settings window (toggled from the "Editor" menu).
+    static void DrawEditorSettings();
+
     // Property layout helpers.
     static void BeginPropertyGrid();
     static void EndPropertyGrid();

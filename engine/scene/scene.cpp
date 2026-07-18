@@ -9,7 +9,6 @@
 #include "engine/graphics/ui/ui_factory.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/animation_systems.h"
 #include "engine/scene/components/control_component.h"
 #include "engine/scene/components/scene_transition_component.h"
 #include "engine/scene/scene_events.h"
@@ -256,8 +255,7 @@ void Scene::OnUpdateRuntime(Timestep ts, const SceneContext& ctx)
     // 3. Physics Simulation
     ctx.PhysicsSystem->Update(this, ts, true);
 
-    // 4. Animation Playback
-    Animation::UpdatePlayback(this, ts);
+    // 4. Animation Playback (handled by SceneResources::Update)
 
     // 5. Scene Transitions
     auto transitionView = m_Registry->view<SceneTransitionComponent>();
@@ -303,8 +301,7 @@ void Scene::OnUpdateSimulation(Timestep ts, const SceneContext& ctx)
     // 3. Physics Simulation
     ctx.PhysicsSystem->Update(this, ts, true);
 
-    // 4. Animation Playback
-    Animation::UpdatePlayback(this, ts);
+    // 4. Animation Playback (handled by SceneResources::Update)
 }
 
 void Scene::OnUpdateEditor(Timestep timestep, const SceneContext& ctx)

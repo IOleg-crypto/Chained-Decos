@@ -243,7 +243,7 @@ void ComponentRegistry::RegisterEngineComponents()
     RegisterReflective<SpriteComponent>("Sprite", ICON_FA_IMAGE, "Rendering");
     RegisterReflective<ShaderComponent>("Shader", nullptr, "Rendering");
 
-    RegisterReflective<SpawnComponent>("SpawnZone", ICON_FA_LOCATION_DOT);
+    RegisterReflective<SpawnComponent>("Spawn", ICON_FA_LOCATION_DOT);
     RegisterReflective<PlayerComponent>("Player", ICON_FA_USER);
 
     // Audio

@@ -146,6 +146,8 @@ void EditorLayout::OnImGuiRender()
     bool readOnly = EditorLayer::Get().GetSceneState() == SceneState::Play;
     m_Panels.OnImGuiRender(readOnly);
 
+    EditorGUI::DrawEditorSettings();
+
     ImGui::End();
 }
 

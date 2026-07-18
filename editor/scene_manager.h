@@ -41,6 +41,16 @@ public:
     std::shared_ptr<Scene> GetRuntimeScene() const { return m_RuntimeScene; }
     std::shared_ptr<Scene> GetEditorScene() const { return m_EditorScene; }
 
+    // Dirty tracking for confirm-on-close
+    bool IsSceneDirty() const { return m_SceneDirty; }
+    void MarkSceneDirty() { m_SceneDirty = true; }
+    void ClearSceneDirty() { m_SceneDirty = false; }
+
+    // Confirm dialogs (called by UI when IsConfirmPending)
+    bool IsConfirmPending() const { return m_PendingNewScene || m_PendingOpenScene; }
+    void ConfirmPendingAction();
+    void CancelPendingAction();
+
     /// @brief Set the event callback that scenes will use to dispatch events (e.g. SceneChangeRequestEvent).
     void SetSceneEventCallback(const Scene::EventCallbackFn& callback) { m_SceneEventCallback = callback; }
 
@@ -94,6 +104,13 @@ private:
 
     float m_AutoSaveTimer = 0.0f;
     float m_LastAutoSaveTime = 0.0f;
+
+    bool m_SceneDirty = false;
+
+    // Pending confirm actions (set when dirty scene needs user confirmation)
+    bool m_PendingNewScene = false;
+    bool m_PendingOpenScene = false;
+    std::filesystem::path m_PendingOpenPath;
 
     // Dependencies
     CommandHistory& m_CommandHistory;

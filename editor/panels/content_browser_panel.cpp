@@ -1,11 +1,13 @@
-#include "content_browser_panel.h"
-#include "thirdparty/IconsFontAwesome6.h"
+#include "editor/panels/content_browser_panel.h"
 #include "editor/action_commands.h"
 #include "editor/layer.h"
 #include "engine/core/log.h"
 #include "engine/project/project.h"
+#include "engine/scene/components.h"
+#include "engine/scene/prefab_serializer.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
+#include "thirdparty/IconsFontAwesome6.h"
 
 namespace Chained
 {
@@ -23,6 +25,8 @@ ContentBrowserPanel::ContentBrowserPanel()
     {
         m_Provider->SetRoot(std::filesystem::current_path() / "assets");
     }
+
+    m_ThumbnailSize = EditorLayer::Get().GetConfig().DefaultThumbnailSize;
 }
 
 ContentBrowserPanel::~ContentBrowserPanel() = default;
@@ -164,27 +168,24 @@ void ContentBrowserPanel::RenderGridView()
             if (!asset.isDirectory)
             {
                 static const char* kAssetIcons[] = {
-                    nullptr,                // Directory (not used here)
-                    ICON_FA_CUBES,          // Scene
-                    ICON_FA_FILE_CODE,      // Script
-                    ICON_FA_SHAPES,         // Model
-                    ICON_FA_IMAGE,          // Texture
-                    ICON_FA_MUSIC,          // Audio
-                    ICON_FA_CUBE,           // Prefab
-                    ICON_FA_FILE            // Other
+                    nullptr,           // Directory (not used here)
+                    ICON_FA_CUBES,     // Scene
+                    ICON_FA_FILE_CODE, // Script
+                    ICON_FA_SHAPES,    // Model
+                    ICON_FA_IMAGE,     // Texture
+                    ICON_FA_MUSIC,     // Audio
+                    ICON_FA_CUBE,      // Prefab
+                    ICON_FA_FILE       // Other
                 };
                 static constexpr int kAssetIconCount = sizeof(kAssetIcons) / sizeof(kAssetIcons[0]);
                 int typeIdx = static_cast<int>(asset.type);
-                icon = (typeIdx >= 0 && typeIdx < kAssetIconCount && kAssetIcons[typeIdx])
-                           ? kAssetIcons[typeIdx]
-                           : ICON_FA_FILE;
+                icon = (typeIdx >= 0 && typeIdx < kAssetIconCount && kAssetIcons[typeIdx]) ? kAssetIcons[typeIdx]
+                                                                                           : ICON_FA_FILE;
             }
 
             ImGui::BeginGroup();
             ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
-            if (ImGui::Button(icon, {cellSize - m_Padding, m_ThumbnailSize * m_IconScale}))
-            {
-            }
+            ImGui::Button(icon, {cellSize - m_Padding, m_ThumbnailSize * m_IconScale});
 
             if (ImGui::BeginPopupContextItem())
             {
@@ -287,9 +288,26 @@ void ContentBrowserPanel::OnAssetDoubleClicked(const AssetEntry& entry)
     {
         m_NextDirectory = entry.path;
     }
-    else if (entry.type == EditorAssetType::Scene)
+    if (entry.type == EditorAssetType::Scene)
     {
         EditorLayer::Get().GetSceneManager().OpenScene(entry.path);
+    }
+    if (entry.type == EditorAssetType::Prefab)
+    {
+        PrefabSerializer::Deserialize(EditorLayer::Get().GetSceneManager().GetActiveScene().get(), entry.path.string());
+    }
+    if (entry.type == EditorAssetType::Model)
+    {
+        Entity entity = EditorLayer::Get().GetSceneManager().GetActiveScene()->CreateEntity(entry.name);
+        auto& modelcomp = entity.AddComponent<ModelComponent>();
+        // Use relative path if possible to satisfy portability
+        modelcomp.ModelPath = Project::GetRelativePath(entry.path);
+
+        // Select the new entity. Dispatch through the app so Inspector/Material
+        // panels (which subscribe to EntitySelectedEvent) also refresh — the event
+        // handler in EditorLayer::OnEvent updates m_EditorState.SelectedEntity for us.
+        EntitySelectedEvent e((entt::entity)entity, EditorLayer::Get().GetSceneManager().GetActiveScene().get());
+        Application::Get().OnEvent(e);
     }
 }
 

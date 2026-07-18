@@ -49,9 +49,22 @@ public:
     void SetMoveSpeed(float speed) { m_MoveSpeed = speed; }
     void SetBoostMultiplier(float multiplier) { m_BoostMultiplier = multiplier; }
     void SetDisableZoom(bool disable) { m_DisableZoom = disable; }
+    void SetRotationSpeed(float speed) { m_RotationSpeed = speed; }
+    void SetZoomSpeedMultiplier(float multiplier) { m_ZoomSpeedMultiplier = multiplier; }
+    void SetFovDegrees(float fov) { m_FovDegrees = fov; }
+    void SetNearClip(float near) { m_NearClip = near; }
+    void SetFarClip(float far) { m_FarClip = far; }
+
     float GetBoostMultiplier() const { return m_BoostMultiplier; }
     float GetMoveSpeed() const { return m_MoveSpeed; }
     bool GetDisableZoom() const { return m_DisableZoom; }
+    float GetRotationSpeed() const { return m_RotationSpeed; }
+    float GetZoomSpeedMultiplier() const { return m_ZoomSpeedMultiplier; }
+    float GetFovDegrees() const { return m_FovDegrees; }
+    float GetNearClip() const { return m_NearClip; }
+    float GetFarClip() const { return m_FarClip; }
+
+    Camera3D ToCamera3D() const;
 
     void MousePan(const glm::vec2& delta);
     void MouseRotate(const glm::vec2& delta);
@@ -74,6 +87,11 @@ private:
     float m_MoveSpeed = 10.0f;
     float m_BoostMultiplier = 5.0f;
     bool m_DisableZoom = false;
+    float m_RotationSpeed = 1.0f;
+    float m_ZoomSpeedMultiplier = 1.0f;
+    float m_FovDegrees = 45.0f;
+    float m_NearClip = 0.1f;
+    float m_FarClip = 10000.0f;
 };
 
 } // namespace Chained

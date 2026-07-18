@@ -1,5 +1,7 @@
 #include "geometry_generator.h"
 #include <vector>
+#include <cmath>
+#include <algorithm>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
@@ -209,6 +211,11 @@ namespace Chained
         });
         auto vao = VertexArray::Create();
         vao->AddVertexBuffer(vbo);
+        // TriangleCount = 2 below makes DrawMesh take the DrawIndexed path, so the VAO MUST
+        // carry an index buffer — without it glDrawElements reads from a null EBO and crashes.
+        uint32_t indices[] = {0, 1, 2, 2, 3, 0};
+        auto ebo = IndexBuffer::Create(indices, 6);
+        vao->SetIndexBuffer(ebo);
 
         Mesh mesh;
         mesh.VAO = vao;
@@ -353,69 +360,212 @@ namespace Chained
         return mesh;
     }
 
-    Model GeometryGenerator::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
+    namespace
     {
-        Model model;
+        // Builds a RawMesh (de-interleaved arrays, no VAO) for a box of the given dimensions.
+        // Matches the interleaved layout of GenerateCube: 24 verts, per-face normals + texcoords.
+        RawMesh BuildCubeRaw(const glm::vec3& dimensions)
+        {
+            float w = dimensions.x * 0.5f;
+            float h = dimensions.y * 0.5f;
+            float d = dimensions.z * 0.5f;
 
-        Mesh mesh;
-        bool generated = false;
+            struct V { glm::vec3 p, n; glm::vec2 t; };
+            const V verts[] = {
+                // Front (+Z)
+                {{-w,-h, d},{0,0, 1},{0,0}}, {{ w,-h, d},{0,0, 1},{1,0}}, {{ w, h, d},{0,0, 1},{1,1}}, {{-w, h, d},{0,0, 1},{0,1}},
+                // Back (-Z)
+                {{ w,-h,-d},{0,0,-1},{0,0}}, {{-w,-h,-d},{0,0,-1},{1,0}}, {{-w, h,-d},{0,0,-1},{1,1}}, {{ w, h,-d},{0,0,-1},{0,1}},
+                // Top (+Y)
+                {{-w, h, d},{0, 1,0},{0,0}}, {{ w, h, d},{0, 1,0},{1,0}}, {{ w, h,-d},{0, 1,0},{1,1}}, {{-w, h,-d},{0, 1,0},{0,1}},
+                // Bottom (-Y)
+                {{-w,-h,-d},{0,-1,0},{0,0}}, {{ w,-h,-d},{0,-1,0},{1,0}}, {{ w,-h, d},{0,-1,0},{1,1}}, {{-w,-h, d},{0,-1,0},{0,1}},
+                // Right (+X)
+                {{ w,-h, d},{ 1,0,0},{0,0}}, {{ w,-h,-d},{ 1,0,0},{1,0}}, {{ w, h,-d},{ 1,0,0},{1,1}}, {{ w, h, d},{ 1,0,0},{0,1}},
+                // Left (-X)
+                {{-w,-h,-d},{-1,0,0},{0,0}}, {{-w,-h, d},{-1,0,0},{1,0}}, {{-w, h, d},{-1,0,0},{1,1}}, {{-w, h,-d},{-1,0,0},{0,1}},
+            };
+
+            RawMesh raw;
+            raw.materialIndex = 0;
+            for (const auto& v : verts)
+            {
+                raw.vertices.insert(raw.vertices.end(), {v.p.x, v.p.y, v.p.z});
+                raw.normals.insert(raw.normals.end(), {v.n.x, v.n.y, v.n.z});
+                raw.texcoords.insert(raw.texcoords.end(), {v.t.x, v.t.y});
+            }
+            for (uint32_t face = 0; face < 6; ++face)
+            {
+                uint32_t b = face * 4;
+                raw.indices.insert(raw.indices.end(), {b, b + 1, b + 2, b + 2, b + 3, b});
+            }
+            raw.MinBounds = -dimensions * 0.5f;
+            raw.MaxBounds =  dimensions * 0.5f;
+            return raw;
+        }
+
+        // UV-sphere with positions == normals*radius (unit normals), matching GenerateSphere.
+        RawMesh BuildSphereRaw(float radius, int slices, int stacks)
+        {
+            RawMesh raw;
+            raw.materialIndex = 0;
+
+            for (int stackIndex = 0; stackIndex <= stacks; ++stackIndex)
+            {
+                float stackFraction = (float)stackIndex / (float)stacks;
+                float polarAngle = stackFraction * glm::pi<float>();
+
+                for (int sliceIndex = 0; sliceIndex <= slices; ++sliceIndex)
+                {
+                    float sliceFraction = (float)sliceIndex / (float)slices;
+                    float azimuthAngle = sliceFraction * 2.0f * glm::pi<float>();
+
+                    float nx = std::cos(azimuthAngle) * std::sin(polarAngle);
+                    float ny = std::cos(polarAngle);
+                    float nz = std::sin(azimuthAngle) * std::sin(polarAngle);
+
+                    raw.vertices.insert(raw.vertices.end(), {nx * radius, ny * radius, nz * radius});
+                    raw.texcoords.insert(raw.texcoords.end(), {sliceFraction, 1.0f - stackFraction});
+                    raw.normals.insert(raw.normals.end(), {nx, ny, nz});
+                }
+            }
+
+            for (int stackIndex = 0; stackIndex < stacks; ++stackIndex)
+            {
+                for (int sliceIndex = 0; sliceIndex < slices; ++sliceIndex)
+                {
+                    uint32_t row0 = stackIndex * (slices + 1) + sliceIndex;
+                    uint32_t row1 = (stackIndex + 1) * (slices + 1) + sliceIndex;
+                    raw.indices.insert(raw.indices.end(), {row1, row0, row0 + 1, row1, row0 + 1, row1 + 1});
+                }
+            }
+
+            raw.MinBounds = {-radius, -radius, -radius};
+            raw.MaxBounds = { radius,  radius,  radius};
+            return raw;
+        }
+
+        // Flat XZ plane (up = +Y), spanning dimensions.x by dimensions.z.
+        RawMesh BuildPlaneRaw(const glm::vec3& dimensions)
+        {
+            float hx = dimensions.x * 0.5f;
+            float hz = dimensions.z * 0.5f;
+
+            RawMesh raw;
+            raw.materialIndex = 0;
+            const glm::vec3 pos[] = {{-hx, 0.0f, -hz}, {hx, 0.0f, -hz}, {hx, 0.0f, hz}, {-hx, 0.0f, hz}};
+            const glm::vec2 uv[]  = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
+            for (int i = 0; i < 4; ++i)
+            {
+                raw.vertices.insert(raw.vertices.end(), {pos[i].x, pos[i].y, pos[i].z});
+                raw.normals.insert(raw.normals.end(), {0.0f, 1.0f, 0.0f});
+                raw.texcoords.insert(raw.texcoords.end(), {uv[i].x, uv[i].y});
+            }
+            raw.indices = {0, 1, 2, 2, 3, 0};
+            raw.MinBounds = {-hx, 0.0f, -hz};
+            raw.MaxBounds = { hx, 0.0f,  hz};
+            return raw;
+        }
+
+        // Capsule: cylinder body + two hemispheres. Normals are the unit sphere directions
+        // (a good approximation; the cylinder band gets radial normals from the polar sweep).
+        RawMesh BuildCapsuleRaw(float radius, float height, int slices, int stacks)
+        {
+            RawMesh raw;
+            raw.materialIndex = 0;
+
+            float cylinderHeight = std::max(0.0f, height - 2.0f * radius);
+            float halfCylinderHeight = cylinderHeight * 0.5f;
+
+            for (int stackIndex = 0; stackIndex <= stacks; ++stackIndex)
+            {
+                float stackFraction = (float)stackIndex / (float)stacks;
+                float polarAngle = stackFraction * glm::pi<float>();
+                float yOffset = (stackFraction < 0.5f) ? halfCylinderHeight : -halfCylinderHeight;
+
+                for (int sliceIndex = 0; sliceIndex <= slices; ++sliceIndex)
+                {
+                    float sliceFraction = (float)sliceIndex / (float)slices;
+                    float azimuthAngle = sliceFraction * 2.0f * glm::pi<float>();
+
+                    float nx = std::cos(azimuthAngle) * std::sin(polarAngle);
+                    float ny = std::cos(polarAngle);
+                    float nz = std::sin(azimuthAngle) * std::sin(polarAngle);
+
+                    raw.vertices.insert(raw.vertices.end(), {nx * radius, ny * radius + yOffset, nz * radius});
+                    raw.texcoords.insert(raw.texcoords.end(), {sliceFraction, 1.0f - stackFraction});
+                    raw.normals.insert(raw.normals.end(), {nx, ny, nz});
+                }
+            }
+
+            for (int stackIndex = 0; stackIndex < stacks; ++stackIndex)
+            {
+                for (int sliceIndex = 0; sliceIndex < slices; ++sliceIndex)
+                {
+                    uint32_t row0 = stackIndex * (slices + 1) + sliceIndex;
+                    uint32_t row1 = (stackIndex + 1) * (slices + 1) + sliceIndex;
+                    raw.indices.insert(raw.indices.end(), {row1, row0, row0 + 1, row1, row0 + 1, row1 + 1});
+                }
+            }
+
+            float halfH = halfCylinderHeight + radius;
+            raw.MinBounds = {-radius, -halfH, -radius};
+            raw.MaxBounds = { radius,  halfH,  radius};
+            return raw;
+        }
+    } // namespace
+
+    PendingModelData GeometryGenerator::GeneratePrimitivePendingData(const std::string& type,
+                                                                     const ProceduralParameters& params)
+    {
+        PendingModelData data;
+
+        RawMesh raw;
+        bool generated = true;
 
         if (type == ":cube:")
         {
-            mesh = GenerateCube(params.Dimensions);
-            generated = true;
+            raw = BuildCubeRaw(params.Dimensions);
         }
         else if (type == ":sphere:")
         {
-            mesh = GenerateSphere(params.Radius, params.Slices, params.Stacks);
-            mesh.MinBounds = { -params.Radius, -params.Radius, -params.Radius };
-            mesh.MaxBounds = {  params.Radius,  params.Radius,  params.Radius };
-            generated = true;
+            raw = BuildSphereRaw(params.Radius, params.Slices, params.Stacks);
         }
         else if (type == ":plane:")
         {
-            mesh = GenerateQuad(params.Dimensions.x * 0.5f);
-            mesh.MinBounds = { -params.Dimensions.x * 0.5f, 0.0f, -params.Dimensions.z * 0.5f };
-            mesh.MaxBounds = {  params.Dimensions.x * 0.5f, 0.0f,  params.Dimensions.z * 0.5f };
-            generated = true;
+            raw = BuildPlaneRaw(params.Dimensions);
         }
         else if (type == ":cylinder:" || type == ":cone:" || type == ":hemisphere:")
         {
-            // Approximate with capsule (no-skinning path), cylinder body
-            mesh = GenerateCapsule(params.Radius, params.Height, params.Slices, params.Stacks);
-            mesh.MinBounds = { -params.Radius, -params.Height * 0.5f, -params.Radius };
-            mesh.MaxBounds = {  params.Radius,  params.Height * 0.5f,  params.Radius };
-            generated = true;
+            // Approximate with a capsule body until dedicated generators are added.
+            raw = BuildCapsuleRaw(params.Radius, params.Height, params.Slices, params.Stacks);
         }
         else if (type == ":torus:" || type == ":knot:")
         {
-            // Approximate with sphere until dedicated generators are added
-            mesh = GenerateSphere(params.Radius, params.Slices, params.Stacks);
-            mesh.MinBounds = { -params.Radius, -params.Radius, -params.Radius };
-            mesh.MaxBounds = {  params.Radius,  params.Radius,  params.Radius };
-            generated = true;
+            // Approximate with a sphere until dedicated generators are added.
+            raw = BuildSphereRaw(params.Radius, params.Slices, params.Stacks);
+        }
+        else
+        {
+            generated = false;
         }
 
         if (!generated)
-            return model;
-
-        // Ensure bounds are set for the cube (GenerateCube doesn't set them)
-        if (type == ":cube:")
         {
-            mesh.MinBounds = -params.Dimensions * 0.5f;
-            mesh.MaxBounds =  params.Dimensions * 0.5f;
+            return data; // isValid stays false → OnLoaded is a no-op
         }
 
-        mesh.MaterialIndex = 0;
-        model.Meshes.push_back(std::move(mesh));
+        data.meshes.push_back(std::move(raw));
+        data.instances.push_back(MeshInstance{0, glm::mat4(1.0f)});
 
-        // Add default material
-        Material defaultMat;
-        defaultMat.AlbedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
-        defaultMat.Roughness   = 0.5f;
-        defaultMat.Metalness   = 0.0f;
-        model.Materials.push_back(defaultMat);
+        RawMaterial defaultMat;
+        defaultMat.name = "Primitive";
+        defaultMat.albedoColor = {1.0f, 1.0f, 1.0f, 1.0f};
+        defaultMat.roughness = 0.5f;
+        defaultMat.metalness = 0.0f;
+        data.materials.push_back(defaultMat);
 
-        return model;
+        data.isValid = true;
+        return data;
     }
 }

@@ -24,30 +24,24 @@
 #include "imgui_internal.h"
 #include "scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
+#include "editor/asset_types.h"
 #include "undo/entity_commands.h"
 
 namespace Chained
 {
 
-static Camera3D MakeCameraFromController(EditorCameraController& controller)
+Camera3D ViewportPanel::GetActiveOrEditorCamera(Scene* scene) const
 {
-    Camera3D camera;
-    glm::vec3 pos = controller.CalculatePosition();
-    glm::vec3 fp = controller.GetFocalPoint();
-    glm::vec3 up = controller.GetUpDirection();
-    camera.Position = {pos.x, pos.y, pos.z};
-    camera.Target = {fp.x, fp.y, fp.z};
-    camera.Up = {up.x, up.y, up.z};
-    camera.Projection = controller.GetProjectionType();
-    camera.FovDegrees = glm::degrees(controller.GetPerspectiveVerticalFOV());
-    camera.OrthographicSize = controller.GetOrthographicSize();
-    camera.NearClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
-                          ? controller.GetPerspectiveNearClip()
-                          : controller.GetOrthographicNearClip();
-    camera.FarClip = (controller.GetProjectionType() == Camera::ProjectionType::Perspective)
-                         ? controller.GetPerspectiveFarClip()
-                         : controller.GetOrthographicFarClip();
-    return camera;
+    if (!scene)
+    {
+        return {};
+    }
+    auto activeCameraOpt = SceneRenderer::GetActiveCamera(scene->GetRegistry());
+    if (activeCameraOpt.has_value() && m_SceneManager.GetSceneState() == SceneState::Play)
+    {
+        return activeCameraOpt.value();
+    }
+    return m_CameraController->ToCamera3D();
 }
 
 void ViewportPanel::ClearSceneBackground(Scene* scene)
@@ -268,23 +262,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     // Shortcuts & Keyboard Input — must be before ImGui::End() so IsWindowFocused works
     if (m_Focused || m_Hovered)
     {
-        for (const auto& btn : s_GizmoBtns)
-        {
-            if (Chained::Core::Input::IsKeyPressed(btn.key))
-            {
-                m_CurrentTool = btn.type;
-            }
-        }
-
-        if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) &&
-            Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
-        {
-            Entity selected = m_EditorState.SelectedEntity;
-            if (selected)
-            {
-                m_CommandHistory.PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
-            }
-        }
+        HandleKeyboardShortcuts();
     }
 
     ImGui::End();
@@ -303,10 +281,15 @@ void ViewportPanel::OnUpdate(Timestep ts)
         bool mouseInViewport = m_Hovered || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
         if (activeScene && mouseInViewport)
         {
-            auto& editorSettings = m_ProjectManager.GetEditorSettings();
-            m_CameraController->SetMoveSpeed(editorSettings.CameraMoveSpeed);
-            m_CameraController->SetBoostMultiplier(editorSettings.CameraBoostMultiplier);
-            m_CameraController->SetDisableZoom(editorSettings.DisableCameraZoom);
+            const auto& editorCfg = EditorLayer::Get().GetConfig();
+            m_CameraController->SetMoveSpeed(editorCfg.CameraMoveSpeed);
+            m_CameraController->SetBoostMultiplier(editorCfg.CameraBoostMultiplier);
+            m_CameraController->SetDisableZoom(editorCfg.DisableCameraZoom);
+            m_CameraController->SetRotationSpeed(editorCfg.CameraRotationSpeed);
+            m_CameraController->SetZoomSpeedMultiplier(editorCfg.CameraZoomSpeedMultiplier);
+            m_CameraController->SetFovDegrees(editorCfg.CameraFovDegrees);
+            m_CameraController->SetNearClip(editorCfg.CameraNearClip);
+            m_CameraController->SetFarClip(editorCfg.CameraFarClip);
 
             Entity primaryCamera =
                 SceneRenderer::GetPrimaryCameraEntity(activeScene->GetRegistry(), activeScene->GetRegistryPtr());
@@ -330,6 +313,27 @@ void ViewportPanel::OnEvent(Event& e)
     });
 }
 
+void ViewportPanel::HandleKeyboardShortcuts()
+{
+    for (const auto& btn : s_GizmoBtns)
+    {
+        if (Chained::Core::Input::IsKeyPressed(btn.key))
+        {
+            m_CurrentTool = btn.type;
+        }
+    }
+
+    if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) &&
+        Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
+    {
+        Entity selected = m_EditorState.SelectedEntity;
+        if (selected)
+        {
+            m_CommandHistory.PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+        }
+    }
+}
+
 Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
 {
     auto activeScene = m_SceneManager.GetActiveScene();
@@ -342,7 +346,7 @@ Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
     }
     else
     {
-        camera = MakeCameraFromController(*m_CameraController);
+        camera = m_CameraController->ToCamera3D();
     }
 
     return ScenePicker::CreateRayFromViewport(camera, mousePosition, m_ViewportSize);
@@ -427,7 +431,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
 
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
     bool cameraFound = activeCameraOpt.has_value();
-    auto camera = MakeCameraFromController(*m_CameraController);
+    auto camera = m_CameraController->ToCamera3D();
 
     if (cameraFound && m_SceneManager.GetSceneState() == SceneState::Play)
     {
@@ -458,18 +462,15 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     auto& currentDebugFlags = activeScene->GetSettings().DebugFlags;
     options.DrawGrid = currentDebugFlags.DrawGrid;
     options.ShowDebugColliders = currentDebugFlags.DrawColliders;
-    options.ShowDebugCollisionModelBox = currentDebugFlags.DrawCollisionModelBox;
     options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
     options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
     m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip,
                                  camera.FarClip, options);
 
     // Render proper editor icons (camera, light, spawn) with loaded textures
-    if (m_SceneManager.GetSceneState() != SceneState::Play)
+    if (m_SceneManager.GetSceneState() != SceneState::Play && EditorLayer::Get().GetConfig().ShowEditorIcons)
     {
         RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
-        // ServiceLocator<Renderer>()->GetSceneManager()->RenderEditorIcons(activeScene->GetRegistry(),
-        // activeScene->GetSettings(), camera);
     }
 
     m_HDRFramebuffer->Unbind();
@@ -525,6 +526,7 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
                 EntitySelectedEvent e((entt::entity)entity, activeScene);
                 Application::Get().OnEvent(e);
             }
+
         }
         ImGui::EndDragDropTarget();
     }
@@ -534,9 +536,7 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 {
     auto selectedEntity = m_EditorState.SelectedEntity;
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
-    auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-    bool useActiveCamera = activeCameraOpt.has_value() && m_SceneManager.GetSceneState() == SceneState::Play;
-    auto camera = useActiveCamera ? activeCameraOpt.value() : MakeCameraFromController(*m_CameraController);
+    auto camera = GetActiveOrEditorCamera(activeScene);
 
     ImGui::SetCursorScreenPos(viewportScreenPos);
 
@@ -667,147 +667,219 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 10);
 
-        // Snapping toggle
-        bool snapping = m_Gizmo.IsSnappingEnabled();
-        if (snapping)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveSnapBlue);
-        }
-        if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28}))
-        {
-            m_Gizmo.SetSnapping(!snapping);
-        }
-        if (snapping)
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Enable Grid Snapping");
-        }
-
-        ImGui::SameLine(0, 5);
-        float gridSize = m_Gizmo.GetGridSize();
-        ImGui::SetNextItemWidth(45);
-        if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f"))
-        {
-            m_Gizmo.SetGridSize(gridSize);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Grid Snap Size");
-        }
-
-        ImGui::SameLine(0, 10);
-
-        // Local/World toggle
-        bool isLocal = m_Gizmo.IsLocalSpace();
-        if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28}))
-        {
-            m_Gizmo.SetLocalSpace(!isLocal);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Toggle Local/World Space");
-        }
+        DrawSnapSection();
+        DrawTransformSpaceToggle();
 
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 15);
 
-        // Playback Tools
-        // Playback Tools
-        SceneState sceneState = m_SceneManager.GetSceneState();
-        bool isPlaying = (sceneState == SceneState::Play);
-        bool isSimulating = (sceneState == SceneState::Simulate);
-        ImGui::SameLine(0, 10);
-
-        if (isPlaying)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
-        }
-        if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
-        {
-            if (isPlaying)
-            {
-                m_SceneManager.SetSceneState(SceneState::Edit);
-            }
-            else
-            {
-                m_SceneManager.SetSceneState(SceneState::Play);
-            }
-        }
-        if (isPlaying)
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
-        }
-
-        ImGui::SameLine(0, 5);
-
-        if (isSimulating)
-        {
-            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange); // Orange for simulate
-        }
-        if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
-        {
-            if (isSimulating)
-            {
-                m_SceneManager.SetSceneState(SceneState::Edit);
-            }
-            else
-            {
-                m_SceneManager.SetSceneState(SceneState::Simulate);
-            }
-        }
-        if (isSimulating)
-        {
-            ImGui::PopStyleColor();
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");
-        }
-
-        ImGui::SameLine(0, 5);
-        // Reload Scripts (Ctrl+R)
-        if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
-        {
-            auto project = Project::GetActive();
-            if (project)
-            {
-                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
-                                                                      project->GetConfig().ProjectDirectory);
-                auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
-                scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
-            }
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
-        }
+        DrawPlaybackControls();
+        DrawScriptReloadButton();
 
         ImGui::SameLine(0, 15);
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 15);
 
-        // Run scene in new window (for play mode testing)
-        if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
-        {
-            AppLaunchRuntimeEvent e;
-            Application::Get().OnEvent(e);
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
-        }
+        DrawRunInNewWindowButton();
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
     ImGui::PopStyleColor();
+}
+
+void ViewportPanel::DrawSnapSection()
+{
+    bool snapping = m_Gizmo.IsSnappingEnabled();
+    if (snapping)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveSnapBlue);
+    }
+    if (ImGui::Button(ICON_FA_MAGNET "##SnapToggle", {28, 28}))
+    {
+        m_Gizmo.SetSnapping(!snapping);
+    }
+    if (snapping)
+    {
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Enable Grid Snapping");
+    }
+
+    ImGui::SameLine(0, 5);
+    float gridSize = m_Gizmo.GetGridSize();
+    ImGui::SetNextItemWidth(45);
+    if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f"))
+    {
+        m_Gizmo.SetGridSize(gridSize);
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Grid Snap Size");
+    }
+}
+
+void ViewportPanel::DrawTransformSpaceToggle()
+{
+    ImGui::SameLine(0, 10);
+
+    bool isLocal = m_Gizmo.IsLocalSpace();
+    if (ImGui::Button(isLocal ? (ICON_FA_CUBE " Local") : (ICON_FA_EARTH_AMERICAS " World"), {70, 28}))
+    {
+        m_Gizmo.SetLocalSpace(!isLocal);
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Toggle Local/World Space");
+    }
+}
+
+void ViewportPanel::DrawPlaybackControls()
+{
+    SceneState sceneState = m_SceneManager.GetSceneState();
+    bool isPlaying = (sceneState == SceneState::Play);
+    bool isSimulating = (sceneState == SceneState::Simulate);
+    ImGui::SameLine(0, 10);
+
+    if (isPlaying)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
+    }
+    if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
+    {
+        if (isPlaying)
+        {
+            m_SceneManager.SetSceneState(SceneState::Edit);
+        }
+        else
+        {
+            m_SceneManager.SetSceneState(SceneState::Play);
+        }
+    }
+    if (isPlaying)
+    {
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
+    }
+
+    ImGui::SameLine(0, 5);
+
+    if (isSimulating)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange);
+    }
+    if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
+    {
+        if (isSimulating)
+        {
+            m_SceneManager.SetSceneState(SceneState::Edit);
+        }
+        else
+        {
+            m_SceneManager.SetSceneState(SceneState::Simulate);
+        }
+    }
+    if (isSimulating)
+    {
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");
+    }
+}
+
+void ViewportPanel::DrawScriptReloadButton()
+{
+    ImGui::SameLine(0, 5);
+    if (ImGui::Button(ICON_FA_FILE_CODE "##ReloadToolbar", ImVec2(28, 28)))
+    {
+        auto project = Project::GetActive();
+        if (project)
+        {
+            auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
+                                                                   project->GetConfig().ProjectDirectory);
+            auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
+            scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
+        }
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
+    }
+}
+
+void ViewportPanel::DrawRunInNewWindowButton()
+{
+    if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
+    {
+        AppLaunchRuntimeEvent e;
+        Application::Get().OnEvent(e);
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
+    }
+}
+
+void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax, float iconScale)
+{
+    const glm::vec3 activeCameraPos = camera.Position;
+
+    auto iconSizeFromDistance = [&](const glm::vec3& worldPos) {
+        const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
+        return std::clamp(distanceToCamera * iconScale, iconMin, iconMax);
+    };
+
+    auto getIconHandle = [](const std::shared_ptr<TextureAsset>& icon) -> uint32_t {
+        if (icon && icon->GetTexture())
+        {
+            return icon->GetTexture()->GetNativeHandle();
+        }
+        return 0;
+    };
+
+    auto lightView = registry.view<TransformComponent, LightComponent>();
+    for (auto entity : lightView)
+    {
+        auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
+        const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
+        const float iconSize = iconSizeFromDistance(iconPos);
+
+        glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
+                               light.LightColor.b / 255.0f, 0.95f};
+
+        uint32_t handle = getIconHandle(m_EditorIcons.LightIcon);
+        if (handle != 0)
+        {
+            ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
+            if (light.Type == LightType::Directional)
+            {
+                glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
+                ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
+            }
+        }
+        else if (light.Type == LightType::Directional)
+        {
+            glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
+            ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
+        }
+        else if (light.Type == LightType::Point)
+        {
+            ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f,
+                                                                   lightTint, *ServiceLocator::Get<Renderer>());
+        }
+        else if (light.Type == LightType::Spot)
+        {
+            ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f,
+                                                                   lightTint, *ServiceLocator::Get<Renderer>());
+        }
+    }
 }
 
 void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera)
@@ -833,6 +905,12 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
         return std::clamp(distanceToCamera * scale, minSize, maxSize);
     };
 
+    // Gizmo icon sizing comes from the global editor settings (Editor Settings > Appearance).
+    const auto& editorCfg = EditorLayer::Get().GetConfig();
+    const float iconMin = editorCfg.IconSizeMin;
+    const float iconMax = editorCfg.IconSizeMax;
+    const float iconScale = editorCfg.IconSizeScale;
+
     auto getIconHandle = [](const std::shared_ptr<TextureAsset>& icon) -> uint32_t {
         if (icon && icon->GetTexture())
         {
@@ -852,7 +930,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             continue;
         }
 
-        const float iconSize = iconSizeFromDistance(iconPos, 0.6f, 2.5f, 0.15f);
+        const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
         uint32_t handle = getIconHandle(m_EditorIcons.CameraIcon);
         if (handle != 0)
@@ -862,52 +940,16 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
     }
 
     // Light icons
-    {
-        auto lightView = registry.view<TransformComponent, LightComponent>();
-        for (auto entity : lightView)
-        {
-            auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
-            const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-            const float iconSize = iconSizeFromDistance(iconPos, 0.36f, 0.85f, 2.f);
+    RenderLightIcons(registry, camera, iconMin, iconMax, iconScale);
 
-            glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
-                                   light.LightColor.b / 255.0f, 0.95f};
-
-            uint32_t handle = getIconHandle(m_EditorIcons.LightIcon);
-            if (handle != 0)
-            {
-                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
-                if (light.Type == LightType::Directional)
-                {
-                    glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-                    ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
-                }
-            }
-            else if (light.Type == LightType::Directional)
-            {
-                glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-                ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
-            }
-            else if (light.Type == LightType::Point)
-            {
-                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f,
-                                                                      lightTint, *ServiceLocator::Get<Renderer>());
-            }
-            else if (light.Type == LightType::Spot)
-            {
-                ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f,
-                                                                      lightTint, *ServiceLocator::Get<Renderer>());
-            }
-        }
-    }
+    // Spawn icons
     {
-        // Spawn Component
         auto spawnView = registry.view<TransformComponent, SpawnComponent>();
         for (auto entity : spawnView)
         {
             auto [transform, spawn] = spawnView.get<TransformComponent, SpawnComponent>(entity);
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-            const float iconSize = iconSizeFromDistance(iconPos, 0.36f, 0.85f, 2.f);
+            const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
             glm::vec4 spawnTint = {1.0f, 1.0f, 1.0f, 0.95f};
             uint32_t handle = getIconHandle(m_EditorIcons.SpawnIcon);
             if (handle != 0)
@@ -923,7 +965,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
         {
             auto [transform, audio] = audioView.get<TransformComponent, AudioComponent>(entity);
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-            const float iconSize = iconSizeFromDistance(iconPos, 0.36f, 0.85f, 2.f);
+            const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
             glm::vec4 audioTint = {1.0f, 1.0f, 1.0f, 0.95f};
             uint32_t handle = getIconHandle(m_EditorIcons.AudioIcon);
             if (handle != 0)
