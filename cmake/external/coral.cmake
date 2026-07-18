@@ -29,6 +29,14 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/coral/cmake/CMakeLists.txt")
         if(MINGW)
             file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
             target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
+
+            # MinGW GCC at -O0 emits prologues that can leave the stack
+            # misaligned at the call boundary into hostfxr/coreclr.dll, whose
+            # SSE/AVX init code then faults with an access violation (CI-only,
+            # timing/layout dependent; -mstackrealign alone does not cover the
+            # cross-DLL call path). -Og keeps debuggability but restores the
+            # aligned prologue codegen, matching the Release behavior.
+            target_compile_options(Coral.Native PRIVATE $<$<CONFIG:Debug>:-Og>)
         endif()
 
         # CI environment LLVM Clang / Windows SDK fix for missing CoTaskMemAlloc
