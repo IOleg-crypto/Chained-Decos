@@ -309,7 +309,7 @@ RaycastResult Physics::Raycast(Scene* scene, Ray ray)
 {
     if (auto world = GetWorld())
     {
-        return world->Raycast(ray.position, ray.direction, 1000.0f);
+        return world->Raycast(ray.position, ray.direction, 1600.0f);
     }
     return {};
 }
