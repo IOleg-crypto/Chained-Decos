@@ -271,11 +271,13 @@ void PropertyEditor::Init()
                         }
                         for (auto& s : animNames) cStrs.push_back(s.c_str());
 
+                        ImGui::SetNextItemWidth(-1);
                         int currentIdx = comp.CurrentAnimationIndex;
                         if (ui.Enum("Current Animation", currentIdx, cStrs.data(), (int)cStrs.size()))
                         {
                             comp.CurrentAnimationIndex = currentIdx;
-                            comp.TargetAnimationIndex = currentIdx; 
+                            comp.CurrentFrame = 0;
+                            comp.FrameTimeCounter = 0;
                             changed = true;
                         }
 
@@ -286,6 +288,29 @@ void PropertyEditor::Init()
                             ImGui::Text("Name");
                             ImGui::TableSetColumnIndex(1);
                             ImGui::TextDisabled("%s", animNames[comp.CurrentAnimationIndex].c_str());
+
+                            ImGui::TableNextRow();
+                            ImGui::TableSetColumnIndex(0);
+                            ImGui::Text("Playback");
+                            ImGui::TableSetColumnIndex(1);
+                            if (comp.IsPlaying)
+                            {
+                                if (ImGui::Button("Stop", ImVec2(-1, 0)))
+                                {
+                                    comp.IsPlaying = false;
+                                    changed = true;
+                                }
+                            }
+                            else
+                            {
+                                if (ImGui::Button("Play", ImVec2(-1, 0)))
+                                {
+                                    comp.IsPlaying = true;
+                                    comp.CurrentFrame = 0;
+                                    comp.FrameTimeCounter = 0;
+                                    changed = true;
+                                }
+                            }
                         }
                     }
                     else

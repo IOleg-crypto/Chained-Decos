@@ -3,10 +3,12 @@
 
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Geometry/Triangle.h>
+#include <Jolt/Physics/Body/MassProperties.h>
 #include <Jolt/Physics/Collision/CastResult.h>
 #include <Jolt/Physics/Collision/RayCast.h>
 #include <Jolt/Physics/Collision/Shape/BoxShape.h>
 #include <Jolt/Physics/Collision/Shape/CapsuleShape.h>
+#include <Jolt/Physics/Collision/Shape/ConvexHullShape.h>
 #include <Jolt/Physics/Collision/Shape/MeshShape.h>
 #include <Jolt/Physics/Collision/Shape/RotatedTranslatedShape.h>
 #include <Jolt/Physics/Collision/Shape/ScaledShape.h>
@@ -15,6 +17,8 @@
 #include <Jolt/RegisterTypes.h>
 
 #include <chrono>
+#include <cmath>
+#include <cstdint>
 
 namespace Chained
 {
@@ -166,6 +170,83 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             break;
         }
 
+        // Jolt's MeshShape is concave and only supports Static/Kinematic bodies: there is no
+        // Mesh-vs-Mesh collision function, so a Dynamic mesh touching another mesh trips
+        // JPH_ASSERT("Unsupported shape pair") in CollisionDispatch. For non-static mesh bodies
+        // we approximate the geometry with a ConvexHullShape built from the same vertices.
+        if (!desc.IsStatic)
+        {
+            // Feeding raw triangle vertices to the hull builder is pathological: a level-geometry
+            // mesh yields millions of near-duplicate points (3 per triangle), and the builder must
+            // scan them all only to keep at most cMaxPointsInHull (256). Deduplicate onto a coarse
+            // spatial grid first — this collapses 6M points to a few hundred and turns a 40s freeze
+            // into milliseconds, with no meaningful loss of hull accuracy.
+            constexpr float kGridCell = 0.05f; // 5cm dedup grid
+            std::unordered_set<uint64_t> seen;
+            JPH::Array<JPH::Vec3> points;
+
+            auto tryAdd = [&](const glm::vec3& p)
+            {
+                auto quant = [](float v) { return (int64_t)std::floor(v / kGridCell); };
+                uint64_t key = (uint64_t)(quant(p.x) & 0x1FFFFF) | ((uint64_t)(quant(p.y) & 0x1FFFFF) << 21) |
+                               ((uint64_t)(quant(p.z) & 0x1FFFFF) << 42);
+                if (seen.insert(key).second)
+                {
+                    points.push_back(JPH::Vec3(p.x, p.y, p.z));
+                }
+            };
+
+            for (const auto& t : desc.Triangles)
+            {
+                tryAdd(t.V0);
+                tryAdd(t.V1);
+                tryAdd(t.V2);
+            }
+
+            // A non-static mesh this large is almost certainly level geometry mistagged as dynamic.
+            // A convex hull of it is a useless blob, so warn loudly rather than silently approximate.
+            if (points.size() > 4096)
+            {
+                CH_CORE_WARN("Physics: Dynamic mesh has {} unique points after dedup ({} raw tris) — this looks "
+                             "like static level geometry marked non-static. A convex hull will be a crude blob; "
+                             "consider making this body Static or Kinematic instead.",
+                             points.size(), desc.Triangles.size());
+            }
+
+            JPH::ConvexHullShapeSettings hullSettings(points);
+            auto hullResult = hullSettings.Create();
+            if (hullResult.HasError())
+            {
+                CH_CORE_ERROR("Physics: ConvexHull build for dynamic mesh failed: {} — falling back to unit box.",
+                              hullResult.GetError().c_str());
+                shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+                break;
+            }
+
+            JPH::ShapeRefC hull = hullResult.Get();
+
+            // Apply per-instance scale (identity scale needs no wrapper).
+            shape = hull;
+            if (desc.MeshScale != glm::vec3(1.0f))
+            {
+                JPH::ScaledShapeSettings scaledSettings(
+                    hull, JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
+                auto scaledResult = scaledSettings.Create();
+                if (!scaledResult.HasError())
+                {
+                    shape = scaledResult.Get();
+                }
+                else
+                {
+                    CH_CORE_WARN("Physics: ScaledShape build failed: {} — using unscaled hull.",
+                                 scaledResult.GetError().c_str());
+                }
+            }
+            CH_CORE_INFO("Physics: Dynamic mesh body approximated with ConvexHull ({} points, {} raw tris).",
+                         points.size(), desc.Triangles.size());
+            break;
+        }
+
         // The cache holds the bare, unscaled BVH keyed by model path. Scale (ScaledShape)
         // and offset (RotatedTranslatedShape) are layered on afterwards as cheap decorators,
         // so every instance of the same model — regardless of scale or offset — reuses one BVH.
@@ -178,6 +259,7 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             {
                 baseShape = it->second;
                 cached = true;
+                CH_CORE_TRACE("Physics: Reused cached mesh BVH [key='{}']", desc.CacheKey);
             }
         }
 
@@ -210,7 +292,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             }
 
             JPH::MeshShapeSettings s(std::move(joltTris));
-            s.mBuildQuality = JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed;
+            s.mBuildQuality = desc.UseFastBuildQuality ? JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed
+                                                       : JPH::MeshShapeSettings::EBuildQuality::FavorRuntimePerformance;
             auto result = s.Create();
             if (result.HasError())
             {
@@ -229,8 +312,10 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             const auto buildEnd = std::chrono::steady_clock::now();
             const double buildMs =
                 std::chrono::duration<double, std::milli>(buildEnd - buildStart).count();
+            // This branch only runs on a cache miss — the BVH is being built for the first
+            // time, then stored for reuse. (Don't confuse with the cache-hit path above.)
             CH_CORE_INFO("Physics: Built mesh BVH ({} tris) in {:.2f} ms{} [key='{}']", joltTris.size(), buildMs,
-                         desc.CacheKey.empty() ? " (uncached)" : " (cached)", desc.CacheKey);
+                         desc.CacheKey.empty() ? " (uncached)" : " (freshly built, cached for reuse)", desc.CacheKey);
         }
 
         // Apply per-instance scale as a decorator (identity scale needs no wrapper).
@@ -302,6 +387,42 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     settings.mAngularDamping = desc.AngularDamping;
     settings.mAllowSleeping = true;
 
+    if (desc.Shape == ColliderType::Mesh && !desc.IsStatic && !desc.Triangles.empty())
+    {
+        JPH::Vec3 bbMin(FLT_MAX, FLT_MAX, FLT_MAX), bbMax(-FLT_MAX, -FLT_MAX, -FLT_MAX);
+        for (const auto& tri : desc.Triangles)
+        {
+            const JPH::Vec3 verts[] = {
+                JPH::Vec3(tri.V0.x, tri.V0.y, tri.V0.z),
+                JPH::Vec3(tri.V1.x, tri.V1.y, tri.V1.z),
+                JPH::Vec3(tri.V2.x, tri.V2.y, tri.V2.z),
+            };
+            for (const auto& v : verts)
+            {
+                bbMin = JPH::Vec3::sMin(bbMin, v);
+                bbMax = JPH::Vec3::sMax(bbMax, v);
+            }
+        }
+        JPH::Vec3 boxSize = bbMax - bbMin;
+        if (boxSize.GetX() > 0.0f && boxSize.GetY() > 0.0f && boxSize.GetZ() > 0.0f)
+        {
+            float volume = boxSize.GetX() * boxSize.GetY() * boxSize.GetZ();
+            float density = (volume > 0.0f) ? (desc.Mass / volume) : 1.0f;
+            settings.mMassPropertiesOverride.SetMassAndInertiaOfSolidBox(boxSize, density);
+            settings.mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
+        }
+        else
+        {
+            settings.mMassPropertiesOverride.mMass = desc.Mass;
+            settings.mMassPropertiesOverride.mInertia = JPH::Mat44::sScale(desc.Mass);
+            settings.mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
+        }
+    }
+    else
+    {
+        settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateMassAndInertia;
+    }
+
     if (desc.IsKinematic)
     {
         settings.mGravityFactor = 0.0f;
@@ -331,6 +452,11 @@ void JoltPhysicsWorld::DestroyBody(PhysicsBodyHandle handle)
     JPH::BodyID id((JPH::uint32)handle);
     bi.RemoveBody(id);
     bi.DestroyBody(id);
+}
+
+bool JoltPhysicsWorld::HasCachedMeshShape(const std::string& key) const
+{
+    return !key.empty() && m_MeshShapeCache.count(key) > 0;
 }
 
 void JoltPhysicsWorld::SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot)

@@ -50,6 +50,8 @@ public:
     /// Clear all grounded state (call before/after world reset).
     virtual void ClearGroundedState() override;
 
+    virtual bool HasCachedMeshShape(const std::string& key) const override;
+
     /// Clear the cached mesh shapes (call on world reset).
     void ClearShapeCache();
 

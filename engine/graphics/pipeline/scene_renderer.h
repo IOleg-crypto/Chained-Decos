@@ -85,6 +85,13 @@ public:
     // Core Render Pass API
     void PrepareLights(entt::registry& registry, const Frustum& frustum);
     void CollectAndRenderItems(entt::registry& registry, const Frustum& frustum, const glm::vec3& cameraPos);
+
+    // Shared "ready ModelAsset -> RenderItem" path used for both ModelComponent and
+    // PrimitiveComponent: frustum-culls, applies an optional ShaderComponent override,
+    // splits opaque/transparent, and pushes to the queues. Returns true if queued.
+    bool EnqueueModelAsset(entt::registry& registry, entt::entity entity, ModelAsset* modelAsset,
+                           const glm::mat4& worldTransform, const Frustum& frustum,
+                           const glm::vec3& cameraPos);
     
     void DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries);
     void DrawModel(ModelAsset* modelAsset, const glm::mat4& transform,
@@ -112,7 +119,6 @@ public:
     void RenderSprites(entt::registry& registry, const Camera3D& camera);
     void RenderDebug(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera, const SceneRenderOptions& options);
     void DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options);
-    void DrawCollisionModelBoxDebug(entt::registry& registry);
 
 private:
     std::vector<std::unique_ptr<IRenderPass>> m_RenderPasses;

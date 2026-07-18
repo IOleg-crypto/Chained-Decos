@@ -34,7 +34,6 @@ void EditorPanels::Init()
     Register<MaterialPanel>();
     Register<ProfilerPanel>();
     Register<ProjectSettingsPanel>();
-    
 }
 
 void EditorPanels::OnUpdate(Timestep ts)

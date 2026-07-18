@@ -1,5 +1,4 @@
 #include "engine/scene/animation_systems.h"
-#include "engine/scene/scene.h"
 #include "engine/scene/components.h"
 #include "engine/core/log.h"
 
@@ -47,22 +46,6 @@ void Stop(AnimationComponent& anim)
 {
     anim.IsPlaying = false;
     anim.Blending = false;
-}
-
-// Advances frame timers for all playing AnimationComponents in the scene.
-// TODO: Replace placeholder frame advancement with real clip-based keyframe interpolation.
-void UpdatePlayback(Scene* scene, Timestep ts)
-{
-    auto& registry = scene->GetRegistry();
-    auto view = registry.view<AnimationComponent>();
-    for (auto entity : view)
-    {
-        auto& anim = view.get<AnimationComponent>(entity);
-        if (!anim.IsPlaying) continue;
-        anim.FrameTimeCounter += (float)ts;
-        // Placeholder: real frame advancement logic depends on clip data
-        // This keeps component active for runtime and allows blending logic.
-    }
 }
 
 } // namespace Chained::Animation

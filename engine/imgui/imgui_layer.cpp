@@ -146,4 +146,14 @@ void* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const voi
     }
     return font;
 }
+
+void ImGuiLayer::ClearFonts()
+{
+    if (!ImGui::GetCurrentContext())
+    {
+        CH_CORE_WARN("ImGuiLayer: Cannot clear fonts without an active ImGui context.");
+        return;
+    }
+    ImGui::GetIO().Fonts->Clear();
+}
 } // namespace Chained

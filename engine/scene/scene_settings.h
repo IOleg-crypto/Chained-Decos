@@ -2,8 +2,8 @@
 #define CH_SCENE_SETTINGS_H
 
 #include "engine/assets/types/environment_asset.h"
-#include "engine/scene/components/control_component.h"
 #include "engine/common/color.h"
+#include "engine/scene/components/control_component.h"
 #include <memory>
 #include <string>
 
@@ -13,7 +13,6 @@ struct DebugRenderFlags
 {
     bool DrawColliders = false;
     bool DrawHierarchy = false;
-    bool DrawCollisionModelBox = false;
     bool DrawGrid = false;
     bool DrawSelection = true;
     bool DrawLights = true;
@@ -30,7 +29,7 @@ enum class BackgroundMode
 
 struct GridSettings
 {
-    int   Slices  = 20;
+    int Slices = 20;
     float Spacing = 1.0f;
 };
 
@@ -45,7 +44,7 @@ struct SceneSettings
     std::string BackgroundTexturePath;
 
     CanvasSettings Canvas;
-    GridSettings   Grid;
+    GridSettings Grid;
 
     DebugRenderFlags DebugFlags;
     float DiagnosticMode = 0.0f;

@@ -180,7 +180,11 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
     if (mesh.VAO)
     {
         mesh.VAO->Bind();
-        if (mesh.TriangleCount > 0)
+        // DrawIndexed only if the VAO actually has an index buffer. A mesh can carry
+        // TriangleCount > 0 yet lack an EBO (e.g. a malformed procedural mesh); calling
+        // glDrawElements then reads from a null index buffer and segfaults. Fall back to
+        // DrawArrays in that case rather than crashing the whole renderer.
+        if (mesh.TriangleCount > 0 && mesh.VAO->GetIndexBuffer())
         {
             GraphicsDevice::Get().DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
         }

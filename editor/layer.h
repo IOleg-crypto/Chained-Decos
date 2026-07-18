@@ -74,6 +74,10 @@ public:
     const EditorConfig& GetConfig() const { return m_Config; }
     EditorConfig& GetConfig() { return m_Config; }
 
+    // Rebuild the ImGui font atlas from the current EditorConfig (font path + size).
+    // Safe to call at runtime — clears and re-adds the UI + icon fonts.
+    void ReloadEditorFonts();
+
     std::shared_ptr<Scene> GetActiveScene() const;
 
 private:

@@ -6,7 +6,6 @@
 #include "engine/project/project.h"
 #include <glm/gtc/matrix_transform.hpp>
 
-
 namespace Chained
 {
 
@@ -17,13 +16,18 @@ void ShadowPass::Init()
         return;
     }
 
-    // Grab the depth-pass shader from the library if it exists.
-    if (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("ShadowDepth"))
-    {
-        m_DepthShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("ShadowDepth");
-    }
+    // Grab the depth-pass shader from the library. Use LoadOrGet so it resolves the
+    // path from the config and loads it on demand — LoadEngineResources only eagerly
+    // loads the common material shaders (Lighting/Skinned/Unlit/Billboard), not ShadowDepth.
+    m_DepthShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("ShadowDepth");
 
-    m_Initialized = true;
+    // Only mark initialized once the shader is really loaded. If SceneRenderer was
+    // constructed before the shader config was parsed, Execute() will retry the load.
+    if (m_DepthShaderAsset && m_DepthShaderAsset->GetShader())
+    {
+        CH_INFO("Shadow depth shader loaded");
+        m_Initialized = true;
+    }
 }
 
 void ShadowPass::Execute(const RenderContext& ctx)
@@ -43,6 +47,13 @@ void ShadowPass::Execute(const RenderContext& ctx)
                                                                         : glm::normalize(glm::vec3(0.3f, -0.7f, 0.3f));
 
     m_HasShadows = true;
+
+    // The shader may not have been available when Init() ran (SceneRenderer can be
+    // constructed before the shader config is parsed). Retry the load lazily here.
+    if (!m_DepthShaderAsset || !m_DepthShaderAsset->GetShader())
+    {
+        Init();
+    }
     if (!m_DepthShaderAsset || !m_DepthShaderAsset->GetShader())
     {
         return;
@@ -93,8 +104,11 @@ void ShadowPass::Execute(const RenderContext& ctx)
     shader->Bind();
     shader->SetMatrix("u_LightSpaceMatrix", m_LightSpaceMatrix);
 
-    // Save current FBO binding
+    // Save current FBO binding and viewport — both must be restored so the
+    // subsequent scene passes render at the camera's resolution, not the shadow map's.
     uint32_t previousFBO = GraphicsDevice::Get().GetFramebufferBinding();
+    int prevViewport[4] = {0, 0, 0, 0};
+    GraphicsDevice::Get().GetViewport(&prevViewport[0], &prevViewport[1], &prevViewport[2], &prevViewport[3]);
 
     m_ShadowMap->Bind();
     GraphicsDevice::Get().SetViewport(0, 0, shadowRes, shadowRes);
@@ -112,9 +126,10 @@ void ShadowPass::Execute(const RenderContext& ctx)
 
     GraphicsDevice::Get().SetPolygonOffset(false);
 
-    // Restore previous FBO binding
+    // Restore previous FBO binding and viewport
     m_ShadowMap->Unbind();
     GraphicsDevice::Get().BindFramebuffer(previousFBO);
+    GraphicsDevice::Get().SetViewport(prevViewport[0], prevViewport[1], prevViewport[2], prevViewport[3]);
 }
 
 void ShadowPass::Shutdown()

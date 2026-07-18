@@ -101,7 +101,6 @@ static void SerializeDebugSettings(YAML::Emitter& out, const SceneSettings& sett
     out << YAML::Key << "DiagnosticMode" << YAML::Value << settings.DiagnosticMode;
     out << YAML::Key << "DrawColliders" << YAML::Value << settings.DebugFlags.DrawColliders;
     out << YAML::Key << "DrawHierarchy" << YAML::Value << settings.DebugFlags.DrawHierarchy;
-    out << YAML::Key << "DrawCollisionModelBox" << YAML::Value << settings.DebugFlags.DrawCollisionModelBox;
     out << YAML::Key << "DrawGrid" << YAML::Value << settings.DebugFlags.DrawGrid;
     out << YAML::Key << "DrawSelection" << YAML::Value << settings.DebugFlags.DrawSelection;
     out << YAML::Key << "DrawLights" << YAML::Value << settings.DebugFlags.DrawLights;
@@ -154,7 +153,6 @@ static void DeserializeDebugSettings(const YAML::Node& data, SceneSettings& sett
     settings.DiagnosticMode = ReadYamlValue(debugNode, "DiagnosticMode", 0.0f);
     settings.DebugFlags.DrawColliders = ReadYamlValue(debugNode, "DrawColliders", false);
     settings.DebugFlags.DrawHierarchy = ReadYamlValue(debugNode, "DrawHierarchy", false);
-    settings.DebugFlags.DrawCollisionModelBox = ReadYamlValue(debugNode, "DrawCollisionModelBox", false);
     settings.DebugFlags.DrawGrid = ReadYamlValue(debugNode, "DrawGrid", false);
     settings.DebugFlags.DrawSelection = ReadYamlValue(debugNode, "DrawSelection", true);
     settings.DebugFlags.DrawLights = ReadYamlValue(debugNode, "DrawLights", true);
