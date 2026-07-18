@@ -1,10 +1,10 @@
 add_compile_options(
-    # Debug: Plain -g. We previously used -gsplit-dwarf to avoid BFD linker 
-    # memory exhaustion, but -gsplit-dwarf on MinGW/Windows (PE/COFF) is 
-    # highly unstable and corrupts exception unwinding, causing Access Violations 
-    # in CI during CoreCLR init. We now rely on LLD (which is much more memory 
-    # efficient) to handle the large Debug debug info.
-    $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
+    # Debug: Plain -g. We use -mstackrealign because MinGW GCC at -O0 sometimes 
+    # fails to maintain the 16-byte stack alignment required by the Windows x64 ABI.
+    # This causes Access Violations (AV) inside CoreCLR/hostfxr which uses SSE/AVX
+    # instructions heavily during initialization and callbacks. LLD handles the
+    # debug info memory pressure.
+    $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g> $<$<CONFIG:Debug>:-mstackrealign>
     $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
     # Section-per-symbol in all configs so --gc-sections can drop unused code and
     # shrink what the linker has to hold in memory.

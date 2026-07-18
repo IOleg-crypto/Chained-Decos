@@ -513,6 +513,195 @@ namespace Chained
             raw.MaxBounds = { radius,  halfH,  radius};
             return raw;
         }
+
+        // Cylinder aligned to Y, centered at origin. `radiusBottom`/`radiusTop` differ for a cone
+        // (top == 0) or a truncated cone. Side wall + two caps. `slices` = radial segments.
+        RawMesh BuildConeLikeRaw(float radiusBottom, float radiusTop, float height, int slices)
+        {
+            RawMesh raw;
+            raw.materialIndex = 0;
+            slices = std::max(3, slices);
+
+            float halfH = height * 0.5f;
+            float slant = std::sqrt(height * height + (radiusBottom - radiusTop) * (radiusBottom - radiusTop));
+            float ny = (slant > 0.0f) ? (radiusBottom - radiusTop) / slant : 0.0f; // dy/dslant for side normal
+            float nradial = (slant > 0.0f) ? height / slant : 1.0f;
+
+            auto pushVert = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& t) {
+                raw.vertices.insert(raw.vertices.end(), {p.x, p.y, p.z});
+                raw.normals.insert(raw.normals.end(), {n.x, n.y, n.z});
+                raw.texcoords.insert(raw.texcoords.end(), {t.x, t.y});
+            };
+
+            // --- Side wall (2 rings, welded per-slice so normals are radial) ---
+            uint32_t sideStart = 0;
+            for (int i = 0; i <= slices; ++i)
+            {
+                float f = (float)i / (float)slices;
+                float a = f * 2.0f * glm::pi<float>();
+                float cx = std::cos(a), cz = std::sin(a);
+                glm::vec3 n = glm::normalize(glm::vec3(cx * nradial, ny, cz * nradial));
+                // bottom ring
+                pushVert({cx * radiusBottom, -halfH, cz * radiusBottom}, n, {f, 0.0f});
+                // top ring
+                pushVert({cx * radiusTop, halfH, cz * radiusTop}, n, {f, 1.0f});
+            }
+            for (int i = 0; i < slices; ++i)
+            {
+                uint32_t b = sideStart + i * 2;
+                // quad (b bottom, b+1 top, b+2 next bottom, b+3 next top)
+                raw.indices.insert(raw.indices.end(), {b, b + 2, b + 1, b + 1, b + 2, b + 3});
+            }
+
+            // --- Bottom cap (facing -Y) ---
+            if (radiusBottom > 0.0f)
+            {
+                uint32_t center = (uint32_t)(raw.vertices.size() / 3);
+                pushVert({0.0f, -halfH, 0.0f}, {0, -1, 0}, {0.5f, 0.5f});
+                uint32_t ringStart = (uint32_t)(raw.vertices.size() / 3);
+                for (int i = 0; i <= slices; ++i)
+                {
+                    float f = (float)i / (float)slices;
+                    float a = f * 2.0f * glm::pi<float>();
+                    float cx = std::cos(a), cz = std::sin(a);
+                    pushVert({cx * radiusBottom, -halfH, cz * radiusBottom}, {0, -1, 0}, {cx * 0.5f + 0.5f, cz * 0.5f + 0.5f});
+                }
+                for (int i = 0; i < slices; ++i)
+                {
+                    raw.indices.insert(raw.indices.end(), {center, ringStart + i, ringStart + i + 1});
+                }
+            }
+
+            // --- Top cap (facing +Y) ---
+            if (radiusTop > 0.0f)
+            {
+                uint32_t center = (uint32_t)(raw.vertices.size() / 3);
+                pushVert({0.0f, halfH, 0.0f}, {0, 1, 0}, {0.5f, 0.5f});
+                uint32_t ringStart = (uint32_t)(raw.vertices.size() / 3);
+                for (int i = 0; i <= slices; ++i)
+                {
+                    float f = (float)i / (float)slices;
+                    float a = f * 2.0f * glm::pi<float>();
+                    float cx = std::cos(a), cz = std::sin(a);
+                    pushVert({cx * radiusTop, halfH, cz * radiusTop}, {0, 1, 0}, {cx * 0.5f + 0.5f, cz * 0.5f + 0.5f});
+                }
+                for (int i = 0; i < slices; ++i)
+                {
+                    raw.indices.insert(raw.indices.end(), {center, ringStart + i + 1, ringStart + i});
+                }
+            }
+
+            float maxR = std::max(radiusBottom, radiusTop);
+            raw.MinBounds = {-maxR, -halfH, -maxR};
+            raw.MaxBounds = { maxR,  halfH,  maxR};
+            return raw;
+        }
+
+        // Upper half of a sphere (dome) + a flat bottom cap. `stacks` covers the dome only.
+        RawMesh BuildHemisphereRaw(float radius, int slices, int stacks)
+        {
+            RawMesh raw;
+            raw.materialIndex = 0;
+            slices = std::max(3, slices);
+            stacks = std::max(2, stacks);
+
+            auto pushVert = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& t) {
+                raw.vertices.insert(raw.vertices.end(), {p.x, p.y, p.z});
+                raw.normals.insert(raw.normals.end(), {n.x, n.y, n.z});
+                raw.texcoords.insert(raw.texcoords.end(), {t.x, t.y});
+            };
+
+            // Dome: polar angle 0 (top) .. pi/2 (equator)
+            for (int st = 0; st <= stacks; ++st)
+            {
+                float sf = (float)st / (float)stacks;
+                float polar = sf * glm::half_pi<float>();
+                for (int sl = 0; sl <= slices; ++sl)
+                {
+                    float slf = (float)sl / (float)slices;
+                    float az = slf * 2.0f * glm::pi<float>();
+                    float nx = std::cos(az) * std::sin(polar);
+                    float ny = std::cos(polar);
+                    float nz = std::sin(az) * std::sin(polar);
+                    pushVert({nx * radius, ny * radius, nz * radius}, {nx, ny, nz}, {slf, 1.0f - sf});
+                }
+            }
+            for (int st = 0; st < stacks; ++st)
+            {
+                for (int sl = 0; sl < slices; ++sl)
+                {
+                    uint32_t row0 = st * (slices + 1) + sl;
+                    uint32_t row1 = (st + 1) * (slices + 1) + sl;
+                    raw.indices.insert(raw.indices.end(), {row0, row1, row0 + 1, row0 + 1, row1, row1 + 1});
+                }
+            }
+
+            // Flat bottom cap at y = 0, facing -Y
+            uint32_t center = (uint32_t)(raw.vertices.size() / 3);
+            pushVert({0.0f, 0.0f, 0.0f}, {0, -1, 0}, {0.5f, 0.5f});
+            uint32_t ringStart = (uint32_t)(raw.vertices.size() / 3);
+            for (int sl = 0; sl <= slices; ++sl)
+            {
+                float slf = (float)sl / (float)slices;
+                float az = slf * 2.0f * glm::pi<float>();
+                float cx = std::cos(az), cz = std::sin(az);
+                pushVert({cx * radius, 0.0f, cz * radius}, {0, -1, 0}, {cx * 0.5f + 0.5f, cz * 0.5f + 0.5f});
+            }
+            for (int sl = 0; sl < slices; ++sl)
+            {
+                raw.indices.insert(raw.indices.end(), {center, ringStart + sl, ringStart + sl + 1});
+            }
+
+            raw.MinBounds = {-radius, 0.0f, -radius};
+            raw.MaxBounds = { radius, radius, radius};
+            return raw;
+        }
+
+        // Torus in the XZ plane. `majorRadius` = ring center distance, `minorRadius` = tube radius.
+        // `slices` = segments around the ring, `stacks` = segments around the tube.
+        RawMesh BuildTorusRaw(float majorRadius, float minorRadius, int slices, int stacks)
+        {
+            RawMesh raw;
+            raw.materialIndex = 0;
+            slices = std::max(3, slices);
+            stacks = std::max(3, stacks);
+
+            for (int i = 0; i <= slices; ++i)
+            {
+                float u = (float)i / (float)slices * 2.0f * glm::pi<float>();
+                float cu = std::cos(u), su = std::sin(u);
+                for (int j = 0; j <= stacks; ++j)
+                {
+                    float v = (float)j / (float)stacks * 2.0f * glm::pi<float>();
+                    float cv = std::cos(v), sv = std::sin(v);
+
+                    // Tube center for this ring position, in XZ plane
+                    glm::vec3 center = {majorRadius * cu, 0.0f, majorRadius * su};
+                    glm::vec3 normal = {cv * cu, sv, cv * su};
+                    glm::vec3 pos = center + minorRadius * normal;
+
+                    raw.vertices.insert(raw.vertices.end(), {pos.x, pos.y, pos.z});
+                    raw.normals.insert(raw.normals.end(), {normal.x, normal.y, normal.z});
+                    raw.texcoords.insert(raw.texcoords.end(),
+                                         {(float)i / (float)slices, (float)j / (float)stacks});
+                }
+            }
+            int stride = stacks + 1;
+            for (int i = 0; i < slices; ++i)
+            {
+                for (int j = 0; j < stacks; ++j)
+                {
+                    uint32_t a = i * stride + j;
+                    uint32_t b = (i + 1) * stride + j;
+                    raw.indices.insert(raw.indices.end(), {a, b, a + 1, a + 1, b, b + 1});
+                }
+            }
+
+            float outer = majorRadius + minorRadius;
+            raw.MinBounds = {-outer, -minorRadius, -outer};
+            raw.MaxBounds = { outer,  minorRadius,  outer};
+            return raw;
+        }
     } // namespace
 
     PendingModelData GeometryGenerator::GeneratePrimitivePendingData(const std::string& type,
@@ -535,15 +724,22 @@ namespace Chained
         {
             raw = BuildPlaneRaw(params.Dimensions);
         }
-        else if (type == ":cylinder:" || type == ":cone:" || type == ":hemisphere:")
+        else if (type == ":cylinder:")
         {
-            // Approximate with a capsule body until dedicated generators are added.
-            raw = BuildCapsuleRaw(params.Radius, params.Height, params.Slices, params.Stacks);
+            raw = BuildConeLikeRaw(params.Radius, params.Radius, params.Height, params.Slices);
+        }
+        else if (type == ":cone:")
+        {
+            raw = BuildConeLikeRaw(params.Radius, 0.0f, params.Height, params.Slices);
+        }
+        else if (type == ":hemisphere:")
+        {
+            raw = BuildHemisphereRaw(params.Radius, params.Slices, params.Stacks);
         }
         else if (type == ":torus:" || type == ":knot:")
         {
-            // Approximate with a sphere until dedicated generators are added.
-            raw = BuildSphereRaw(params.Radius, params.Slices, params.Stacks);
+            // Knot approximated by a torus until a dedicated generator is added.
+            raw = BuildTorusRaw(params.Radius, params.InnerRadius, params.Slices, params.Stacks);
         }
         else
         {
