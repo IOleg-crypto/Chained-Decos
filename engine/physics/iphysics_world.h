@@ -44,6 +44,7 @@ struct PhysicsBodyDesc
     bool IsStatic = false;
     bool UseGravity = true;
     bool IsFixedRotation = false;
+    bool UseFastBuildQuality = true;
 };
 
 class IPhysicsWorld
@@ -53,6 +54,10 @@ public:
 
     virtual PhysicsBodyHandle CreateBody(const PhysicsBodyDesc& desc) = 0;
     virtual void DestroyBody(PhysicsBodyHandle handle) = 0;
+
+    /// Returns true if a mesh shape with the given cache key already exists.
+    /// Use to skip triangle extraction on cache hits.
+    virtual bool HasCachedMeshShape(const std::string& key) const = 0;
 
     virtual void SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot) = 0;
     virtual void GetTransform(PhysicsBodyHandle handle, glm::vec3& pos, glm::quat& rot) = 0;

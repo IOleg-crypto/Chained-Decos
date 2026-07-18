@@ -6,10 +6,12 @@
 #include "engine/audio/audio.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
+#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/physics/iphysics_world.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/model_component.h"
+#include "engine/scene/components/primitive_component.h"
 #include "engine/scene/components/shader_component.h"
 #include "engine/scene/components/sprite_component.h"
 #include "engine/scene/scene.h"
@@ -28,6 +30,12 @@ void RegisterObservers(entt::registry& reg)
 
     reg.on_construct<ShaderComponent>().connect<&ResolveShader>();
     reg.on_update<ShaderComponent>().connect<&ResolveShader>();
+
+    // Primitives only get flagged dirty here (safe off the main thread). The actual mesh /
+    // VAO build happens in Update() on the main thread. on_update fires when the inspector
+    // patches the component, giving live regeneration on parameter changes.
+    reg.on_construct<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
+    reg.on_update<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
 }
 
 // NOTE: ModelComponent is intentionally NOT connected to on_construct/on_update.
@@ -42,7 +50,6 @@ void Update(entt::registry& reg, Timestep ts)
     // AssetManager handles finalization internally now
     CH_PROFILE_FUNCTION();
 
-    
     reg.view<RigidBodyComponent, TransformComponent>().each([&](auto entity, auto& rb, auto& transform) {
         if (rb.Handle == kInvalidPhysicsBody && reg.ctx().contains<IPhysicsWorld*>())
         {
@@ -69,6 +76,15 @@ void Update(entt::registry& reg, Timestep ts)
         if (!model.ModelPath.empty() && model.ModelHandle == 0)
         {
             ResolveModel(reg, entity);
+        }
+    });
+
+    // Procedural primitives: (re)build the backing ModelAsset on the main thread when it is
+    // missing or its parameters changed (Dirty). Must run before rendering.
+    reg.view<PrimitiveComponent>().each([&](auto entity, auto& prim) {
+        if (prim.Type != PrimitiveType::None && (!prim.Asset || prim.Dirty))
+        {
+            ResolvePrimitive(reg, entity);
         }
     });
 
@@ -138,18 +154,14 @@ void Update(entt::registry& reg, Timestep ts)
             }
             else
             {
-                const float FRAME_EPSILON = 0.001f;
-                if (std::abs(animation.FrameTimeCounter - 0.0f) < FRAME_EPSILON)
+                animation.TargetFrame++;
+                if (animation.TargetAnimationIndex >= 0 &&
+                    animation.TargetAnimationIndex < modelAsset->GetAnimationCount())
                 {
-                    animation.TargetFrame++;
-                    if (animation.TargetAnimationIndex >= 0 &&
-                        animation.TargetAnimationIndex < modelAsset->GetAnimationCount())
+                    int targetTotalFrames = modelAsset->GetAnimations()[animation.TargetAnimationIndex].frameCount;
+                    if (animation.TargetFrame >= targetTotalFrames)
                     {
-                        int targetTotalFrames = modelAsset->GetAnimations()[animation.TargetAnimationIndex].frameCount;
-                        if (animation.TargetFrame >= targetTotalFrames)
-                        {
-                            animation.TargetFrame = 0;
-                        }
+                        animation.TargetFrame = 0;
                     }
                 }
             }
@@ -296,6 +308,56 @@ void ResolveModel(entt::registry& reg, entt::entity e)
     ComponentUtils::ResolveModelPath(model);
 }
 
+void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
+{
+    reg.get<PrimitiveComponent>(e).Dirty = true;
+}
+
+void ResolvePrimitive(entt::registry& reg, entt::entity e)
+{
+    auto& prim = reg.get<PrimitiveComponent>(e);
+
+    const char* typeMarker = nullptr;
+    switch (prim.Type)
+    {
+    case PrimitiveType::Cube:       typeMarker = ":cube:"; break;
+    case PrimitiveType::Sphere:     typeMarker = ":sphere:"; break;
+    case PrimitiveType::Plane:      typeMarker = ":plane:"; break;
+    case PrimitiveType::Cylinder:   typeMarker = ":cylinder:"; break;
+    case PrimitiveType::Cone:       typeMarker = ":cone:"; break;
+    case PrimitiveType::Torus:      typeMarker = ":torus:"; break;
+    case PrimitiveType::Knot:       typeMarker = ":knot:"; break;
+    case PrimitiveType::Hemisphere: typeMarker = ":hemisphere:"; break;
+    case PrimitiveType::None:
+    default:
+        prim.Dirty = false;
+        return;
+    }
+
+    ProceduralParameters params;
+    params.Radius = prim.Radius;
+    params.InnerRadius = prim.InnerRadius;
+    params.Height = prim.Height;
+    params.Slices = prim.Slices;
+    params.Stacks = prim.Stacks;
+    params.Dimensions = prim.Dimensions;
+
+    PendingModelData data = GeometryGenerator::GeneratePrimitivePendingData(typeMarker, params);
+    if (!data.isValid)
+    {
+        prim.Dirty = false;
+        return;
+    }
+
+    if (!prim.Asset)
+    {
+        prim.Asset = std::make_shared<ModelAsset>();
+    }
+    prim.Asset->SetPendingData(std::move(data));
+    prim.Asset->OnLoaded(); // main-thread GPU upload
+    prim.Dirty = false;
+}
+
 void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
 {
     if (!reg.ctx().contains<IPhysicsWorld*>())
@@ -314,13 +376,11 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
     auto& transform = reg.get<TransformComponent>(e);
     auto& rb = reg.get<RigidBodyComponent>(e);
 
-    
     if (rb.Handle != kInvalidPhysicsBody)
     {
         return;
     }
 
-    
     auto* collider = reg.try_get<ColliderComponent>(e);
     if (!collider || !collider->Enabled)
     {
@@ -344,29 +404,31 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
     desc.Friction = collider->Friction;
     desc.Restitution = collider->Restitution;
     desc.Offset = collider->Offset;
+    desc.UseFastBuildQuality = collider->UseFastBuildQuality;
 
-    
     switch (collider->Type)
     {
     case ColliderType::Box:
-        
+
         desc.Dimensions = (collider->Size * transform.Scale) * 0.5f;
         break;
 
     case ColliderType::Sphere:
-        
+
         desc.Dimensions.x = collider->Radius * std::max({transform.Scale.x, transform.Scale.y, transform.Scale.z});
         break;
 
     case ColliderType::Capsule:
-        
+
         desc.Dimensions.x = collider->Radius * std::max(transform.Scale.x, transform.Scale.z);
         desc.Dimensions.y = (collider->Height * transform.Scale.y) * 0.5f;
         break;
 
     case ColliderType::Mesh: {
-        desc.IsStatic = true;
-
+        // NOTE: Static/Kinematic/Dynamic is taken from the RigidBody component (set above,
+        // lines with desc.IsStatic / desc.IsKinematic). Do NOT force it here — a mesh collider
+        // on level geometry must stay Static, otherwise the whole level falls under gravity and
+        // (being a concave MeshShape) trips the Mesh-vs-Mesh assert in Jolt.
         std::string modelPath = collider->ModelPath;
         if (modelPath.empty())
         {
@@ -379,6 +441,17 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
         if (modelPath.empty())
         {
             return;
+        }
+
+        // Fast path: skip triangle extraction if mesh BVH is already cached
+        if (auto* world = reg.ctx().find<IPhysicsWorld*>())
+        {
+            if ((*world) && (*world)->HasCachedMeshShape(modelPath))
+            {
+                desc.CacheKey = modelPath;
+                desc.MeshScale = transform.Scale;
+                break;
+            }
         }
 
         auto modelAsset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(modelPath);

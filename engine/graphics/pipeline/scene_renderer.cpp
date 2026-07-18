@@ -300,243 +300,163 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
     auto meshView = registry.view<TransformComponent, ModelComponent>();
     auto* assets = ServiceLocator::Get<AssetManager>();
 
-    // --- Debug counters (one per RenderScene call) ---
-    int dbg_total = 0, dbg_emptyPath = 0, dbg_nullAsset = 0, dbg_notReady = 0, dbg_culled = 0, dbg_queued = 0;
-
     for (auto entity : meshView)
     {
         auto [transform, mesh] = meshView.get<TransformComponent, ModelComponent>(entity);
-        dbg_total++;
         if (mesh.ModelPath.empty())
         {
-            dbg_emptyPath++;
             continue;
         }
 
         auto handle = assets->LoadAsset(mesh.ModelPath, ModelAsset::GetStaticType());
         auto modelAsset = assets->Get<ModelAsset>(mesh.ModelPath);
-        if (!modelAsset)
+        if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
         {
-            dbg_nullAsset++;
             continue;
         }
 
-        // Logic handled by AssetResolutionSystem
-
-        AssetState state = modelAsset->GetState();
-        if (state != AssetState::Ready)
-        {
-            dbg_notReady++;
-            continue;
-        }
-
-        BoundingBox bbox = modelAsset->GetBoundingBox();
-        // Expand bounding box for animated entities to prevent aggressive culling
-        if (registry.all_of<AnimationComponent>(entity))
-        {
-            glm::vec3 center = (bbox.Max + bbox.Min) * 0.5f;
-            glm::vec3 size = (bbox.Max - bbox.Min);
-            size *= 2.0f; // Double the size for animation range
-            bbox.Min = center - size * 0.5f;
-            bbox.Max = center + size * 0.5f;
-        }
-
-        // Transform AABB center+extents to world space for frustum culling
-        glm::vec3 localCenter = (bbox.Max + bbox.Min) * 0.5f;
-        glm::vec3 localExtents = (bbox.Max - bbox.Min) * 0.5f;
-
-        const glm::mat4& worldTransform = transform.WorldTransform;
-        glm::vec3 worldCenter = glm::vec3(worldTransform * glm::vec4(localCenter, 1.0f));
-        glm::vec3 worldExtents = {
-            std::abs(worldTransform[0][0]) * localExtents.x + std::abs(worldTransform[1][0]) * localExtents.y +
-                std::abs(worldTransform[2][0]) * localExtents.z,
-            std::abs(worldTransform[0][1]) * localExtents.x + std::abs(worldTransform[1][1]) * localExtents.y +
-                std::abs(worldTransform[2][1]) * localExtents.z,
-            std::abs(worldTransform[0][2]) * localExtents.x + std::abs(worldTransform[1][2]) * localExtents.y +
-                std::abs(worldTransform[2][2]) * localExtents.z,
-        };
-        if (!IsBoxVisible(frustum, worldCenter, worldExtents))
-        {
-            dbg_culled++;
-            continue;
-        }
-
-        std::shared_ptr<ShaderAsset> shaderOver;
-        std::vector<ShaderUniform> uniforms;
-        if (registry.all_of<ShaderComponent>(entity))
-        {
-            auto& sc = registry.get<ShaderComponent>(entity);
-            if (sc.Enabled && !sc.ShaderPath.empty())
-            {
-                auto handle = assets->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType());
-                shaderOver = assets->Get<ShaderAsset>(sc.ShaderPath);
-                uniforms = sc.Uniforms;
-            }
-        }
-
-        std::vector<Material> materials = modelAsset->GetMaterials();
-
-        RenderItem item;
-        item.Asset = modelAsset.get();
-        item.Transform = transform.WorldTransform;
-        item.Materials = materials;
-        item.ShaderOverride = shaderOver.get();
-        item.CustomUniforms = uniforms;
-
-        if (registry.all_of<AnimationComponent>(entity))
-        {
-            auto& anim = registry.get<AnimationComponent>(entity);
-            if (anim.CurrentAnimationIndex >= 0)
-            {
-                item.BoneMatrices = modelAsset->GetBoneMatrices(anim.CurrentAnimationIndex, anim.CurrentFrame);
-            }
-        }
-
-        // Determine transparency and push to correct queue
-        bool hasOpaque = false;
-        bool hasTransparent = false;
-        const auto& model = modelAsset->GetModel();
-        for (int i = 0; i < (int)model.Meshes.size(); ++i)
-        {
-            Material mat = ResolveMaterialForMesh(i, model, materials, modelAsset.get());
-            if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
-            {
-                hasTransparent = true;
-            }
-            else
-            {
-                hasOpaque = true;
-            }
-        }
-
-        // Calculate distance for transparent sorting
-        // Note: we can use a simpler position extraction for speed
-        glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-        item.Distance = glm::length(cameraPos - worldPos);
-
-        if (hasTransparent)
-        {
-            m_TransparentQueue.push_back(item);
-        }
-        if (hasOpaque)
-        {
-            m_OpaqueQueue.push_back(std::move(item));
-            dbg_queued++;
-        }
+        EnqueueModelAsset(registry, entity, modelAsset.get(), transform.WorldTransform, frustum, cameraPos);
     }
 
     auto primView = registry.view<TransformComponent, PrimitiveComponent>();
     for (auto entity : primView)
     {
         auto [transform, primitive] = primView.get<TransformComponent, PrimitiveComponent>(entity);
-        if (primitive.Type == PrimitiveType::None)
+        if (primitive.Type == PrimitiveType::None || !primitive.Asset ||
+            primitive.Asset->GetState() != AssetState::Ready)
         {
+            // Generation is handled by SceneResources::ResolvePrimitive on the main thread
+            // before rendering; here we only consume a ready asset.
             continue;
         }
 
-        if (!primitive.Asset || primitive.Dirty)
+        EnqueueModelAsset(registry, entity, primitive.Asset.get(), transform.WorldTransform, frustum, cameraPos);
+    }
+}
+
+bool SceneRenderer::EnqueueModelAsset(entt::registry& registry, entt::entity entity, ModelAsset* modelAsset,
+                                      const glm::mat4& worldTransform, const Frustum& frustum,
+                                      const glm::vec3& cameraPos)
+{
+    BoundingBox bbox = modelAsset->GetBoundingBox();
+
+    // Expand bounding box for animated entities to prevent aggressive culling
+    if (registry.all_of<AnimationComponent>(entity))
+    {
+        glm::vec3 center = (bbox.Max + bbox.Min) * 0.5f;
+        glm::vec3 size = (bbox.Max - bbox.Min) * 2.0f; // Double the size for animation range
+        bbox.Min = center - size * 0.5f;
+        bbox.Max = center + size * 0.5f;
+    }
+
+    // Transform AABB center+extents to world space for frustum culling
+    glm::vec3 localCenter = (bbox.Max + bbox.Min) * 0.5f;
+    glm::vec3 localExtents = (bbox.Max - bbox.Min) * 0.5f;
+
+    glm::vec3 worldCenter = glm::vec3(worldTransform * glm::vec4(localCenter, 1.0f));
+    glm::vec3 worldExtents = {
+        std::abs(worldTransform[0][0]) * localExtents.x + std::abs(worldTransform[1][0]) * localExtents.y +
+            std::abs(worldTransform[2][0]) * localExtents.z,
+        std::abs(worldTransform[0][1]) * localExtents.x + std::abs(worldTransform[1][1]) * localExtents.y +
+            std::abs(worldTransform[2][1]) * localExtents.z,
+        std::abs(worldTransform[0][2]) * localExtents.x + std::abs(worldTransform[1][2]) * localExtents.y +
+            std::abs(worldTransform[2][2]) * localExtents.z,
+    };
+    if (!IsBoxVisible(frustum, worldCenter, worldExtents))
+    {
+        return false;
+    }
+
+    std::shared_ptr<ShaderAsset> shaderOver;
+    std::vector<ShaderUniform> uniforms;
+    if (registry.all_of<ShaderComponent>(entity))
+    {
+        auto& sc = registry.get<ShaderComponent>(entity);
+        if (sc.Enabled && !sc.ShaderPath.empty())
         {
-            const char* paths[] = {
-                "", ":cube:", ":sphere:", ":plane:", ":cylinder:", ":cone:", ":torus:", ":knot:", ":hemisphere:"};
-            int idx = (int)primitive.Type;
-            if (idx > 0 && idx < 9)
+            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType());
+            shaderOver = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(sc.ShaderPath);
+            uniforms = sc.Uniforms;
+        }
+    }
+
+    std::vector<Material> materials = modelAsset->GetMaterials();
+
+    RenderItem item;
+    item.Asset = modelAsset;
+    item.Transform = worldTransform;
+    item.Materials = materials;
+    item.ShaderOverride = shaderOver.get();
+    item.CustomUniforms = uniforms;
+
+    if (registry.all_of<AnimationComponent>(entity))
+    {
+        auto& anim = registry.get<AnimationComponent>(entity);
+        if (anim.CurrentAnimationIndex >= 0)
+        {
+            if (anim.Blending && anim.TargetAnimationIndex >= 0)
             {
-                ProceduralParameters p;
-                p.Radius = primitive.Radius;
-                p.Height = primitive.Height;
-                p.Slices = primitive.Slices;
-                p.Stacks = primitive.Stacks;
-                p.Dimensions = primitive.Dimensions;
-                Model m = GeometryGenerator::GenerateProceduralModel(paths[idx], p);
-                if (!m.Meshes.empty())
+                float alpha = (anim.BlendDuration > 0.0f)
+                                  ? glm::clamp(anim.BlendTimer / anim.BlendDuration, 0.0f, 1.0f)
+                                  : 1.0f;
+                auto matricesA = modelAsset->GetBoneMatrices(anim.CurrentAnimationIndex, anim.CurrentFrame);
+                auto matricesB = modelAsset->GetBoneMatrices(anim.TargetAnimationIndex, anim.TargetFrame);
+
+                if (!matricesA.empty() && !matricesB.empty())
                 {
-                    if (!primitive.Asset)
+                    size_t count = glm::min(matricesA.size(), matricesB.size());
+                    float oneMinusAlpha = 1.0f - alpha;
+                    item.BoneMatrices.resize(count);
+                    for (size_t i = 0; i < count; ++i)
                     {
-                        primitive.Asset = std::make_shared<ModelAsset>();
-                        primitive.Asset->SetPath(paths[idx]);
+                        item.BoneMatrices[i] = matricesA[i] * oneMinusAlpha + matricesB[i] * alpha;
                     }
-                    primitive.Asset->SetModel(m);
-                    primitive.Asset->SetState(AssetState::Ready);
                 }
-                primitive.Dirty = false;
-            }
-        }
-
-        if (!primitive.Asset || primitive.Asset->GetState() != AssetState::Ready)
-        {
-            continue;
-        }
-        const BoundingBox primBBox = primitive.Asset->GetBoundingBox();
-        glm::vec3 primLocalCenter = (primBBox.Max + primBBox.Min) * 0.5f;
-        glm::vec3 primLocalExtents = (primBBox.Max - primBBox.Min) * 0.5f;
-
-        // Transform AABB center+extents to world space for frustum culling
-        const glm::mat4& primWorldTransform = transform.WorldTransform;
-        glm::vec3 primCenter = glm::vec3(primWorldTransform * glm::vec4(primLocalCenter, 1.0f));
-        glm::vec3 primExtents = {
-            std::abs(primWorldTransform[0][0]) * primLocalExtents.x + std::abs(primWorldTransform[1][0]) * primLocalExtents.y +
-                std::abs(primWorldTransform[2][0]) * primLocalExtents.z,
-            std::abs(primWorldTransform[0][1]) * primLocalExtents.x + std::abs(primWorldTransform[1][1]) * primLocalExtents.y +
-                std::abs(primWorldTransform[2][1]) * primLocalExtents.z,
-            std::abs(primWorldTransform[0][2]) * primLocalExtents.x + std::abs(primWorldTransform[1][2]) * primLocalExtents.y +
-                std::abs(primWorldTransform[2][2]) * primLocalExtents.z,
-        };
-        if (!IsBoxVisible(frustum, primCenter, primExtents))
-        {
-            continue;
-        }
-
-        std::shared_ptr<ShaderAsset> shaderOver;
-        std::vector<ShaderUniform> uniforms;
-        if (registry.all_of<ShaderComponent>(entity))
-        {
-            auto& sc = registry.get<ShaderComponent>(entity);
-            if (sc.Enabled && !sc.ShaderPath.empty())
-            {
-                auto handle =
-                    ServiceLocator::Get<AssetManager>()->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType());
-                shaderOver = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(sc.ShaderPath);
-                uniforms = sc.Uniforms;
-            }
-        }
-        std::vector<Material> materials;
-
-        RenderItem item;
-        item.Asset = primitive.Asset.get();
-        item.Transform = transform.WorldTransform;
-        item.Materials = materials;
-        item.ShaderOverride = shaderOver.get();
-        item.CustomUniforms = uniforms;
-
-        // Primitives are usually opaque, but let's check
-        bool hasOpaque = false;
-        bool hasTransparent = false;
-        const auto& model = primitive.Asset->GetModel();
-        for (int i = 0; i < (int)model.Meshes.size(); ++i)
-        {
-            Material mat = ResolveMaterialForMesh(i, model, {}, primitive.Asset.get());
-            if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
-            {
-                hasTransparent = true;
+                else if (!matricesA.empty())
+                {
+                    item.BoneMatrices = std::move(matricesA);
+                }
+                else
+                {
+                    item.BoneMatrices = std::move(matricesB);
+                }
             }
             else
             {
-                hasOpaque = true;
+                item.BoneMatrices = modelAsset->GetBoneMatrices(anim.CurrentAnimationIndex, anim.CurrentFrame);
             }
         }
+    }
 
-        glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-        item.Distance = glm::length(cameraPos - worldPos);
-
-        if (hasTransparent)
+    // Determine transparency and push to correct queue
+    bool hasOpaque = false;
+    bool hasTransparent = false;
+    const auto& model = modelAsset->GetModel();
+    for (int i = 0; i < (int)model.Meshes.size(); ++i)
+    {
+        Material mat = ResolveMaterialForMesh(i, model, materials, modelAsset);
+        if (mat.Transparent || mat.AlbedoColor.a < 0.99f)
         {
-            m_TransparentQueue.push_back(item);
+            hasTransparent = true;
         }
-        if (hasOpaque)
+        else
         {
-            m_OpaqueQueue.push_back(std::move(item));
+            hasOpaque = true;
         }
     }
+
+    glm::vec3 worldPos = glm::vec3(worldTransform[3]);
+    item.Distance = glm::length(cameraPos - worldPos);
+
+    if (hasTransparent)
+    {
+        m_TransparentQueue.push_back(item);
+    }
+    if (hasOpaque)
+    {
+        m_OpaqueQueue.push_back(std::move(item));
+    }
+    return hasOpaque || hasTransparent;
 }
 
 void SceneRenderer::DrawAnimatedEntities(const std::vector<AnimatedEntry>& animatedEntries)
@@ -813,11 +733,6 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
         DrawColliderDebug(registry, options);
     }
 
-    if (options.ShowDebugCollisionModelBox)
-    {
-        DrawCollisionModelBoxDebug(registry);
-    }
-
     if (options.DrawGrid)
     {
         auto& grid = settings.Grid;
@@ -925,45 +840,4 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
     GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Fill);
 }
-
-void SceneRenderer::DrawCollisionModelBoxDebug(entt::registry& registry)
-{
-    // Draw bounding boxes for collision model box entities
-    // This shows mesh collider bounding boxes
-    auto view = registry.view<TransformComponent, ColliderComponent>();
-    for (auto entity : view)
-    {
-        auto [transform, collider] = view.get<TransformComponent, ColliderComponent>(entity);
-        if (!collider.Enabled)
-        {
-            continue;
-        }
-
-        // Only render for mesh colliders
-        if (collider.Type != ColliderType::Mesh)
-        {
-            continue;
-        }
-
-        glm::vec4 color = glm::vec4(1.0f, 1.0f, 0.0f, 1.0f); // Yellow for collision model boxes
-
-        if (collider.ModelHandle != 0)
-        {
-            auto model = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(collider.ModelHandle);
-            if (model && model->IsReady())
-            {
-                const BoundingBox& localBox = model->GetBoundingBox();
-                glm::vec3 center = (localBox.Min + localBox.Max) * 0.5f;
-                glm::vec3 size = localBox.Max - localBox.Min;
-
-                // Note: transform.WorldTransform already includes entity scale,
-                // but the localBox is also scaled if the importer applied scale?
-                // Usually localBox is untransformed.
-                ServiceLocator::Get<DebugRenderer>()->DrawCubeWires(transform.WorldTransform * glm::translate(glm::mat4(1.0f), center), size,
-                                             color, *ServiceLocator::Get<Renderer>());
-            }
-        }
-    }
-}
-
 } // namespace Chained

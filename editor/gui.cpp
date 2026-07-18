@@ -1,27 +1,27 @@
-#include "engine/platform/dialogs/dialogs.h"
 #include "gui.h"
-#include "editor/project/project_exporter.h"
-#include "engine/core/service_locator.h"
-#include "thirdparty/IconsFontAwesome6.h"
 #include "editor/layer.h"
 #include "editor/panels/panel.h"
 #include "editor/panels/viewport_panel.h"
-#include "events.h"
+#include "editor/project/project_exporter.h"
 #include "engine/app/application.h"
+#include "engine/core/service_locator.h"
+#include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "engine/scene/components.h"
+#include "events.h"
 #include "scripting/scriptengine.h"
+#include "thirdparty/IconsFontAwesome6.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "engine/app/application.h"
+#include "engine/common/thread_pool.h"
 #include "engine/core/platform.h"
 #include "engine/scene/component_registry.h"
 #include "imgui_internal.h"
 #include "scripting/scriptengine.h"
 #include <filesystem>
-#include <string>
 #include <mutex>
-#include "engine/common/thread_pool.h"
+#include <string>
 
 namespace Chained
 {
@@ -30,13 +30,15 @@ namespace Chained
 // State for the Export popup (static, ephemeral)
 static struct ExportState
 {
-    bool        Open       = false;
-    bool        Success    = false;
+    bool Open = false;
+    bool Success = false;
     std::string Message;
     std::string OutDir;
-    std::mutex  Mutex;
-    bool        IsExporting = false;
+    std::mutex Mutex;
+    bool IsExporting = false;
 } s_ExportState;
+
+static bool s_ShowEditorSettings = false;
 
 static void DrawPropertyLabel(const char* label)
 {
@@ -55,6 +57,24 @@ static void DrawPropertyLabel(const char* label)
         ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.4f);
     }
 }
+namespace
+{
+// Curated list of bundled UI fonts (paths relative to the engine resources root).
+struct FontChoice
+{
+    const char* Label;
+    const char* Path;
+};
+
+constexpr std::array<FontChoice, 6> kFontChoices = {{
+    {"Lato Bold", "resources/font/lato/lato-bold.ttf"},
+    {"Lato Regular", "resources/font/lato/lato-regular.ttf"},
+    {"Gantari Regular", "resources/font/gantari/static/gantari-regular.ttf"},
+    {"Gantari Medium", "resources/font/gantari/static/gantari-medium.ttf"},
+    {"Alan Sans Regular", "resources/font/static/alansans-regular.ttf"},
+    {"Alan Sans Medium", "resources/font/static/alansans-medium.ttf"},
+}};
+} // namespace
 
 // --- Menu System Implementation ---
 
@@ -162,13 +182,11 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             std::lock_guard<std::mutex> lock(s_ExportState.Mutex);
             isExporting = s_ExportState.IsExporting;
         }
-        if (ImGui::MenuItem(isExporting ? ICON_FA_FILE_EXPORT " Exporting..." : ICON_FA_FILE_EXPORT " Export Project..."))
+
+        if (ImGui::MenuItem(isExporting ? ICON_FA_FILE_EXPORT " Exporting..."
+                                        : ICON_FA_FILE_EXPORT " Export Project..."))
         {
-            if (isExporting)
-            {
-                // Already exporting
-            }
-            else
+            if (!isExporting)
             {
                 auto outDir = Dialogs::PickFolder();
                 if (outDir)
@@ -182,11 +200,10 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
                         auto result = ProjectExporter::ExportTo(outDirPath);
                         std::lock_guard<std::mutex> lock(s_ExportState.Mutex);
                         s_ExportState.Success = result.Success;
-                        s_ExportState.Message = result.Success
-                            ? "Export complete!"
-                            : ("Export failed: " + result.Error);
-                        s_ExportState.OutDir  = result.OutDir.string();
-                        s_ExportState.Open    = true;
+                        s_ExportState.Message =
+                            result.Success ? "Export complete!" : ("Export failed: " + result.Error);
+                        s_ExportState.OutDir = result.OutDir.string();
+                        s_ExportState.Open = true;
                         s_ExportState.IsExporting = false;
                     });
                 }
@@ -202,10 +219,20 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
             auto project = Project::GetActive();
             if (project)
             {
-                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(
-                    project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
+                auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
+                                                                      project->GetConfig().ProjectDirectory);
                 ServiceLocator::Get<ScriptEngine>()->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
             }
+        }
+        ImGui::EndMenu();
+    }
+
+    // Editor Menu
+    if (ImGui::BeginMenu("Editor"))
+    {
+        if (ImGui::MenuItem(ICON_FA_SLIDERS " Settings"))
+        {
+            s_ShowEditorSettings = true;
         }
         ImGui::EndMenu();
     }
@@ -247,16 +274,265 @@ void EditorGUI::DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels)
         }
     }
 
+    // --- Unsaved Changes Confirm Dialog ---
+    {
+        auto& sceneMgr = EditorLayer::Get().GetSceneManager();
+        if (sceneMgr.IsConfirmPending())
+        {
+            ImGui::OpenPopup("Unsaved Changes");
+        }
+        if (ImGui::BeginPopupModal("Unsaved Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+        {
+            ImGui::Text("Scene has unsaved changes.");
+            ImGui::Spacing();
+            ImGui::TextDisabled("Do you want to save before continuing?");
+            ImGui::Spacing();
+            ImGui::Separator();
+
+            if (ImGui::Button("Save", ImVec2(120.f, 0.f)))
+            {
+                sceneMgr.SaveScene();
+                sceneMgr.ConfirmPendingAction();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Don't Save", ImVec2(120.f, 0.f)))
+            {
+                sceneMgr.ConfirmPendingAction();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::SameLine();
+            if (ImGui::Button("Cancel", ImVec2(120.f, 0.f)))
+            {
+                sceneMgr.CancelPendingAction();
+                ImGui::CloseCurrentPopup();
+            }
+            ImGui::EndPopup();
+        }
+    }
+
     ImGui::EndMenuBar();
+}
+
+void EditorGUI::DrawEditorSettings()
+{
+    if (!s_ShowEditorSettings)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(700, 480), ImGuiCond_FirstUseEver);
+    auto& config = EditorLayer::Get().GetConfig();
+
+    if (ImGui::Begin(ICON_FA_SLIDERS " Editor Settings", &s_ShowEditorSettings))
+    {
+        static int selectedCategory = 0;
+        const char* categories[] = {ICON_FA_PALETTE " Appearance", ICON_FA_CAMERA " Camera",
+                                    ICON_FA_VIDEO " Viewport", ICON_FA_IMAGE " Content Browser",
+                                    ICON_FA_FLOPPY_DISK " Auto-Save", ICON_FA_ROCKET " Startup",
+                                    ICON_FA_GEAR " General"};
+
+        ImGui::Columns(2, "EditorSettingsColumns", true);
+
+        static bool widthSet = false;
+        if (!widthSet)
+        {
+            ImGui::SetColumnWidth(0, 180.0f);
+            widthSet = true;
+        }
+
+        // --- Left sidebar ---
+        ImGui::BeginChild("EditorSettingsSidebar", ImVec2(0, 0), ImGuiChildFlags_NavFlattened);
+        for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
+        {
+            if (ImGui::Selectable(categories[i], selectedCategory == i))
+            {
+                selectedCategory = i;
+            }
+        }
+        ImGui::EndChild();
+
+        ImGui::NextColumn();
+
+        // --- Right content ---
+        ImGui::BeginChild("EditorSettingsContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()),
+                          ImGuiChildFlags_NavFlattened);
+        ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
+
+        if (selectedCategory == 0) // Appearance
+        {
+            ImGui::TextDisabled("Font");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            int currentFont = -1;
+            for (int i = 0; i < (int)kFontChoices.size(); i++)
+            {
+                if (config.FontPath == kFontChoices[i].Path)
+                {
+                    currentFont = i;
+                    break;
+                }
+            }
+            const char* preview = currentFont >= 0 ? kFontChoices[currentFont].Label : "Custom";
+            if (ImGui::BeginCombo("Editor Font", preview))
+            {
+                for (int i = 0; i < (int)kFontChoices.size(); i++)
+                {
+                    bool sel = (currentFont == i);
+                    if (ImGui::Selectable(kFontChoices[i].Label, sel))
+                    {
+                        config.FontPath = kFontChoices[i].Path;
+                    }
+                    if (sel)
+                    {
+                        ImGui::SetItemDefaultFocus();
+                    }
+                }
+                ImGui::EndCombo();
+            }
+
+            ImGui::DragFloat("Font Size", &config.FontSize, 0.25f, 8.0f, 48.0f, "%.0f px");
+            ImGui::TextDisabled("Apply rebuilds the font atlas at the new size/typeface.");
+
+            ImGui::Spacing();
+            ImGui::Spacing();
+            ImGui::TextDisabled("Viewport Icons");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::DragFloat("Icon Scale", &config.IconSizeScale, 0.005f, 0.01f, 1.0f, "%.3f");
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("How fast gizmo icons grow with camera distance.");
+            }
+            ImGui::DragFloat("Icon Min Size", &config.IconSizeMin, 0.05f, 0.1f, config.IconSizeMax, "%.2f");
+            ImGui::DragFloat("Icon Max Size", &config.IconSizeMax, 0.05f, config.IconSizeMin, 40.0f, "%.2f");
+        }
+        else if (selectedCategory == 1) // Camera
+        {
+            ImGui::TextDisabled("Editor Camera (Edit Mode)");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::SliderFloat("Move Speed", &config.CameraMoveSpeed, 0.1f, 100.0f, "%.1f");
+            ImGui::SliderFloat("Boost Multiplier", &config.CameraBoostMultiplier, 1.0f, 10.0f, "%.1f");
+            ImGui::SliderFloat("Rotation Speed", &config.CameraRotationSpeed, 0.1f, 5.0f, "%.1f");
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("How fast the camera rotates when holding right-click.");
+            }
+            ImGui::SliderFloat("Zoom Speed", &config.CameraZoomSpeedMultiplier, 0.1f, 5.0f, "%.1f");
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Multiplier for mouse wheel zoom speed.");
+            }
+            ImGui::DragFloat("FOV", &config.CameraFovDegrees, 0.5f, 20.0f, 120.0f, "%.1f deg");
+            ImGui::DragFloat("Near Clip", &config.CameraNearClip, 0.01f, 0.001f, 10.0f, "%.3f");
+            ImGui::DragFloat("Far Clip", &config.CameraFarClip, 100.0f, 100.0f, 100000.0f, "%.0f");
+            ImGui::Checkbox("Disable Camera Zoom", &config.DisableCameraZoom);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Prevent the mouse wheel from zooming the editor camera.");
+            }
+        }
+        else if (selectedCategory == 2) // Viewport
+        {
+            ImGui::TextDisabled("Viewport");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Show Editor Icons", &config.ShowEditorIcons);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Show camera, light, and spawn zone icons in the viewport.");
+            }
+            ImGui::DragFloat("Gizmo Scale", &config.GizmoScale, 0.05f, 0.5f, 3.0f, "%.2f");
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Scale of the transform gizmo in the viewport.");
+            }
+        }
+        else if (selectedCategory == 3) // Content Browser
+        {
+            ImGui::TextDisabled("Content Browser");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::DragFloat("Thumbnail Size", &config.DefaultThumbnailSize, 4.0f, 32.0f, 256.0f, "%.0f px");
+            const char* sortNames[] = {"Name", "Date", "Size"};
+            ImGui::Combo("Sort Order", &config.DefaultSortOrder, sortNames, 3);
+            ImGui::Checkbox("Show File Extensions", &config.ShowFileExtensions);
+        }
+        else if (selectedCategory == 4) // Auto-Save
+        {
+            ImGui::TextDisabled("Auto-Save");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Enable Auto-Save", &config.AutoSaveEnabled);
+            ImGui::DragFloat("Interval (s)", &config.AutoSaveInterval, 1.0f, 10.0f, 3600.0f, "%.0f");
+        }
+        else if (selectedCategory == 5) // Startup
+        {
+            ImGui::TextDisabled("Startup");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Load Last Project on Startup", &config.LoadLastProjectOnStartup);
+            ImGui::Spacing();
+            ImGui::TextDisabled("Last project:");
+            ImGui::SameLine();
+            ImGui::TextWrapped("%s", config.LastProjectPath.empty() ? "(none)" : config.LastProjectPath.c_str());
+        }
+        else if (selectedCategory == 6) // General
+        {
+            ImGui::TextDisabled("General");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::Checkbox("Confirm on Scene Close", &config.ConfirmOnSceneClose);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Show a warning when closing/switching a scene with unsaved changes.");
+            }
+            ImGui::DragInt("Max Recent Projects", &config.MaxRecentProjects, 1, 1, 50);
+        }
+
+        ImGui::PopStyleVar();
+        ImGui::EndChild();
+
+        ImGui::Columns(1);
+        ImGui::Separator();
+
+        if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Apply Font"))
+        {
+            EditorLayer::Get().ReloadEditorFonts();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Rebuild the editor font atlas now.");
+        }
+        ImGui::SameLine();
+        if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Settings"))
+        {
+            EditorLayer::Get().SaveConfig();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Persist to editor_settings.yaml.");
+        }
+    }
+    ImGui::End();
 }
 
 void EditorGUI::BeginPropertyGrid()
 {
-    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6)); // A bit more vertical breathing room
-    ImGui::BeginTable("PropertyGrid", 2, 
-        ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg | ImGuiTableFlags_SizingStretchSame);
-    
-    // Set left column to be roughly 40% of the width or 120px
+    ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(8, 6));
+    ImGui::BeginTable("PropertyGrid", 2,
+                      ImGuiTableFlags_Resizable | ImGuiTableFlags_BordersInnerV | ImGuiTableFlags_RowBg |
+                          ImGuiTableFlags_SizingStretchSame);
+
     ImGui::TableSetupColumn("Label", ImGuiTableColumnFlags_WidthFixed, 120.0f);
     ImGui::TableSetupColumn("Control", ImGuiTableColumnFlags_WidthStretch);
 }
@@ -280,10 +556,9 @@ void EditorGUI::EndProperty()
     ImGui::PopID();
 }
 
-// --- Property Widgets Implementation (New Unified Style) ---
+// --- Property Widgets Implementation ---
 
-template <typename F>
-bool EditorGUI::PropertyWidget(const char* label, F&& widgetFn)
+template <typename F> bool EditorGUI::PropertyWidget(const char* label, F&& widgetFn)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
@@ -385,8 +660,8 @@ bool EditorGUI::Property(const char* label, int& value, const char** items, int 
     return PropertyWidget(label, [&]() { return ImGui::Combo("##prop", &value, items, itemCount); });
 }
 
-bool EditorGUI::FilePropertyImpl(const char* label, std::string& value,
-    const char* filter, std::function<void()> thumbnailFn)
+bool EditorGUI::FilePropertyImpl(const char* label, std::string& value, const char* filter,
+                                 std::function<void()> thumbnailFn)
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
@@ -488,18 +763,16 @@ bool EditorGUI::ActionButton(const char* icon, const char* label)
 static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, float resetValue,
                                 float width, bool& changed)
 {
-    ImGuiIO& io = ImGui::GetIO();
     ImGui::PushID(label);
 
     float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
     ImVec2 buttonSize = {lineHeight, lineHeight};
 
-    // Label with background color
     ImGui::PushStyleColor(ImGuiCol_Button, color);
     ImGui::PushStyleColor(ImGuiCol_ButtonHovered, color);
     ImGui::PushStyleColor(ImGuiCol_ButtonActive, color);
     ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 3.0f);
-    // Use a button as a colored label
+
     if (ImGui::Button(label, buttonSize))
     {
         val = resetValue;
@@ -513,7 +786,7 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
     ImGui::PopStyleVar();
     ImGui::PopStyleColor(3);
 
-    ImGui::SameLine(0, 0); // No spacing between label and input
+    ImGui::SameLine(0, 0);
 
     ImGui::SetNextItemWidth(width - buttonSize.x);
     char buf[32];
@@ -527,8 +800,8 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
 }
 
 template <int N>
-bool EditorGUI::DrawVecImpl(const char* label, float* values, float resetValue,
-    const ImVec4* colors, const char* componentLabels[N])
+bool EditorGUI::DrawVecImpl(const char* label, float* values, float resetValue, const ImVec4* colors,
+                            const char* componentLabels[N])
 {
     DrawPropertyLabel(label);
     ImGui::PushID(label);
@@ -544,10 +817,13 @@ bool EditorGUI::DrawVecImpl(const char* label, float* values, float resetValue,
 
     for (int i = 0; i < N; ++i)
     {
-        if (i > 0) ImGui::SameLine();
+        if (i > 0)
+        {
+            ImGui::SameLine();
+        }
         ImGui::SetNextItemWidth(itemWidth);
-        DrawPropertyControl(componentLabels[i], values[i], colors[i],
-            componentLabels[i], resetValue, itemWidth, changed);
+        DrawPropertyControl(componentLabels[i], values[i], colors[i], componentLabels[i], resetValue, itemWidth,
+                            changed);
     }
 
     ImGui::EndGroup();
@@ -563,7 +839,11 @@ bool EditorGUI::DrawVec2(const char* label, glm::vec2& values, float resetValue)
     ImVec4 colors[2] = {{0.8f, 0.1f, 0.15f, 1.0f}, {0.2f, 0.7f, 0.2f, 1.0f}};
     const char* labels[2] = {"X", "Y"};
     bool changed = DrawVecImpl<2>(label, arr, resetValue, colors, labels);
-    if (changed) { values.x = arr[0]; values.y = arr[1]; }
+    if (changed)
+    {
+        values.x = arr[0];
+        values.y = arr[1];
+    }
     return changed;
 }
 
@@ -573,17 +853,29 @@ bool EditorGUI::DrawVec3(const char* label, glm::vec3& values, float resetValue)
     ImVec4 colors[3] = {{0.8f, 0.1f, 0.15f, 1.0f}, {0.2f, 0.7f, 0.2f, 1.0f}, {0.1f, 0.25f, 0.8f, 1.0f}};
     const char* labels[3] = {"X", "Y", "Z"};
     bool changed = DrawVecImpl<3>(label, arr, resetValue, colors, labels);
-    if (changed) { values.x = arr[0]; values.y = arr[1]; values.z = arr[2]; }
+    if (changed)
+    {
+        values.x = arr[0];
+        values.y = arr[1];
+        values.z = arr[2];
+    }
     return changed;
 }
 
 bool EditorGUI::DrawVec4(const char* label, glm::vec4& values, float resetValue)
 {
     float arr[4] = {values.x, values.y, values.z, values.w};
-    ImVec4 colors[4] = {{0.8f, 0.1f, 0.15f, 1.0f}, {0.2f, 0.7f, 0.2f, 1.0f}, {0.1f, 0.25f, 0.8f, 1.0f}, {0.5f, 0.5f, 0.5f, 1.0f}};
+    ImVec4 colors[4] = {
+        {0.8f, 0.1f, 0.15f, 1.0f}, {0.2f, 0.7f, 0.2f, 1.0f}, {0.1f, 0.25f, 0.8f, 1.0f}, {0.5f, 0.5f, 0.5f, 1.0f}};
     const char* labels[4] = {"X", "Y", "Z", "W"};
     bool changed = DrawVecImpl<4>(label, arr, resetValue, colors, labels);
-    if (changed) { values.x = arr[0]; values.y = arr[1]; values.z = arr[2]; values.w = arr[3]; }
+    if (changed)
+    {
+        values.x = arr[0];
+        values.y = arr[1];
+        values.z = arr[2];
+        values.w = arr[3];
+    }
     return changed;
 }
 

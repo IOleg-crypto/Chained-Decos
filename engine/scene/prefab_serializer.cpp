@@ -13,6 +13,7 @@ namespace Chained
 static void SerializeEntityRecursive(YAML::Emitter& out, Entity entity)
 {
     out << YAML::BeginMap;
+    ComponentSerializer::SerializeID(out, entity);
     ComponentSerializer::SerializeAll(out, entity);
     out << YAML::EndMap;
 

@@ -27,6 +27,7 @@ struct ColliderComponent
     bool IsTrigger = false;
     bool Enabled = true;
     bool AutoCalculate = false;
+    bool UseFastBuildQuality = true;
 
     std::string ModelPath;
     AssetHandle ModelHandle = 0;
@@ -54,6 +55,8 @@ struct ColliderComponent
             .Tooltip =
                 "If enabled, the collider only registers intersections but does not block physical body movement"};
         UIMeta AutoCalculate = {.Tooltip = "Automatically calculate collider dimensions based on the ModelComponent"};
+        UIMeta UseFastBuildQuality = {
+            .Tooltip = "Mesh only: faster BVH build but slightly worse runtime collision performance"};
         UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
                             .Tooltip = "Path to the 3D model for the Mesh collider",
                             .Extensions = ".glb,.gltf,.obj"};

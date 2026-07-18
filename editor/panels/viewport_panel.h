@@ -90,10 +90,21 @@ private:
     void RenderOverlays(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
     void HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
     void RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+    void HandleKeyboardShortcuts();
 
-    
+    // Toolbar sub-sections
+    void DrawSnapSection();
+    void DrawTransformSpaceToggle();
+    void DrawPlaybackControls();
+    void DrawScriptReloadButton();
+    void DrawRunInNewWindowButton();
+
+    // Icon rendering helpers
     void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
+    void RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax, float iconScale);
     void ClearSceneBackground(Scene* scene);
+
+    Camera3D GetActiveOrEditorCamera(Scene* scene) const;
 };
 
 } // namespace Chained

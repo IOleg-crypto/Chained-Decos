@@ -21,6 +21,23 @@ EditorCameraController::EditorCameraController()
     UpdateView();
 }
 
+Camera3D EditorCameraController::ToCamera3D() const
+{
+    Camera3D camera;
+    glm::vec3 pos = CalculatePosition();
+    glm::vec3 fp = m_FocalPoint;
+    glm::vec3 up = GetUpDirection();
+    camera.Position = {pos.x, pos.y, pos.z};
+    camera.Target = {fp.x, fp.y, fp.z};
+    camera.Up = {up.x, up.y, up.z};
+    camera.Projection = GetProjectionType();
+    camera.FovDegrees = m_FovDegrees;
+    camera.OrthographicSize = GetOrthographicSize();
+    camera.NearClip = m_NearClip;
+    camera.FarClip = m_FarClip;
+    return camera;
+}
+
 void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize)
 {
     m_ViewportWidth = (uint32_t)viewportSize.x;
@@ -207,7 +224,7 @@ std::pair<float, float> EditorCameraController::PanSpeed() const
 
 float EditorCameraController::RotationSpeed() const
 {
-    return 1.0f;
+    return m_RotationSpeed;
 }
 
 float EditorCameraController::ZoomSpeed() const
@@ -216,7 +233,7 @@ float EditorCameraController::ZoomSpeed() const
     distance = std::max(distance, 0.0f);
     float speed = distance * distance;
 
-    return std::clamp(speed, 0.1f, 100.0f);
+    return std::clamp(speed * m_ZoomSpeedMultiplier, 0.1f, 100.0f);
 }
 
 } // namespace Chained

@@ -150,6 +150,86 @@ void EditorLayer::LoadConfig()
                     m_Config.RecentProjects.push_back(entry.as<std::string>());
                 }
             }
+            if (node["FontPath"])
+            {
+                m_Config.FontPath = node["FontPath"].as<std::string>(m_Config.FontPath);
+            }
+            if (node["FontSize"])
+            {
+                m_Config.FontSize = node["FontSize"].as<float>(m_Config.FontSize);
+            }
+            if (node["IconSizeScale"])
+            {
+                m_Config.IconSizeScale = node["IconSizeScale"].as<float>(m_Config.IconSizeScale);
+            }
+            if (node["IconSizeMin"])
+            {
+                m_Config.IconSizeMin = node["IconSizeMin"].as<float>(m_Config.IconSizeMin);
+            }
+            if (node["IconSizeMax"])
+            {
+                m_Config.IconSizeMax = node["IconSizeMax"].as<float>(m_Config.IconSizeMax);
+            }
+            if (node["CameraMoveSpeed"])
+            {
+                m_Config.CameraMoveSpeed = node["CameraMoveSpeed"].as<float>(m_Config.CameraMoveSpeed);
+            }
+            if (node["CameraBoostMultiplier"])
+            {
+                m_Config.CameraBoostMultiplier = node["CameraBoostMultiplier"].as<float>(m_Config.CameraBoostMultiplier);
+            }
+            if (node["DisableCameraZoom"])
+            {
+                m_Config.DisableCameraZoom = node["DisableCameraZoom"].as<bool>(m_Config.DisableCameraZoom);
+            }
+            if (node["CameraRotationSpeed"])
+            {
+                m_Config.CameraRotationSpeed = node["CameraRotationSpeed"].as<float>(m_Config.CameraRotationSpeed);
+            }
+            if (node["CameraZoomSpeedMultiplier"])
+            {
+                m_Config.CameraZoomSpeedMultiplier = node["CameraZoomSpeedMultiplier"].as<float>(m_Config.CameraZoomSpeedMultiplier);
+            }
+            if (node["CameraFovDegrees"])
+            {
+                m_Config.CameraFovDegrees = node["CameraFovDegrees"].as<float>(m_Config.CameraFovDegrees);
+            }
+            if (node["CameraNearClip"])
+            {
+                m_Config.CameraNearClip = node["CameraNearClip"].as<float>(m_Config.CameraNearClip);
+            }
+            if (node["CameraFarClip"])
+            {
+                m_Config.CameraFarClip = node["CameraFarClip"].as<float>(m_Config.CameraFarClip);
+            }
+            if (node["ShowEditorIcons"])
+            {
+                m_Config.ShowEditorIcons = node["ShowEditorIcons"].as<bool>(m_Config.ShowEditorIcons);
+            }
+            if (node["GizmoScale"])
+            {
+                m_Config.GizmoScale = node["GizmoScale"].as<float>(m_Config.GizmoScale);
+            }
+            if (node["DefaultThumbnailSize"])
+            {
+                m_Config.DefaultThumbnailSize = node["DefaultThumbnailSize"].as<float>(m_Config.DefaultThumbnailSize);
+            }
+            if (node["DefaultSortOrder"])
+            {
+                m_Config.DefaultSortOrder = node["DefaultSortOrder"].as<int>(m_Config.DefaultSortOrder);
+            }
+            if (node["ShowFileExtensions"])
+            {
+                m_Config.ShowFileExtensions = node["ShowFileExtensions"].as<bool>(m_Config.ShowFileExtensions);
+            }
+            if (node["ConfirmOnSceneClose"])
+            {
+                m_Config.ConfirmOnSceneClose = node["ConfirmOnSceneClose"].as<bool>(m_Config.ConfirmOnSceneClose);
+            }
+            if (node["MaxRecentProjects"])
+            {
+                m_Config.MaxRecentProjects = node["MaxRecentProjects"].as<int>(m_Config.MaxRecentProjects);
+            }
         }
     } catch (const std::exception& e)
     {
@@ -176,6 +256,27 @@ void EditorLayer::SaveConfig()
     }
     out << YAML::EndSeq;
 
+    out << YAML::Key << "FontPath" << YAML::Value << m_Config.FontPath;
+    out << YAML::Key << "FontSize" << YAML::Value << m_Config.FontSize;
+    out << YAML::Key << "IconSizeScale" << YAML::Value << m_Config.IconSizeScale;
+    out << YAML::Key << "IconSizeMin" << YAML::Value << m_Config.IconSizeMin;
+    out << YAML::Key << "IconSizeMax" << YAML::Value << m_Config.IconSizeMax;
+    out << YAML::Key << "CameraMoveSpeed" << YAML::Value << m_Config.CameraMoveSpeed;
+    out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << m_Config.CameraBoostMultiplier;
+    out << YAML::Key << "DisableCameraZoom" << YAML::Value << m_Config.DisableCameraZoom;
+    out << YAML::Key << "CameraRotationSpeed" << YAML::Value << m_Config.CameraRotationSpeed;
+    out << YAML::Key << "CameraZoomSpeedMultiplier" << YAML::Value << m_Config.CameraZoomSpeedMultiplier;
+    out << YAML::Key << "CameraFovDegrees" << YAML::Value << m_Config.CameraFovDegrees;
+    out << YAML::Key << "CameraNearClip" << YAML::Value << m_Config.CameraNearClip;
+    out << YAML::Key << "CameraFarClip" << YAML::Value << m_Config.CameraFarClip;
+    out << YAML::Key << "ShowEditorIcons" << YAML::Value << m_Config.ShowEditorIcons;
+    out << YAML::Key << "GizmoScale" << YAML::Value << m_Config.GizmoScale;
+    out << YAML::Key << "DefaultThumbnailSize" << YAML::Value << m_Config.DefaultThumbnailSize;
+    out << YAML::Key << "DefaultSortOrder" << YAML::Value << m_Config.DefaultSortOrder;
+    out << YAML::Key << "ShowFileExtensions" << YAML::Value << m_Config.ShowFileExtensions;
+    out << YAML::Key << "ConfirmOnSceneClose" << YAML::Value << m_Config.ConfirmOnSceneClose;
+    out << YAML::Key << "MaxRecentProjects" << YAML::Value << m_Config.MaxRecentProjects;
+
     out << YAML::EndMap;
     out << YAML::EndMap;
 
@@ -197,7 +298,10 @@ void EditorLayer::OnAttach()
     m_Panels->Init();
 
     m_CommandHistory.SetNotifyCallback(
-        []() { CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor..."); });
+        [this]() {
+            CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor...");
+            m_SceneManager->MarkSceneDirty();
+        });
 
     // Auto-load last project/scene
     const auto& config = GetConfig();
@@ -251,16 +355,16 @@ void EditorLayer::LoadEditorFonts()
         return;
     }
 
-    float fontSize = 16.0f;
-    auto& assetManager = (*ServiceLocator::Get<AssetManager>());
+    float fontSize = m_Config.FontSize > 0.0f ? m_Config.FontSize : 16.0f;
+    auto engineRoot = ServiceLocator::Get<AssetManager>()->GetEngineRoot();
 
-    // --- Default UI Font (Lato) ---
-    std::string fontPath =
-        (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/lato/lato-bold.ttf").string();
+    // --- Default UI Font (from config, defaults to Lato Bold) ---
+    std::string relFont = !m_Config.FontPath.empty() ? m_Config.FontPath : "resources/font/lato/lato-bold.ttf";
+    std::string fontPath = (engineRoot / relFont).string();
     if (std::filesystem::exists(fontPath))
     {
         imguiLayer->AddFontFromFile(fontPath, fontSize);
-        CH_CORE_INFO("Loaded editor font: {}", fontPath);
+        CH_CORE_INFO("Loaded editor font: {} @ {}px", fontPath, fontSize);
     }
     else
     {
@@ -269,8 +373,7 @@ void EditorLayer::LoadEditorFonts()
     }
 
     // --- Icon Font (FontAwesome) ---
-    std::string faPath =
-        (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/font/fa-solid-900.ttf").string();
+    std::string faPath = (engineRoot / "resources/font/fa-solid-900.ttf").string();
     if (std::filesystem::exists(faPath))
     {
         static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
@@ -282,6 +385,19 @@ void EditorLayer::LoadEditorFonts()
     }
 
     imguiLayer->RefreshFontAtlasTexture();
+}
+
+void EditorLayer::ReloadEditorFonts()
+{
+    auto* imguiLayer = Application::Get().GetImGuiLayer();
+    if (!imguiLayer)
+    {
+        CH_CORE_ERROR("EditorLayer: ImGuiLayer not found; cannot reload fonts.");
+        return;
+    }
+    // Clear the atlas first so LoadEditorFonts re-adds the UI + icon fonts at the new size/typeface.
+    imguiLayer->ClearFonts();
+    LoadEditorFonts();
 }
 
 void EditorLayer::OnDetach()
@@ -369,13 +485,6 @@ void EditorLayer::OnUpdate(Timestep ts)
                 m_SceneManager->AutoSave(m_Config.AutoSaveInterval, ts);
             }
         }
-    }
-
-    // Input shortcuts
-    if (Core::Input::IsKeyPressed(KeyCode::F5))
-    {
-        AppLaunchRuntimeEvent e;
-        OnEvent(e);
     }
 }
 

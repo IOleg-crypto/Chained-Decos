@@ -29,6 +29,11 @@ EditorSceneManager::EditorSceneManager(CommandHistory& cmd, EditorProjectManager
 
 void EditorSceneManager::NewScene()
 {
+    if (m_Config.ConfirmOnSceneClose && m_SceneDirty)
+    {
+        m_PendingNewScene = true;
+        return;
+    }
     SetScene(Scene::CreateDefault());
 }
 
@@ -44,6 +49,13 @@ void EditorSceneManager::OpenScene()
 
 void EditorSceneManager::OpenScene(const std::filesystem::path& path)
 {
+    if (m_Config.ConfirmOnSceneClose && m_SceneDirty)
+    {
+        m_PendingOpenScene = true;
+        m_PendingOpenPath = path;
+        return;
+    }
+
     CH_CORE_INFO("EditorSceneManager: Transition requested to '{}'", path.string());
     if (m_IsSceneOpenLoading)
     {
@@ -73,6 +85,7 @@ void EditorSceneManager::SaveScene()
 
     SceneSerializer serializer(scene.get());
     serializer.Serialize(scene->GetSettings().ScenePath);
+    m_SceneDirty = false;
     CH_INFO("Scene saved to {0}", scene->GetSettings().ScenePath);
 }
 
@@ -586,6 +599,37 @@ bool EditorSceneManager::OnKeyPressed(KeyPressedEvent& e)
     }
 
     return false;
+}
+
+void EditorSceneManager::ConfirmPendingAction()
+{
+    if (m_PendingNewScene)
+    {
+        m_PendingNewScene = false;
+        m_SceneDirty = false;
+        SetScene(Scene::CreateDefault());
+    }
+    else if (m_PendingOpenScene)
+    {
+        m_PendingOpenScene = false;
+        m_SceneDirty = false;
+        std::filesystem::path path = m_PendingOpenPath;
+        m_PendingOpenPath.clear();
+
+        CH_CORE_INFO("EditorSceneManager: Transition requested to '{}'", path.string());
+        if (!m_IsSceneOpenLoading)
+        {
+            m_IsPlayModeSceneLoad = GetSceneState() == SceneState::Play;
+            StartSceneOpenTransition(path);
+        }
+    }
+}
+
+void EditorSceneManager::CancelPendingAction()
+{
+    m_PendingNewScene = false;
+    m_PendingOpenScene = false;
+    m_PendingOpenPath.clear();
 }
 
 } // namespace Chained

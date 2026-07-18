@@ -35,14 +35,11 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
     if (ImGui::Begin("Project Settings", &m_IsOpen))
     {
         auto& config = project->GetConfig();
-        auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
-        auto& editorConfig = EditorLayer::Get().GetConfig();
 
         static int selectedCategory = 0;
         const char* categories[] = {ICON_FA_GEARS " General",     ICON_FA_CODE " Scripting",
                                     ICON_FA_CUBES " Physics",     ICON_FA_WINDOW_RESTORE " Window",
-                                    ICON_FA_CAMERA " Editor",     ICON_FA_MOUNTAIN_SUN " Rendering",
-                                    ICON_FA_VOLUME_HIGH " Audio", ICON_FA_CAMERA " Camera (Edit Mode)",
+                                    ICON_FA_MOUNTAIN_SUN " Rendering", ICON_FA_VOLUME_HIGH " Audio",
                                     ICON_FA_CUBE " Mesh",         ICON_FA_PLAY " Runtime"};
 
         // Two-column layout: sidebar left, content right
@@ -174,13 +171,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::Checkbox("VSync", &config.Window.VSync);
             ImGui::Checkbox("Resizable", &config.Window.Resizable);
         }
-        else if (selectedCategory == 4) // Editor
-        {
-            ImGui::TextDisabled("Auto-Save Settings");
-            ImGui::Checkbox("Enable Auto-Save", &editorConfig.AutoSaveEnabled);
-            ImGui::DragFloat("Auto-Save Interval (s)", &editorConfig.AutoSaveInterval, 1.0f, 10.0f, 3600.0f);
-        }
-        else if (selectedCategory == 5) // Rendering
+        else if (selectedCategory == 4) // Rendering
         {
             ImGui::TextDisabled("Rendering Settings");
             ImGui::Separator();
@@ -224,7 +215,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
             ImGui::Checkbox("Enable Shadows", &config.Render.EnableShadows);
         }
-        else if (selectedCategory == 6) // Audio
+        else if (selectedCategory == 5) // Audio
         {
             ImGui::TextDisabled("Audio Settings");
             ImGui::Separator();
@@ -234,23 +225,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::SliderFloat("Music Volume", &config.Audio.MusicVolume, 0.0f, 1.0f);
             ImGui::SliderFloat("SFX Volume", &config.Audio.SFXVolume, 0.0f, 1.0f);
         }
-        else if (selectedCategory == 7) // Camera Settings (Edit Mode)
-        {
-            ImGui::TextDisabled("Camera Settings");
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            ImGui::SliderFloat("Move Speed", &editorSettings.CameraMoveSpeed, 0.1f, 100.0f, "%.1f");
-            ImGui::SliderFloat("Boost Multiplier", &editorSettings.CameraBoostMultiplier, 1.0f, 10.0f, "%.1f");
-
-            ImGui::Separator();
-            ImGui::Checkbox("Disable Camera Zoom", &editorSettings.DisableCameraZoom);
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Prevent mouse wheel from zooming the editor camera");
-            }
-        }
-        else if (selectedCategory == 8) // Mesh
+        else if (selectedCategory == 6) // Mesh
         {
             ImGui::TextDisabled("Mesh Import Settings");
             ImGui::Separator();
@@ -274,7 +249,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                 ImGui::SetTooltip("Flip texture UV coordinates vertically on import");
             }
         }
-        else if (selectedCategory == 9) // Runtime
+        else if (selectedCategory == 7) // Runtime
         {
             ImGui::TextDisabled("Runtime Settings");
             ImGui::Separator();
@@ -316,6 +291,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
 
         if (ImGui::Button("Save Project Settings"))
         {
+            auto& editorSettings = EditorLayer::Get().GetProjectManager().GetEditorSettings();
             std::filesystem::path path =
                 project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
             EditorProjectSerializer::Serialize(project, editorSettings, path);
