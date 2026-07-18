@@ -153,6 +153,8 @@ jobs:
             2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
 
       - name: Test
+        env:
+          COREHOST_TRACE: 1
         run: |
           set -euo pipefail
           BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
