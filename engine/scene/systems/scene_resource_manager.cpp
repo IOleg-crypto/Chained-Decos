@@ -320,14 +320,30 @@ void ResolvePrimitive(entt::registry& reg, entt::entity e)
     const char* typeMarker = nullptr;
     switch (prim.Type)
     {
-    case PrimitiveType::Cube:       typeMarker = ":cube:"; break;
-    case PrimitiveType::Sphere:     typeMarker = ":sphere:"; break;
-    case PrimitiveType::Plane:      typeMarker = ":plane:"; break;
-    case PrimitiveType::Cylinder:   typeMarker = ":cylinder:"; break;
-    case PrimitiveType::Cone:       typeMarker = ":cone:"; break;
-    case PrimitiveType::Torus:      typeMarker = ":torus:"; break;
-    case PrimitiveType::Knot:       typeMarker = ":knot:"; break;
-    case PrimitiveType::Hemisphere: typeMarker = ":hemisphere:"; break;
+    case PrimitiveType::Cube:
+        typeMarker = ":cube:";
+        break;
+    case PrimitiveType::Sphere:
+        typeMarker = ":sphere:";
+        break;
+    case PrimitiveType::Plane:
+        typeMarker = ":plane:";
+        break;
+    case PrimitiveType::Cylinder:
+        typeMarker = ":cylinder:";
+        break;
+    case PrimitiveType::Cone:
+        typeMarker = ":cone:";
+        break;
+    case PrimitiveType::Torus:
+        typeMarker = ":torus:";
+        break;
+    case PrimitiveType::Knot:
+        typeMarker = ":knot:";
+        break;
+    case PrimitiveType::Hemisphere:
+        typeMarker = ":hemisphere:";
+        break;
     case PrimitiveType::None:
     default:
         prim.Dirty = false;
