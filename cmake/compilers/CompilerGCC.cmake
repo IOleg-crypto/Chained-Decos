@@ -1,11 +1,10 @@
-# GCC Compiler Settings
-
 add_compile_options(
-    # Debug: use split DWARF so heavy debug info stays in .dwo files and is NOT
-    # pulled into the final link. Plain -g makes the static archives huge and the
-    # BFD linker runs out of memory ("memory exhausted" / "file format not
-    # recognized") when linking them, especially with parallel link jobs.
-    $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g> $<$<CONFIG:Debug>:-gsplit-dwarf>
+    # Debug: Plain -g. We previously used -gsplit-dwarf to avoid BFD linker 
+    # memory exhaustion, but -gsplit-dwarf on MinGW/Windows (PE/COFF) is 
+    # highly unstable and corrupts exception unwinding, causing Access Violations 
+    # in CI during CoreCLR init. We now rely on LLD (which is much more memory 
+    # efficient) to handle the large Debug debug info.
+    $<$<CONFIG:Debug>:-O0> $<$<CONFIG:Debug>:-g>
     $<$<CONFIG:Release>:-O3> $<$<CONFIG:Release>:-DNDEBUG>
     # Section-per-symbol in all configs so --gc-sections can drop unused code and
     # shrink what the linker has to hold in memory.
