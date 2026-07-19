@@ -134,7 +134,7 @@ jobs:
             -DENABLE_UNITY_BUILD=OFF \
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
             -DENABLE_LTO=OFF \
-            -DENABLE_PCH=ON \
+            -DENABLE_PCH=OFF \
             2>&1 | tee "build/${{ matrix.toolchain.preset }}/configure.log"
 
       - name: Build

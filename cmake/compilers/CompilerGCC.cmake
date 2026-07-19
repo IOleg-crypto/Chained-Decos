@@ -16,6 +16,14 @@ if(MINGW)
     add_compile_options(-Wa,-mbig-obj)
 endif()
 
+if(CH_CI)
+    # CI only runs Debug binaries to execute tests, never steps through them.
+    # Full -g on GCC (especially MinGW) dominates compile and link time and
+    # object size; -g1 keeps line tables for readable backtraces. Listed after
+    # the -g above, so it wins (GCC takes the last debug-level flag).
+    add_compile_options($<$<CONFIG:Debug>:-g1>)
+endif()
+
 # Prefer LLD over the default BFD ld: it is dramatically more memory-efficient
 # and faster, which is what actually fixes the MinGW Debug link failures.
 # Guard on availability so the configure step never fails on toolchains that
