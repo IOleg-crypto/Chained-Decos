@@ -77,7 +77,7 @@ jobs:
           msystem: MINGW64
           update: false
           path-type: inherit
-          install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make
+          install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-gdb
 
       - name: Setup MSVC
         if: contains(matrix.preset, 'msvc')
@@ -160,6 +160,25 @@ jobs:
           BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
           ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit_${{ matrix.build_type }}.xml" \
             2>&1 | tee "$BUILD_DIR/ctest_${{ matrix.build_type }}.log"
+
+      - name: Crash backtrace (gcc Debug only)
+        if: failure() && matrix.compiler == 'gcc' && matrix.build_type == 'Debug'
+        env:
+          COREHOST_TRACE: 1
+          ENGINE_ROOT: ${{ github.workspace }}
+        run: |
+          # The integration tests crash with an access violation on this runner
+          # but pass locally with the identical build config. Run one failing
+          # test directly under gdb to capture the faulting module and stack.
+          BIN_DIR="build/${{ matrix.preset }}/bin/${{ matrix.build_type }}"
+          cd "$BIN_DIR"
+          gdb -batch -return-child-result \
+            -ex "set pagination off" \
+            -ex run \
+            -ex "bt" \
+            -ex "info registers" \
+            -ex "info sharedlibrary" \
+            --args ./engine_tests_integration.exe --gtest_filter=RegressionTest.CopyEntityResetsUUID || true
 
       - name: Upload Artifacts
         if: always()
