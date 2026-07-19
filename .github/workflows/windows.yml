@@ -83,6 +83,17 @@ jobs:
         if: contains(matrix.preset, 'msvc')
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Prefer MSYS2 toolchain over preinstalled MinGW
+        if: "contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc') || contains(matrix.preset, 'gcc') && !contains(matrix.preset, 'linux')"
+        shell: msys2 {0}
+        run: |
+          # The windows-latest image preinstalls a MinGW-Builds GCC at C:\mingw64
+          # which shadows the MSYS2 toolchain installed above (jobs run in Git
+          # Bash, not the msys2 shell). That build's libstdc++ segfaults in
+          # std::format Debug code, and it is NOT the toolchain anyone tests
+          # against locally. Put MSYS2's mingw64/bin first on PATH.
+          cygpath -w /mingw64/bin >> "$GITHUB_PATH"
+
       - name: Get CMake and Ninja
         uses: lukka/get-cmake@latest
 
