@@ -5,6 +5,8 @@
 #include <spdlog/fmt/ostr.h>
 #include <spdlog/sinks/callback_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
+#include <chrono>
+#include <cstdio>
 #include <deque>
 #include <mutex>
 #include <string>
@@ -39,12 +41,21 @@ public:
         auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
         console_sink->set_pattern("%^[%H:%M:%S] %v%$");
 
-        auto callback_sink = std::make_shared<spdlog::sinks::callback_sink_mt>([&](const spdlog::details::log_msg& msg) {
+        auto callback_sink = std::make_shared<spdlog::sinks::callback_sink_mt>([](const spdlog::details::log_msg& msg) {
             std::string message(msg.payload.data(), msg.payload.size());
-            std::string timestamp = std::format("[{:02d}:{:02d}:{:02d}] ", 
-                msg.time.time_since_epoch().count() / 3600000000 % 24, // Simplified timestamp for buffer
-                msg.time.time_since_epoch().count() / 60000000 % 60,
-                msg.time.time_since_epoch().count() / 1000000 % 60);
+
+            // Wall-clock HH:MM:SS for the buffered in-editor console. Deliberately
+            // snprintf, not std::format: std::format segfaulted inside libstdc++'s
+            // formatting machinery in Debug builds made by the MinGW-Builds GCC 15.2
+            // that GitHub runners preinstall (crash in _Formatting_scanner::_M_format_arg
+            // on the very first log message). duration_cast is also portable across
+            // system_clock tick periods — the old divisors assumed microseconds.
+            const long long secs =
+                std::chrono::duration_cast<std::chrono::seconds>(msg.time.time_since_epoch()).count();
+            char ts[32];
+            std::snprintf(ts, sizeof(ts), "[%02lld:%02lld:%02lld] ",
+                (secs / 3600) % 24, (secs / 60) % 60, secs % 60);
+            std::string timestamp = ts;
 
             std::lock_guard<std::mutex> lock(s_BufferMutex);
             s_Buffer.push_back({ static_cast<LogLevel>(msg.level), message, timestamp });
