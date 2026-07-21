@@ -24,18 +24,18 @@ else()
     endif()
 
     # Dead Code Elimination linkage
-    if(MINGW OR (NOT WIN32))
-        # ELF / MinGW ld — standard gc-sections
+    if(NOT WIN32)
+        # Linux/macOS ELF — standard gc-sections
         add_link_options(
             $<$<CONFIG:Release>:-Wl,--gc-sections>
         )
     endif()
 
-    # Windows targeting lld-link — /OPT:REF /OPT:ICF replaces --gc-sections
+    # Windows targeting lld-link — /OPT:REF /OPT:ICF replaces --gc-sections.
+    # Use -Wl, prefix to pass comma-separated options to the linker via the driver.
     if(WIN32 AND NOT MINGW)
         add_link_options(
-            $<$<CONFIG:Release>:/OPT:REF>
-            $<$<CONFIG:Release>:/OPT:ICF>
+            $<$<CONFIG:Release>:-Wl,/OPT:REF,/OPT:ICF>
         )
     endif()
 
@@ -51,14 +51,8 @@ else()
     endif()
 endif()
 
-# Prefer LLD linker (same logic as CompilerGCC.cmake).
-# Use the name "lld" (not the full path) so Clang resolves the correct
-# sub-driver (ld.lld for ELF/MinGW, lld-link for MSVC ABI).
-find_program(CH_CLANG_LLD_LINKER NAMES ld.lld lld lld-link)
-if(CH_CLANG_LLD_LINKER)
-    add_link_options(-fuse-ld=lld)
-    message(STATUS "Clang: using LLD linker (${CH_CLANG_LLD_LINKER})")
-endif()
+# LLD linker preference: only on non-Windows (Linux/macOS) where it's not the
+# default. On Windows, the MSYS2/LLVM toolchain already sets -fuse-ld=lld-link.
 
 if(ENABLE_SANITIZERS)
     add_compile_options(-fsanitize=address -fsanitize=undefined)
