@@ -72,12 +72,12 @@ RuntimeLayer::~RuntimeLayer()
 
 void RuntimeLayer::OnAttach()
 {
-    if (auto* imguiLayer = Application::Get().GetImGuiLayer())
+    auto* imguiLayer = Application::Get().GetImGuiLayer();
+    if (imguiLayer)
     {
         ImGui::SetCurrentContext(static_cast<ImGuiContext*>(imguiLayer->GetContext()));
     }
 
-    auto* imguiLayer = Application::Get().GetImGuiLayer();
     auto& io = ImGui::GetIO();
 
     // Add default font through DLL if needed, but usually redundant if Editor/Engine already did it
@@ -395,6 +395,11 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     auto project = Project::GetActive();
+    if (!project)
+    {
+        CH_CORE_ERROR("Runtime: No active project after DiscoverAndLoadProject - cannot initialize scripting.");
+        return false;
+    }
     auto assemblyPath =
         ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
 
@@ -588,13 +593,20 @@ void RuntimeLayer::LoadInitialScene()
         std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
         if (std::filesystem::exists(scenesDir))
         {
-            for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
+            try
             {
-                if (entry.path().extension() == ".chscene")
+                for (const auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
                 {
-                    sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
-                    break;
+                    if (entry.path().extension() == ".chscene")
+                    {
+                        sceneToLoad = std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
+                        break;
+                    }
                 }
+            }
+            catch (const std::filesystem::filesystem_error& e)
+            {
+                CH_CORE_WARN("RuntimeSystem: Failed to enumerate scenes in '{}': {}", scenesDir.string(), e.what());
             }
         }
     }

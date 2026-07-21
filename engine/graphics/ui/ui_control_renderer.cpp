@@ -12,10 +12,12 @@ bool RenderControl(UIFontRegistry& fontRegistry,
     if (std::holds_alternative<std::monostate>(control.Data))
         return false;
 
+    const std::string* fontName = &control.TextStyle.FontName;
+
     ImFont* activeFont = nullptr;
-    if (!control.TextStyle.FontName.empty() && control.TextStyle.FontName != "Default")
+    if (!fontName->empty() && *fontName != "Default")
     {
-        activeFont = fontRegistry.GetFont(control.TextStyle.FontName, control.TextStyle.FontSize);
+        activeFont = fontRegistry.GetFont(*fontName, control.TextStyle.FontSize);
     }
 
     bool changed = false;

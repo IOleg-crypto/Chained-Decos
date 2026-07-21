@@ -4,8 +4,6 @@
 #include "engine/common/timestep.h"
 #include "panels/panel.h"
 #include <memory>
-#include <typeindex>
-#include <unordered_map>
 #include <string>
 #include <vector>
 
@@ -14,8 +12,6 @@ namespace Chained
 
 class EditorLayer;
 
-
-
 class EditorPanels
 {
 public:
@@ -23,48 +19,43 @@ public:
         : m_EditorLayer(editorLayer) {}
     ~EditorPanels() = default;
 
-public:
     void Init();
 
-public:
     template <typename T, typename... Args> std::shared_ptr<T> Register(Args&&... args)
     {
         auto panel = std::make_shared<T>(std::forward<Args>(args)...);
-        m_PanelRegistry[std::type_index(typeid(T))] = panel;
-        m_PanelNameRegistry[panel->GetName()] = panel;
-        m_RootPanels.push_back(panel);
+        m_Panels.push_back(panel);
         return panel;
     }
 
     template <typename T> std::shared_ptr<T> Get()
     {
-        auto it = m_PanelRegistry.find(std::type_index(typeid(T)));
-        if (it != m_PanelRegistry.end())
+        for (auto& panel : m_Panels)
         {
-            return std::static_pointer_cast<T>(it->second);
+            if (auto cast = std::dynamic_pointer_cast<T>(panel))
+                return cast;
         }
         return nullptr;
     }
 
     std::shared_ptr<Panel> Get(const std::string& name)
     {
-        auto it = m_PanelNameRegistry.find(name);
-        if (it != m_PanelNameRegistry.end())
+        for (auto& panel : m_Panels)
         {
-            return it->second;
+            if (panel->GetName() == name)
+                return panel;
         }
         return nullptr;
     }
 
     template <typename F> void ForEach(F&& func)
     {
-        for (auto& panel : m_RootPanels)
+        for (auto& panel : m_Panels)
         {
             func(panel);
         }
     }
 
-public:
     void OnUpdate(Timestep ts);
     void OnImGuiRender(bool readOnly);
     void OnEvent(Event& e);
@@ -72,16 +63,11 @@ public:
 
     EditorLayer& GetEditorLayer() { return m_EditorLayer; }
 
-    std::vector<std::shared_ptr<Panel>>& GetPanels()
-    {
-        return m_RootPanels;
-    }
+    std::vector<std::shared_ptr<Panel>>& GetPanels() { return m_Panels; }
 
 private:
     EditorLayer& m_EditorLayer;
-    std::unordered_map<std::type_index, std::shared_ptr<Panel>> m_PanelRegistry;
-    std::unordered_map<std::string, std::shared_ptr<Panel>> m_PanelNameRegistry;
-    std::vector<std::shared_ptr<Panel>> m_RootPanels;
+    std::vector<std::shared_ptr<Panel>> m_Panels;
 };
 
 } // namespace Chained

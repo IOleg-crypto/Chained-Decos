@@ -13,8 +13,8 @@ public abstract class Component
     /// <summary>The entity this component belongs to.</summary>
     public Entity Entity { get; internal set; } = null!;
     
-    /// <summary>Short-cut to the entity's transform.</summary>
-    public TransformComponent Transform => Entity.Transform;
+    /// <summary>Short-cut to the entity's transform, or null if absent.</summary>
+    public TransformComponent? Transform => Entity.Transform;
 }
 
 }

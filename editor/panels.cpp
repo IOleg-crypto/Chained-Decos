@@ -38,50 +38,37 @@ void EditorPanels::Init()
 
 void EditorPanels::OnUpdate(Timestep ts)
 {
-    // Update all visible panels
-    for (auto& panel : m_RootPanels)
+    for (auto& panel : m_Panels)
     {
-        if (panel->IsVisible() && !panel->IsPendingKill())
+        if (!panel->IsPendingKill())
         {
             panel->OnUpdate(ts);
         }
     }
 
-    // Cleanup pass for pending kills
-    m_RootPanels.erase(std::remove_if(m_RootPanels.begin(), m_RootPanels.end(),
-        [this](const std::shared_ptr<Panel>& panel) {
-            if (panel->IsPendingKill())
-            {
-                // Remove from registries
-                m_PanelNameRegistry.erase(panel->GetName());
-                // Note: type_index registry removing is more complex since we'd have to map back type_index from instance
-                // For deferred removal, usually removing from roots is enough, but properly we would erase from m_PanelRegistry as well.
-                // In this refactoring, assuming we just hide or remove standard panels.
-                return true;
-            }
-            return false;
-        }),
-        m_RootPanels.end());
+    m_Panels.erase(std::remove_if(m_Panels.begin(), m_Panels.end(),
+        [](const std::shared_ptr<Panel>& panel) { return panel->IsPendingKill(); }),
+        m_Panels.end());
 }
 
 void EditorPanels::OnImGuiRender(bool readOnly)
 {
-    for (auto& panel : m_RootPanels)
+    for (auto& panel : m_Panels)
     {
-        if (!panel->IsVisible() || panel->IsPendingKill())
+        if (!panel->IsPendingKill())
         {
-            continue;
+            panel->OnImGuiRender(readOnly);
         }
-
-        panel->OnImGuiRender(readOnly);
     }
 }
 
 void EditorPanels::OnEvent(Event& e)
 {
-    for (auto& panel : m_RootPanels)
+    for (auto& panel : m_Panels)
     {
-        if (panel->IsVisible() && !panel->IsPendingKill())
+        if (e.Handled)
+            break;
+        if (!panel->IsPendingKill())
         {
             panel->OnEvent(e);
         }
@@ -90,7 +77,7 @@ void EditorPanels::OnEvent(Event& e)
 
 void EditorPanels::SetContext(const std::shared_ptr<Scene>& context)
 {
-    for (auto& panel : m_RootPanels)
+    for (auto& panel : m_Panels)
     {
         panel->SetContext(context);
     }

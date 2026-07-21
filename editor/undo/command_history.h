@@ -20,19 +20,6 @@ public:
     void PushCommand(std::unique_ptr<IEditorCommand> command);
     void Undo();
     void Redo();
-    void Clear();
-
-    bool CanUndo() const
-    {
-        return !m_UndoStack.empty();
-    }
-    bool CanRedo() const
-    {
-        return !m_RedoStack.empty();
-    }
-
-    std::string GetUndoName() const;
-    std::string GetRedoName() const;
 
     void SetNotifyCallback(CommandEventCallback callback)
     {

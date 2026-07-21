@@ -173,12 +173,6 @@ namespace Chained
         }
 
         [UnmanagedCallersOnly]
-        public static unsafe void DestroyAllScripts(ulong entityId)
-        {
-            DestroyScriptInternal(entityId, "");
-        }
-
-        [UnmanagedCallersOnly]
         public static void ClearAll()
         {
             foreach (var script in s_ActiveScripts)

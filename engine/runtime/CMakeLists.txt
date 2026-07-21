@@ -6,10 +6,6 @@ add_library(RuntimeCore STATIC
 target_link_libraries(RuntimeCore PUBLIC ChainedEngine::Framework)
 target_include_directories(RuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-target_precompile_headers(RuntimeCore PRIVATE
-    <string>
-    <vector>
-    <memory>
-    <filesystem>
-    "${CMAKE_SOURCE_DIR}/engine/app/application.h"
-)
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(RuntimeCore)
+endif()

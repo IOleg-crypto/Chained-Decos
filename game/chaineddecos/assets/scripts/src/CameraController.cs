@@ -13,7 +13,6 @@ public class CameraController : Script
 
     public override void OnCreate()
     {
-        // Find the main camera entity (SceneCamera), not 'this' entity
         Entity? camEntity = Scene.GetMainCamera();
         if (camEntity == null)
         {

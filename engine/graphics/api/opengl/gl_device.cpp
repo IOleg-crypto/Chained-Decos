@@ -163,14 +163,20 @@ void GLDevice::SetLineWidth(float width)
 void GLDevice::DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount)
 {
     vertexArray->Bind();
-    uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
+    auto ib = vertexArray->GetIndexBuffer();
+    if (!ib)
+        return;
+    uint32_t count = indexCount ? indexCount : ib->GetCount();
     glDrawElements(GL_TRIANGLES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 }
 
 void GLDevice::DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount)
 {
     vertexArray->Bind();
-    uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
+    auto ib = vertexArray->GetIndexBuffer();
+    if (!ib)
+        return;
+    uint32_t count = indexCount ? indexCount : ib->GetCount();
     glDrawElements(GL_LINES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 }
 
@@ -227,7 +233,10 @@ void GLDevice::DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexAr
                                              uint32_t indexCount)
 {
     vertexArray->Bind();
-    uint32_t count = indexCount ? indexCount : vertexArray->GetIndexBuffer()->GetCount();
+    auto ib = vertexArray->GetIndexBuffer();
+    if (!ib)
+        return;
+    uint32_t count = indexCount ? indexCount : ib->GetCount();
     glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)count, GL_UNSIGNED_INT, nullptr, (GLsizei)instanceCount);
 }
 

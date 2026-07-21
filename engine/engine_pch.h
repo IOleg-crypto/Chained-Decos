@@ -16,11 +16,12 @@
 #include <unordered_map>
 #include <unordered_set>
 
-#define GLM_ENABLE_EXPERIMENTAL
-#define GLM_FORCE_DEPTH_ZERO_TO_ONE
+// GLM behavior macros (GLM_ENABLE_EXPERIMENTAL, GLM_FORCE_DEPTH_ZERO_TO_ONE)
+// are defined globally in the root CMakeLists.txt so that TUs compiled without
+// this PCH (NO_PCH modules) see the same GLM configuration.
 
 // 2. Platform specific
-#ifdef WIN32
+#ifdef _WIN32
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
     #endif

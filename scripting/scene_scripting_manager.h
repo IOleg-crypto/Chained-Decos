@@ -3,6 +3,7 @@
 
 #include "engine/core/events/events.h"
 #include "engine/common/timestep.h"
+#include <Coral/Type.hpp>
 
 namespace Chained
 {
@@ -28,6 +29,14 @@ public:
     static void Register(SceneScriptingManager* manager);
     static void Unregister(SceneScriptingManager* manager);
     static void ResetAll();
+
+private:
+    struct ScriptEngineContext
+    {
+        ScriptEngine* engine = nullptr;
+        Coral::Type scriptEngineType = {};
+    };
+    ScriptEngineContext AcquireScriptEngine();
 
 private:
     Scene* m_Scene = nullptr;

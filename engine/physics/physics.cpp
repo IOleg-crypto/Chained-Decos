@@ -19,19 +19,25 @@
 #include "engine/project/project.h"
 
 #include <future>
+#include <memory>
 #include <mutex>
 #include <vector>
 
 namespace Chained
 {
 
+static std::unique_ptr<JPH::Factory> s_JoltFactory;
+
 Physics::Physics() = default;
 Physics::~Physics() = default;
 
 void Physics::Initialize()
 {
+    if (s_JoltFactory)
+        return;
     JPH::RegisterDefaultAllocator();
-    JPH::Factory::sInstance = new JPH::Factory();
+    s_JoltFactory = std::make_unique<JPH::Factory>();
+    JPH::Factory::sInstance = s_JoltFactory.get();
     JPH::RegisterTypes();
     CH_CORE_INFO("Physics initialized (Jolt backend).");
 }
@@ -39,7 +45,7 @@ void Physics::Initialize()
 void Physics::Shutdown()
 {
     m_World.reset();
-    delete JPH::Factory::sInstance;
+    s_JoltFactory.reset();
     JPH::Factory::sInstance = nullptr;
     CH_CORE_INFO("Physics shutdown.");
 }
@@ -53,12 +59,26 @@ IPhysicsWorld* Physics::GetWorld()
     return m_World.get();
 }
 
-void Physics::ResetWorld()
+void Physics::ResetWorld(Scene* scene)
 {
     if (m_World)
     {
         static_cast<JoltPhysicsWorld*>(m_World.get())->ClearShapeCache();
     }
+
+    // Invalidate all rigid body handles before destroying the world
+    if (scene)
+    {
+        auto& registry = scene->GetRegistry();
+        auto view = registry.view<RigidBodyComponent>();
+        for (auto entity : view)
+        {
+            auto& rb = view.get<RigidBodyComponent>(entity);
+            rb.Handle = kInvalidPhysicsBody;
+        }
+        registry.ctx().erase<IPhysicsWorld*>();
+    }
+
     m_World.reset();
     m_World = std::make_unique<JoltPhysicsWorld>();
 
@@ -236,73 +256,6 @@ void Physics::UpdateColliders(Scene* scene)
         rb.Velocity = world->GetVelocity(rb.Handle);
         rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
     }
-}
-
-void Physics::BuildMeshTriangles(const std::string& modelPath, const glm::vec3& scale,
-                                 std::vector<PhysicsTriangle>& outTriangles)
-{
-    if (modelPath.empty())
-    {
-        return;
-    }
-
-    auto* am = ServiceLocator::Get<AssetManager>();
-    auto handle = am->ResolveToHandle(modelPath);
-    if (handle == AssetHandle(0))
-    {
-        return;
-    }
-
-    auto asset = am->Get<ModelAsset>(handle);
-    if (!asset || asset->GetState() != AssetState::Ready)
-    {
-        CH_CORE_WARN("Physics: Model '{}' not ready for mesh collider.", modelPath);
-        return;
-    }
-
-    const auto& instances = asset->GetInstances();
-    const auto& rawMeshes = asset->GetRawMeshes();
-
-    for (const auto& inst : instances)
-    {
-        if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size())
-        {
-            continue;
-        }
-
-        const RawMesh& raw = rawMeshes[inst.meshIndex];
-        if (raw.indices.size() < 3)
-        {
-            continue;
-        }
-
-        for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
-        {
-            uint32_t i0 = raw.indices[i];
-            uint32_t i1 = raw.indices[i + 1];
-            uint32_t i2 = raw.indices[i + 2];
-
-            size_t v0 = (size_t)i0 * 3;
-            size_t v1 = (size_t)i1 * 3;
-            size_t v2 = (size_t)i2 * 3;
-
-            if (v0 + 2 >= raw.vertices.size() || v1 + 2 >= raw.vertices.size() || v2 + 2 >= raw.vertices.size())
-            {
-                continue;
-            }
-
-            glm::vec3 a = {raw.vertices[v0], raw.vertices[v0 + 1], raw.vertices[v0 + 2]};
-            glm::vec3 b = {raw.vertices[v1], raw.vertices[v1 + 1], raw.vertices[v1 + 2]};
-            glm::vec3 c = {raw.vertices[v2], raw.vertices[v2 + 1], raw.vertices[v2 + 2]};
-
-            a = glm::vec3(inst.localTransform * glm::vec4(a, 1.0f)) * scale;
-            b = glm::vec3(inst.localTransform * glm::vec4(b, 1.0f)) * scale;
-            c = glm::vec3(inst.localTransform * glm::vec4(c, 1.0f)) * scale;
-
-            outTriangles.push_back({a, b, c});
-        }
-    }
-    CH_CORE_INFO("Physics: Built mesh collider from '{}' ({} triangles).", modelPath, outTriangles.size());
 }
 
 RaycastResult Physics::Raycast(Scene* scene, Ray ray)

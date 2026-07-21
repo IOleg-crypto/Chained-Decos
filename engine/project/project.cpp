@@ -38,12 +38,15 @@ Project::~Project() = default;
         }
 
         auto& config = project->m_Config;
-        config.Name = projectNode["Name"].as<std::string>();
+        if (projectNode["Name"])
+            config.Name = projectNode["Name"].as<std::string>();
         if (projectNode["IconPath"])
             config.IconPath = projectNode["IconPath"].as<std::string>();
-            
-        config.StartScene = projectNode["StartScene"].as<std::string>();
-        config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
+
+        if (projectNode["StartScene"])
+            config.StartScene = projectNode["StartScene"].as<std::string>();
+        if (projectNode["AssetDirectory"])
+            config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
 
         if (projectNode["ActiveScene"]) config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
         if (projectNode["Environment"]) config.EnvironmentPath = projectNode["Environment"].as<std::string>();
@@ -53,12 +56,6 @@ Project::~Project() = default;
             config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
             if (projectNode["Physics"]["FixedTimestep"])
                 config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
-        }
-
-        if (projectNode["Render"])
-        {
-            // Note: Rendering deserialization handled thoroughly in EditorProjectSerializer.
-            // Simplified fallback here could still load ShadowResolution, etc.
         }
 
         if (projectNode["Scripting"])
@@ -121,13 +118,20 @@ std::vector<std::string> Project::GetAvailableScenes() const
 
     if (std::filesystem::exists(scenesDir))
     {
-        for (auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
+        try
         {
-            if (entry.path().extension() == ".chscene")
+            for (auto& entry : std::filesystem::recursive_directory_iterator(scenesDir))
             {
-                std::string relPath = std::filesystem::relative(entry.path(), assetDir).string();
-                scenes.push_back(relPath);
+                if (entry.path().extension() == ".chscene")
+                {
+                    std::string relPath = std::filesystem::relative(entry.path(), assetDir).string();
+                    scenes.push_back(relPath);
+                }
             }
+        }
+        catch (const std::filesystem::filesystem_error& e)
+        {
+            CH_CORE_WARN("Project: Failed to enumerate scenes in '{}': {}", scenesDir.string(), e.what());
         }
     }
     return scenes;
@@ -198,8 +202,8 @@ std::filesystem::path Project::GetAbsolutePathForProject(const std::filesystem::
         }
     }
 
-    // Note: Engine root handling moved to ProjectManager.
     // Project is now just a data holder for project-specific paths.
+    // Engine root resolution is handled by AssetManager.
 
     return NormalizePath(GetProjectDirectoryForProject() / pathStr);
 }
@@ -243,8 +247,10 @@ std::optional<std::string> Project::TryMakeRelative(const std::filesystem::path&
     {
         std::string relStr = rel.generic_string();
 
-        // Only return if path doesn't escape the base directory
-        if (relStr.find("..") == std::string::npos)
+        // Only return if the path doesn't escape the base directory.
+        // Check the first path component rather than a substring search, so that
+        // legitimately named files/folders (e.g. "..data") are not rejected.
+        if (rel.begin() == rel.end() || *rel.begin() != "..")
         {
             return relStr;
         }

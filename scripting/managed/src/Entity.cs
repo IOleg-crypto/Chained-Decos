@@ -20,7 +20,7 @@ public class Entity
     private readonly Dictionary<System.Type, Component> _cache = new();
 
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, char*, bool> Entity_HasComponent_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, byte> Entity_HasComponent_Ptr;
     internal static unsafe delegate* unmanaged<char*, ulong*, int, int> Entity_FindAllWithComponent_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, void> Entity_AddComponent_Ptr;
 #pragma warning restore 0649
@@ -31,8 +31,8 @@ public class Entity
     /// <summary>True when the entity handle is valid.</summary>
     public bool IsValid => ID != 0;
 
-    /// <summary>Quick access to the TransformComponent.</summary>
-    public TransformComponent Transform => GetComponent<TransformComponent>()!;
+    /// <summary>Quick access to the TransformComponent, or null if absent.</summary>
+    public TransformComponent? Transform => GetComponent<TransformComponent>();
 
     // ── Component access ──────────────────────────────────────────────────
 
@@ -40,7 +40,7 @@ public class Entity
     {
         if (Entity_HasComponent_Ptr == null) return false;
         fixed (char* ptr = componentName)
-            return Entity_HasComponent_Ptr(entityID, ptr);
+            return Entity_HasComponent_Ptr(entityID, ptr) != 0;
     }
 
     /// <summary>True when the component exists.</summary>
@@ -69,7 +69,11 @@ public class Entity
     {
         if (!IsValid) throw new System.Exception("Cannot add component to invalid entity.");
         string name = typeof(T).Name;
-        unsafe { fixed (char* ptr = name) Entity_AddComponent_Ptr(ID, ptr); }
+        unsafe
+        {
+            if (Entity_AddComponent_Ptr == null) return new T() { Entity = this };
+            fixed (char* ptr = name) Entity_AddComponent_Ptr(ID, ptr);
+        }
         T component = new T() { Entity = this };
         _cache[typeof(T)] = component;
         return component;

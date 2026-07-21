@@ -25,7 +25,9 @@ if(CH_CI)
 endif()
 
 # Global library definitions
-add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE)
+# GLM behavior macros live here (not in engine_pch.h) so every TU — including
+# NO_PCH modules — sees the same GLM configuration.
+add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE GLM_ENABLE_EXPERIMENTAL)
 
 # Enable logging only in Debug and RelWithDebInfo configurations
 add_compile_definitions($<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:CH_ENABLE_LOGGING>)

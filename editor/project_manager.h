@@ -26,6 +26,10 @@ public:
 
     bool OnProjectOpened(ProjectOpenedEvent& e);
 
+    // Runs the deferred part of project opening (font atlas rebuild, scene load).
+    // Must be called outside the ImGui frame — see EditorLayer::OnUpdate().
+    void ProcessPendingProjectOpen();
+
     const std::string& GetLastProjectPath() const;
 
     void SetLastProjectPath(const std::string& path);
@@ -35,6 +39,7 @@ public:
 
 private:
     std::string m_LastProjectPath;
+    std::string m_PendingOpenedProjectPath;
     EditorSettings m_EditorSettings;
 };
 

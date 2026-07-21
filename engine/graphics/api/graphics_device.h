@@ -2,6 +2,7 @@
 #define CH_GRAPHICS_DEVICE_H
 
 #include "engine/common/color.h"
+#include "engine/common/engine_assert.h"
 #include <memory>
 
 namespace Chained
@@ -110,6 +111,7 @@ public:
 
     static GraphicsDevice& Get()
     {
+        CH_ASSERT(s_Instance, "GraphicsDevice::Get() called before Set() or after Shutdown()!");
         return *s_Instance;
     }
     static void Set(std::unique_ptr<GraphicsDevice> device)

@@ -9,9 +9,11 @@
 #include "engine/scene/scene_events.h"
 #include "scripting/scriptengine.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/imgui/imgui_layer.h"
 #include <algorithm>
 #include <fstream>
 #include <string>
+#include <utility>
 #include <format>
 #include "engine/scene/scene_serializer.h"
 #include "engine/core/profiler.h"
@@ -152,9 +154,10 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
 
     auto replaceAll = [&](const std::string& from, const std::string& to) {
         size_t pos = 0;
-        while ((pos = str.find(from)) != std::string::npos)
+        while ((pos = str.find(from, pos)) != std::string::npos)
         {
             str.replace(pos, from.length(), to);
+            pos += to.length();
         }
     };
 
@@ -241,6 +244,10 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
         {
             csprojOut << csprojContent;
         }
+        else
+        {
+            CH_CORE_ERROR("NewProject: Failed to create .csproj file '{}'", (scriptsDir / (name + ".Scripts.csproj")).string());
+        }
     }
 
     // Generate starter script
@@ -266,6 +273,10 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
         if (scriptOut.is_open())
         {
             scriptOut << scriptContent;
+        }
+        else
+        {
+            CH_CORE_ERROR("NewProject: Failed to create Starter.cs file '{}'", (scriptsDir / "src" / "Starter.cs").string());
         }
     }
 
@@ -319,10 +330,32 @@ void EditorProjectManager::SaveProject()
 
 bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 {
+    if (!Project::GetActive())
+    {
+        return false;
+    }
+
+    // This event usually fires mid-ImGui-frame (a button click in the Project
+    // Selector). Mutating the font atlas while its fonts are in use crashes
+    // (stbtt_InitFont on freed FontData), so defer the heavy work to the next
+    // EditorLayer::OnUpdate(), which runs before ImGui::NewFrame().
+    m_PendingOpenedProjectPath = e.GetPath();
+    return true;
+}
+
+void EditorProjectManager::ProcessPendingProjectOpen()
+{
+    if (m_PendingOpenedProjectPath.empty())
+    {
+        return;
+    }
+
+    const std::string openedPath = std::exchange(m_PendingOpenedProjectPath, {});
+
     auto project = Project::GetActive();
     if (project)
     {
-        std::filesystem::path resolvedPath = e.GetPath();
+        std::filesystem::path resolvedPath = openedPath;
         std::filesystem::path projDir = resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
 
         ServiceLocator::Get<AssetManager>()->SetProjectDirectory(project->GetProjectDirectoryForProject());
@@ -330,9 +363,24 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
  
          // Load engine shaders and resources
         ServiceLocator::Get<Renderer>()->LoadEngineResources();
-        ServiceLocator::Get<WidgetRenderer>()->LoadProjectFonts();
+        // Rebuild font atlas with both editor fonts and project fonts.
+        // Must be done in one pass: Clear → add editor fonts → add project fonts → Build().
+        // Calling Build() twice (once per font group) crashes because ImGui frees
+        // font file data after the first Build(), making a second Build() invalid.
+        {
+            auto* imguiLayer = Application::Get().GetImGuiLayer();
+            auto* widgetRenderer = ServiceLocator::Get<WidgetRenderer>();
 
-        m_LastProjectPath = e.GetPath();
+            imguiLayer->ClearFonts();
+            // Invalidate cached ImFont* (dangling after ClearFonts).
+            widgetRenderer->GetFontRegistry().Clear();
+
+            EditorLayer::Get().AddEditorFontsToAtlas();
+            widgetRenderer->LoadProjectFonts(); // discovers + adds, no rebuild
+            imguiLayer->RefreshFontAtlasTexture(); // single GPU upload
+        }
+
+        m_LastProjectPath = openedPath;
 
         // Track in recent projects list (move to front, cap at 10)
         auto& config = EditorLayer::Get().GetConfig();
@@ -372,9 +420,7 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
             CH_CORE_INFO("EditorProjectManager: Auto-loading scene: {}", sceneToLoad.string());
             EditorLayer::Get().GetSceneManager().OpenScene(sceneToLoad);
         }
-        return true;
     }
-    return false;
 }
 
 const std::string & EditorProjectManager::GetLastProjectPath() const {
@@ -479,9 +525,16 @@ void EditorProjectManager::LaunchStandalone(std::shared_ptr<Scene> editorScene)
         CH_CORE_ERROR("LaunchStandalone: ShellExecute failed with code {} (Win32 error: {})", (uintptr_t)result, err);
     }
 #else
-    std::string command = std::format("\"{}\" {} &", runtimePath, arguments);
-    CH_CORE_INFO("LaunchStandalone: Executing: {}", command);
-    system(command.c_str());
+    pid_t pid = fork();
+    if (pid == 0)
+    {
+        execl(runtimePath.c_str(), runtimePath.c_str(), arguments.c_str(), nullptr);
+        _exit(127);
+    }
+    else if (pid < 0)
+    {
+        CH_CORE_ERROR("LaunchStandalone: fork() failed");
+    }
 #endif
 }
 

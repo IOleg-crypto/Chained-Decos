@@ -16,6 +16,10 @@ void Transform_GetTranslation(uint64_t entityID, glm::vec3* outTranslation)
     {
         *outTranslation = entity.GetComponent<TransformComponent>().Translation;
     }
+    else if (outTranslation)
+    {
+        *outTranslation = {};
+    }
 }
 void Transform_SetTranslation(uint64_t entityID, glm::vec3* inTranslation)
 {
@@ -32,6 +36,10 @@ void Transform_GetRotation(uint64_t entityID, glm::vec3* outRotation)
     {
         *outRotation = entity.GetComponent<TransformComponent>().Rotation;
     }
+    else if (outRotation)
+    {
+        *outRotation = {};
+    }
 }
 void Transform_SetRotation(uint64_t entityID, glm::vec3* inRotation)
 {
@@ -47,6 +55,10 @@ void Transform_GetScale(uint64_t entityID, glm::vec3* outScale)
     if (entity && entity.HasComponent<TransformComponent>() && outScale)
     {
         *outScale = entity.GetComponent<TransformComponent>().Scale;
+    }
+    else if (outScale)
+    {
+        *outScale = {};
     }
 }
 void Transform_SetScale(uint64_t entityID, glm::vec3* inScale)
@@ -144,6 +156,10 @@ void RigidBody_GetVelocity(uint64_t entityID, glm::vec3* outVelocity)
         }
         *outVelocity = rb.Velocity;
     }
+    else if (outVelocity)
+    {
+        *outVelocity = {};
+    }
 }
 void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
 {
@@ -205,7 +221,9 @@ void AudioComponent_Play(uint64_t entityID)
         auto& audio = entity.GetComponent<AudioComponent>();
         if (audio.SoundHandle != 0)
         {
-            auto& audioService = *ServiceLocator::Get<Audio>();
+            auto* audioService = ServiceLocator::TryGet<Audio>();
+            if (!audioService)
+                return;
 
             glm::vec3 worldPos = {0.0f, 0.0f, 0.0f};
             if (entity.HasComponent<TransformComponent>())
@@ -213,8 +231,8 @@ void AudioComponent_Play(uint64_t entityID)
                 worldPos = glm::vec3(entity.GetComponent<TransformComponent>().WorldTransform[3]);
             }
 
-            audioService.SetInstancePosition(audio.SoundHandle, worldPos);
-            audioService.Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+            audioService->SetInstancePosition(audio.SoundHandle, worldPos);
+            audioService->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
             audio.IsPlaying = true;
         }
     }
@@ -227,8 +245,10 @@ void AudioComponent_Stop(uint64_t entityID)
         auto& audio = entity.GetComponent<AudioComponent>();
         if (audio.SoundHandle != 0 && audio.IsPlaying)
         {
-            auto& audioService = *ServiceLocator::Get<Audio>();
-            audioService.Stop(audio.SoundHandle);
+            auto* audioService = ServiceLocator::TryGet<Audio>();
+            if (!audioService)
+                return;
+            audioService->Stop(audio.SoundHandle);
             audio.IsPlaying = false;
         }
     }
@@ -463,6 +483,10 @@ void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint)
     {
         *outPoint = entity.GetComponent<Chained::SpawnComponent>().SpawnPoint;
     }
+    else if (outPoint)
+    {
+        *outPoint = {};
+    }
 }
 bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
 {
@@ -477,6 +501,10 @@ void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize)
     if (entity && entity.HasComponent<Chained::SpawnComponent>() && outSize)
     {
         *outSize = entity.GetComponent<Chained::SpawnComponent>().ZoneSize;
+    }
+    else if (outSize)
+    {
+        *outSize = {};
     }
 }
 

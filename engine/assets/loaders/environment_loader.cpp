@@ -90,7 +90,7 @@ namespace Chained
             auto skyboxNode = envNode["Skybox"];
             if (skyboxNode)
             {
-                settings.Skybox.TexturePath = skyboxNode["TexturePath"].as<std::string>();
+                if (skyboxNode["TexturePath"]) settings.Skybox.TexturePath = skyboxNode["TexturePath"].as<std::string>();
                 if (skyboxNode["Mode"]) settings.Skybox.Mode = skyboxNode["Mode"].as<int>();
                 if (skyboxNode["Exposure"]) settings.Skybox.Exposure = skyboxNode["Exposure"].as<float>();
                 if (skyboxNode["Brightness"]) settings.Skybox.Brightness = skyboxNode["Brightness"].as<float>();
@@ -100,11 +100,11 @@ namespace Chained
             auto fogNode = envNode["Fog"];
             if (fogNode)
             {
-                settings.Fog.Enabled = fogNode["Enabled"].as<bool>();
-                settings.Fog.FogColor = fogNode["Color"].as<Color>();
-                settings.Fog.Density = fogNode["Density"].as<float>();
-                settings.Fog.Start = fogNode["Start"].as<float>();
-                settings.Fog.End = fogNode["End"].as<float>();
+                if (fogNode["Enabled"]) settings.Fog.Enabled = fogNode["Enabled"].as<bool>();
+                if (fogNode["Color"]) settings.Fog.FogColor = fogNode["Color"].as<Color>();
+                if (fogNode["Density"]) settings.Fog.Density = fogNode["Density"].as<float>();
+                if (fogNode["Start"]) settings.Fog.Start = fogNode["Start"].as<float>();
+                if (fogNode["End"]) settings.Fog.End = fogNode["End"].as<float>();
                 if (fogNode["HeightFalloff"]) settings.Fog.HeightFalloff = fogNode["HeightFalloff"].as<float>();
             }
 

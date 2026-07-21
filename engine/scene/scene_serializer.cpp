@@ -26,6 +26,15 @@ T ReadYamlValue(const YAML::Node& node, const char* key, const T& fallback)
     return node[key].as<T>(fallback);
 }
 
+namespace
+{
+static std::string ToProjectRelativePath(const std::string& absPath)
+{
+    auto project = Project::GetActive();
+    return project ? project->GetRelativePathForProject(absPath) : absPath;
+}
+} // namespace
+
 static void SerializeBackgroundSettings(YAML::Emitter& out, const SceneSettings& settings)
 {
     out << YAML::Key << "Background" << YAML::Value << YAML::BeginMap;
@@ -46,14 +55,9 @@ static void SerializeCanvasSettings(YAML::Emitter& out, const SceneSettings& set
 
 static void SerializeEnvironmentSettings(YAML::Emitter& out, const SceneSettings& settings)
 {
-    auto project = Project::GetActive();
-
     if (settings.Environment)
     {
-        std::string envPath = settings.Environment->GetPath();
-        if (project)
-            envPath = project->GetRelativePathForProject(envPath);
-        
+        std::string envPath = ToProjectRelativePath(settings.Environment->GetPath());
         out << YAML::Key << "EnvironmentPath" << YAML::Value << envPath;
     }
 
@@ -72,14 +76,7 @@ static void SerializeEnvironmentSettings(YAML::Emitter& out, const SceneSettings
     out << YAML::EndMap;
 
     out << YAML::Key << "Skybox" << YAML::Value << YAML::BeginMap;
-    if (project)
-    {
-        out << YAML::Key << "TexturePath" << YAML::Value << project->GetRelativePathForProject(envSettings.Skybox.TexturePath);
-    }
-    else
-    {
-        out << YAML::Key << "TexturePath" << YAML::Value << envSettings.Skybox.TexturePath;
-    }
+    out << YAML::Key << "TexturePath" << YAML::Value << ToProjectRelativePath(envSettings.Skybox.TexturePath);
     out << YAML::Key << "Mode" << YAML::Value << envSettings.Skybox.Mode;
     out << YAML::Key << "Exposure" << YAML::Value << envSettings.Skybox.Exposure;
     out << YAML::Key << "Brightness" << YAML::Value << envSettings.Skybox.Brightness;
@@ -264,6 +261,7 @@ static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
     {
         if (!entity["Entity"])
         {
+            CH_CORE_WARN("SceneSerializer: Malformed entity entry missing 'Entity' key, skipping.");
             continue;
         }
 
@@ -274,6 +272,7 @@ static void DeserializeEntities(Scene* scene, const YAML::Node& entities)
         }
         else if (seenUUIDs.count(uuid))
         {
+            CH_CORE_WARN("SceneSerializer: Duplicate UUID {} found, generating new UUID.", uuid);
             uuid = UUID();
         }
         seenUUIDs.insert(uuid);
@@ -377,6 +376,11 @@ bool SceneSerializer::Serialize(const std::string& filepath)
     if (fout.is_open())
     {
         fout << yaml;
+        if (!fout.good())
+        {
+            CH_CORE_ERROR("SceneSerializer: Failed to write scene file '{}'.", filepath);
+            return false;
+        }
         return true;
     }
     else

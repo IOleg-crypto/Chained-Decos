@@ -31,7 +31,6 @@ public:
     /// @brief Load engine-level shaders and static resources (unit meshes, fullscreen quad).
     void LoadEngineResources();
     void InitializeResources();
-    void CleanupResources();
 
     /// @brief Begin a new render frame with the given camera.
     void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
@@ -86,6 +85,7 @@ protected:
 private:
     void InitializeSkybox();
     void CleanupSkybox();
+    ShaderAsset* BindShader(const std::string& name);
 
 private:
     std::unique_ptr<RendererData>    m_Data;

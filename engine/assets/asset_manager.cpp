@@ -253,7 +253,14 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
 
     std::string resolved = ResolvePath(path);
 
+    AssetLoader* loader = nullptr;
+    std::shared_ptr<Asset> asset;
+
     {
+        // Cache check and registration MUST share one critical section: with two
+        // separate lock scopes, two threads racing on the same path both miss the
+        // cache and both create an asset — the second overwrites m_PathToHandle and
+        // callers end up holding different instances of the "same" asset.
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
         {
@@ -263,13 +270,7 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
                 return currentIt->second;
             }
         }
-    }
 
-    AssetLoader* loader = nullptr;
-    std::shared_ptr<Asset> asset;
-
-    {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         auto loaderIt = m_Loaders.find(type);
         if (loaderIt == m_Loaders.end())
         {
@@ -348,10 +349,8 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
     return asset;
 }
 
-std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle, AssetType type)
+std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle)
 {
-    (void)type;
-
     if (handle != 0)
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
