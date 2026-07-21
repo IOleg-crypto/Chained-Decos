@@ -85,11 +85,14 @@ endif()
 # MSVC, or -g archives under MinGW) each use 2-4+ GB, so a full-core build
 # exhausts RAM ("cc1.exe: out of memory" / MSVC "C1060: out of heap space").
 # This pool caps simultaneous compiles regardless of the -j / --parallel value.
+# Set CH_COMPILE_JOBS=0 to disable the pool (Ninja uses all cores).
 # Tune via -DCH_COMPILE_JOBS=N (rule of thumb: 1 per ~2-3 GB of RAM).
-if(MINGW OR MSVC)
-    set(CH_COMPILE_JOBS "6" CACHE STRING "Max parallel compile jobs (RAM-bound toolchains)")
-    set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_pool=${CH_COMPILE_JOBS})
-    set(CMAKE_JOB_POOL_COMPILE compile_pool)
+if(WIN32)
+    set(CH_COMPILE_JOBS "0" CACHE STRING "Max parallel compile jobs (0 = unlimited)")
+    if(CH_COMPILE_JOBS GREATER 0)
+        set_property(GLOBAL APPEND PROPERTY JOB_POOLS compile_pool=${CH_COMPILE_JOBS})
+        set(CMAKE_JOB_POOL_COMPILE compile_pool)
+    endif()
 endif()
 
 

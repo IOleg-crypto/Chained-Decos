@@ -154,7 +154,6 @@ jobs:
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
             -DENABLE_LTO=OFF \
             -DENABLE_PCH=OFF \
-            -DCH_COMPILE_JOBS=4 \
             2>&1 | tee "build/${{ matrix.preset }}/configure.log"
 
       - name: Build
