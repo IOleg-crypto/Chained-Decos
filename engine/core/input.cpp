@@ -55,45 +55,57 @@ namespace Chained::Core::Input
     bool IsKeyPressed(KeyCode key)
     {
         auto code = static_cast<int>(key);
+        if (code < 0 || code >= 512) return false;
         return s_KeyStates[code] && !s_LastKeyStates[code];
     }
 
     bool IsKeyDown(KeyCode key)
     {
-        return s_KeyStates[static_cast<int>(key)];
+        auto code = static_cast<int>(key);
+        if (code < 0 || code >= 512) return false;
+        return s_KeyStates[code];
     }
 
     bool IsKeyReleased(KeyCode key)
     {
         auto code = static_cast<int>(key);
+        if (code < 0 || code >= 512) return false;
         return !s_KeyStates[code] && s_LastKeyStates[code];
     }
 
     bool IsKeyUp(KeyCode key)
     {
-        return !s_KeyStates[static_cast<int>(key)];
+        auto code = static_cast<int>(key);
+        if (code < 0 || code >= 512) return true;
+        return !s_KeyStates[code];
     }
 
     bool IsMouseButtonPressed(MouseCode button)
     {
         auto code = static_cast<int>(button);
+        if (code < 0 || code >= 16) return false;
         return s_MouseStates[code] && !s_LastMouseStates[code];
     }
 
     bool IsMouseButtonDown(MouseCode button)
     {
-        return s_MouseStates[static_cast<int>(button)];
+        auto code = static_cast<int>(button);
+        if (code < 0 || code >= 16) return false;
+        return s_MouseStates[code];
     }
 
     bool IsMouseButtonReleased(MouseCode button)
     {
         auto code = static_cast<int>(button);
+        if (code < 0 || code >= 16) return false;
         return !s_MouseStates[code] && s_LastMouseStates[code];
     }
 
     bool IsMouseButtonUp(MouseCode button)
     {
-        return !s_MouseStates[static_cast<int>(button)];
+        auto code = static_cast<int>(button);
+        if (code < 0 || code >= 16) return true;
+        return !s_MouseStates[code];
     }
 
     glm::vec2 GetMousePosition()

@@ -1,10 +1,8 @@
 chained_add_engine_module(engine_physics
     SOURCES
         physics.cpp
-        raycast_query.cpp
         jolt_physics_world.cpp
         physics.h
-        raycast_query.h
         raycast_result.h
         iphysics_world.h
         physics_types.h

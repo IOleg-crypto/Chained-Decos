@@ -14,10 +14,9 @@ namespace Chained
         WindowClose, WindowResize,
         KeyPressed, KeyReleased, KeyTyped,
         MouseButtonPressed, MouseButtonReleased, MouseMoved, MouseScrolled,
-        ProjectCreated, ProjectOpened, SceneOpened, SceneSaved,
+        ProjectCreated, ProjectOpened, SceneOpened,
         ScenePlay, SceneSimulate, SceneStop, SceneChangeRequest, EntitySelected,
-        AppLaunchRuntime, AppResetLayout, AppSaveLayout, ViewportFocusEntity,
-        ButtonPressed, Undo, Redo
+        AppLaunchRuntime, AppResetLayout, AppSaveLayout, ViewportFocusEntity
     };
 
     enum EventCategory
@@ -50,7 +49,7 @@ namespace Chained
         virtual const char* GetName() const = 0;
         virtual int GetCategoryFlags() const = 0;
         virtual std::string ToString() const { return GetName(); }
-        bool IsInCategory(EventCategory category) { return GetCategoryFlags() & category; }
+        bool IsInCategory(EventCategory category) const { return GetCategoryFlags() & category; }
     };
 
     class EventDispatcher

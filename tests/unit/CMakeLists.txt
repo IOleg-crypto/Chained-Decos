@@ -32,10 +32,21 @@ target_include_directories(engine_tests_unit PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
-include(GoogleTest)
-gtest_discover_tests(engine_tests_unit
-    CONFIGURATION_VAR CMAKE_BUILD_TYPE
-    DISCOVERY_MODE PRE_TEST
-    DISCOVERY_TIMEOUT 30
-    PROPERTIES LABELS "Unit"
+# Engine PCH is PRIVATE on engine modules; apply it here explicitly.
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(engine_tests_unit)
+endif()
+
+# Unit tests run as a SINGLE ctest entry (one process for the whole binary)
+# rather than via gtest_discover_tests. PRE_TEST discovery generates per-test
+# include files whose names contain characters (e.g. the [1] index suffix)
+# that break path resolution on Windows, producing
+# "engine_tests_unit[1]_include-.cmake ... could not be found" CTest errors.
+# A single entry keeps gtest's own per-test reporting and readable output.
+add_test(NAME UnitSuite COMMAND engine_tests_unit)
+set_tests_properties(UnitSuite PROPERTIES
+    LABELS "Unit"
+    ENVIRONMENT "ENGINE_ROOT=${CMAKE_SOURCE_DIR}"
+    WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
+    TIMEOUT 120
 )

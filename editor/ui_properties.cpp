@@ -36,18 +36,25 @@ bool UIProperties::StringEnumInternal(const char* name, std::string& value, cons
         optionNames.push_back(option.c_str());
     }
 
-    EditorGUI::BeginPropertyGrid();
-    EditorGUI::BeginProperty(name);
     bool changed = false;
+    if (ImGui::GetCurrentTable() != nullptr)
+    {
+        ImGui::TableNextRow();
+        ImGui::TableSetColumnIndex(0);
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("%s", name);
+        ImGui::TableSetColumnIndex(1);
+    }
+    ImGui::PushID(name);
     ImGui::BeginDisabled(meta.ReadOnly);
+    ImGui::SetNextItemWidth(-1);
     if (ImGui::Combo("##prop", &currentIndex, optionNames.data(), (int)optionNames.size()))
     {
         value = (currentIndex >= 0 && currentIndex < (int)options.size()) ? options[currentIndex] : std::string();
         changed = true;
     }
     ImGui::EndDisabled();
-    EditorGUI::EndProperty();
-    EditorGUI::EndPropertyGrid();
+    ImGui::PopID();
     
     if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
     {

@@ -8,7 +8,9 @@
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/scene.h"
 #include <algorithm>
+#include <cmath>
 #include <float.h>
+#include <limits>
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
@@ -20,7 +22,12 @@ namespace Chained
 static bool RayAABBInternal(const glm::vec3& origin, const glm::vec3& dir, const glm::vec3& min, const glm::vec3& max,
                             float& t)
 {
-    glm::vec3 invDir = 1.0f / (dir + glm::vec3(1e-8f)); 
+    auto SafeInv = [](float d) -> float {
+        return (std::abs(d) < std::numeric_limits<float>::epsilon())
+                   ? std::copysign(std::numeric_limits<float>::infinity(), d)
+                   : 1.0f / d;
+    };
+    glm::vec3 invDir(SafeInv(dir.x), SafeInv(dir.y), SafeInv(dir.z));
     glm::vec3 t0 = (min - origin) * invDir;
     glm::vec3 t1 = (max - origin) * invDir;
 
@@ -50,7 +57,9 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
     }
 
     
-    RaycastResult physicsResult = ServiceLocator::Get<Physics>()->Raycast(scene, ray);
+    RaycastResult physicsResult;
+    if (auto* physics = ServiceLocator::TryGet<Physics>())
+        physicsResult = physics->Raycast(scene, ray);
     if (physicsResult.Hit)
     {
         finalResult.Hit = true;

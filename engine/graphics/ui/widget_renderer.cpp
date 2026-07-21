@@ -6,8 +6,7 @@
 #include "engine/core/service_locator.h"
 #include <algorithm>
 
-#include "engine/app/application.h"
-#include "engine/core/log.h"
+
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/hierarchy_component.h"
 #include "engine/scene/components/tag_component.h"
@@ -29,6 +28,8 @@ void WidgetRenderer::Update(Timestep ts) {}
 
 void WidgetRenderer::LoadProjectFonts() {
     m_FontRegistry.LoadProjectFonts();
+    // NOTE: atlas GPU rebuild is the caller's responsibility.
+    // See project_manager.cpp / EditorLayer::ReloadEditorFonts for the single-rebuild pattern.
 }
 
 UIRect WidgetRenderer::GetEntityRect(Scene *scene, Entity entity, const ImVec2 &viewportSize, const ImVec2 &viewportPos) {

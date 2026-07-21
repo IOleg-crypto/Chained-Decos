@@ -73,8 +73,10 @@ function(apply_engine_optimizations target_name)
     endif()
 
     if(ENABLE_PCH AND NOT NO_PCH)
-        # Real PCH: faster local dev, but breaks sccache cache hit rates
-        target_precompile_headers(${target_name} PUBLIC "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+        # Real PCH: faster local dev, but breaks sccache cache hit rates.
+        # PRIVATE: consumers that want the PCH call apply_engine_optimizations()
+        # themselves instead of inheriting it transitively.
+        target_precompile_headers(${target_name} PRIVATE "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
     elseif(NOT NO_PCH)
         # Force-include: injects engine_pch.h into every TU via compiler flags.
         # This gives the same include coverage as PCH but without a .pch binary,

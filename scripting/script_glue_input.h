@@ -8,17 +8,17 @@
 namespace Chained
 {
 
-CH_SCRIPT_FUNC uint32_t Input_IsKeyDown(int keyCode);
+CH_SCRIPT_FUNC int Input_IsKeyDown(int keyCode);
 
-CH_SCRIPT_FUNC uint32_t Input_IsKeyPressed(int keyCode);
+CH_SCRIPT_FUNC int Input_IsKeyPressed(int keyCode);
 
-CH_SCRIPT_FUNC uint32_t Input_IsKeyReleased(int keyCode);
+CH_SCRIPT_FUNC int Input_IsKeyReleased(int keyCode);
 
-CH_SCRIPT_FUNC uint32_t Input_IsMouseButtonDown(int button);
+CH_SCRIPT_FUNC int Input_IsMouseButtonDown(int button);
 
-CH_SCRIPT_FUNC uint32_t Input_IsMouseButtonPressed(int button);
+CH_SCRIPT_FUNC int Input_IsMouseButtonPressed(int button);
 
-CH_SCRIPT_FUNC void Input_GetMouseDelta(glm::vec3* outDelta);
+CH_SCRIPT_FUNC void Input_GetMouseDelta(float* outX, float* outY);
 
 CH_SCRIPT_FUNC float Input_GetMouseWheelMove();
 

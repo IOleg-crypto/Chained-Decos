@@ -3,32 +3,33 @@
 
 namespace Chained
 {
-void Input_GetMouseDelta(glm::vec3* outDelta)
+void Input_GetMouseDelta(float* outX, float* outY)
 {
     glm::vec2 delta = Core::Input::GetMouseDelta();
-    *outDelta = {delta.x, delta.y, 0.0f};
+    if (outX) *outX = delta.x;
+    if (outY) *outY = delta.y;
 }
 float Input_GetMouseWheelMove()
 {
     return Core::Input::GetMouseWheelMove();
 }
-uint32_t Input_IsMouseButtonPressed(int button)
+int Input_IsMouseButtonPressed(int button)
 {
     return Core::Input::IsMouseButtonPressed(static_cast<MouseCode>(button)) ? 1 : 0;
 }
-uint32_t Input_IsMouseButtonDown(int button)
+int Input_IsMouseButtonDown(int button)
 {
     return Core::Input::IsMouseButtonDown(static_cast<MouseCode>(button)) ? 1 : 0;
 }
-uint32_t Input_IsKeyReleased(int keyCode)
+int Input_IsKeyReleased(int keyCode)
 {
     return Core::Input::IsKeyReleased(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 }
-uint32_t Input_IsKeyPressed(int keyCode)
+int Input_IsKeyPressed(int keyCode)
 {
     return Core::Input::IsKeyPressed(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 }
-uint32_t Input_IsKeyDown(int keyCode)
+int Input_IsKeyDown(int keyCode)
 {
     return Core::Input::IsKeyDown(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 }

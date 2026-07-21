@@ -88,12 +88,9 @@ void Renderer::Shutdown()
 
     CleanupSkybox();
 
-    if (m_Data->Lighting.LightSSBO)
-    {
-        m_Data->Lighting.LightSSBO.reset();
-    }
-    if (m_Data->Shaders) m_Data->Shaders.reset();
-    if (m_Data->GlobalUBO) m_Data->GlobalUBO.reset();
+    m_Data->Lighting.LightSSBO.reset();
+    m_Data->Shaders.reset();
+    m_Data->GlobalUBO.reset();
 
     m_Data->Geometry.FullscreenQuadVAO.reset();
     m_Data->CameraUBO.reset();
@@ -261,7 +258,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
 
     // 3. Bind and Draw
     instancedVAO->Bind();
-    if (mesh.TriangleCount > 0)
+    if (mesh.TriangleCount > 0 && instancedVAO->GetIndexBuffer())
     {
         GraphicsDevice::Get().DrawIndexedInstanced(instancedVAO, (uint32_t)transforms.size(), mesh.TriangleCount * 3);
     }
@@ -392,12 +389,8 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     GraphicsDevice::Get().SetTexture(0, textureId);
     shader->SetInt("texture0", 0);
 
-    const bool blendWasEnabled = GraphicsDevice::Get().IsBlendEnabled();
-    const bool cullWasEnabled = GraphicsDevice::Get().IsCullFaceEnabled();
-
-    GraphicsDevice::Get().SetBlendEnabled(true);
-    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
-    GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None); // Using abstraction layer safe call
+    PipelineStateGuard stateGuard;
+    stateGuard.WithBlend().WithCullNone();
 
     if (!m_Data->Geometry.BillboardVAO)
     {
@@ -422,9 +415,6 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     m_Data->Geometry.BillboardVAO->Bind();
     GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.BillboardVAO, 6);
     m_Data->Geometry.BillboardVAO->Unbind();
-
-    GraphicsDevice::Get().SetCullMode(cullWasEnabled ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);
-    GraphicsDevice::Get().SetBlendEnabled(blendWasEnabled);
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
@@ -508,6 +498,17 @@ void Renderer::Update(Timestep ts)
     m_Frame->SetTime(ts);
 }
 
+ShaderAsset* Renderer::BindShader(const std::string& name)
+{
+    auto shaderAsset = m_Data->Shaders->LoadOrGet(name);
+    if (!shaderAsset || !shaderAsset->GetShader())
+    {
+        return nullptr;
+    }
+    shaderAsset->GetShader()->Bind();
+    return shaderAsset.get();
+}
+
 void Renderer::InitializeSkybox()
 {
     m_Data->Skybox.SkyboxCubeModel = std::make_unique<Model>();
@@ -522,10 +523,6 @@ void Renderer::CleanupSkybox()
     m_Data->Skybox.SkyboxCubeModel.reset();
     m_Data->Skybox.SkyboxSphereModel.reset();
     m_Data->Skybox.CachedCubemap.reset();
-}
-
-void Renderer::CleanupResources()
-{
 }
 
 void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const glm::vec4& tint, bool flipX, bool flipY)
@@ -549,12 +546,8 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     shader->SetVec4("u_Tint", tint);
     shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));
 
-    const bool blendWasEnabled = GraphicsDevice::Get().IsBlendEnabled();
-    const bool cullWasEnabled = GraphicsDevice::Get().IsCullFaceEnabled();
-
-    GraphicsDevice::Get().SetBlendEnabled(true);
-    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
-    GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
+    PipelineStateGuard stateGuard;
+    stateGuard.WithBlend().WithCullNone();
 
     if (!m_Data->Geometry.SpriteVAO)
     {
@@ -576,15 +569,9 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
         m_Data->Geometry.SpriteVAO->SetIndexBuffer(ibo);
     }
 
-    if (m_Data->Geometry.SpriteVAO)
-    {
-        m_Data->Geometry.SpriteVAO->Bind();
-        GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.SpriteVAO, 6);
-        m_Data->Geometry.SpriteVAO->Unbind();
-    }
-
-    GraphicsDevice::Get().SetCullMode(cullWasEnabled ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);
-    GraphicsDevice::Get().SetBlendEnabled(blendWasEnabled);
+    m_Data->Geometry.SpriteVAO->Bind();
+    GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.SpriteVAO, 6);
+    m_Data->Geometry.SpriteVAO->Unbind();
 }
 
 } // namespace Chained

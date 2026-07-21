@@ -2,10 +2,12 @@
 #include "engine/common/asset_path.h"
 #include "engine/common/base.h"
 #include "engine/project/project.h"
+#include "thirdparty/imgui/imstb_truetype.h" // Або шлях, де у вас лежить stb_truetype.h
 #include <algorithm>
 #include <array>
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <system_error>
 #include <unordered_set>
@@ -14,18 +16,97 @@
 namespace Chained
 {
 
-// Round font size to nearest 0.5 for cache key (avoids floating-point key mismatches)
-static float RoundFontSize(float size)
+// stb_truetype (used by ImGui) cannot parse variable fonts (OpenType fvar table).
+// Detect them by scanning the sfnt table directory before handing the file to ImGui.
+// Передаємо std::filesystem::path замість std::string для повної підтримки Unicode/UTF-8
+static bool IsVariableFont(const std::filesystem::path& path)
 {
-    return std::round(size * 2.0f) / 2.0f;
+    // Використовуємо std::ifstream замість fopen — це автоматично вирішує проблему з UTF-8 на Windows
+    std::ifstream f(path, std::ios::binary);
+    if (!f.is_open())
+    {
+        return false;
+    }
+
+    uint8_t hdr[12];
+    if (!f.read(reinterpret_cast<char*>(hdr), sizeof(hdr)))
+    {
+        return false;
+    }
+
+    // Перевірка магічного числа (чи це взагале TrueType / OpenType шрифт)
+    // 0x00010000 - TrueType, 'OTTO' - OpenType PostScript
+    uint32_t sfntVersion = (static_cast<uint32_t>(hdr[0]) << 24) | (static_cast<uint32_t>(hdr[1]) << 16) |
+                           (static_cast<uint32_t>(hdr[2]) << 8) | static_cast<uint32_t>(hdr[3]);
+
+    if (sfntVersion != 0x00010000 && sfntVersion != 0x4F54544F)
+    {
+        return false;
+    }
+
+    const uint16_t numTables = (static_cast<uint16_t>(hdr[4]) << 8) | hdr[5];
+
+    // Шукаємо таблицю 'fvar'
+    for (uint16_t i = 0; i < numTables; ++i)
+    {
+        uint8_t rec[16];
+        if (!f.read(reinterpret_cast<char*>(rec), sizeof(rec)))
+        {
+            break; // Файл пошкоджений або обірвався раніше часу
+        }
+
+        if (rec[0] == 'f' && rec[1] == 'v' && rec[2] == 'a' && rec[3] == 'r')
+        {
+            return true; // Це варіативний шрифт
+        }
+    }
+
+    return false;
 }
 
-std::string UIFontRegistry::MakeKey(const std::string& name, float size)
+static bool IsValidFontMetrics(const std::filesystem::path& path)
 {
-    // e.g. "fonts/Roboto-Regular.ttf|16.0"
-    char buf[32];
-    snprintf(buf, sizeof(buf), "|%.1f", RoundFontSize(size));
-    return name + buf;
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    std::streamsize size = file.tellg();
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer(size);
+    if (!file.read(buffer.data(), size))
+    {
+        return false;
+    }
+
+    stbtt_fontinfo fontInfo;
+    // Ініціалізуємо stbtt (індекс 0 означає перший шрифт у файлі)
+    if (!stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(buffer.data()), 0))
+    {
+        return false;
+    }
+
+    // Перевіримо bounding box для кількох критичних та базових символів (наприклад, 't', 'A', 'g')
+    const int testCodepoints[] = {'A', 't', 'g', '1'};
+
+    for (int cp : testCodepoints)
+    {
+        int x0, y0, x1, y1;
+        stbtt_GetCodepointBox(&fontInfo, cp, &x0, &y0, &x1, &y1);
+
+        int width = x1 - x0;
+        int height = y1 - y0; // Для stbtt координати Y йдуть знизу вгору
+
+       
+        if (width <= 0 || height <= 0)
+        {
+            return false;
+        }
+    }
+
+    return true;
 }
 
 std::string UIFontRegistry::NormalizeFontName(std::string name)
@@ -61,9 +142,7 @@ void UIFontRegistry::LoadProjectFonts()
 
         std::error_code iterError;
         std::filesystem::recursive_directory_iterator it(
-            fontsDir,
-            std::filesystem::directory_options::skip_permission_denied,
-            iterError);
+            fontsDir, std::filesystem::directory_options::skip_permission_denied, iterError);
         std::filesystem::recursive_directory_iterator end;
 
         if (iterError)
@@ -89,9 +168,8 @@ void UIFontRegistry::LoadProjectFonts()
             }
 
             auto ext = entry.path().extension().string();
-            std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char ch) {
-                return static_cast<char>(std::tolower(ch));
-            });
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                           [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 
             bool validExt = false;
             for (const auto& ve : validExtensions)
@@ -110,8 +188,7 @@ void UIFontRegistry::LoadProjectFonts()
             auto relativePath = std::filesystem::relative(entry.path(), assetDir, iterError);
             if (iterError)
             {
-                CH_CORE_WARN("UIFontRegistry: Failed to build relative path for '{}' ({})",
-                             entry.path().string(),
+                CH_CORE_WARN("UIFontRegistry: Failed to build relative path for '{}' ({})", entry.path().string(),
                              iterError.message());
                 iterError.clear();
                 continue;
@@ -140,76 +217,45 @@ void UIFontRegistry::LoadProjectFonts()
 
     if (discovered == 0)
     {
-        CH_CORE_INFO("UIFontRegistry: No project fonts found in '{}' or '{}'.",
-                     (assetDir / "font").string(),
+        CH_CORE_INFO("UIFontRegistry: No project fonts found in '{}' or '{}'.", (assetDir / "font").string(),
                      (assetDir / "fonts").string());
         return;
     }
 
     CH_CORE_INFO("UIFontRegistry: Discovered {} font file(s).", discovered);
+    // Fonts are loaded on demand via PreloadFonts() / GetFont().
+    // Do not bulk-load all discovered fonts here — the atlas has finite space
+    // and most fonts will never be used in a given scene.
 }
 
 ImFont* UIFontRegistry::EnsureDefaultProjectFont(float pixelSize, bool allowRuntimeMutation)
 {
     const float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
 
-    static const std::array<const char*, 8> preferredFonts = {
-        "font/alan_sans/static/alansans-regular.ttf",
-        "font/alan_sans/static/alansans-medium.ttf",
-        "fonts/alan_sans/static/alansans-regular.ttf",
-        "fonts/alan_sans/static/alansans-medium.ttf",
-        "font/lato/lato-regular.ttf",
-        "font/lato/lato-bold.ttf",
-        "fonts/lato/lato-regular.ttf",
-        "fonts/lato/lato-bold.ttf",
-    };
-
-    std::vector<std::pair<std::string, float>> preloadRequests;
-    for (const char* preferred : preferredFonts)
-    {
-        const std::string normalized = NormalizeFontName(preferred);
-        if (m_KnownPaths.find(normalized) != m_KnownPaths.end())
-        {
-            preloadRequests.emplace_back(normalized, size);
-            break;
-        }
-    }
-
-    if (preloadRequests.empty() && !m_KnownPaths.empty())
-    {
-        std::string fallbackName;
-        for (const auto& [name, _] : m_KnownPaths)
-        {
-            if (name.rfind("font/", 0) == 0 || name.rfind("fonts/", 0) == 0)
-            {
-                fallbackName = name;
-                break;
-            }
-        }
-
-        if (!fallbackName.empty())
-        {
-            preloadRequests.emplace_back(fallbackName, size);
-        }
-    }
-
-    if (preloadRequests.empty())
+    if (m_KnownPaths.empty())
     {
         return nullptr;
     }
 
-    PreloadFonts(preloadRequests, allowRuntimeMutation);
-
-    for (const auto& [name, requestedSize] : preloadRequests)
+    // Pick the first discovered font that is truly a project font (font/ or fonts/ prefix).
+    // No hardcoded names — whatever the project has in its fonts directory is used.
+    std::string chosen;
+    for (const auto& [name, absPath] : m_KnownPaths)
     {
-        ImFont* font = GetFont(name, requestedSize);
-        if (font)
+        if (name.rfind("font/", 0) == 0 || name.rfind("fonts/", 0) == 0)
         {
-            return font;
+            chosen = name;
+            break;
         }
     }
 
-    return nullptr;
+    if (chosen.empty())
+    {
+        return nullptr;
+    }
+
+    PreloadFonts({{chosen, size}}, allowRuntimeMutation);
+    return GetFont(chosen, size);
 }
 
 ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize)
@@ -220,36 +266,31 @@ ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize
         return nullptr;
     }
 
-    const float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
-    const std::string key = MakeKey(normalizedName, size);
-
-    // Already in atlas — fast path.
-    auto it = m_Fonts.find(key);
+    // Fonts are keyed by name only — with ImGui 1.92 dynamic fonts, one ImFont*
+    // renders at any size (pass the size to PushFont()/ImDrawList::AddText()).
+    auto it = m_Fonts.find(normalizedName);
     if (it != m_Fonts.end())
     {
         return it->second;
     }
 
-    // Don't mutate ImGui font atlas at runtime.
-    if (ImGui::GetFrameCount() > 0)
-    {
-        return nullptr;
-    }
-
-    // Lazy registration — only valid before font atlas is built (pre-first-frame).
+    // Lazy registration. Safe at any time with the dynamic font atlas
+    // (ImGuiBackendFlags_RendererHasTextures) — glyphs bake on demand.
     auto pathIt = m_KnownPaths.find(normalizedName);
     if (pathIt != m_KnownPaths.end())
     {
-        return RegisterFont(normalizedName, pathIt->second, size);
+        return RegisterFont(normalizedName, pathIt->second, pixelSize);
     }
 
     std::filesystem::path directPath(normalizedName);
     if (directPath.is_absolute() && FileExists(directPath))
     {
-        return RegisterFont(normalizedName, directPath.string(), size);
+        return RegisterFont(normalizedName, directPath.string(), pixelSize);
     }
 
+    // Warn once per missing name, then cache the failure so we don't spam per frame.
     CH_CORE_WARN("UIFontRegistry: Font '{}' not discovered. Check assets/font or assets/fonts.", normalizedName);
+    m_Fonts[normalizedName] = nullptr;
     return nullptr;
 }
 
@@ -261,10 +302,7 @@ const ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pix
         return nullptr;
     }
 
-    const float size = (pixelSize > 0.0f) ? pixelSize : 16.0f;
-    const std::string key = MakeKey(normalizedName, size);
-
-    auto it = m_Fonts.find(key);
+    auto it = m_Fonts.find(normalizedName);
     if (it != m_Fonts.end())
     {
         return it->second;
@@ -298,13 +336,12 @@ int UIFontRegistry::PreloadFonts(const std::vector<std::pair<std::string, float>
         }
 
         const float pixelSize = (pixelSizeRaw > 0.0f) ? pixelSizeRaw : 16.0f;
-        const std::string key = MakeKey(fontName, pixelSize);
-        if (!seenKeys.insert(key).second)
+        if (!seenKeys.insert(fontName).second)
         {
             continue;
         }
 
-        if (m_Fonts.find(key) != m_Fonts.end())
+        if (m_Fonts.find(fontName) != m_Fonts.end())
         {
             continue;
         }
@@ -352,24 +389,58 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
         return nullptr;
     }
 
-    std::string key = MakeKey(normalizedName, pixelSize);
-
-    ImGuiIO& io = ImGui::GetIO();
-    ImFont* font = io.Fonts->AddFontFromFileTTF(absolutePath.c_str(), pixelSize);
-    if (!font)
+    // Already registered (or a cached failure) — don't touch the atlas again.
     {
-        CH_CORE_ERROR("UIFontRegistry: Failed to load font '{}' at size {:.1f}", absolutePath, pixelSize);
+        auto it = m_Fonts.find(normalizedName);
+        if (it != m_Fonts.end())
+        {
+            return it->second;
+        }
+    }
+
+    if (IsVariableFont(std::filesystem::path(absolutePath)))
+    {
+        CH_CORE_WARN("UIFontRegistry: Skipping variable font '{}' (not supported by stb_truetype)", absolutePath);
+        m_Fonts[normalizedName] = nullptr;
         return nullptr;
     }
 
-    m_Fonts[key] = font;
+    if (!IsValidFontMetrics(std::filesystem::path(absolutePath)))
+    {
+        CH_CORE_ERROR("UIFontRegistry: Font '{}' has corrupted or invalid internal metrics! Skipping to prevent crash.",
+                      absolutePath);
+        m_Fonts[normalizedName] = nullptr;
+        return nullptr;
+    }
+
+    // The size passed here is only the legacy default — with dynamic fonts the
+    // actual render size comes from PushFont()/AddText() at each call site.
+    const float defaultSize = (pixelSize > 0.0f) ? pixelSize : 16.0f;
+
+    ImGuiIO& io = ImGui::GetIO();
+    ImFont* font = io.Fonts->AddFontFromFileTTF(absolutePath.c_str(), defaultSize);
+    if (!font)
+    {
+        CH_CORE_ERROR("UIFontRegistry: Failed to load font '{}'", absolutePath);
+        m_Fonts[normalizedName] = nullptr;
+        return nullptr;
+    }
+
+    m_Fonts[normalizedName] = font;
 
     if (!m_DefaultFont)
     {
         m_DefaultFont = font;
     }
 
-    CH_CORE_INFO("UIFontRegistry: Loaded '{}' at {:.1f}px", normalizedName, pixelSize);
+    // If the atlas was already built (frame > 0), signal that the GPU texture
+    // must be refreshed before the new font can render on screen.
+    if (ImGui::GetFrameCount() > 0)
+    {
+        m_NeedsRebuild = true;
+    }
+
+    CH_CORE_INFO("UIFontRegistry: Loaded '{}'", normalizedName);
     return font;
 }
 
@@ -378,6 +449,18 @@ void UIFontRegistry::Clear()
     m_Fonts.clear();
     m_KnownPaths.clear();
     m_DefaultFont = nullptr;
+}
+
+std::vector<std::string> UIFontRegistry::GetKnownFontNames() const
+{
+    std::vector<std::string> names;
+    names.reserve(m_KnownPaths.size());
+    for (const auto& [name, _] : m_KnownPaths)
+    {
+        names.push_back(name);
+    }
+    std::sort(names.begin(), names.end());
+    return names;
 }
 
 } // namespace Chained

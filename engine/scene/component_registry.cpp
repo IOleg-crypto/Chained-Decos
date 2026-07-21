@@ -316,6 +316,7 @@ void ComponentRegistry::RegisterEngineComponents()
             out << YAML::Key << "Border Size" << YAML::Value << widgetComp.BoxStyle.BorderSize;
             out << YAML::Key << "Border Color" << YAML::Value << widgetComp.BoxStyle.BorderColor;
             out << YAML::Key << "Gradient" << YAML::Value << widgetComp.BoxStyle.UseGradient;
+            out << YAML::Key << "Gradient Color" << YAML::Value << widgetComp.BoxStyle.GradientColor;
             out << YAML::Key << "Padding" << YAML::Value << widgetComp.BoxStyle.Padding;
             out << YAML::Key << "Hover Scale" << YAML::Value << widgetComp.BoxStyle.HoverScale;
             out << YAML::Key << "Pressed Scale" << YAML::Value << widgetComp.BoxStyle.PressedScale;
@@ -328,6 +329,8 @@ void ComponentRegistry::RegisterEngineComponents()
             out << YAML::Key << "Font Size" << YAML::Value << widgetComp.TextStyle.FontSize;
             out << YAML::Key << "Text Color" << YAML::Value << widgetComp.TextStyle.TextColor;
             out << YAML::Key << "Shadow" << YAML::Value << widgetComp.TextStyle.Shadow;
+            out << YAML::Key << "Shadow Offset" << YAML::Value << widgetComp.TextStyle.ShadowOffset;
+            out << YAML::Key << "Shadow Color" << YAML::Value << widgetComp.TextStyle.ShadowColor;
             out << YAML::Key << "Letter Spacing" << YAML::Value << widgetComp.TextStyle.LetterSpacing;
             out << YAML::Key << "Line Height" << YAML::Value << widgetComp.TextStyle.LineHeight;
             out << YAML::Key << "H Align" << YAML::Value << static_cast<int>(widgetComp.TextStyle.Horizontal);
@@ -388,6 +391,10 @@ void ComponentRegistry::RegisterEngineComponents()
                 {
                     widgetComp.BoxStyle.UseGradient = boxStyleNode["Gradient"].as<bool>();
                 }
+                if (boxStyleNode["Gradient Color"])
+                {
+                    widgetComp.BoxStyle.GradientColor = boxStyleNode["Gradient Color"].as<Color>();
+                }
                 if (boxStyleNode["Padding"])
                 {
                     widgetComp.BoxStyle.Padding = boxStyleNode["Padding"].as<float>();
@@ -424,6 +431,14 @@ void ComponentRegistry::RegisterEngineComponents()
                 if (textStyleNode["Shadow"])
                 {
                     widgetComp.TextStyle.Shadow = textStyleNode["Shadow"].as<bool>();
+                }
+                if (textStyleNode["Shadow Offset"])
+                {
+                    widgetComp.TextStyle.ShadowOffset = textStyleNode["Shadow Offset"].as<float>();
+                }
+                if (textStyleNode["Shadow Color"])
+                {
+                    widgetComp.TextStyle.ShadowColor = textStyleNode["Shadow Color"].as<Color>();
                 }
                 if (textStyleNode["Letter Spacing"])
                 {

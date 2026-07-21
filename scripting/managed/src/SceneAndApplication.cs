@@ -66,9 +66,13 @@ namespace Chained
         public static Entity? CopyEntity(Entity entity)
         {
             if (entity == null || !entity.IsValid) return null;
-            
+
             ulong newId = 0;
-            unsafe { newId = Scene_CopyEntity_Ptr(entity.ID); }
+            unsafe
+            {
+                if (Scene_CopyEntity_Ptr == null) return null;
+                newId = Scene_CopyEntity_Ptr(entity.ID);
+            }
             return newId != 0 ? new Entity(newId) : null;
         }
     }

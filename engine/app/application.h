@@ -64,7 +64,7 @@ private:
     std::unique_ptr<Window> m_Window;
     std::unique_ptr<LayerStack> m_LayerStack;
     ImGuiLayer* m_ImGuiLayer = nullptr;
-    bool m_Running = false;
+    bool m_Running;
 
     struct
     {
