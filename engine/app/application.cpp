@@ -60,8 +60,8 @@ Application::Application(const ApplicationSpecification& spec)
         m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
     }
 
-    ServiceLocator::Provide<ThreadPool>(new ThreadPool(workerCount));
-    ServiceLocator::Provide<AssetManager>(new AssetManager());
+    ServiceLocator::Provide(std::make_unique<ThreadPool>(workerCount));
+    ServiceLocator::Provide(std::make_unique<AssetManager>());
 
     // Set engine root BEFORE any other modules (like Renderer) try to load assets!
     if (!m_Specification.EngineRoot.empty())
@@ -72,13 +72,13 @@ Application::Application(const ApplicationSpecification& spec)
 
     if (!m_Specification.Headless)
     {
-        ServiceLocator::Provide<Renderer>(new Renderer());
-        ServiceLocator::Provide<WidgetRenderer>(new WidgetRenderer());
-        ServiceLocator::Provide<DebugRenderer>(new DebugRenderer());
+        ServiceLocator::Provide(std::make_unique<Renderer>());
+        ServiceLocator::Provide(std::make_unique<WidgetRenderer>());
+        ServiceLocator::Provide(std::make_unique<DebugRenderer>());
     }
-    ServiceLocator::Provide<Audio>(new Audio());
-    ServiceLocator::Provide<Physics>(new Physics());
-    ServiceLocator::Provide<ScriptEngine>(new ScriptEngine(m_Specification.EnableScripting));
+    ServiceLocator::Provide(std::make_unique<Audio>());
+    ServiceLocator::Provide(std::make_unique<Physics>());
+    ServiceLocator::Provide(std::make_unique<ScriptEngine>(m_Specification.EnableScripting));
 
     ServiceLocator::InitializeModule();
     ServiceLocator::Lock();
@@ -90,6 +90,7 @@ Application::Application(const ApplicationSpecification& spec)
     }
 
     m_LayerStack = std::make_unique<LayerStack>();
+    m_Timer.LastFrameTime = Platform::GetTime();
     m_Running = true;
 
     if (!m_Specification.Headless)
@@ -115,6 +116,11 @@ Application::~Application()
     Core::Input::Shutdown();
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
+    // Log::Shutdown() MUST come after m_Window.reset(): ~GlfwWindow::Shutdown() emits
+    // CH_CORE_INFO("Glfw Window Closed"). If the core logger were reset first, that log
+    // call dereferences a null spdlog::logger and segfaults (access violation reading the
+    // atomic log level). Logging outlives every subsystem that can log during teardown.
+    Log::Shutdown();
     s_Instance = nullptr;
 }
 
@@ -188,7 +194,7 @@ void Application::OnEvent(Event& e)
 {
     if (e.GetEventType() == EventType::WindowResize)
     {
-        auto& re = (WindowResizeEvent&)e;
+        auto& re = static_cast<WindowResizeEvent&>(e);
         ServiceLocator::Get<Renderer>()->SetViewportSize(re.GetWidth(), re.GetHeight());
     }
 

@@ -331,38 +331,45 @@ namespace ChainedDecos
     public class PlayerController : Script
     {
         public float Speed = 5.0f;
-        private TransformComponent _transform;
 
-        protected override void OnCreate()
+        // Lifecycle methods are public virtual on the base class; override the ones you need.
+        public override void OnCreate()
         {
-            // Called once when the Entity is initialized
-            _transform = GetComponent<TransformComponent>();
-            Log.Info("Player Controller initialized!");
+            // Called once, one frame after the script is instantiated.
+            Log.Info("Player Controller initialized");
         }
 
-        protected override void OnUpdate(float deltaTime)
+        public override void OnUpdate(float deltaTime)
         {
-            // Called every frame
-            if (Input.IsKeyDown(KeyCode.W))
+            // Called every frame. Input takes the Key enum (not KeyCode).
+            TransformComponent? transform = GetComponent<TransformComponent>();
+            if (transform == null)
+                return;
+
+            if (Input.IsKeyDown(Key.W))
             {
-                Vector3 pos = _transform.Translation;
+                Vector3 pos = transform.Translation;
                 pos.Z -= Speed * deltaTime;
-                _transform.Translation = pos;
+                transform.Translation = pos;
             }
         }
     }
 }
 ```
 
+`GetComponent<T>()` returns `null` when the component is absent, so null-check the
+result before using it. See [docs/SCRIPTING_API.md](docs/SCRIPTING_API.md) for the full,
+verified API surface.
+
 ### Connecting the Script in the Editor
 
-Once you've written your magical gameplay code, how does the engine know about it?
+Once a script is written, wire it to an entity:
 
 1. **Build the scripts:** Either rebuild the project through CMake/Ninja, or navigate to your `.csproj` folder and run `dotnet build`.
-2. **Open the Editor** and select the Entity you want to control.
+2. **Open the Editor** and select the entity you want to control.
 3. **Add Component:** In the Inspector panel, click **Add Component** and choose **Managed Script Component**.
 4. **Link it:** In the `Class Name` text field, type the **fully qualified name** of your script — namespace included (for example: `ChainedDecos.PlayerController`).
-5. **Play:** Hit the Play button in the editor. The engine will instantly instantiate your C# class and execute your lifecycle methods!
+5. **Play:** Press Play in the editor. The engine instantiates the C# class and drives its lifecycle methods.
 
 ### Under the Hood: Architecture & Registration
 
@@ -370,7 +377,7 @@ If you are modifying the engine itself, you will find the native-to-managed brid
 - **Native Host:** [scripting/scriptengine.h](scripting/scriptengine.h) initializes Coral and loads assemblies.
 - **Interops:** Native C++ calls are exposed to C# via `script_glue.cpp`.
 - **Discovery:** At startup, `ScriptTypeRegistry::Discover()` scans the game DLL for classes deriving from `Chained.Script`.
-- **Lifecycle:** `SceneScripting` instantiates your script in C++, calls `__Init()` to cache delegates, and smoothly passes events from the C++ Scene to C#.
+- **Lifecycle:** `SceneScripting` instantiates the script in C++, calls `__Init()` to cache delegates, and forwards events from the native Scene to C#.
 
 ### Managed API Surface
 
@@ -399,15 +406,22 @@ To add physical behavior to an Entity in the Editor:
 1. Click **Add Component** and select **RigidBodyComponent**. This determines if the object falls (Dynamic) or stays still (Kinematic/Static).
 2. Add a physical shape like a **BoxColliderComponent** or **SphereColliderComponent**.
 
-If you are writing a C# script (inherited from `Chained.Script`), you can hook into these collisions directly:
+If you are writing a C# script (derived from `Chained.Script`), you can react to
+collisions by overriding `OnCollisionEnter`. The engine passes the other entity's raw
+id, not an `Entity` wrapper — construct one from the id to inspect it:
 
 ```csharp
-protected override void OnCollisionEnter(Entity other)
+public override void OnCollisionEnter(ulong otherEntityId)
 {
-    Log.Info($"Hit something: {other.Name}");
-    if (other.HasComponent<DamageZone>())
+    Entity other = new Entity(otherEntityId);
+
+    TagComponent? tag = other.GetComponent<TagComponent>();
+    if (tag != null)
+        Log.Info($"Hit something tagged: {tag.Tag}");
+
+    if (other.HasComponent<RigidBodyComponent>())
     {
-        // Example: Handle player taking damage
+        // Example: react to hitting a physical object.
     }
 }
 ```
@@ -416,22 +430,20 @@ protected override void OnCollisionEnter(Entity other)
 
 While the Editor UI is drawn using ImGui, the gameplay (In-Game) UI meant for players can be handled in two ways:
 
-1. **Automated Components (Recommended)**: Use `WidgetComponent` for visuals and `SceneTransitionComponent` for automated scene loading. This is handled natively by the engine and is the fastest way to build menus.
-2. **Managed Scripting (IMGUI-style)**: For custom logic, override the `OnGUI` method in your C# script and use the `UI` helper class.
+1. **Declarative Components (Recommended)**: Use `WidgetComponent` for visuals and `SceneTransitionComponent` for scene loading. This is handled natively by the engine and is the most complete way to build menus.
+2. **Managed Scripting**: For custom HUD readouts, override the `OnGUI` method in your C# script and use the `UI` helper class. The managed UI surface is intentionally minimal today — it exposes a single `UI.Text` call.
 
 ```csharp
-protected override void OnGUI()
+public override void OnGUI()
 {
-    // Draw simple HUD text
-    UI.DrawText("Stamina: 100", new Vector2(10.0f, 10.0f), Color.White);
-
-    // Custom button logic (if not using SceneTransitionComponent)
-    if (UI.DrawButton("Reset Stats", new Vector2(100.0f, 200.0f)))
-    {
-        // Custom logic here
-    }
+    // Lightweight HUD text. One call per line.
+    UI.Text("Stamina: 100");
+    UI.Text($"FPS: {Time.FPS}");
 }
 ```
+
+For buttons, layouts, and full menus, prefer the declarative `WidgetComponent` path
+rather than drawing from script.
 
 ## Extending the Engine (C++)
 
@@ -583,6 +595,7 @@ Changing `CH_ACTIVE_GAME` without reconfiguring the build tree can leave stale g
 
 ## Known Issues
 
+- The font system needs rework: font rendering/handling for both in-scene (game) text and the editor is currently unreliable and is being fixed.
 - Some native test areas are currently being reworked and may be skipped or gated in CI depending on environment constraints.
 - Runtime and editor workflows are under active iteration.
 - Virtual file system support is planned/in-progress and should not be treated as fully delivered yet.
