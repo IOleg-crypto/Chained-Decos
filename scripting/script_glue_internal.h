@@ -23,11 +23,6 @@ inline std::string ToUtf8(const Coral::UCChar* str)
     return Coral::StringHelper::ConvertWideToUtf8(str);
 }
 
-inline std::string ToUtf8(std::string_view str)
-{
-    return std::string(str);
-}
-
 inline Coral::UCString ToWide(const std::string& str)
 {
     return Coral::StringHelper::ConvertUtf8ToWide(str);
@@ -47,6 +42,12 @@ inline void ResolveComponentName(std::string& name)
 {
     if (name == "MeshComponent") name = "ModelComponent";
     if (name == "PhysicsComponent") name = "ColliderComponent";
+    // The registry derives SerializationKey from the human-readable display name
+    // (RegisterReflective("Rigid Body") -> "Rigid BodyComponent"), but C# sends the
+    // CLR type name typeof(RigidBodyComponent).Name == "RigidBodyComponent" (no space).
+    // Without this alias the registry lookup never matches, so GetComponent<RigidBodyComponent>()
+    // returns null and PlayerController.OnUpdate bails before applying WASD movement.
+    if (name == "RigidBodyComponent") name = "Rigid BodyComponent";
 }
 
 Scene* GetActiveScene();
