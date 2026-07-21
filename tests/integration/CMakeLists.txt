@@ -54,18 +54,14 @@ if(COMMAND apply_engine_optimizations)
 endif()
 
 include(GoogleTest)
-# Integration tests run as a SINGLE ctest entry (one process for the whole
-# binary) rather than via gtest_discover_tests. With PRE_TEST discovery every
-# test case became its own process, and each process paid a full engine boot
-# (Audio + Jolt + optionally CoreCLR) in the global test environment — 80+
-# cold starts per ctest run, and a single crash in shared startup code fanned
-# out into 80+ identical failures wrapped in unreadable LaunchTest.cmake
-# errors. One process keeps gtest's own per-test reporting and readable crash
-# output. Unit tests (fast, no engine boot) keep per-test discovery.
-add_test(NAME IntegrationSuite COMMAND engine_tests_integration)
-set_tests_properties(IntegrationSuite PROPERTIES
-    LABELS "Integration"
-    ENVIRONMENT "ENGINE_ROOT=${CMAKE_SOURCE_DIR}"
+# Discover individual GTest tests so each shows up as a separate CTest entry.
+# POST_BUILD mode discovers tests at build time, avoiding PRE_TEST path issues
+# on Windows and the overhead of running the discovery binary at test time.
+gtest_discover_tests(engine_tests_integration
     WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    TIMEOUT 300
+    DISCOVERY_TIMEOUT 60
+    PROPERTIES
+        LABELS "Integration"
+        ENVIRONMENT "ENGINE_ROOT=${CMAKE_SOURCE_DIR}"
+        TIMEOUT 120
 )
