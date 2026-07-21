@@ -6,6 +6,7 @@
 #include "engine/scene/scene.h"
 #include "engine/project/project.h"
 #include <Coral/Assembly.hpp>
+#include <atomic>
 #include <string>
 #include <unordered_map>
 
@@ -51,8 +52,8 @@ public:
     // Returns true if the assembly was found and loaded.
     bool TryAutoLoad(const ProjectConfig& config);
 
-    Scene* GetContextScene() const { return m_CurrentScene; }
-    void SetContextScene(Scene* scene) { m_CurrentScene = scene; }
+    Scene* GetContextScene() const { return m_CurrentScene.load(std::memory_order_acquire); }
+    void SetContextScene(Scene* scene) { m_CurrentScene.store(scene, std::memory_order_release); }
 private:
     ScriptEngine(const ScriptEngine&) = delete;
     ScriptEngine& operator=(const ScriptEngine&) = delete;
@@ -62,7 +63,7 @@ private:
     ScriptHost m_Host;
     ScriptRegistry m_Registry;
     bool m_EnableScripting;
-    Scene* m_CurrentScene = nullptr;
+    std::atomic<Scene*> m_CurrentScene{nullptr};
 };
 
 } // namespace Chained

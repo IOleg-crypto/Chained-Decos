@@ -14,8 +14,11 @@ bool RenderPanel(PanelData& panel, UIControlComponent& wc, const ImVec2& pos, co
     auto textureAsset = ResolveTexture(panel.TextureHandle, panel.TexturePath);
     if (textureAsset && textureAsset->GetState() == AssetState::Ready)
     {
-        ImTextureID texId = (ImTextureID)(uintptr_t)textureAsset->GetTexture()->GetNativeHandle();
-        dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
+        if (auto tex = textureAsset->GetTexture())
+        {
+            ImTextureID texId = (ImTextureID)(uintptr_t)tex->GetNativeHandle();
+            dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
+        }
     }
     else
     {

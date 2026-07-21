@@ -22,9 +22,7 @@ inline ImU32 ToImU32(const Color& c)
 
 inline ImU32 GetControlColor(const UIStyle& style, const UIControlComponent& wc)
 {
-    if (wc.IsDown)    return ToImU32(style.PressedColor);
-    if (wc.IsHovered) return ToImU32(style.HoverColor);
-    return ToImU32(style.BackgroundColor);
+    return ToImU32(style.State.CurrentColor);
 }
 
 inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSize, const std::string& text,
@@ -32,17 +30,15 @@ inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
 {
     if (text.empty()) return;
 
-    ImVec2 textSize;
-    if (font)
-    {
-        ImGui::PushFont(font);
-        textSize = ImGui::CalcTextSize(text.c_str());
-        ImGui::PopFont();
-    }
-    else
-    {
-        textSize = ImGui::CalcTextSize(text.c_str());
-    }
+    // No per-widget font -> fall back to the current (default) font, but still
+    // honor the widget's FontSize. ImGui 1.92 renders any font at any size.
+    ImFont* activeFont = font ? font : ImGui::GetFont();
+    const float activeSize = (fontSize > 0.0f) ? fontSize : ImGui::GetFontSize();
+
+    // Measure at the exact size the text will be drawn at.
+    ImGui::PushFont(activeFont, activeSize);
+    ImVec2 textSize = ImGui::CalcTextSize(text.c_str());
+    ImGui::PopFont();
 
     ImVec2 textPos = pos;
 
@@ -59,12 +55,10 @@ inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
     if (textStyle.Shadow)
     {
         ImVec2 shadowPos = { textPos.x + textStyle.ShadowOffset, textPos.y + textStyle.ShadowOffset };
-        if (font) dl->AddText(font, fontSize, shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
-        else      dl->AddText(shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
+        dl->AddText(activeFont, activeSize, shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
     }
 
-    if (font) dl->AddText(font, fontSize, textPos, ToImU32(textStyle.TextColor), text.c_str());
-    else      dl->AddText(textPos, ToImU32(textStyle.TextColor), text.c_str());
+    dl->AddText(activeFont, activeSize, textPos, ToImU32(textStyle.TextColor), text.c_str());
 }
 
 inline std::shared_ptr<TextureAsset> ResolveTexture(AssetHandle& handle, const std::string& path)
@@ -72,7 +66,7 @@ inline std::shared_ptr<TextureAsset> ResolveTexture(AssetHandle& handle, const s
     auto* am = ServiceLocator::Get<AssetManager>();
     if (!am) return nullptr;
 
-    if (handle == 0 && !path.empty())
+    if (!path.empty())
     {
         auto asset = am->Get<TextureAsset>(path);
         if (asset)

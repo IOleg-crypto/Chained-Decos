@@ -112,6 +112,7 @@ private:
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
     Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
+    std::vector<entt::entity> GetRootEntitiesImpl() const;
 };
 
 } // namespace Chained

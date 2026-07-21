@@ -46,25 +46,36 @@ public:
     // True if any fonts were successfully loaded.
     bool HasFonts() const { return !m_Fonts.empty(); }
 
+    // Returns all discovered font names (relative paths from assets/).
+    std::vector<std::string> GetKnownFontNames() const;
+
     // Clears all registered fonts (call before re-loading a new project).
     void Clear();
 
+    // Returns true if fonts were registered after the first frame and the GPU
+    // atlas texture must be rebuilt via ImGuiLayer::RefreshFontAtlasTexture().
+    bool NeedsAtlasRebuild() const { return m_NeedsRebuild; }
+
+    // Clears the rebuild flag (call after the atlas GPU texture has been refreshed).
+    void ClearRebuildFlag() { m_NeedsRebuild = false; }
+
 private:
     // Registers a single TTF/OTF file at the given absolute path under a relative name key.
-    // Returns the loaded ImFont* or nullptr on failure.
+    // Returns the loaded ImFont* or nullptr on failure (failures are cached as nullptr).
     ImFont* RegisterFont(const std::string& relativeName, const std::string& absolutePath, float pixelSize);
 
-    // Build a cache key from name + size (rounded to 0.5px increments).
-    static std::string MakeKey(const std::string& name, float size);
     static std::string NormalizeFontName(std::string name);
 
-    // map<"fonts/Roboto.ttf|16.0" -> ImFont*>
+    // Keyed by normalized relative name, e.g. "fonts/Roboto.ttf". One ImFont* per
+    // file — with ImGui 1.92 dynamic fonts any render size works from a single entry
+    // (pass the size to PushFont()/ImDrawList::AddText()). nullptr = cached failure.
     std::unordered_map<std::string, ImFont*> m_Fonts;
 
     // Tracks which relative paths have been discovered (name -> absolute path)
     std::unordered_map<std::string, std::string> m_KnownPaths;
 
-    ImFont* m_DefaultFont = nullptr;
+    ImFont* m_DefaultFont  = nullptr;
+    bool    m_NeedsRebuild = false;
 };
 
 } // namespace Chained

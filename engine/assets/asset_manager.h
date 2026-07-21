@@ -45,7 +45,7 @@ public:
         AssetHandle handle = ResolveToHandle(path);
         if (handle != AssetHandle(0))
         {
-            auto asset = GetAsset(handle, T::GetStaticType());
+            auto asset = GetAsset(handle);
             if (asset)
             {
                 return std::static_pointer_cast<T>(asset);
@@ -57,7 +57,7 @@ public:
 
     template <typename T> std::shared_ptr<T> Get(AssetHandle handle)
     {
-        return std::static_pointer_cast<T>(GetAsset(handle, T::GetStaticType()));
+        return std::static_pointer_cast<T>(GetAsset(handle));
     }
 
     // Explicit load — creates, loads and caches the asset, returning nullptr on failure.
@@ -84,7 +84,7 @@ public:
         ReloadAsset(handle, T::GetStaticType());
     }
 
-    std::shared_ptr<Asset> GetAsset(AssetHandle handle, AssetType type);
+    std::shared_ptr<Asset> GetAsset(AssetHandle handle);
     std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
 
 private:

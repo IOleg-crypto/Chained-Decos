@@ -3,6 +3,7 @@
 
 #include "engine/physics/physics_types.h"
 #include "entt/entt.hpp"
+#include <glm/glm.hpp>
 
 namespace Chained
 {

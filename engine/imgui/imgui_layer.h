@@ -9,8 +9,8 @@ namespace Chained
 class ImGuiLayer : public Layer
 {
 public:
-    ImGuiLayer();
-    ~ImGuiLayer() override;
+    ImGuiLayer() = default;
+    ~ImGuiLayer() override = default;
 
     void OnAttach() override;
     void OnDetach() override;
@@ -23,7 +23,8 @@ public:
     bool RefreshFontAtlasTexture();
 
     // Centralized font loading in the DLL to avoid cross-module atlas corruption
-    void* AddFontFromFile(const std::string& path, float size, const void* config = nullptr, const void* ranges = nullptr);
+    void* AddFontFromFile(const std::string& path, float size, const void* config = nullptr,
+                          const void* ranges = nullptr);
 
     // Clear all fonts from the atlas so they can be re-added at a new size/typeface.
     // Follow with AddFontFromFile(...) + RefreshFontAtlasTexture() to apply.
@@ -35,9 +36,21 @@ public:
     }
 
     static void SetContext(ImGuiContext* context);
-    void* GetContext() const { return ImGui::GetCurrentContext(); }
+    void* GetContext() const
+    {
+        return ImGui::GetCurrentContext();
+    }
+
+public:
+    // Enqueue a task to run after the current ImGui frame finishes (in End()).
+    // Contract: must only be called from the main/render thread.
+    void ExecuteNextFrame(std::function<void()>&& task)
+    {
+        m_DeferredTasks.push_back(std::move(task));
+    }
 
 private:
+    std::vector<std::function<void()>> m_DeferredTasks;
     bool m_BlockEvents = true;
 };
 } // namespace Chained

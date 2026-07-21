@@ -21,11 +21,10 @@
 #include "engine/scene/component_registry.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/graphics/ui/widget_renderer.h"
 
 namespace Chained
 {
-
-EditorLayer* PropertyEditor::s_EditorLayer = nullptr;
 
 // --- Template Implementations (Moved from Header) ---
 
@@ -34,6 +33,16 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
 {
     static std::unordered_map<entt::entity, T> s_InitialStates;
     entt::entity e = (entt::entity)entity;
+
+    // Clear stale states when entity is not in the current context
+    // (handles scene changes where entity IDs may be reused)
+    static entt::registry* s_LastRegistry = nullptr;
+    entt::registry* currentRegistry = &entity.GetRegistry();
+    if (s_LastRegistry != currentRegistry)
+    {
+        s_InitialStates.clear();
+        s_LastRegistry = currentRegistry;
+    }
 
     DrawComponentContainer<T>(name, icon, entity, [&](T& comp, Entity ent) {
         UIProperties ui;
@@ -55,11 +64,10 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
             {
                 auto oldState = s_InitialStates[e];
                 auto newState = comp;
-                if (s_EditorLayer)
-                {
-                    s_EditorLayer->GetCommandHistory().PushCommand(
-                        std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
-                }
+                
+                EditorLayer::Get().GetCommandHistory().PushCommand(
+                    std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
+                
                 s_InitialStates.erase(e);
             }
         }
@@ -88,10 +96,7 @@ void PropertyEditor::DrawComponentContainer(const std::string& name, const char*
                 return false;
             },
             [&]() {
-                    if (s_EditorLayer)
-                    {
-                        s_EditorLayer->GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
-                    }
+                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(entity));
             });
     }
 }
@@ -137,13 +142,12 @@ void PropertyEditor::RegisterComponentImpl(
     metadata.Icon = icon;
     metadata.DrawUI = drawUI;
     metadata.Add = [](Entity e) {
-        if (!e.HasComponent<T>() && s_EditorLayer)
-            s_EditorLayer->GetCommandHistory().PushCommand(
+        if (!e.HasComponent<T>())
+            EditorLayer::Get().GetCommandHistory().PushCommand(
                 std::make_unique<AddComponentCommand<T>>(e));
     };
     metadata.Remove = [](Entity e) {
-        if (s_EditorLayer)
-            s_EditorLayer->GetCommandHistory().PushCommand(
+            EditorLayer::Get().GetCommandHistory().PushCommand(
                 std::make_unique<RemoveComponentCommand<T>>(e));
     };
 }
@@ -167,8 +171,6 @@ void PropertyEditor::RegisterCustom(const std::string& name,
 
 void PropertyEditor::Init()
 {
-    s_EditorLayer = &EditorLayer::Get();
-
     // --- Core Components ---
     ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
     RegisterCustom<LightComponent>("Light", [&](LightComponent& comp, Entity entity) {
@@ -398,7 +400,9 @@ void PropertyEditor::Init()
 
         if (ImGui::BeginPopup("AddScriptPopup"))
         {
-            for (const auto& [className, type] : ServiceLocator::Get<ScriptEngine>()->GetRegistry().GetScriptClasses())
+            if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
+            {
+            for (const auto& [className, type] : se->GetRegistry().GetScriptClasses())
             {
                 // Extract short name for menu
                 size_t lastDot = className.find_last_of('.');
@@ -411,6 +415,7 @@ void PropertyEditor::Init()
                 }
                 if (ImGui::IsItemHovered())
                     ImGui::SetTooltip("%s", className.c_str());
+            }
             }
             ImGui::EndPopup();
         }
@@ -438,16 +443,27 @@ void PropertyEditor::Init()
         if (ui.Property("Pressed Scale",   comp.BoxStyle.PressedScale,    PropertyMeta(0.5f, 3.0f,  0.01f))) changed = true;
         if (ui.Property("Transition Speed",comp.BoxStyle.TransitionSpeed, PropertyMeta(0.0f, 2.0f,  0.01f))) changed = true;
         if (ui.Property("Gradient",        comp.BoxStyle.UseGradient))    changed = true;
+        if (ui.Property("Gradient Color",  comp.BoxStyle.GradientColor)) changed = true;
 
         ui.Separator();
         // Text Style
         ui.Header("Text Style");
-        if (ui.Property("Font Name",       comp.TextStyle.FontName))      changed = true;
+        {
+            auto fontNames = ServiceLocator::Get<WidgetRenderer>()->GetFontRegistry().GetKnownFontNames();
+            fontNames.insert(fontNames.begin(), "Default");
+            if (ui.StringEnum("Font Name", comp.TextStyle.FontName, fontNames)) changed = true;
+        }
         if (ui.Property("Font Size",       comp.TextStyle.FontSize,       PropertyMeta(4.0f, 256.0f, 0.5f))) changed = true;
         if (ui.Property("Text Color",      comp.TextStyle.TextColor))     changed = true;
         if (ui.Property("Shadow",          comp.TextStyle.Shadow))        changed = true;
+        if (comp.TextStyle.Shadow) {
+            if (ui.Property("Shadow Offset", comp.TextStyle.ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.5f))) changed = true;
+            if (ui.Property("Shadow Color",  comp.TextStyle.ShadowColor)) changed = true;
+        }
         if (ui.Property("Letter Spacing",  comp.TextStyle.LetterSpacing,  PropertyMeta(0.0f, 10.0f, 0.05f))) changed = true;
         if (ui.Property("Line Height",     comp.TextStyle.LineHeight,     PropertyMeta(0.0f, 5.0f,  0.05f))) changed = true;
+        if (ui.Property("H Align",         comp.TextStyle.Horizontal)) changed = true;
+        if (ui.Property("V Align",         comp.TextStyle.Vertical)) changed = true;
 
         ui.Separator();
         // Widget-type specific

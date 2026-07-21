@@ -125,13 +125,16 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
     }
 
     auto& config = project->GetConfig();
-    config.Name = projectNode["Name"].as<std::string>();
+    if (projectNode["Name"])
+        config.Name = projectNode["Name"].as<std::string>();
     if (projectNode["IconPath"])
     {
         config.IconPath = projectNode["IconPath"].as<std::string>();
     }
-    config.StartScene = projectNode["StartScene"].as<std::string>();
-    config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
+    if (projectNode["StartScene"])
+        config.StartScene = projectNode["StartScene"].as<std::string>();
+    if (projectNode["AssetDirectory"])
+        config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
 
     DeserializePath(projectNode, "Environment", config.EnvironmentPath);
     DeserializePath(projectNode, "ActiveScene", config.ActiveScenePath);

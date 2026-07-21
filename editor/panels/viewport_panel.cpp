@@ -186,14 +186,11 @@ ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, 
     m_HDRFramebufferSamples = hdrSpec.Samples;
     m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
 
-    m_SceneRenderer = new SceneRenderer();
+    m_SceneRenderer = std::make_unique<SceneRenderer>();
     m_CameraController = std::make_unique<EditorCameraController>();
 }
 
-ViewportPanel::~ViewportPanel()
-{
-    delete m_SceneRenderer;
-}
+ViewportPanel::~ViewportPanel() = default;
 
 void ViewportPanel::OnImGuiRender(bool readOnly)
 {

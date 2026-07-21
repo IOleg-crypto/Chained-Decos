@@ -47,12 +47,28 @@ bool PrefabSerializer::Serialize(Entity entity, const std::string& filepath)
     out << YAML::EndMap;
 
     std::ofstream fout(filepath);
+    if (!fout.is_open())
+    {
+        CH_CORE_ERROR("PrefabSerializer: Failed to open file for writing '{}'", filepath);
+        return false;
+    }
     fout << out.c_str();
+    if (!fout.good())
+    {
+        CH_CORE_ERROR("PrefabSerializer: Failed to write to file '{}'", filepath);
+        return false;
+    }
     return true;
 }
 
 Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
 {
+    if (!scene)
+    {
+        CH_CORE_ERROR("PrefabSerializer::Deserialize: scene is null");
+        return {};
+    }
+
     YAML::Node data;
     try {
         data = YAML::LoadFile(filepath);
@@ -142,6 +158,11 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     }
 
     // Step 4: Find and return the root entity
+    if (!data["RootEntity"])
+    {
+        CH_CORE_ERROR("PrefabSerializer: Missing 'RootEntity' in '{}'", filepath);
+        return createdEntities.empty() ? Entity{} : createdEntities[0];
+    }
     uint64_t rootOldUUID = data["RootEntity"].as<uint64_t>();
     if (remapTable.count(rootOldUUID))
         return remapTable[rootOldUUID];

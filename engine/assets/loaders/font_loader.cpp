@@ -67,8 +67,12 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
     std::vector<unsigned char> pixels(font.atlasWidth * font.atlasHeight);
     stbtt_bakedchar chardata[128];
 
-    stbtt_BakeFontBitmap(buffer.data(), 0, font.fontSize, pixels.data(), font.atlasWidth, font.atlasHeight, 32, 128,
+    int charsBaked = stbtt_BakeFontBitmap(buffer.data(), 0, font.fontSize, pixels.data(), font.atlasWidth, font.atlasHeight, 32, 128,
                          chardata);
+    if (charsBaked <= 0)
+    {
+        return fail("stbtt_BakeFontBitmap failed for '" + resolvedPath + "'");
+    }
 
     std::vector<unsigned char> rgbaPixels(font.atlasWidth * font.atlasHeight * 4);
     for(size_t i = 0; i < pixels.size(); i++) {
