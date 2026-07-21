@@ -7,7 +7,6 @@
 #include "engine/scene/components/transform_component.h"
 
 
-#define GLM_ENABLE_EXPERIMENTAL
 #include <algorithm>
 #include <glm/gtx/quaternion.hpp>
 

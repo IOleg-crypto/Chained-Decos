@@ -4,6 +4,7 @@
 #include "editor/panels/viewport_panel.h"
 #include "editor/project/project_exporter.h"
 #include "engine/app/application.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
@@ -19,9 +20,12 @@
 #include "engine/scene/component_registry.h"
 #include "imgui_internal.h"
 #include "scripting/scriptengine.h"
+#include <algorithm>
+#include <cctype>
 #include <filesystem>
 #include <mutex>
 #include <string>
+#include <vector>
 
 namespace Chained
 {
@@ -59,21 +63,99 @@ static void DrawPropertyLabel(const char* label)
 }
 namespace
 {
-// Curated list of bundled UI fonts (paths relative to the engine resources root).
+// Editor font choice discovered by scanning <EngineRoot>/resources/font/ for TTF/OTF files.
 struct FontChoice
 {
-    const char* Label;
-    const char* Path;
+    std::string Label; // e.g. "Lato Bold" (derived from filename)
+    std::string Path;  // relative to the engine root, e.g. "resources/font/lato/lato-bold.ttf"
 };
 
-constexpr std::array<FontChoice, 6> kFontChoices = {{
-    {"Lato Bold", "resources/font/lato/lato-bold.ttf"},
-    {"Lato Regular", "resources/font/lato/lato-regular.ttf"},
-    {"Gantari Regular", "resources/font/gantari/static/gantari-regular.ttf"},
-    {"Gantari Medium", "resources/font/gantari/static/gantari-medium.ttf"},
-    {"Alan Sans Regular", "resources/font/static/alansans-regular.ttf"},
-    {"Alan Sans Medium", "resources/font/static/alansans-medium.ttf"},
-}};
+// Turns "lato-bold" / "AlanSans_Medium" into "Lato Bold" / "AlanSans Medium".
+std::string MakeFontLabel(const std::filesystem::path& file)
+{
+    std::string stem = file.stem().string();
+    std::string label;
+    label.reserve(stem.size());
+    bool upperNext = true;
+    for (char c : stem)
+    {
+        if (c == '-' || c == '_')
+        {
+            label += ' ';
+            upperNext = true;
+        }
+        else
+        {
+            label += upperNext ? (char)std::toupper((unsigned char)c) : c;
+            upperNext = false;
+        }
+    }
+    return label;
+}
+
+// Scans <EngineRoot>/resources/font recursively; cached after the first call.
+// FontAwesome icon fonts are excluded — merging them as the main UI font breaks text.
+const std::vector<FontChoice>& GetEditorFontChoices()
+{
+    static std::vector<FontChoice> s_Choices;
+    static bool s_Scanned = false;
+    if (s_Scanned)
+    {
+        return s_Choices;
+    }
+    s_Scanned = true;
+
+    auto engineRoot = ServiceLocator::Get<AssetManager>()->GetEngineRoot();
+    const std::filesystem::path fontDir = engineRoot / "resources" / "font";
+
+    std::error_code ec;
+    if (!std::filesystem::exists(fontDir, ec) || ec)
+    {
+        CH_CORE_WARN("EditorGUI: Font directory '{}' not found; font picker will be empty.", fontDir.string());
+        return s_Choices;
+    }
+
+    for (std::filesystem::recursive_directory_iterator
+             it(fontDir, std::filesystem::directory_options::skip_permission_denied, ec), end;
+         it != end && !ec; it.increment(ec))
+    {
+        if (!it->is_regular_file(ec))
+        {
+            ec.clear();
+            continue;
+        }
+
+        std::string ext = it->path().extension().string();
+        std::transform(ext.begin(), ext.end(), ext.begin(),
+                       [](unsigned char c) { return (char)std::tolower(c); });
+        if (ext != ".ttf" && ext != ".otf")
+        {
+            continue;
+        }
+
+        // Skip icon fonts (merged separately in LoadEditorFonts).
+        std::string stem = it->path().stem().string();
+        if (stem.rfind("fa-", 0) == 0)
+        {
+            continue;
+        }
+
+        auto rel = std::filesystem::relative(it->path(), engineRoot, ec);
+        if (ec)
+        {
+            ec.clear();
+            continue;
+        }
+
+        s_Choices.push_back({MakeFontLabel(it->path()), rel.generic_string()});
+    }
+
+    std::sort(s_Choices.begin(), s_Choices.end(),
+              [](const FontChoice& a, const FontChoice& b) { return a.Label < b.Label; });
+
+    CH_CORE_INFO("EditorGUI: Discovered {} editor font(s) in '{}'.", s_Choices.size(), fontDir.string());
+    return s_Choices;
+}
 } // namespace
 
 // --- Menu System Implementation ---
@@ -332,17 +414,10 @@ void EditorGUI::DrawEditorSettings()
                                     ICON_FA_FLOPPY_DISK " Auto-Save", ICON_FA_ROCKET " Startup",
                                     ICON_FA_GEAR " General"};
 
-        ImGui::Columns(2, "EditorSettingsColumns", true);
-
-        static bool widthSet = false;
-        if (!widthSet)
-        {
-            ImGui::SetColumnWidth(0, 180.0f);
-            widthSet = true;
-        }
+        float buttonRowHeight = ImGui::GetFrameHeightWithSpacing();
 
         // --- Left sidebar ---
-        ImGui::BeginChild("EditorSettingsSidebar", ImVec2(0, 0), ImGuiChildFlags_NavFlattened);
+        ImGui::BeginChild("EditorSettingsSidebar", ImVec2(180, -buttonRowHeight), ImGuiChildFlags_NavFlattened);
         for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
         {
             if (ImGui::Selectable(categories[i], selectedCategory == i))
@@ -352,11 +427,10 @@ void EditorGUI::DrawEditorSettings()
         }
         ImGui::EndChild();
 
-        ImGui::NextColumn();
+        ImGui::SameLine();
 
         // --- Right content ---
-        ImGui::BeginChild("EditorSettingsContent", ImVec2(0, -ImGui::GetFrameHeightWithSpacing()),
-                          ImGuiChildFlags_NavFlattened);
+        ImGui::BeginChild("EditorSettingsContent", ImVec2(0, -buttonRowHeight), ImGuiChildFlags_NavFlattened);
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
 
         if (selectedCategory == 0) // Appearance
@@ -365,24 +439,25 @@ void EditorGUI::DrawEditorSettings()
             ImGui::Separator();
             ImGui::Spacing();
 
+            const auto& fontChoices = GetEditorFontChoices();
             int currentFont = -1;
-            for (int i = 0; i < (int)kFontChoices.size(); i++)
+            for (int i = 0; i < (int)fontChoices.size(); i++)
             {
-                if (config.FontPath == kFontChoices[i].Path)
+                if (config.FontPath == fontChoices[i].Path)
                 {
                     currentFont = i;
                     break;
                 }
             }
-            const char* preview = currentFont >= 0 ? kFontChoices[currentFont].Label : "Custom";
+            const char* preview = currentFont >= 0 ? fontChoices[currentFont].Label.c_str() : "Custom";
             if (ImGui::BeginCombo("Editor Font", preview))
             {
-                for (int i = 0; i < (int)kFontChoices.size(); i++)
+                for (int i = 0; i < (int)fontChoices.size(); i++)
                 {
                     bool sel = (currentFont == i);
-                    if (ImGui::Selectable(kFontChoices[i].Label, sel))
+                    if (ImGui::Selectable(fontChoices[i].Label.c_str(), sel))
                     {
-                        config.FontPath = kFontChoices[i].Path;
+                        config.FontPath = fontChoices[i].Path;
                     }
                     if (sel)
                     {
@@ -393,7 +468,6 @@ void EditorGUI::DrawEditorSettings()
             }
 
             ImGui::DragFloat("Font Size", &config.FontSize, 0.25f, 8.0f, 48.0f, "%.0f px");
-            ImGui::TextDisabled("Apply rebuilds the font atlas at the new size/typeface.");
 
             ImGui::Spacing();
             ImGui::Spacing();
@@ -502,25 +576,14 @@ void EditorGUI::DrawEditorSettings()
         ImGui::PopStyleVar();
         ImGui::EndChild();
 
-        ImGui::Columns(1);
-        ImGui::Separator();
-
-        if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Apply Font"))
-        {
-            EditorLayer::Get().ReloadEditorFonts();
-        }
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Rebuild the editor font atlas now.");
-        }
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Settings"))
+        if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Settings", ImVec2(-1, 0)))
         {
             EditorLayer::Get().SaveConfig();
+            EditorLayer::Get().RequestEditorFontReload();
         }
         if (ImGui::IsItemHovered())
         {
-            ImGui::SetTooltip("Persist to editor_settings.yaml.");
+            ImGui::SetTooltip("Save and apply all settings.");
         }
     }
     ImGui::End();
@@ -790,7 +853,7 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
 
     ImGui::SetNextItemWidth(width - buttonSize.x);
     char buf[32];
-    sprintf(buf, "##%s_%s", label, id);
+    snprintf(buf, sizeof(buf), "##%s_%s", label, id);
     if (ImGui::DragFloat(buf, &val, 0.1f, 0.0f, 0.0f, "%.2f"))
     {
         changed = true;

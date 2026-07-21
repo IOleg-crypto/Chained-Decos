@@ -3,7 +3,6 @@
 
 #include "engine/common/uuid.h"
 #include "engine/core/log.h"
-#include <cstdio>
 #include <string>
 #include <atomic>
 
@@ -67,8 +66,7 @@ public:
         AssetState oldState = m_State.exchange(state, std::memory_order_release);
         if (state != oldState)
         {
-            printf("[ASSET] '%s' state change: %d -> %d\n", m_Path.c_str(), (int)oldState, (int)state);
-            fflush(stdout);
+            CH_CORE_INFO("[ASSET] '{}' state change: {} -> {}", m_Path, (int)oldState, (int)state);
             
             if (state == AssetState::Failed)
             {

@@ -26,11 +26,9 @@ public:
     static void RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer,
                                const char* icon = nullptr);
 
-    static void DrawEntityHeader(Chained::Entity entity);
+    static void DrawEntityHeader(Entity entity);
 
 private:
-    static class EditorLayer* s_EditorLayer;
-
     // Shared registration logic
     template <typename T>
     static void RegisterComponentImpl(const std::string& name, const char* icon,

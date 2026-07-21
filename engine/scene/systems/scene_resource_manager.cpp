@@ -182,13 +182,16 @@ void Update(entt::registry& reg, Timestep ts)
             glm::vec3 forward = rot * glm::vec3(0, 0, -1);
             glm::vec3 up = rot * glm::vec3(0, 1, 0);
 
-            ServiceLocator::Get<Audio>()->SetListenerPosition(pos, forward, up);
+            if (auto* audioSvc = ServiceLocator::TryGet<Audio>())
+                audioSvc->SetListenerPosition(pos, forward, up);
             break;
         }
     }
 
     // 2. Manage Audio Components
     auto audioView = reg.view<AudioComponent, TransformComponent>();
+    auto* audioSvc = ServiceLocator::TryGet<Audio>();
+    if (!audioSvc) return;
     for (auto entity : audioView)
     {
         auto& audio = audioView.get<AudioComponent>(entity);
@@ -196,10 +199,10 @@ void Update(entt::registry& reg, Timestep ts)
         // Ensure the audio is loaded
         if (!audio.SoundPath.empty())
         {
-            if (audio.SoundHandle == 0 || !ServiceLocator::Get<Audio>()->IsSoundLoaded(audio.SoundHandle))
+            if (audio.SoundHandle == 0 || !audioSvc->IsSoundLoaded(audio.SoundHandle))
             {
                 CH_CORE_INFO("AudioComponent: Loading sound: {}", audio.SoundPath);
-                audio.SoundHandle = ServiceLocator::Get<Audio>()->LoadSound(audio.SoundPath);
+                audio.SoundHandle = audioSvc->LoadSound(audio.SoundPath);
             }
         }
 
@@ -209,7 +212,7 @@ void Update(entt::registry& reg, Timestep ts)
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
 
-            ServiceLocator::Get<Audio>()->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop,
+            audioSvc->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop,
                                                audio.Spatialized, worldPos);
             audio.IsPlaying = true;
         }
@@ -217,7 +220,7 @@ void Update(entt::registry& reg, Timestep ts)
         {
             auto& transform = audioView.get<TransformComponent>(entity);
             glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-            ServiceLocator::Get<Audio>()->SetInstancePosition(audio.SoundHandle, worldPos);
+            audioSvc->SetInstancePosition(audio.SoundHandle, worldPos);
         }
     }
 }
@@ -253,8 +256,10 @@ void OnRuntimeStart(Scene* scene)
 void OnRuntimeStop(Scene* scene)
 {
     CH_PROFILE_FUNCTION();
-    auto& audioSvc = (*ServiceLocator::Get<Audio>());
-    audioSvc.StopAll();
+    if (auto* audioSvc = ServiceLocator::TryGet<Audio>())
+    {
+        audioSvc->StopAll();
+    }
 
     auto& reg = scene->GetRegistry();
     auto view = reg.view<AudioComponent>();

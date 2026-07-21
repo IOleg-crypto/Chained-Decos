@@ -86,6 +86,13 @@ public:
         spdlog::set_level(static_cast<spdlog::level::level_enum>(level));
     }
 
+    static void Shutdown()
+    {
+        s_CoreLogger.reset();
+        s_ClientLogger.reset();
+        spdlog::shutdown();
+    }
+
     static void SetLogCallback(LogCallbackFn callback)
     {
         s_LogCallback = callback;

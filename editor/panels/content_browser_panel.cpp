@@ -8,6 +8,7 @@
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "thirdparty/IconsFontAwesome6.h"
+#include <algorithm>
 
 namespace Chained
 {
@@ -15,15 +16,14 @@ namespace Chained
 ContentBrowserPanel::ContentBrowserPanel()
 {
     m_Name = "Content Browser";
-    m_Provider = std::make_unique<ContentBrowserProvider>();
 
     if (auto project = Project::GetActive())
     {
-        m_Provider->SetRoot(project->GetAssetDirectoryForProject());
+        SetRoot(project->GetAssetDirectoryForProject());
     }
     else
     {
-        m_Provider->SetRoot(std::filesystem::current_path() / "assets");
+        SetRoot(std::filesystem::current_path() / "assets");
     }
 
     m_ThumbnailSize = EditorLayer::Get().GetConfig().DefaultThumbnailSize;
@@ -35,7 +35,7 @@ void ContentBrowserPanel::OnImGuiRender(bool readOnly)
 {
     if (!m_NextDirectory.empty())
     {
-        m_Provider->Navigate(m_NextDirectory);
+        Navigate(m_NextDirectory);
         m_NextDirectory.clear();
     }
 
@@ -61,7 +61,7 @@ void ContentBrowserPanel::OnEvent(Event& e)
     dispatcher.Dispatch<ProjectOpenedEvent>([this](ProjectOpenedEvent& e) {
         if (auto project = Project::GetActive())
         {
-            m_Provider->SetRoot(project->GetAssetDirectoryForProject());
+            SetRoot(project->GetAssetDirectoryForProject());
         }
         return false;
     });
@@ -72,11 +72,11 @@ void ContentBrowserPanel::RenderToolbar()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 2));
     ImGui::PushStyleVar(ImGuiStyleVar_ItemInnerSpacing, ImVec2(0, 0));
 
-    if (m_Provider->GetCurrentDirectory() != m_Provider->GetRootDirectory())
+    if (GetCurrentDirectory() != GetRootDirectory())
     {
         if (ImGui::Button(ICON_FA_ARROW_LEFT))
         {
-            m_Provider->GoUp();
+            GoUp();
         }
     }
     else
@@ -92,7 +92,7 @@ void ContentBrowserPanel::RenderToolbar()
     if (ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", m_FilterBuffer,
                                  sizeof(m_FilterBuffer)))
     {
-        m_Provider->SetFilter(m_FilterBuffer, m_FilterType);
+        SetFilter(m_FilterBuffer, m_FilterType);
     }
 
     ImGui::SameLine();
@@ -105,7 +105,7 @@ void ContentBrowserPanel::RenderToolbar()
             if (ImGui::Selectable(filterNames[i], m_FilterType == i))
             {
                 m_FilterType = i;
-                m_Provider->SetFilter(m_FilterBuffer, m_FilterType);
+                SetFilter(m_FilterBuffer, m_FilterType);
             }
         }
         ImGui::EndCombo();
@@ -114,15 +114,15 @@ void ContentBrowserPanel::RenderToolbar()
     ImGui::SameLine();
     if (ImGui::Button("Assets"))
     {
-        m_Provider->GoToRoot();
+        GoToRoot();
     }
 
     // Breadcrumbs
     std::error_code ec;
-    auto relPath = std::filesystem::relative(m_Provider->GetCurrentDirectory(), m_Provider->GetRootDirectory(), ec);
+    auto relPath = std::filesystem::relative(GetCurrentDirectory(), GetRootDirectory(), ec);
     if (!ec && !relPath.empty() && relPath != ".")
     {
-        std::filesystem::path accumulated = m_Provider->GetRootDirectory();
+        std::filesystem::path accumulated = GetRootDirectory();
         for (const auto& part : relPath)
         {
             ImGui::SameLine();
@@ -131,7 +131,7 @@ void ContentBrowserPanel::RenderToolbar()
             accumulated /= part;
             if (ImGui::Button(part.string().c_str()))
             {
-                m_Provider->Navigate(accumulated);
+                Navigate(accumulated);
                 break;
             }
         }
@@ -152,7 +152,7 @@ void ContentBrowserPanel::RenderGridView()
 
     ImGui::Columns(columnCount, nullptr, false);
 
-    const auto& assets = m_Provider->GetAssets();
+    const auto& assets = GetAssets();
     if (assets.empty())
     {
         ImGui::TextDisabled("Empty directory or No assets found matching filters.");
@@ -211,7 +211,7 @@ void ContentBrowserPanel::RenderGridView()
                 if (ImGui::Button("OK", {120, 0}))
                 {
                     EditorActionCommands::RenameAsset(m_RenamingPath, m_RenameBuffer);
-                    m_Provider->Refresh();
+                    Refresh();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
@@ -228,7 +228,7 @@ void ContentBrowserPanel::RenderGridView()
                 if (ImGui::Button("Delete", {120, 0}))
                 {
                     EditorActionCommands::DeleteAsset(m_PathToDelete);
-                    m_Provider->Refresh();
+                    Refresh();
                     ImGui::CloseCurrentPopup();
                 }
                 ImGui::SameLine();
@@ -273,8 +273,8 @@ void ContentBrowserPanel::RenderGridView()
         {
             if (ImGui::MenuItem(ICON_FA_FOLDER " New Folder"))
             {
-                EditorActionCommands::CreateFolder(m_Provider->GetCurrentDirectory());
-                m_Provider->Refresh();
+                EditorActionCommands::CreateFolder(GetCurrentDirectory());
+                Refresh();
             }
             ImGui::EndMenu();
         }
@@ -300,12 +300,8 @@ void ContentBrowserPanel::OnAssetDoubleClicked(const AssetEntry& entry)
     {
         Entity entity = EditorLayer::Get().GetSceneManager().GetActiveScene()->CreateEntity(entry.name);
         auto& modelcomp = entity.AddComponent<ModelComponent>();
-        // Use relative path if possible to satisfy portability
         modelcomp.ModelPath = Project::GetRelativePath(entry.path);
 
-        // Select the new entity. Dispatch through the app so Inspector/Material
-        // panels (which subscribe to EntitySelectedEvent) also refresh — the event
-        // handler in EditorLayer::OnEvent updates m_EditorState.SelectedEntity for us.
         EntitySelectedEvent e((entt::entity)entity, EditorLayer::Get().GetSceneManager().GetActiveScene().get());
         Application::Get().OnEvent(e);
     }
@@ -313,12 +309,140 @@ void ContentBrowserPanel::OnAssetDoubleClicked(const AssetEntry& entry)
 
 void ContentBrowserPanel::RefreshDirectory() const
 {
-    m_Provider->Refresh();
+    const_cast<ContentBrowserPanel*>(this)->Refresh();
 }
 
 void ContentBrowserPanel::SetRootDirectory(const std::filesystem::path& path) const
 {
-    m_Provider->SetRoot(path);
+    const_cast<ContentBrowserPanel*>(this)->SetRoot(path);
+}
+
+void ContentBrowserPanel::SetRoot(const std::filesystem::path& path)
+{
+    m_RootDirectory = path;
+    m_CurrentDirectory = path;
+    Scan();
+}
+
+void ContentBrowserPanel::SetFilter(const std::string& query, int typeFilter)
+{
+    m_FilterQuery = query;
+    std::transform(m_FilterQuery.begin(), m_FilterQuery.end(), m_FilterQuery.begin(), ::tolower);
+    m_ContentFilterType = typeFilter;
+    Scan();
+}
+
+void ContentBrowserPanel::Refresh()
+{
+    Scan();
+}
+
+void ContentBrowserPanel::Navigate(const std::filesystem::path& path)
+{
+    m_CurrentDirectory = path;
+    Scan();
+}
+
+void ContentBrowserPanel::GoUp()
+{
+    if (m_CurrentDirectory != m_RootDirectory)
+    {
+        m_CurrentDirectory = m_CurrentDirectory.parent_path();
+        Scan();
+    }
+}
+
+void ContentBrowserPanel::GoToRoot()
+{
+    m_CurrentDirectory = m_RootDirectory;
+    Scan();
+}
+
+void ContentBrowserPanel::Scan()
+{
+    m_CurrentAssets.clear();
+    std::error_code ec;
+
+    if (!std::filesystem::exists(m_CurrentDirectory, ec))
+    {
+        return;
+    }
+
+    for (auto& p : std::filesystem::directory_iterator(m_CurrentDirectory, ec))
+    {
+        AssetEntry entry;
+        entry.name = p.path().filename().string();
+        entry.path = p.path();
+        entry.isDirectory = p.is_directory();
+        entry.type = DetermineAssetType(p.path());
+
+        if (!m_FilterQuery.empty())
+        {
+            std::string nameLower = entry.name;
+            std::transform(nameLower.begin(), nameLower.end(), nameLower.begin(), ::tolower);
+            if (nameLower.find(m_FilterQuery) == std::string::npos)
+            {
+                continue;
+            }
+        }
+
+        if (!entry.isDirectory && m_ContentFilterType > 0)
+        {
+            static constexpr EditorAssetType kFilterTypes[] = {
+                EditorAssetType::Scene,
+                EditorAssetType::Prefab,
+                EditorAssetType::Model,
+                EditorAssetType::Texture,
+                EditorAssetType::Script,
+                EditorAssetType::Audio
+            };
+            static constexpr int kFilterTypeCount = sizeof(kFilterTypes) / sizeof(kFilterTypes[0]);
+
+            bool match = false;
+            if (m_ContentFilterType - 1 < kFilterTypeCount)
+            {
+                match = (entry.type == kFilterTypes[m_ContentFilterType - 1]);
+            }
+            if (!match)
+            {
+                continue;
+            }
+        }
+
+        m_CurrentAssets.push_back(entry);
+    }
+
+    std::sort(m_CurrentAssets.begin(), m_CurrentAssets.end(), [](const AssetEntry& a, const AssetEntry& b) {
+        if (a.isDirectory != b.isDirectory)
+        {
+            return a.isDirectory > b.isDirectory;
+        }
+        return a.name < b.name;
+    });
+}
+
+EditorAssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::path& path)
+{
+    if (std::filesystem::is_directory(path))
+    {
+        return EditorAssetType::Directory;
+    }
+
+    static const std::unordered_map<std::string, EditorAssetType> s_ExtensionMap = {
+        {".chscene", EditorAssetType::Scene},   {".chmap", EditorAssetType::Scene},
+        {".chprefab", EditorAssetType::Prefab},         {".h", EditorAssetType::Script},
+        {".cpp", EditorAssetType::Script},
+        {".cs", EditorAssetType::Script},      {".obj", EditorAssetType::Model},
+        {".gltf", EditorAssetType::Model},      {".glb", EditorAssetType::Model},
+        {".png", EditorAssetType::Texture},     {".jpg", EditorAssetType::Texture},
+        {".tga", EditorAssetType::Texture},     {".wav", EditorAssetType::Audio},
+        {".ogg", EditorAssetType::Audio},       {".mp3", EditorAssetType::Audio}};
+
+    std::string ext = path.extension().string();
+    std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+    auto it = s_ExtensionMap.find(ext);
+    return (it != s_ExtensionMap.end()) ? it->second : EditorAssetType::Other;
 }
 
 } // namespace Chained

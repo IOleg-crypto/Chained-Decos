@@ -3,8 +3,6 @@
 #include "audio.h"
 #include "engine/core/log.h"
 #include "engine/project/project.h"
-#include "engine/common/engine_assert.h"
-
 #include <filesystem>
 #include <algorithm>
 
@@ -12,34 +10,33 @@ namespace Chained
 {
 
 Audio::Audio()
-    : m_Engine(nullptr)
+    : m_engine(nullptr)
 {
 }
 
 Audio::~Audio()
 {
-    if (m_Engine)
+    if (m_engine)
     {
         CH_CORE_WARN("Audio System: Destructor called before explicit Shutdown(). Force shutting down.");
-        Audio::Shutdown();
+        Shutdown();
     }
 }
 
 void Audio::Initialize()
 {
-    if (m_Engine)
+    if (m_engine)
     {
         CH_CORE_WARN("Audio System: Already initialized.");
         return;
     }
 
-    m_Engine = new ma_engine();
-    ma_result result = ma_engine_init(NULL, m_Engine);
+    m_engine = std::unique_ptr<ma_engine, MiniaudioEngineDeleter>(new ma_engine());
+    ma_result result = ma_engine_init(NULL, m_engine.get());
     if (result != MA_SUCCESS)
     {
         CH_CORE_ERROR("Audio System: Failed to initialize miniaudio engine.");
-        delete m_Engine;
-        m_Engine = nullptr;
+        m_engine.reset();
     }
     else
     {
@@ -49,23 +46,21 @@ void Audio::Initialize()
 
 void Audio::Shutdown()
 {
-    if (!m_Engine)
+    if (!m_engine)
     {
         return;
     }
 
     StopAll();
 
-    ma_engine_uninit(m_Engine);
-    delete m_Engine;
-    m_Engine = nullptr;
+    m_engine.reset();
 
     CH_CORE_INFO("Audio System: Shutdown complete.");
 }
 
 void Audio::Update(Timestep ts)
 {
-    if (!m_Engine)
+    if (!m_engine)
     {
         return;
     }
@@ -149,19 +144,19 @@ bool Audio::IsPlaying(AudioHandle handle) const
 
 void Audio::SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up)
 {
-    if (!m_Engine)
+    if (!m_engine)
     {
         return;
     }
 
-    ma_engine_listener_set_position(m_Engine, 0, position.x, position.y, position.z);
-    ma_engine_listener_set_direction(m_Engine, 0, forward.x, forward.y, forward.z);
-    ma_engine_listener_set_world_up(m_Engine, 0, up.x, up.y, up.z);
+    ma_engine_listener_set_position(m_engine.get(), 0, position.x, position.y, position.z);
+    ma_engine_listener_set_direction(m_engine.get(), 0, forward.x, forward.y, forward.z);
+    ma_engine_listener_set_world_up(m_engine.get(), 0, up.x, up.y, up.z);
 }
 
 void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
 {
-    if (!m_Engine || handle == 0)
+    if (!m_engine || handle == 0)
     {
         return;
     }
@@ -178,7 +173,7 @@ void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
 
 void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
 {
-    if (!m_Engine || handle == 0)
+    if (!m_engine || handle == 0)
     {
         return;
     }
@@ -200,7 +195,7 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
 
     ma_uint32 flags = MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC;
     
-    ma_result result = ma_sound_init_from_file(m_Engine, filepath.c_str(), flags, NULL, NULL, &instance->Sound);
+    ma_result result = ma_sound_init_from_file(m_engine.get(), filepath.c_str(), flags, NULL, NULL, &instance->Sound);
     if (result != MA_SUCCESS)
     {
         CH_CORE_ERROR("Audio System: Failed to init sound from file {}", filepath);
@@ -231,7 +226,7 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
 
 void Audio::SetVolume(AudioHandle handle, float volume)
 {
-    if (!m_Engine || handle == 0)
+    if (!m_engine || handle == 0)
     {
         return;
     }
@@ -248,7 +243,7 @@ void Audio::SetVolume(AudioHandle handle, float volume)
 
 void Audio::SetPitch(AudioHandle handle, float pitch)
 {
-    if (!m_Engine || handle == 0)
+    if (!m_engine || handle == 0)
     {
         return;
     }
@@ -265,7 +260,7 @@ void Audio::SetPitch(AudioHandle handle, float pitch)
 
 void Audio::Stop(const std::string& filepath)
 {
-    if (!m_Engine || filepath.empty())
+    if (!m_engine || filepath.empty())
     {
         return;
     }
@@ -298,7 +293,7 @@ void Audio::Stop(const std::string& filepath)
 
 void Audio::Stop(AudioHandle handle)
 {
-    if (!m_Engine || handle == 0)
+    if (!m_engine || handle == 0)
     {
         return;
     }
@@ -321,7 +316,7 @@ void Audio::Stop(AudioHandle handle)
 
 void Audio::StopAll()
 {
-    if (!m_Engine)
+    if (!m_engine)
     {
         return;
     }
@@ -337,7 +332,7 @@ void Audio::StopAll()
 
 ma_engine* Audio::GetEngine() const 
 {
-    return m_Engine;
+    return m_engine.get();
 }
 
 } // namespace Chained

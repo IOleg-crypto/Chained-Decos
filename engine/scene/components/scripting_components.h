@@ -65,11 +65,6 @@ struct ManagedScriptInstance
         NeedsStart = true;
     }
 
-    // Returns a raw (non-owning) pointer to the underlying object. Cast as needed.
-    void* GetRaw() const
-    {
-        return Instance.get();
-    }
     bool HasInstance() const
     {
         return Instance != nullptr;

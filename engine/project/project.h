@@ -143,7 +143,7 @@ public:
     static std::filesystem::path GetAssetPath(const std::filesystem::path& relative);
 
     // Converts a path to a project-relative string when possible.
-    // NOTE: For EngineRoot resolution, use ProjectManager.
+    // NOTE: Engine root resolution is handled by AssetManager.
     std::string GetRelativePathForProject(const std::filesystem::path& path) const;
     static std::string GetRelativePath(const std::filesystem::path& path);
     // Converts a path to an absolute path under this project.

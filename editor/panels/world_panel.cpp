@@ -4,6 +4,8 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/service_locator.h"
+#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/imgui/imgui_layer.h"
 #include "engine/physics/physics.h"
 #include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
@@ -135,6 +137,7 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         }
         ImGui::Unindent(10.0f);
     }
+
     if (m_Context->GetSettings().Mode == BackgroundMode::Environment3D)
     {
         if (ImGui::CollapsingHeader(ICON_FA_MICROCHIP "  Physics", ImGuiTreeNodeFlags_DefaultOpen))

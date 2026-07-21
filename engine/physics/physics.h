@@ -49,7 +49,8 @@ public:
 
     /// Destroys the current world and creates a fresh one, applying
     /// gravity from the active project configuration.
-    void ResetWorld();
+    /// If scene is provided, invalidates all RigidBodyComponent handles.
+    void ResetWorld(Scene* scene = nullptr);
 
     /// Iterates all entities with TransformComponent + RigidBodyComponent
     /// that don't yet have a physics body, and creates Jolt bodies for them.
@@ -73,9 +74,6 @@ private:
     /// for all Dynamic bodies. Static and Kinematic bodies are skipped because
     /// their transforms are driven by scripts or remain fixed.
     void UpdateColliders(Scene* scene);
-
-    /// Extracts triangles from a model asset for MeshShape colliders.
-    void BuildMeshTriangles(const std::string& modelPath, const glm::vec3& scale, std::vector<PhysicsTriangle>& outTriangles);
 
     /// When AutoCalculate=true: builds a temp Jolt MeshShape from the model,
     /// calls GetLocalBounds() and writes Size/Offset/Radius/Height back into the collider.

@@ -74,7 +74,7 @@ private:
     uint32_t m_HDRFramebufferSamples = 1; // MSAA sample count m_HDRFramebuffer was last (re)created with
 
     // Engine subsystem pointers are now accessed via static APIs (Renderer::Get(), etc.)
-    SceneRenderer* m_SceneRenderer = nullptr;
+    std::unique_ptr<SceneRenderer> m_SceneRenderer;
 
     // Dependencies
     CommandHistory& m_CommandHistory;

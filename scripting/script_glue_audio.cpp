@@ -9,7 +9,9 @@ void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
     if (Project::GetActive() != nullptr && path)
     {
         const std::string soundPath = ch_u16_to_string(path);
-        auto* audioService = ServiceLocator::Get<Audio>();
+        auto* audioService = ServiceLocator::TryGet<Audio>();
+        if (!audioService)
+            return;
 
         AudioHandle handle = audioService->LoadSound(soundPath);
         if (handle != 0)
@@ -38,7 +40,10 @@ void Audio_Stop(const Coral::UCChar* path)
     if (Project::GetActive() != nullptr && path)
     {
         const std::string soundPath = ch_u16_to_string(path);
-        ServiceLocator::Get<Audio>()->Stop(soundPath);
+        auto* audioService = ServiceLocator::TryGet<Audio>();
+        if (!audioService)
+            return;
+        audioService->Stop(soundPath);
 
         if (Scene* scene = GetActiveScene())
         {
@@ -59,7 +64,10 @@ void Audio_StopAll()
 {
     if (Project::GetActive() != nullptr)
     {
-        ServiceLocator::Get<Audio>()->StopAll();
+        auto* audioService = ServiceLocator::TryGet<Audio>();
+        if (!audioService)
+            return;
+        audioService->StopAll();
     }
 }
 void AudioComponent_SetVolume(uint64_t entityID, float volume)
@@ -71,7 +79,9 @@ void AudioComponent_SetVolume(uint64_t entityID, float volume)
         audio.Volume = volume;
         if (audio.IsPlaying && audio.SoundHandle != 0)
         {
-            ServiceLocator::Get<Audio>()->SetVolume(audio.SoundHandle, volume);
+            auto* audioService = ServiceLocator::TryGet<Audio>();
+            if (audioService)
+                audioService->SetVolume(audio.SoundHandle, volume);
         }
     }
 }
@@ -92,7 +102,10 @@ bool AudioComponent_IsPlaying(uint64_t entityID)
     }
 
     auto& audio = entity.GetComponent<AudioComponent>();
-    return audio.IsPlaying && ServiceLocator::Get<Audio>()->IsPlaying(audio.SoundHandle);
+    auto* audioService = ServiceLocator::TryGet<Audio>();
+    if (!audioService)
+        return false;
+    return audio.IsPlaying && audioService->IsPlaying(audio.SoundHandle);
 }
 const Coral::UCChar* AudioComponent_GetSoundPath(uint64_t entityID)
 {

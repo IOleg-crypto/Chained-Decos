@@ -32,6 +32,8 @@ void FrameManager::BeginScene(const Camera3D& camera, uint32_t viewportWidth, ui
     }
 
     // Upload to UBO
+    if (!m_CameraUBO)
+        return;
     CameraData cameraData;
     cameraData.ViewProjection = m_Frame.Proj * m_Frame.View;
     cameraData.Projection = m_Frame.Proj;

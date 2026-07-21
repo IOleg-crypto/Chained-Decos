@@ -52,23 +52,6 @@ private:
     Entity m_Entity;
 };
 
-// Undo system events
-class UndoEvent : public Event
-{
-public:
-    UndoEvent() = default;
-    EVENT_CLASS_TYPE(Undo)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
-class RedoEvent : public Event
-{
-public:
-    RedoEvent() = default;
-    EVENT_CLASS_TYPE(Redo)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
-
 } // namespace Chained
 
 #endif // CH_EDITOR_EVENTS_H

@@ -112,9 +112,10 @@ static ObjectLayerPairFilterImpl s_ObjVsObjFilter;
 // ─────────────────────────────────────────────────────────────────────────────
 JoltPhysicsWorld::JoltPhysicsWorld()
 {
-    m_TempAllocator = new JPH::TempAllocatorImpl(32 * 1024 * 1024);
-    m_JobSystem = new JPH::JobSystemThreadPool(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers,
-                                               (int)std::thread::hardware_concurrency() - 1);
+    m_TempAllocator = std::make_unique<JPH::TempAllocatorImpl>(32 * 1024 * 1024);
+    unsigned int hwThreads = std::thread::hardware_concurrency();
+    int numThreads = std::max(1, (int)hwThreads - 1);
+    m_JobSystem = std::make_unique<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, numThreads);
 
     m_PhysicsSystem.Init(65536, 0, 65536, 65536, s_BPLayerInterface, s_ObjVsBPFilter, s_ObjVsObjFilter);
 
@@ -126,12 +127,7 @@ JoltPhysicsWorld::JoltPhysicsWorld()
     CH_CORE_INFO("Jolt Physics World Initialized with ContactListener.");
 }
 
-JoltPhysicsWorld::~JoltPhysicsWorld()
-{
-    m_MeshShapeCache.clear();
-    delete m_JobSystem;
-    delete m_TempAllocator;
-}
+JoltPhysicsWorld::~JoltPhysicsWorld() = default;
 
 void JoltPhysicsWorld::ClearShapeCache()
 {
@@ -150,16 +146,37 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     case ColliderType::Box: {
         JPH::BoxShapeSettings s(JPH::Vec3(desc.Dimensions.x, desc.Dimensions.y, desc.Dimensions.z));
         shape = s.Create().Get();
+        if (!shape)
+        {
+            CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
+            shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+        }
         break;
     }
     case ColliderType::Sphere: {
         JPH::SphereShapeSettings s(desc.Dimensions.x);
         shape = s.Create().Get();
+        if (!shape)
+        {
+            CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
+            shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+        }
         break;
     }
     case ColliderType::Capsule: {
         JPH::CapsuleShapeSettings s(desc.Dimensions.y, desc.Dimensions.x);
         shape = s.Create().Get();
+        if (!shape)
+        {
+            CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
+            shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+        }
         break;
     }
     case ColliderType::Mesh: {
@@ -167,6 +184,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
         {
             CH_CORE_WARN("Physics: MeshShape requested but no triangles provided — falling back to unit box.");
             shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
             break;
         }
 
@@ -220,6 +239,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
                 CH_CORE_ERROR("Physics: ConvexHull build for dynamic mesh failed: {} — falling back to unit box.",
                               hullResult.GetError().c_str());
                 shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
                 break;
             }
 
@@ -288,6 +309,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             {
                 CH_CORE_WARN("Physics: All mesh triangles degenerate — falling back to unit box.");
                 shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
                 break;
             }
 
@@ -300,6 +323,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
                 CH_CORE_ERROR("Physics: MeshShape build failed: {} — falling back to unit box.",
                               result.GetError().c_str());
                 shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
                 break;
             }
 
@@ -340,6 +365,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     default: {
         CH_CORE_WARN("Physics: Unknown ColliderType — falling back to unit box.");
         shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+        if (!shape)
+            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
         break;
     }
     }
@@ -441,6 +468,11 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     settings.mUserData = desc.UserData;
 
     JPH::Body* body = bi.CreateBody(settings);
+    if (!body)
+    {
+        CH_CORE_ERROR("Physics: Body creation failed (user-data {}).", desc.UserData);
+        return kInvalidPhysicsBody;
+    }
     bi.AddBody(body->GetID(), JPH::EActivation::Activate);
 
     return (PhysicsBodyHandle)body->GetID().GetIndexAndSequenceNumber();
@@ -509,7 +541,7 @@ RaycastResult JoltPhysicsWorld::Raycast(const glm::vec3& origin, const glm::vec3
 
 void JoltPhysicsWorld::Step(float fixedDt)
 {
-    m_PhysicsSystem.Update(fixedDt, 1, m_TempAllocator, m_JobSystem);
+    m_PhysicsSystem.Update(fixedDt, 1, m_TempAllocator.get(), m_JobSystem.get());
 }
 
 void JoltPhysicsWorld::SetGravity(float gravity)

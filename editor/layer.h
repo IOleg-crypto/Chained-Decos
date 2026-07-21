@@ -36,9 +36,6 @@ public:
     virtual void OnImGuiRender() override;
     virtual void OnEvent(Event& e) override;
 
-    float GetViewportWidth() const { return m_ViewportSize.x; }
-    float GetViewportHeight() const { return m_ViewportSize.y; }
-
     void ResetLayout();
     
     EditorSceneManager& GetSceneManager() { return *m_SceneManager; }
@@ -62,8 +59,6 @@ public:
     CommandHistory& GetCommandHistory();
     EditorPanels& GetPanels() { return *m_Panels; }
 
-    static void ReparentEntity(Entity child, Entity parent);
-
     ImVec2 GetViewportSize() const { return m_ViewportSize; }
     ImVec2& GetViewportSizeRef() { return m_ViewportSize; }
     void OnViewportResized(const ImVec2& size) { m_ViewportSize = size; }
@@ -75,8 +70,16 @@ public:
     EditorConfig& GetConfig() { return m_Config; }
 
     // Rebuild the ImGui font atlas from the current EditorConfig (font path + size).
-    // Safe to call at runtime — clears and re-adds the UI + icon fonts.
+    // Must NOT be called while an ImGui frame is in flight (clears the atlas the
+    // frame is drawing with) — from UI code use RequestEditorFontReload() instead.
     void ReloadEditorFonts();
+
+    // Defers ReloadEditorFonts() to the next OnUpdate(), outside the ImGui frame.
+    void RequestEditorFontReload() { m_PendingEditorFontReload = true; }
+
+    // Adds editor UI font + icon font to the current atlas WITHOUT rebuilding.
+    // Call RefreshFontAtlasTexture() separately after all fonts have been added.
+    void AddEditorFontsToAtlas();
 
     std::shared_ptr<Scene> GetActiveScene() const;
 
@@ -96,6 +99,7 @@ private:
     CommandHistory m_CommandHistory;
     
     std::string m_PendingSceneTransitionPath;
+    bool m_PendingEditorFontReload = false;
     ImVec2 m_ViewportSize = {1280, 720};
 
     // Tracks the scene state seen on the previous frame so we can detect the

@@ -24,6 +24,19 @@ struct SoundInstance
     AudioHandle Handle;
 };
 
+// Custom deleter for ma_engine
+struct MiniaudioEngineDeleter
+{
+    void operator()(ma_engine* engine) const
+    {
+        if (engine)
+        {
+            ma_engine_uninit(engine);
+            delete engine;
+        }
+    }
+};
+
 class Audio : public EngineModule
 {
 public:
@@ -56,7 +69,7 @@ public:
 public:
     ma_engine* GetEngine() const;
 private:
-    ma_engine* m_Engine = nullptr;
+    std::unique_ptr<ma_engine, MiniaudioEngineDeleter> m_engine;
 private:
 
     mutable std::mutex m_DataMutex;

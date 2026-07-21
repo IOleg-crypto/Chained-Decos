@@ -157,6 +157,27 @@ std::filesystem::path ScriptEngine::ResolveAssemblyPath(const ScriptingSettings&
         return exeLibPath;
     }
 
+    // Scan exeDir/scripts/*/ for CMake build output layout
+    std::filesystem::path scriptsRoot = exeDir / "scripts";
+    if (std::filesystem::is_directory(scriptsRoot))
+    {
+        std::error_code ec;
+        for (auto& entry : std::filesystem::directory_iterator(scriptsRoot, ec))
+        {
+            if (!entry.is_directory()) continue;
+            std::filesystem::path candidate = entry.path() / dllName;
+            if (std::filesystem::exists(candidate))
+            {
+                return candidate;
+            }
+            candidate = entry.path() / ("lib" + dllName);
+            if (std::filesystem::exists(candidate))
+            {
+                return candidate;
+            }
+        }
+    }
+
     return {};
 }
 
@@ -170,13 +191,18 @@ bool ScriptEngine::TryAutoLoad(const ProjectConfig& config)
     auto dllPath = ResolveAssemblyPath(config.Scripting, config.ProjectDirectory);
     if (dllPath.empty())
     {
-        CH_CORE_WARN("ScriptEngine: Script assembly not found for '{}'.", config.Name);
+        CH_CORE_WARN("ScriptEngine: Script assembly not found for '{}' (module: '{}', dir: '{}').",
+            config.Name, config.Scripting.ModuleName, config.Scripting.ModuleDirectory.string());
         return false;
     }
 
     SetEnabled(true);
     Initialize();
-    LoadAppAssembly(dllPath.string());
+    if (!LoadAppAssembly(dllPath.string()))
+    {
+        CH_CORE_ERROR("ScriptEngine: Failed to auto-load script assembly '{}'.", dllPath.string());
+        return false;
+    }
     CH_CORE_INFO("ScriptEngine: Auto-loaded script assembly '{}'.", dllPath.string());
     return true;
 }

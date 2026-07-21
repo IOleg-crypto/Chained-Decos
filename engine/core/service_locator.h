@@ -15,9 +15,11 @@ namespace Chained
 class CH_API ServiceLocator
 {
 public:
-    // Registers a service by its type. Takes ownership of the service pointer.
+    // Registers a service by its type. Takes ownership of the service.
     // T must inherit from EngineModule.
-    template <typename T> static void Provide(T* service)
+    // On rejection (locked locator, duplicate registration) the service is destroyed
+    // by the unique_ptr — no leak, unlike the old raw-pointer overload.
+    template <typename T> static void Provide(std::unique_ptr<T> service)
     {
         static_assert(std::is_class_v<T>, "ServiceLocator: Provided type T must be a class or a struct!");
         static_assert(std::is_base_of_v<EngineModule, T>,
@@ -27,19 +29,34 @@ public:
 
         std::unique_lock<std::shared_mutex> lock(GetMutex());
 
-        CH_CORE_ASSERT(!s_IsLocked, "ServiceLocator: Cannot provide a service after the locator has been locked!");
+        // Handled gracefully (log + destroy via unique_ptr) rather than asserted,
+        // so release builds and tests behave the same as debug builds.
         if (s_IsLocked)
         {
+            CH_CORE_ERROR("ServiceLocator: Provide<{}> rejected — locator is locked.", typeid(T).name());
             return;
         }
 
         auto& services = GetInternalMap();
-        CH_CORE_ASSERT(services.find(typeid(T)) == services.end(), "ServiceLocator: Service already provided!");
+        if (services.find(typeid(T)) != services.end())
+        {
+            // Bail explicitly so the duplicate doesn't overwrite the map entry
+            // while the old instance lingers in ModuleOrder.
+            CH_CORE_ERROR("ServiceLocator: Provide<{}> rejected — service already provided.", typeid(T).name());
+            return;
+        }
 
         // shared_ptr<T> -> shared_ptr<void> preserves the correct deleter automatically
-        auto sharedService = std::shared_ptr<T>(service);
+        std::shared_ptr<T> sharedService = std::move(service);
         services[typeid(T)] = sharedService;
-        GetModuleOrder().push_back(sharedService); // ← was GetSystemsOrder() (bug fix)
+        GetModuleOrder().push_back(sharedService);
+    }
+
+    // Convenience overload for legacy call sites: Provide(new T(...)).
+    // Wraps immediately so rejection paths cannot leak.
+    template <typename T> static void Provide(T* service)
+    {
+        Provide(std::unique_ptr<T>(service));
     }
 
     // Registers a NON-OWNING reference to an existing service.
@@ -53,15 +70,18 @@ public:
 
         std::unique_lock<std::shared_mutex> lock(GetMutex());
 
-        CH_CORE_ASSERT(!s_IsLocked, "ServiceLocator: Cannot provide a service after the locator has been locked!");
         if (s_IsLocked)
         {
+            CH_CORE_ERROR("ServiceLocator: ProvideRef<{}> rejected — locator is locked.", typeid(T).name());
             return;
         }
 
         auto& services = GetInternalMap();
-        CH_CORE_ASSERT(services.find(typeid(T)) == services.end(), "ServiceLocator: Service already provided!");
-
+        if (services.find(typeid(T)) != services.end())
+        {
+            CH_CORE_ERROR("ServiceLocator: ProvideRef<{}> rejected — service already provided.", typeid(T).name());
+            return;
+        }
         // No-op deleter: ServiceLocator does NOT own this pointer
         auto sharedService = std::shared_ptr<T>(service, [](T*) {});
         services[typeid(T)] = sharedService;
@@ -75,8 +95,16 @@ public:
     }
     static void InitializeModule()
     {
-        std::shared_lock<std::shared_mutex> lock(GetMutex());
-        for (auto& module : GetModuleOrder())
+        // Copy the module list under the lock, then iterate WITHOUT holding it.
+        // A module's Initialize() may legitimately call Get()/TryGet() (and re-locking
+        // a shared_mutex on the same thread is UB); holding the lock here would deadlock.
+        std::vector<std::shared_ptr<EngineModule>> modules;
+        {
+            std::shared_lock<std::shared_mutex> lock(GetMutex());
+            modules = GetModuleOrder();
+        }
+
+        for (auto& module : modules)
         {
             if (!module->IsEnabled())
                 continue;
@@ -104,6 +132,7 @@ public:
         {
             std::unique_lock<std::shared_mutex> lock(GetMutex());
             s_IsLocked = false;
+            s_IsShuttingDown = true;
             modulesToShutdown = GetModuleOrder();
         }
 
@@ -113,12 +142,18 @@ public:
             {
                 (*it)->Shutdown();
             }
+            // Mark as disabled so Get()/TryGet() report this module as unavailable for
+            // the rest of the shutdown sequence (reverse order: earlier modules may still
+            // legitimately look up their still-alive dependencies, but nobody must ever
+            // receive an already-shut-down service).
+            (*it)->SetEnabled(false);
         }
 
         {
             std::unique_lock<std::shared_mutex> lock(GetMutex());
             GetInternalMap().clear();
             GetModuleOrder().clear();
+            s_IsShuttingDown = false;
         }
     }
     static bool IsAvailable()
@@ -126,6 +161,9 @@ public:
         std::shared_lock<std::shared_mutex> lock(GetMutex());
         return !GetInternalMap().empty();
     }
+    // Contract (shared with TryGet): a disabled module (e.g. its Initialize() threw) is
+    // treated as UNAVAILABLE — both methods return nullptr for it. Get() additionally
+    // asserts, because callers of Get() declare a hard dependency.
     template <typename T> static T* Get()
     {
         static_assert(std::is_base_of_v<EngineModule, T>,
@@ -140,9 +178,20 @@ public:
             T* svc = static_cast<T*>(it->second.get());
             if (!svc->IsEnabled())
             {
-                CH_CORE_WARN("ServiceLocator: Requested service '{}' is disabled!", typeid(T).name());
-                // Still returning it as old code expects a valid pointer, but consumers should check IsEnabled() (or we can return nullptr, but returning nullptr crashes unprotected callers). 
-                // Let's return it, but emit a warning.
+                if (s_IsShuttingDown)
+                {
+                    // Use-after-shutdown: an earlier module is looking up a dependency
+                    // that has already been shut down (reverse order violation).
+                    CH_CORE_ERROR("ServiceLocator: Get<{}> during shutdown — service already shut down.",
+                                  typeid(T).name());
+                }
+                else
+                {
+                    CH_CORE_ASSERT(false, "ServiceLocator: Requested service is disabled (initialization failed?)!");
+                    CH_CORE_ERROR("ServiceLocator: Get<{}> returning nullptr — service is disabled.",
+                                  typeid(T).name());
+                }
+                return nullptr;
             }
             return svc;
         }
@@ -200,6 +249,7 @@ private:
     }
 
     inline static bool s_IsLocked = false;
+    inline static bool s_IsShuttingDown = false;
 };
 } // namespace Chained
 

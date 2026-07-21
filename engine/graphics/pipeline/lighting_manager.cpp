@@ -107,19 +107,23 @@ void LightingManager::SetLightingUniforms(ShaderAsset* shaderAsset, const FrameS
 
 void LightingManager::ApplyFogUniforms(ShaderAsset* shader)
 {
+    if (!shader || !shader->GetShader())
+        return;
+
     const auto& fog = m_Lighting.CurrentFog;
+    auto s = shader->GetShader();
     int enabled = fog.Enabled ? 1 : 0;
     int mode = (int)fog.Mode;
     glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
                        fog.FogColor.a / 255.0f};
 
-    shader->GetShader()->SetInt("fogEnabled", enabled);
-    shader->GetShader()->SetVec4("fogColor", color);
-    shader->GetShader()->SetFloat("fogDensity", fog.Density);
-    shader->GetShader()->SetFloat("fogStart", fog.Start);
-    shader->GetShader()->SetFloat("fogEnd", fog.End);
-    shader->GetShader()->SetInt("fogMode", mode);
-    shader->GetShader()->SetFloat("fogHeightFalloff", fog.HeightFalloff);
+    s->SetInt("fogEnabled", enabled);
+    s->SetVec4("fogColor", color);
+    s->SetFloat("fogDensity", fog.Density);
+    s->SetFloat("fogStart", fog.Start);
+    s->SetFloat("fogEnd", fog.End);
+    s->SetInt("fogMode", mode);
+    s->SetFloat("fogHeightFalloff", fog.HeightFalloff);
 }
 
 } // namespace Chained
