@@ -11,14 +11,33 @@ else()
         $<$<CONFIG:Release>:-fdata-sections>
     )
 
+    # -mstackrealign: MinGW/ELF Clang at -O0 may misalign the stack,
+    # causing SSE/AVX faults inside CoreCLR/hostfxr (same as GCC).
+    if(MINGW OR (NOT WIN32))
+        add_compile_options(
+            $<$<CONFIG:Debug>:-mstackrealign>
+        )
+    endif()
+
     if(MINGW)
         add_compile_options(-Wa,-mbig-obj)
     endif()
 
-    # Dead Code Elimination linkage and binary stripping for Release build
-    add_link_options(
-        $<$<CONFIG:Release>:-Wl,--gc-sections>
-    )
+    # Dead Code Elimination linkage
+    if(MINGW OR (NOT WIN32))
+        # ELF / MinGW ld — standard gc-sections
+        add_link_options(
+            $<$<CONFIG:Release>:-Wl,--gc-sections>
+        )
+    endif()
+
+    # Windows targeting lld-link — /OPT:REF /OPT:ICF replaces --gc-sections
+    if(WIN32 AND NOT MINGW)
+        add_link_options(
+            $<$<CONFIG:Release>:/OPT:REF>
+            $<$<CONFIG:Release>:/OPT:ICF>
+        )
+    endif()
 
     if(DISABLE_ALL_WARNINGS)
         add_compile_options(-w)
@@ -30,6 +49,15 @@ else()
     else()
         add_compile_options(-Wno-all)
     endif()
+endif()
+
+# Prefer LLD linker (same logic as CompilerGCC.cmake).
+# Use the name "lld" (not the full path) so Clang resolves the correct
+# sub-driver (ld.lld for ELF/MinGW, lld-link for MSVC ABI).
+find_program(CH_CLANG_LLD_LINKER NAMES ld.lld lld lld-link)
+if(CH_CLANG_LLD_LINKER)
+    add_link_options(-fuse-ld=lld)
+    message(STATUS "Clang: using LLD linker (${CH_CLANG_LLD_LINKER})")
 endif()
 
 if(ENABLE_SANITIZERS)
