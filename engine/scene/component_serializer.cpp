@@ -1,9 +1,7 @@
 #include "component_serializer.h"
-#include "components/control_component.h"
 #include "components/id_component.h"
-#include "components/ui_action_component.h"
-#include "engine/scene/component_registry.h"
 #include "engine/scene/hierarchy_serializer.h"
+#include "engine/scene/serialization.h"
 
 namespace Chained
 {

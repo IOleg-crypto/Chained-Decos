@@ -65,23 +65,6 @@ void CommandHistory::Redo()
     Notify();
 }
 
-void CommandHistory::Clear()
-{
-    m_UndoStack.clear();
-    m_RedoStack.clear();
-    Notify();
-}
-
-std::string CommandHistory::GetUndoName() const
-{
-    return m_UndoStack.empty() ? "" : m_UndoStack.back()->GetName();
-}
-
-std::string CommandHistory::GetRedoName() const
-{
-    return m_RedoStack.empty() ? "" : m_RedoStack.back()->GetName();
-}
-
 void CommandHistory::Notify()
 {
     if (m_NotifyCallback)

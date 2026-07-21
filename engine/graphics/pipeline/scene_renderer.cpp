@@ -141,6 +141,10 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 {
     CH_PROFILE_FUNCTION();
 
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
+
     GraphicsDevice::Get().EnableDepthTest();
 
     auto environment = options.EnvironmentOverride ? options.EnvironmentOverride : settings.Environment;
@@ -148,13 +152,13 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     if (environment)
     {
         const auto& envSettings = environment->GetSettings();
-        auto& rendererLighting = ServiceLocator::Get<Renderer>()->GetLighting().GetData();
+        auto& rendererLighting = renderer->GetLighting().GetData();
         rendererLighting.CurrentLighting = envSettings.Lighting;
         rendererLighting.CurrentFog = envSettings.Fog;
         m_CurrentEnv = envSettings;
     }
 
-    ServiceLocator::Get<Renderer>()->UpdateTime(Timestep(Platform::GetTime()));
+    renderer->UpdateTime(Timestep(Platform::GetTime()));
 
     m_CurrentStats = {};
     m_CurrentStats.EntityCount = (uint32_t)registry.storage<entt::entity>().size();
@@ -167,7 +171,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     // (BeginScene uploads the SSBO to the GPU).
     PrepareLights(registry, frustum);
 
-    ServiceLocator::Get<Renderer>()->BeginScene(camera, nearClip, farClip);
+    renderer->BeginScene(camera, nearClip, farClip);
 
     RenderContext ctx{registry, settings, camera, options, nearClip, farClip, this};
 
@@ -188,7 +192,6 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
         if (pass->GetName() == "ShadowPass")
         {
             auto* shadowPass = static_cast<ShadowPass*>(pass.get());
-            auto* renderer = ServiceLocator::Get<Renderer>();
             uint32_t shadowTexID = 0;
             if (shadowPass->HasShadows() && shadowPass->GetShadowMap())
                 shadowTexID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
@@ -200,7 +203,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     RenderSprites(registry, camera);
     RenderDebug(registry, settings, camera, options);
 
-    ServiceLocator::Get<Renderer>()->EndScene();
+    renderer->EndScene();
 
     Profiler::UpdateStats(m_CurrentStats);
 }
@@ -208,6 +211,9 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& camera)
 {
     CH_PROFILE_FUNCTION();
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
     auto view = registry.view<TransformComponent, SpriteComponent>();
 
     struct SpriteEntry
@@ -244,16 +250,19 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(sprite.TexturePath);
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
-            ServiceLocator::Get<Renderer>()->DrawSprite(textureAsset->GetTexture()->GetNativeHandle(),
-                                                        transform.WorldTransform, ColorToVec4(sprite.Tint),
-                                                        sprite.FlipX, sprite.FlipY);
+            renderer->DrawSprite(textureAsset->GetTexture()->GetNativeHandle(),
+                                  transform.WorldTransform, ColorToVec4(sprite.Tint),
+                                  sprite.FlipX, sprite.FlipY);
         }
     }
 }
 
 void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frustum)
 {
-    auto& lighting = ServiceLocator::Get<Renderer>()->GetLighting().GetData();
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
+    auto& lighting = renderer->GetLighting().GetData();
 
     for (auto& l : lighting.Lights)
     {
@@ -479,6 +488,10 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
                               const std::vector<Chained::ShaderUniform>& shaderUniformOverrides,
                               Chained::RenderPassStage pass)
 {
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
+
     if (!modelAsset || modelAsset->GetState() != Chained::AssetState::Ready)
     {
         return;
@@ -488,8 +501,8 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
     std::string fallbackName = boneMatrices.empty() ? "Lighting" : "Skinned";
     auto activeShader = shaderOverride
                             ? shaderOverride
-                            : (ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists(fallbackName)
-                                   ? ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get(fallbackName).get()
+                            : (renderer->GetShaderLibrary().Exists(fallbackName)
+                                   ? renderer->GetShaderLibrary().Get(fallbackName).get()
                                    : nullptr);
 
     if (!activeShader || !activeShader->GetShader())
@@ -538,8 +551,8 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
         material.ShaderID = activeShader->GetShader()->GetNativeHandle();
 
         activeShader->GetShader()->Bind();
-        ServiceLocator::Get<Renderer>()->DrawMesh(model.Meshes[i], material,
-                                                  transform * inst.localTransform);
+        renderer->DrawMesh(model.Meshes[i], material,
+                           transform * inst.localTransform);
         material.ShaderID = originalID;
     }
 }
@@ -585,11 +598,15 @@ void SceneRenderer::BindShaderUniforms(Chained::ShaderAsset* shaderAsset, const 
         return;
     }
 
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
+
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
     // Use shared lighting uniforms from Renderer
-    ServiceLocator::Get<Renderer>()->SetLightingUniforms(shaderAsset);
+    renderer->SetLightingUniforms(shaderAsset);
 
     if (!boneMatrices.empty())
     {
@@ -707,6 +724,10 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
         return;
     }
 
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
+
     // Save current state
     auto guard = PipelineStateGuard::Capture();
     guard.WithDepthTest().WithBlend().WithWireframeMode();
@@ -736,14 +757,18 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     if (options.DrawGrid)
     {
         auto& grid = settings.Grid;
-        ServiceLocator::Get<DebugRenderer>()->DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f}, *ServiceLocator::Get<Renderer>());
+        ServiceLocator::Get<DebugRenderer>()->DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f}, *renderer);
     }
 
-    ServiceLocator::Get<DebugRenderer>()->Flush(*ServiceLocator::Get<Renderer>());
+    ServiceLocator::Get<DebugRenderer>()->Flush(*renderer);
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer)
+        return;
+
     int mode = options.SetCollisionWireframeMode;
     bool drawSolid = (mode == 1 || mode == 2);
     bool drawWire = (mode == 0 || mode == 2);
@@ -791,19 +816,19 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
 
                 if (collider.Type == ColliderType::Box)
                 {
-                    ServiceLocator::Get<DebugRenderer>()->DrawCubeWires(baseTransform, collider.Size * entityScale, color, *ServiceLocator::Get<Renderer>(), isWireframe);
+                    ServiceLocator::Get<DebugRenderer>()->DrawCubeWires(baseTransform, collider.Size * entityScale, color, *renderer, isWireframe);
                 }
                 else if (collider.Type == ColliderType::Sphere)
                 {
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
-                    ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(baseTransform, collider.Radius * maxScale, color, *ServiceLocator::Get<Renderer>(), isWireframe);
+                    ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(baseTransform, collider.Radius * maxScale, color, *renderer, isWireframe);
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
 
                     float radiusScale = glm::max(entityScale.x, entityScale.z);
                     ServiceLocator::Get<DebugRenderer>()->DrawCapsuleWires(baseTransform, collider.Radius * radiusScale,
-                                                    collider.Height * entityScale.y, color, *ServiceLocator::Get<Renderer>(), isWireframe);
+                                                    collider.Height * entityScale.y, color, *renderer, isWireframe);
                 }
             }
             else if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
@@ -818,7 +843,7 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                         glm::mat4 finalMat = meshTrans * inst.localTransform;
                         if (inst.meshIndex >= 0 && inst.meshIndex < model.Meshes.size())
                         {
-                            ServiceLocator::Get<DebugRenderer>()->DrawMeshWire(model.Meshes[inst.meshIndex], color, finalMat, *ServiceLocator::Get<Renderer>(), isWireframe);
+                            ServiceLocator::Get<DebugRenderer>()->DrawMeshWire(model.Meshes[inst.meshIndex], color, finalMat, *renderer, isWireframe);
                         }
                     }
                 }

@@ -48,6 +48,11 @@ target_include_directories(engine_tests_integration PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
+# Engine PCH is PRIVATE on engine modules; apply it here explicitly.
+if(COMMAND apply_engine_optimizations)
+    apply_engine_optimizations(engine_tests_integration)
+endif()
+
 include(GoogleTest)
 # Integration tests run as a SINGLE ctest entry (one process for the whole
 # binary) rather than via gtest_discover_tests. With PRE_TEST discovery every

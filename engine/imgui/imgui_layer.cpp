@@ -7,28 +7,29 @@
 #include "engine/app/application.h"
 #include "imgui.h"
 
-
 #include "backends/imgui_impl_glfw.h"
 #include <GLFW/glfw3.h>
 
 namespace Chained
 {
+static constexpr const char* kGLSLVersion = "#version 430";
+
 void ImGuiLayer::SetContext(ImGuiContext* context)
 {
     ImGui::SetCurrentContext(context);
 }
 
-ImGuiLayer::ImGuiLayer()
-{
-}
-
-ImGuiLayer::~ImGuiLayer()
-{
-}
-
 void ImGuiLayer::OnAttach()
 {
     CH_PROFILE_FUNCTION();
+
+    // Validate native window before creating the ImGui context to avoid leaks on failure.
+    GLFWwindow* window = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+    if (!window)
+    {
+        CH_CORE_ERROR("ImGuiLayer: Failed to get native window handle!");
+        return;
+    }
 
     // Setup ImGui context
     IMGUI_CHECKVERSION();
@@ -49,14 +50,8 @@ void ImGuiLayer::OnAttach()
         style.Colors[ImGuiCol_WindowBg].w = 1.0f;
     }
 
-    GLFWwindow* window = (GLFWwindow*)Application::Get().GetWindow().GetNativeWindow();
-    if (!window)
-    {
-        CH_CORE_ERROR("ImGuiLayer: Failed to get native window handle!");
-        return;
-    }
     ImGui_ImplGlfw_InitForOpenGL(window, false);
-    ImGui_ImplOpenGL3_Init("#version 430");
+    ImGui_ImplOpenGL3_Init(kGLSLVersion);
 }
 
 void ImGuiLayer::OnDetach()
@@ -87,16 +82,30 @@ void ImGuiLayer::End()
     io.DisplaySize =
         ImVec2((float)Application::Get().GetWindow().GetWidth(), (float)Application::Get().GetWindow().GetHeight());
 
-    // Rendering
+    // 1. Render main window
     ImGui::Render();
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
+    // 2. Render additional windows (Viewports)
     if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
     {
         GLFWwindow* backup_current_context = glfwGetCurrentContext();
         ImGui::UpdatePlatformWindows();
         ImGui::RenderPlatformWindowsDefault();
         glfwMakeContextCurrent(backup_current_context);
+    }
+
+    // === SUPER SAFE ZONE: FRAME FULLY COMPLETED ===
+    if (!m_DeferredTasks.empty())
+    {
+        for (const auto& task : m_DeferredTasks)
+        {
+            if (task)
+            {
+                task();
+            }
+        }
+        m_DeferredTasks.clear();
     }
 }
 
@@ -107,6 +116,11 @@ bool ImGuiLayer::RefreshFontAtlasTexture()
         CH_CORE_WARN("ImGuiLayer: Cannot refresh font atlas without an active ImGui context.");
         return false;
     }
+
+    // Build the atlas explicitly so that CreateDeviceObjects() always uploads
+    // a valid texture (ImGui_ImplOpenGL3_CreateFontsTexture checks IsBuilt(),
+    // but after ClearFonts() + AddFontFromFile() the atlas is dirty/unbuilt).
+    ImGui::GetIO().Fonts->Build();
 
     ImGui_ImplOpenGL3_DestroyDeviceObjects();
     if (!ImGui_ImplOpenGL3_CreateDeviceObjects())
@@ -121,11 +135,11 @@ bool ImGuiLayer::RefreshFontAtlasTexture()
 
 void ImGuiLayer::OnEvent(Event& e)
 {
-    if (m_BlockEvents)
+    if (m_BlockEvents && !e.Handled)
     {
         ImGuiIO& io = ImGui::GetIO();
-        e.Handled |= e.IsInCategory(EventCategoryMouse) & io.WantCaptureMouse;
-        e.Handled |= e.IsInCategory(EventCategoryKeyboard) & io.WantCaptureKeyboard;
+        e.Handled |= e.IsInCategory(EventCategoryMouse) && io.WantCaptureMouse;
+        e.Handled |= e.IsInCategory(EventCategoryKeyboard) && io.WantCaptureKeyboard;
     }
 }
 
@@ -133,13 +147,16 @@ void* ImGuiLayer::AddFontFromFile(const std::string& path, float size, const voi
 {
     if (!ImGui::GetCurrentContext())
     {
-        CH_CORE_WARN("ImGuiLayer: Cannot add font without an active ImGui context.");
         return nullptr;
     }
 
     ImGuiIO& io = ImGui::GetIO();
+
+    // ImGui внутрішньо робить глибоку копію конфігу, якщо ми передаємо його через AddFontFromFileTTF.
+    // Але він НЕ копіює масив ranges, тому static масив у EditorLayer — це єдиний порятунок від крашу.
     ImFont* font =
         io.Fonts->AddFontFromFileTTF(path.c_str(), size, (const ImFontConfig*)config, (const ImWchar*)ranges);
+
     if (!font)
     {
         CH_CORE_ERROR("ImGuiLayer: Failed to load font from '{}'", path);
@@ -154,6 +171,11 @@ void ImGuiLayer::ClearFonts()
         CH_CORE_WARN("ImGuiLayer: Cannot clear fonts without an active ImGui context.");
         return;
     }
-    ImGui::GetIO().Fonts->Clear();
+    ImGuiIO& io = ImGui::GetIO();
+    io.Fonts->Clear();
+    // Reset FontDefault to avoid a dangling pointer — it pointed into the
+    // now-freed atlas data.  ImGui will pick up the first font in the
+    // rebuilt atlas on the next frame.
+    io.FontDefault = nullptr;
 }
 } // namespace Chained

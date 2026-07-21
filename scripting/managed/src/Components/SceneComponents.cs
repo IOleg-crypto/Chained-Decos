@@ -65,9 +65,9 @@ public class CameraComponent : Component
     internal static unsafe delegate* unmanaged<ulong, Vector3*, void> Camera_GetRight_Ptr;
     internal static unsafe delegate* unmanaged<ulong, float*, float*, float*, void> Camera_GetOrbit_Ptr;
     internal static unsafe delegate* unmanaged<ulong, float, float, float, void> Camera_SetOrbit_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetPrimary_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> Camera_GetPrimary_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetPrimary_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> Camera_GetIsOrbit_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> Camera_GetIsOrbit_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetIsOrbit_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*> Camera_GetTargetTag_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, void> Camera_SetTargetTag_Ptr;
@@ -111,13 +111,13 @@ public class CameraComponent : Component
 
     public bool Primary
     {
-        get { unsafe { return Camera_GetPrimary_Ptr(Entity.ID); } }
+        get { unsafe { return Camera_GetPrimary_Ptr(Entity.ID) != 0; } }
         set { unsafe { Camera_SetPrimary_Ptr(Entity.ID, value); } }
     }
 
     public bool IsOrbitCamera
     {
-        get { unsafe { return Camera_GetIsOrbit_Ptr(Entity.ID); } }
+        get { unsafe { return Camera_GetIsOrbit_Ptr(Entity.ID) != 0; } }
         set { unsafe { Camera_SetIsOrbit_Ptr(Entity.ID, value); } }
     }
 
@@ -134,7 +134,7 @@ public class AudioComponent : Component
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, float, void> AudioComponent_SetVolume_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> AudioComponent_SetLoop_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> AudioComponent_IsPlaying_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> AudioComponent_IsPlaying_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*> AudioComponent_GetSoundPath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
     internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Stop_Ptr;
@@ -142,7 +142,7 @@ public class AudioComponent : Component
 
     private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
     private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, loop);
-    private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID);
+    private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID) != 0;
     private static unsafe string GetSoundPath(ulong entityID) => Marshal.PtrToStringUni(new IntPtr(AudioComponent_GetSoundPath_Ptr(entityID))) ?? string.Empty;
 
     public float Volume { set => SetVolume(Entity.ID, value); }
@@ -169,9 +169,9 @@ public class SpriteComponent : Component
     internal static unsafe delegate* unmanaged<ulong, char*, void> SpriteComponent_SetTexturePath_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipX_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> SpriteComponent_GetFlipX_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipX_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> SpriteComponent_GetFlipY_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> SpriteComponent_GetFlipY_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipY_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int> SpriteComponent_GetZOrder_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int, void> SpriteComponent_SetZOrder_Ptr;
@@ -191,13 +191,13 @@ public class SpriteComponent : Component
 
     public bool FlipX
     {
-        get { unsafe { return SpriteComponent_GetFlipX_Ptr(Entity.ID); } }
+        get { unsafe { return SpriteComponent_GetFlipX_Ptr(Entity.ID) != 0; } }
         set { unsafe { SpriteComponent_SetFlipX_Ptr(Entity.ID, value); } }
     }
 
     public bool FlipY
     {
-        get { unsafe { return SpriteComponent_GetFlipY_Ptr(Entity.ID); } }
+        get { unsafe { return SpriteComponent_GetFlipY_Ptr(Entity.ID) != 0; } }
         set { unsafe { SpriteComponent_SetFlipY_Ptr(Entity.ID, value); } }
     }
 
@@ -214,13 +214,13 @@ public class ShaderComponent : Component
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, char*, float, void> Shader_SetFloat_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, Vector3*, void> Shader_SetVec3_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> Shader_GetEnabled_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> Shader_GetEnabled_Ptr;
     internal static unsafe delegate* unmanaged<ulong, bool, void> Shader_SetEnabled_Ptr;
 #pragma warning restore 0649
 
     public bool Enabled
     {
-        get { unsafe { return Shader_GetEnabled_Ptr(Entity.ID); } }
+        get { unsafe { return Shader_GetEnabled_Ptr(Entity.ID) != 0; } }
         set { unsafe { Shader_SetEnabled_Ptr(Entity.ID, value); } }
     }
 
@@ -273,15 +273,15 @@ public class PlayerComponent : Component
 public class SpawnComponent : Component
 {
 #pragma warning disable 0649
-    internal static unsafe delegate* unmanaged<ulong, bool> SpawnComponent_IsActive_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_IsActive_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool> SpawnComponent_GetRenderSpawnZoneInScene_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_GetRenderSpawnZoneInScene_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetZoneSize_Ptr;
 #pragma warning restore 0649
 
     public bool IsActive
     {
-        get { unsafe { return SpawnComponent_IsActive_Ptr != null && SpawnComponent_IsActive_Ptr(Entity.ID); } }
+        get { unsafe { return SpawnComponent_IsActive_Ptr != null && SpawnComponent_IsActive_Ptr(Entity.ID) != 0; } }
     }
 
     public Vector3 SpawnPoint
@@ -300,7 +300,7 @@ public class SpawnComponent : Component
 
     public bool RenderSpawnZoneInScene
     {
-        get { unsafe { return SpawnComponent_GetRenderSpawnZoneInScene_Ptr != null && SpawnComponent_GetRenderSpawnZoneInScene_Ptr(Entity.ID); } }
+        get { unsafe { return SpawnComponent_GetRenderSpawnZoneInScene_Ptr != null && SpawnComponent_GetRenderSpawnZoneInScene_Ptr(Entity.ID) != 0; } }
     }
 
     public Vector3 ZoneSize

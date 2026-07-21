@@ -16,6 +16,7 @@
 #include "engine/scene/prefab_serializer.h"
 #include "engine/core/platform.h"
 #include <functional>
+#include <queue>
 #include <vector>
 
 namespace
@@ -23,12 +24,26 @@ namespace
     bool IsDescendant(Chained::Entity child, Chained::Entity possibleParent)
     {
         if (child == possibleParent) return true;
-        
+
         if (!possibleParent.HasComponent<Chained::HierarchyComponent>()) return false;
-        
+
+        std::queue<entt::entity> queue;
         for (entt::entity c : possibleParent.GetComponent<Chained::HierarchyComponent>().Children)
+            queue.push(c);
+
+        while (!queue.empty())
         {
-            if (IsDescendant(child, Chained::Entity(c, child.GetRegistryPtr()))) return true;
+            entt::entity current = queue.front();
+            queue.pop();
+
+            Chained::Entity currentEnt(current, child.GetRegistryPtr());
+            if (currentEnt == child) return true;
+
+            if (currentEnt.HasComponent<Chained::HierarchyComponent>())
+            {
+                for (entt::entity c : currentEnt.GetComponent<Chained::HierarchyComponent>().Children)
+                    queue.push(c);
+            }
         }
         return false;
     }

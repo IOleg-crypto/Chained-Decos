@@ -7,6 +7,8 @@ namespace Chained
 {
 void Camera_GetForward(uint64_t entityID, glm::vec3* outForward)
 {
+    if (!outForward)
+        return;
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<TransformComponent>())
     {
@@ -17,10 +19,13 @@ void Camera_GetForward(uint64_t entityID, glm::vec3* outForward)
     else
     {
         CH_CORE_WARN("[Diag Camera_GetForward] entityID={} NOT FOUND or no TransformComponent!", entityID);
+        *outForward = {};
     }
 }
 void Camera_GetRight(uint64_t entityID, glm::vec3* outRight)
 {
+    if (!outRight)
+        return;
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<TransformComponent>())
     {
@@ -28,9 +33,14 @@ void Camera_GetRight(uint64_t entityID, glm::vec3* outRight)
         glm::quat rotation = tc.RotationQuat;
         *outRight = rotation * glm::vec3(1.0f, 0.0f, 0.0f);
     }
+    else
+    {
+        *outRight = {};
+    }
 }
 void Camera_SetOrbit(uint64_t entityID, float yaw, float pitch, float distance)
 {
+    CH_CORE_INFO("[Diag Camera] SetOrbit entity={} yaw={} pitch={} dist={}", entityID, yaw, pitch, distance);
     Entity entity = GetEntity(entityID);
     Scene* scene = GetActiveScene();
     if (entity && entity.HasComponent<CameraComponent>() && entity.HasComponent<TransformComponent>() && scene)

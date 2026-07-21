@@ -34,6 +34,8 @@ public:
 
     // --- Shader uniform binding ---
     void SetLightingUniforms(ShaderAsset* shaderAsset, const FrameState& frame);
+    /// Applies fog uniforms to the given shader asset.
+    void ApplyFogUniforms(ShaderAsset* shader);
 
     // --- Accessors for direct data access ---
     LightingData&       GetData()       { return m_Lighting; }
@@ -42,8 +44,6 @@ public:
     const ShadowState&  GetShadowData() const { return m_Shadow; }
 
 private:
-    void ApplyFogUniforms(ShaderAsset* shader);
-
     LightingData& m_Lighting;
     ShadowState&  m_Shadow;
 };

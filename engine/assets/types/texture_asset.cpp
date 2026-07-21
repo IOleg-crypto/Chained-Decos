@@ -62,7 +62,15 @@ void TextureAsset::OnLoaded()
         }
         m_HasPendingImage = false;
 
-        SetState(AssetState::Ready);
+        if (m_Texture)
+        {
+            SetState(AssetState::Ready);
+        }
+        else
+        {
+            CH_CORE_ERROR("TextureAsset: Failed to create GPU texture for '{}'", m_Path);
+            SetState(AssetState::Failed);
+        }
     }
 }
 

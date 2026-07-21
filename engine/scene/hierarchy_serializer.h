@@ -9,7 +9,7 @@ namespace Chained
 struct HierarchyTask
 {
     Entity entity;
-    uint64_t parent;
+    uint64_t parent = 0;
     std::vector<uint64_t> children;
 };
 

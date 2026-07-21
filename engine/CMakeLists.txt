@@ -42,7 +42,7 @@ target_link_libraries(engine PUBLIC
     engine_app
 )
 
-target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD GLM_ENABLE_EXPERIMENTAL)
+target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
 
 if(CH_ENGINE_SHARED)
     target_compile_definitions(engine PUBLIC 

@@ -10,8 +10,8 @@
 
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/profiler.h"
 #include "engine/common/thread_pool.h"
+#include "engine/core/profiler.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
@@ -21,8 +21,9 @@
 #include "scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "ui/project_selector_ui.h"
-
 #include <ImGuizmo.h>
+#include <imgui.h>
+#include <imgui_internal.h>
 #include <yaml-cpp/yaml.h>
 
 namespace Chained
@@ -77,17 +78,11 @@ EditorLayer::EditorLayer()
     // any layer is constructed (layers are pushed from CreateApplication after `new
     // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
     m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
-    m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
+    m_Context.Scripting = ServiceLocator::TryGet<ScriptEngine>(); // null if scripting disabled
     m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>(); // null in headless mode
-
-    // Default debug settings
-    GetDebugRenderFlags().DrawColliders = true;
-    GetDebugRenderFlags().DrawLights = true;
-    GetDebugRenderFlags().DrawSpawnZones = true;
-
     m_ProjectManager = std::make_unique<EditorProjectManager>();
-    m_SceneManager = std::make_unique<EditorSceneManager>(
-        m_CommandHistory, *m_ProjectManager, m_Config, m_ViewportSize, m_EditorState, m_Context);
+    m_SceneManager = std::make_unique<EditorSceneManager>(m_CommandHistory, *m_ProjectManager, m_Config, m_ViewportSize,
+                                                          m_EditorState, m_Context);
 
     // Forward scene events (e.g. SceneChangeRequestEvent) back to EditorLayer::OnEvent
     m_SceneManager->SetSceneEventCallback([this](Event& e) { OnEvent(e); });
@@ -104,6 +99,15 @@ EditorLayer::~EditorLayer()
 {
     SetSelectedEntity({});
     s_Instance = nullptr;
+}
+
+template <typename T>
+static void LoadYAMLField(const YAML::Node& node, const char* key, T& target)
+{
+    if (node[key])
+    {
+        target = node[key].as<T>(target);
+    }
 }
 
 void EditorLayer::LoadConfig()
@@ -126,22 +130,10 @@ void EditorLayer::LoadConfig()
                 m_ProjectManager->SetLastProjectPath(lastProj);
                 m_Config.LastProjectPath = lastProj;
             }
-            if (node["LastScenePath"])
-            {
-                m_Config.LastScenePath = node["LastScenePath"].as<std::string>("");
-            }
-            if (node["LoadLastProjectOnStartup"])
-            {
-                m_Config.LoadLastProjectOnStartup = node["LoadLastProjectOnStartup"].as<bool>(false);
-            }
-            if (node["AutoSaveEnabled"])
-            {
-                m_Config.AutoSaveEnabled = node["AutoSaveEnabled"].as<bool>(true);
-            }
-            if (node["AutoSaveInterval"])
-            {
-                m_Config.AutoSaveInterval = node["AutoSaveInterval"].as<float>(300.0f);
-            }
+            LoadYAMLField(node, "LastScenePath", m_Config.LastScenePath);
+            LoadYAMLField(node, "LoadLastProjectOnStartup", m_Config.LoadLastProjectOnStartup);
+            LoadYAMLField(node, "AutoSaveEnabled", m_Config.AutoSaveEnabled);
+            LoadYAMLField(node, "AutoSaveInterval", m_Config.AutoSaveInterval);
             if (node["RecentProjects"])
             {
                 m_Config.RecentProjects.clear();
@@ -150,86 +142,26 @@ void EditorLayer::LoadConfig()
                     m_Config.RecentProjects.push_back(entry.as<std::string>());
                 }
             }
-            if (node["FontPath"])
-            {
-                m_Config.FontPath = node["FontPath"].as<std::string>(m_Config.FontPath);
-            }
-            if (node["FontSize"])
-            {
-                m_Config.FontSize = node["FontSize"].as<float>(m_Config.FontSize);
-            }
-            if (node["IconSizeScale"])
-            {
-                m_Config.IconSizeScale = node["IconSizeScale"].as<float>(m_Config.IconSizeScale);
-            }
-            if (node["IconSizeMin"])
-            {
-                m_Config.IconSizeMin = node["IconSizeMin"].as<float>(m_Config.IconSizeMin);
-            }
-            if (node["IconSizeMax"])
-            {
-                m_Config.IconSizeMax = node["IconSizeMax"].as<float>(m_Config.IconSizeMax);
-            }
-            if (node["CameraMoveSpeed"])
-            {
-                m_Config.CameraMoveSpeed = node["CameraMoveSpeed"].as<float>(m_Config.CameraMoveSpeed);
-            }
-            if (node["CameraBoostMultiplier"])
-            {
-                m_Config.CameraBoostMultiplier = node["CameraBoostMultiplier"].as<float>(m_Config.CameraBoostMultiplier);
-            }
-            if (node["DisableCameraZoom"])
-            {
-                m_Config.DisableCameraZoom = node["DisableCameraZoom"].as<bool>(m_Config.DisableCameraZoom);
-            }
-            if (node["CameraRotationSpeed"])
-            {
-                m_Config.CameraRotationSpeed = node["CameraRotationSpeed"].as<float>(m_Config.CameraRotationSpeed);
-            }
-            if (node["CameraZoomSpeedMultiplier"])
-            {
-                m_Config.CameraZoomSpeedMultiplier = node["CameraZoomSpeedMultiplier"].as<float>(m_Config.CameraZoomSpeedMultiplier);
-            }
-            if (node["CameraFovDegrees"])
-            {
-                m_Config.CameraFovDegrees = node["CameraFovDegrees"].as<float>(m_Config.CameraFovDegrees);
-            }
-            if (node["CameraNearClip"])
-            {
-                m_Config.CameraNearClip = node["CameraNearClip"].as<float>(m_Config.CameraNearClip);
-            }
-            if (node["CameraFarClip"])
-            {
-                m_Config.CameraFarClip = node["CameraFarClip"].as<float>(m_Config.CameraFarClip);
-            }
-            if (node["ShowEditorIcons"])
-            {
-                m_Config.ShowEditorIcons = node["ShowEditorIcons"].as<bool>(m_Config.ShowEditorIcons);
-            }
-            if (node["GizmoScale"])
-            {
-                m_Config.GizmoScale = node["GizmoScale"].as<float>(m_Config.GizmoScale);
-            }
-            if (node["DefaultThumbnailSize"])
-            {
-                m_Config.DefaultThumbnailSize = node["DefaultThumbnailSize"].as<float>(m_Config.DefaultThumbnailSize);
-            }
-            if (node["DefaultSortOrder"])
-            {
-                m_Config.DefaultSortOrder = node["DefaultSortOrder"].as<int>(m_Config.DefaultSortOrder);
-            }
-            if (node["ShowFileExtensions"])
-            {
-                m_Config.ShowFileExtensions = node["ShowFileExtensions"].as<bool>(m_Config.ShowFileExtensions);
-            }
-            if (node["ConfirmOnSceneClose"])
-            {
-                m_Config.ConfirmOnSceneClose = node["ConfirmOnSceneClose"].as<bool>(m_Config.ConfirmOnSceneClose);
-            }
-            if (node["MaxRecentProjects"])
-            {
-                m_Config.MaxRecentProjects = node["MaxRecentProjects"].as<int>(m_Config.MaxRecentProjects);
-            }
+            LoadYAMLField(node, "FontPath", m_Config.FontPath);
+            LoadYAMLField(node, "FontSize", m_Config.FontSize);
+            LoadYAMLField(node, "IconSizeScale", m_Config.IconSizeScale);
+            LoadYAMLField(node, "IconSizeMin", m_Config.IconSizeMin);
+            LoadYAMLField(node, "IconSizeMax", m_Config.IconSizeMax);
+            LoadYAMLField(node, "CameraMoveSpeed", m_Config.CameraMoveSpeed);
+            LoadYAMLField(node, "CameraBoostMultiplier", m_Config.CameraBoostMultiplier);
+            LoadYAMLField(node, "DisableCameraZoom", m_Config.DisableCameraZoom);
+            LoadYAMLField(node, "CameraRotationSpeed", m_Config.CameraRotationSpeed);
+            LoadYAMLField(node, "CameraZoomSpeedMultiplier", m_Config.CameraZoomSpeedMultiplier);
+            LoadYAMLField(node, "CameraFovDegrees", m_Config.CameraFovDegrees);
+            LoadYAMLField(node, "CameraNearClip", m_Config.CameraNearClip);
+            LoadYAMLField(node, "CameraFarClip", m_Config.CameraFarClip);
+            LoadYAMLField(node, "ShowEditorIcons", m_Config.ShowEditorIcons);
+            LoadYAMLField(node, "GizmoScale", m_Config.GizmoScale);
+            LoadYAMLField(node, "DefaultThumbnailSize", m_Config.DefaultThumbnailSize);
+            LoadYAMLField(node, "DefaultSortOrder", m_Config.DefaultSortOrder);
+            LoadYAMLField(node, "ShowFileExtensions", m_Config.ShowFileExtensions);
+            LoadYAMLField(node, "ConfirmOnSceneClose", m_Config.ConfirmOnSceneClose);
+            LoadYAMLField(node, "MaxRecentProjects", m_Config.MaxRecentProjects);
         }
     } catch (const std::exception& e)
     {
@@ -282,6 +214,11 @@ void EditorLayer::SaveConfig()
 
     std::filesystem::path configPath = std::filesystem::current_path() / "editor_settings.yaml";
     std::ofstream fout(configPath);
+    if (!fout.is_open())
+    {
+        CH_CORE_ERROR("EditorLayer: Failed to open editor settings for writing: {}", configPath.string());
+        return;
+    }
     fout << out.c_str();
 }
 
@@ -297,11 +234,15 @@ void EditorLayer::OnAttach()
     PropertyEditor::Init();
     m_Panels->Init();
 
-    m_CommandHistory.SetNotifyCallback(
-        [this]() {
-            CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor...");
-            m_SceneManager->MarkSceneDirty();
-        });
+    m_CommandHistory.SetNotifyCallback([this]() {
+        CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor...");
+        m_SceneManager->MarkSceneDirty();
+    });
+
+    // Load editor fonts BEFORE project auto-load.
+    // OnProjectOpened will clear + rebuild the atlas (editor + project fonts together).
+    // LoadEditorFonts must run first so there is a valid atlas for the initial UI frame.
+    LoadEditorFonts();
 
     // Auto-load last project/scene
     const auto& config = GetConfig();
@@ -311,6 +252,9 @@ void EditorLayer::OnAttach()
     {
         CH_CORE_INFO("Auto-loading last project: {}", m_ProjectManager->GetLastProjectPath());
         m_ProjectManager->OpenProject(m_ProjectManager->GetLastProjectPath());
+        // No ImGui frame is in flight during OnAttach, so it is safe (and
+        // required — the scene below needs asset dirs set) to process now.
+        m_ProjectManager->ProcessPendingProjectOpen();
 
         if (!config.LastScenePath.empty() && std::filesystem::exists(config.LastScenePath))
         {
@@ -342,29 +286,29 @@ void EditorLayer::OnAttach()
         CH_CORE_WARN("Editor icon not found at: {}", iconPath);
     }
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
-
-    LoadEditorFonts();
 }
 
-void EditorLayer::LoadEditorFonts()
+void EditorLayer::AddEditorFontsToAtlas()
 {
     auto* imguiLayer = Application::Get().GetImGuiLayer();
     if (!imguiLayer)
     {
-        CH_CORE_ERROR("EditorLayer: ImGuiLayer not found!");
         return;
     }
 
     float fontSize = m_Config.FontSize > 0.0f ? m_Config.FontSize : 16.0f;
     auto engineRoot = ServiceLocator::Get<AssetManager>()->GetEngineRoot();
 
-    // --- Default UI Font (from config, defaults to Lato Bold) ---
     std::string relFont = !m_Config.FontPath.empty() ? m_Config.FontPath : "resources/font/lato/lato-bold.ttf";
     std::string fontPath = (engineRoot / relFont).string();
+
+    bool baseFontLoaded = false;
+
     if (std::filesystem::exists(fontPath))
     {
         imguiLayer->AddFontFromFile(fontPath, fontSize);
         CH_CORE_INFO("Loaded editor font: {} @ {}px", fontPath, fontSize);
+        baseFontLoaded = true;
     }
     else
     {
@@ -374,30 +318,65 @@ void EditorLayer::LoadEditorFonts()
 
     // --- Icon Font (FontAwesome) ---
     std::string faPath = (engineRoot / "resources/font/fa-solid-900.ttf").string();
-    if (std::filesystem::exists(faPath))
+    if (baseFontLoaded && std::filesystem::exists(faPath))
     {
-        static const ImWchar icons_ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+        // ВАЖЛИВО: Використовуємо ImFontConfig, але налаштовуємо його так,
+        // щоб ImGui сам керував пам'яттю копії цього конфігу
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
-        imguiLayer->AddFontFromFile(faPath, fontSize, &icons_config, icons_ranges);
+
+        // Замість локального масиву на стеку/static, використовуємо вбудований
+        // у ImGui інструмент для створення стійкого пулу гліфів.
+        // Якщо у вас немає окремого хелпера, ми явно просимо ImGui зберегти цей діапазон:
+        static const ImWchar* font_awesome_ranges = nullptr;
+        if (!font_awesome_ranges)
+        {
+            // Будуємо статичний масив один раз, але гарантуємо, що він живе вічно
+            // і не руйнується при викликах ClearFonts()
+            static const ImWchar ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
+            font_awesome_ranges = ranges;
+        }
+
+        // Передаємо надійний вказівник на діапазони
+        imguiLayer->AddFontFromFile(faPath, fontSize, &icons_config, font_awesome_ranges);
         CH_CORE_INFO("Loaded and merged FontAwesome for editor: {}", faPath);
     }
-
-    imguiLayer->RefreshFontAtlasTexture();
+}
+void EditorLayer::LoadEditorFonts()
+{
+    // Called from OnAttach — atlas is fresh, just add and build once.
+    AddEditorFontsToAtlas();
+    Application::Get().GetImGuiLayer()->RefreshFontAtlasTexture();
 }
 
 void EditorLayer::ReloadEditorFonts()
 {
+    // Full rebuild: clear atlas, re-add editor fonts, re-add project fonts, single Build().
+    // This avoids the "stbtt_InitFont: freed font data" crash caused by double Build().
     auto* imguiLayer = Application::Get().GetImGuiLayer();
     if (!imguiLayer)
     {
-        CH_CORE_ERROR("EditorLayer: ImGuiLayer not found; cannot reload fonts.");
         return;
     }
-    // Clear the atlas first so LoadEditorFonts re-adds the UI + icon fonts at the new size/typeface.
+
     imguiLayer->ClearFonts();
-    LoadEditorFonts();
+
+    // Invalidate cached ImFont* pointers — they are now dangling after ClearFonts.
+    if (auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+    {
+        widgetRenderer->GetFontRegistry().Clear();
+    }
+
+    AddEditorFontsToAtlas();
+
+    // Re-add project fonts if a project is loaded.
+    if (auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+    {
+        widgetRenderer->LoadProjectFonts();
+    }
+
+    imguiLayer->RefreshFontAtlasTexture();
 }
 
 void EditorLayer::OnDetach()
@@ -416,13 +395,36 @@ void EditorLayer::OnUpdate(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
+    m_ProjectManager->ProcessPendingProjectOpen();
+
+    // Замість прямого виклику, відправляємо задачу в чергу ImGuiLayer
+    if (m_PendingEditorFontReload)
+    {
+        auto* imguiLayer = Application::Get().GetImGuiLayer();
+        if (imguiLayer)
+        {
+            imguiLayer->ExecuteNextFrame([this]() {
+                // Виконується суворо МІЖ кадрами
+                ReloadEditorFonts();
+
+                // Переприв'язуємо дефолт  ний шрифт для майбутнього кадру
+                ImGuiIO& io = ImGui::GetIO();
+                if (!io.Fonts->Fonts.empty())
+                {
+                    io.FontDefault = io.Fonts->Fonts[0];
+                }
+            });
+        }
+        m_PendingEditorFontReload = false;
+    }
+
     if (!m_PendingSceneTransitionPath.empty())
     {
         m_SceneManager->OpenScene(m_PendingSceneTransitionPath);
-        
+
         // Ensure play mode continues after scene load
         m_SceneManager->SetSceneState(SceneState::Play);
-        
+
         m_PendingSceneTransitionPath.clear();
     }
 
@@ -466,8 +468,8 @@ void EditorLayer::OnUpdate(Timestep ts)
                 uiRenderer->ProcessInput(scene.get(), suppress);
             }
 
-            auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
-            if (scriptEngine.GetHost().IsInitialized() && scriptEngine.CanExecuteFrameScripts())
+            auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
+            if (scriptEngine && scriptEngine->GetHost().IsInitialized() && scriptEngine->CanExecuteFrameScripts())
             {
                 scene->OnUpdateRuntime(ts, m_Context);
             }
@@ -582,22 +584,7 @@ void EditorLayer::OnEvent(Event& e)
         return true;
     });
 
-    // 3. Command/Undo
-    dispatcher.Dispatch<UndoEvent>([this](auto& e) {
-        if (GetSceneState() != SceneState::Play && GetSceneState() != SceneState::Simulate)
-        {
-            m_CommandHistory.Undo();
-        }
-        return true;
-    });
-
-    dispatcher.Dispatch<RedoEvent>([this](auto& e) {
-        if (GetSceneState() != SceneState::Play && GetSceneState() != SceneState::Simulate)
-        {
-            m_CommandHistory.Redo();
-        }
-        return true;
-    });
+    // 3. Command/Undo — handled by scene_manager.cpp OnKeyPressed
 
     // 4. Input
     dispatcher.Dispatch<KeyPressedEvent>([this](auto& e) { return m_SceneManager->OnKeyPressed(e); });
@@ -651,15 +638,6 @@ void EditorLayer::OnEvent(Event& e)
 CommandHistory& EditorLayer::GetCommandHistory()
 {
     return m_CommandHistory;
-}
-
-
-void EditorLayer::ReparentEntity(Entity child, Entity parent)
-{
-    if (child.HasComponent<HierarchyComponent>())
-    {
-        child.GetComponent<HierarchyComponent>().Parent = parent;
-    }
 }
 
 } // namespace Chained

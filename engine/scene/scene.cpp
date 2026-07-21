@@ -176,7 +176,7 @@ void Scene::OnRuntimeStart(const SceneContext& ctx)
     m_Registry->ctx().insert_or_assign<SceneContext>(SceneContext(ctx));
 
     // Shared physics initialization (needed for both Play and Simulate)
-    ctx.PhysicsSystem->ResetWorld();
+    ctx.PhysicsSystem->ResetWorld(this);
     ctx.PhysicsSystem->ResetAccumulator(this);
     ctx.PhysicsSystem->InitializeBodies(this);
 
@@ -354,29 +354,15 @@ SceneSettings& Scene::GetSettings() { return m_Settings; }
 
 std::vector<entt::entity> Scene::GetRootEntities()
 {
-    std::vector<entt::entity> roots;
-    auto& reg = GetRegistry();
-
-    auto view = reg.template view<TransformComponent>();
-    for (auto entity : view)
-    {
-        if (reg.template all_of<HierarchyComponent>(entity))
-        {
-            auto& hc = reg.template get<HierarchyComponent>(entity);
-            if (hc.Parent == entt::null)
-            {
-                roots.push_back(entity);
-            }
-        }
-        else
-        {
-            roots.push_back(entity);
-        }
-    }
-    return roots;
+    return GetRootEntitiesImpl();
 }
 
 std::vector<entt::entity> Scene::GetRootEntities() const
+{
+    return GetRootEntitiesImpl();
+}
+
+std::vector<entt::entity> Scene::GetRootEntitiesImpl() const
 {
     std::vector<entt::entity> roots;
     auto& reg = GetRegistry();

@@ -11,17 +11,16 @@ namespace Chained {
     {
         auto& renderer = *ctx.Renderer;
 
-        GraphicsDevice::Get().SetBlendEnabled(true);
-        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
-
-        // 1. Opaque Pass
+        // 1. Opaque Pass — no blending
         for (const auto& item : renderer.GetOpaqueQueue())
         {
             renderer.DrawModel(item.Asset, item.Transform, item.BoneMatrices, item.Materials, item.ShaderOverride,
                       item.CustomUniforms, RenderPassStage::Opaque);
         }
 
-        // 2. Transparent Pass
+        // 2. Transparent Pass — enable blending
+        GraphicsDevice::Get().SetBlendEnabled(true);
+        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
         GraphicsDevice::Get().DisableDepthMask();
         for (const auto& item : renderer.GetTransparentQueue())
         {

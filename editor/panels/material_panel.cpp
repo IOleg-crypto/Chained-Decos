@@ -141,7 +141,7 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
                 if (label.empty()) label = "Material " + std::to_string(i);
 
                 ImGui::PushID(i);
-                ImVec4 swatch = {m.AlbedoColor.r, m.AlbedoColor.g, m.AlbedoColor.b, 1.0f};
+                ImVec4 swatch = {m.AlbedoColor.r / 255.0f, m.AlbedoColor.g / 255.0f, m.AlbedoColor.b / 255.0f, 1.0f};
                 ImGui::ColorButton("##swatch", swatch,
                     ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoBorder,
                     {14, 14});

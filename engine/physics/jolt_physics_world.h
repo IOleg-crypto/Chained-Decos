@@ -58,8 +58,8 @@ public:
 private:
     // ── Jolt subsystems ──────────────────────────────────────────────────────
     JPH::PhysicsSystem m_PhysicsSystem;
-    JPH::TempAllocatorImpl* m_TempAllocator = nullptr;
-    JPH::JobSystemThreadPool* m_JobSystem = nullptr;
+    std::unique_ptr<JPH::TempAllocatorImpl> m_TempAllocator;
+    std::unique_ptr<JPH::JobSystemThreadPool> m_JobSystem;
 
     // ── Ground detection ──────────────────────────────────────────────────────
     // Set of Jolt body IDs (packed as uint32) that have at least one ground

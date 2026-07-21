@@ -4,7 +4,10 @@
 
 Chained::Scene* Chained::GetActiveScene()
 {
-    return ServiceLocator::Get<ScriptEngine>()->GetContextScene();
+    auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
+    if (!scriptEngine)
+        return nullptr;
+    return scriptEngine->GetContextScene();
 }
 
 Chained::Entity Chained::GetEntity(uint64_t entityID)

@@ -153,9 +153,6 @@ void ModelAsset::OnLoaded()
                     case 0:
                         newModel.Materials[matIdx].AlbedoMap = tex;
                         break;
-                    case 1:
-                        newModel.Materials[matIdx].EmissiveMap = tex;
-                        break; 
                     case 2:
                         newModel.Materials[matIdx].NormalMap = tex;
                         break;
@@ -199,9 +196,6 @@ void ModelAsset::OnLoaded()
         {
         case 0:
             newModel.Materials[matIdx].AlbedoMap = texPtr;
-            break;
-        case 1:
-            newModel.Materials[matIdx].EmissiveMap = texPtr;
             break;
         case 2:
             newModel.Materials[matIdx].NormalMap = texPtr;
