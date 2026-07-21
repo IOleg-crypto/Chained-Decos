@@ -37,16 +37,13 @@ if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(engine_tests_unit)
 endif()
 
-# Unit tests run as a SINGLE ctest entry (one process for the whole binary)
-# rather than via gtest_discover_tests. PRE_TEST discovery generates per-test
-# include files whose names contain characters (e.g. the [1] index suffix)
-# that break path resolution on Windows, producing
-# "engine_tests_unit[1]_include-.cmake ... could not be found" CTest errors.
-# A single entry keeps gtest's own per-test reporting and readable output.
-add_test(NAME UnitSuite COMMAND engine_tests_unit)
-set_tests_properties(UnitSuite PROPERTIES
-    LABELS "Unit"
-    ENVIRONMENT "ENGINE_ROOT=${CMAKE_SOURCE_DIR}"
+include(GoogleTest)
+# Discover individual GTest tests so each shows up as a separate CTest entry.
+# Unit tests are fast (no engine boot), so per-test discovery has negligible overhead.
+gtest_discover_tests(engine_tests_unit
     WORKING_DIRECTORY "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
-    TIMEOUT 120
+    PROPERTIES
+        LABELS "Unit"
+        ENVIRONMENT "ENGINE_ROOT=${CMAKE_SOURCE_DIR}"
+        TIMEOUT 30
 )
