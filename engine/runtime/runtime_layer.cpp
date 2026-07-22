@@ -131,6 +131,21 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         return;
     }
 
+    if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+    {
+        if (uiRenderer->GetFontRegistry().NeedsAtlasRebuild())
+        {
+            auto* imguiLayer = Application::Get().GetImGuiLayer();
+            if (imguiLayer)
+            {
+                imguiLayer->ExecuteNextFrame([imguiLayer]() {
+                    imguiLayer->RefreshFontAtlasTexture();
+                });
+            }
+            uiRenderer->GetFontRegistry().ClearRebuildFlag();
+        }
+    }
+
     if (m_Scene && m_IsSceneLoading)
     {
         m_LoadingOverlayElapsed += (float)ts;

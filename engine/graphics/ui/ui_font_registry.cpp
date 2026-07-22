@@ -3,6 +3,7 @@
 #include "engine/common/base.h"
 #include "engine/project/project.h"
 #include "thirdparty/imgui/imstb_truetype.h" // Або шлях, де у вас лежить stb_truetype.h
+#include "engine/platform/dialogs/dialogs.h"
 #include <algorithm>
 #include <array>
 #include <cmath>
@@ -12,6 +13,7 @@
 #include <system_error>
 #include <unordered_set>
 #include <vector>
+#include <thread>
 
 namespace Chained
 {
@@ -88,22 +90,45 @@ static bool IsValidFontMetrics(const std::filesystem::path& path)
         return false;
     }
 
-    // Перевіримо bounding box для кількох критичних та базових символів (наприклад, 't', 'A', 'g')
-    const int testCodepoints[] = {'A', 't', 'g', '1'};
-
-    for (int cp : testCodepoints)
+    // Check bounding box for visible (non-whitespace) ASCII characters.
+    // Whitespace codepoints (space=32, etc.) legitimately have no visible glyph
+    // and stb_truetype returns inverted/zero bounds for them — that is NOT an error.
+    // We only reject a font if a codepoint that:
+    //   (a) has a glyph index in this font, AND
+    //   (b) is not a whitespace character
+    // returns a truly inverted bounding box, which indicates corrupt metrics.
+    int badGlyphs = 0;
+    int checkedGlyphs = 0;
+    for (int cp = 33; cp <= 126; cp++) // start at 33 ('!'), skip space
     {
-        int x0, y0, x1, y1;
-        stbtt_GetCodepointBox(&fontInfo, cp, &x0, &y0, &x1, &y1);
-
-        int width = x1 - x0;
-        int height = y1 - y0; // Для stbtt координати Y йдуть знизу вгору
-
-       
-        if (width <= 0 || height <= 0)
+        // Skip whitespace-like codepoints
+        if (cp == ' ' || cp == '\t' || cp == '\n' || cp == '\r')
         {
-            return false;
+            continue;
         }
+
+        // stbtt_FindGlyphIndex returns 0 if the codepoint is not in the font
+        if (stbtt_FindGlyphIndex(&fontInfo, cp) == 0)
+        {
+            continue; // glyph absent — not an error
+        }
+
+        int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+        if (stbtt_GetCodepointBox(&fontInfo, cp, &x0, &y0, &x1, &y1))
+        {
+            checkedGlyphs++;
+            if (x1 < x0 || y1 < y0)
+            {
+                badGlyphs++;
+            }
+        }
+    }
+
+    // Reject only if the majority of checked glyphs are broken.
+    // A single bad glyph can be a legitimate font quirk; >50% bad is clearly corrupt.
+    if (checkedGlyphs > 0 && badGlyphs > checkedGlyphs / 2)
+    {
+        return false;
     }
 
     return true;
@@ -244,8 +269,11 @@ ImFont* UIFontRegistry::EnsureDefaultProjectFont(float pixelSize, bool allowRunt
     {
         if (name.rfind("font/", 0) == 0 || name.rfind("fonts/", 0) == 0)
         {
-            chosen = name;
-            break;
+            if (!IsVariableFont(std::filesystem::path(absPath)))
+            {
+                chosen = name;
+                break;
+            }
         }
     }
 
@@ -407,8 +435,11 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
 
     if (!IsValidFontMetrics(std::filesystem::path(absolutePath)))
     {
-        CH_CORE_ERROR("UIFontRegistry: Font '{}' has corrupted or invalid internal metrics! Skipping to prevent crash.",
-                      absolutePath);
+        std::string msg = "Font has corrupted or invalid internal metrics and was skipped:\n" + absolutePath;
+        CH_CORE_ERROR("UIFontRegistry: {}", msg);
+        std::thread([msg]() {
+            Dialogs::ShowError("Font Load Error", msg);
+        }).detach();
         m_Fonts[normalizedName] = nullptr;
         return nullptr;
     }

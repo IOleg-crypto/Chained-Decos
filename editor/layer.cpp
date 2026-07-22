@@ -397,7 +397,6 @@ void EditorLayer::OnUpdate(Timestep ts)
 
     m_ProjectManager->ProcessPendingProjectOpen();
 
-    // Замість прямого виклику, відправляємо задачу в чергу ImGuiLayer
     if (m_PendingEditorFontReload)
     {
         auto* imguiLayer = Application::Get().GetImGuiLayer();
@@ -416,6 +415,21 @@ void EditorLayer::OnUpdate(Timestep ts)
             });
         }
         m_PendingEditorFontReload = false;
+    }
+
+    if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+    {
+        if (uiRenderer->GetFontRegistry().NeedsAtlasRebuild())
+        {
+            auto* imguiLayer = Application::Get().GetImGuiLayer();
+            if (imguiLayer)
+            {
+                imguiLayer->ExecuteNextFrame([imguiLayer]() {
+                    imguiLayer->RefreshFontAtlasTexture();
+                });
+            }
+            uiRenderer->GetFontRegistry().ClearRebuildFlag();
+        }
     }
 
     if (!m_PendingSceneTransitionPath.empty())
