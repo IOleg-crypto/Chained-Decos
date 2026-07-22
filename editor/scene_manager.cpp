@@ -215,6 +215,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
 
 void EditorSceneManager::OnUpdate(Timestep ts)
 {
+   
     if (m_PlayModeStartRequested)
     {
         StartPlayModeTransition();
