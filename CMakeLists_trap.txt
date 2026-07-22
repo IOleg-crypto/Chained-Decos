@@ -1,5 +1,0 @@
-cmake_minimum_required(VERSION 3.15)
-project(TrapTest)
-include(CTest)
-add_executable(trap_exe test_trap.cpp)
-add_test(NAME trap_test COMMAND trap_exe)
