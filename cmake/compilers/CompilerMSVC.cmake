@@ -18,8 +18,8 @@
 # Strip unused functions in Release
 add_link_options($<$<CONFIG:Release>:/OPT:REF> $<$<CONFIG:Release>:/OPT:ICF>)
 
-# Speed up Debugging: use FASTLINK
-add_link_options($<$<CONFIG:Debug>:/DEBUG:FASTLINK>)
+# /DEBUG:FULL — FASTLINK is deprecated in VS 2022 toolchain
+add_link_options($<$<CONFIG:Debug>:/DEBUG:FULL>)
 
 if(DISABLE_ALL_WARNINGS)
     add_compile_options(/W0)
@@ -37,8 +37,11 @@ if(ENABLE_SANITIZERS)
 endif()
 
 # Level 2 Security Hardening
+# Note: /guard:cf on the LINKER pulls in uwapi.lib (Windows App Cert Kit),
+# which is absent on the GitHub Actions windows-latest runner. The compile
+# flag is sufficient for CFG code-gen; the linker flag is not needed here.
 add_compile_options(/guard:cf /GS)
-add_link_options(/DYNAMICBASE /NXCOMPAT /guard:cf)
+add_link_options(/DYNAMICBASE /NXCOMPAT)
 
 
     

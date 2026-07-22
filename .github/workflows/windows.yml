@@ -24,27 +24,23 @@ jobs:
           - preset: windows-clang
             compiler: clang
             build_type: Release
-            unity_build: ON
           - preset: windows-clang
             compiler: clang
             build_type: Debug
-            unity_build: ON
           - preset: windows-msvc
             compiler: cl
             build_type: Release
-            unity_build: ON
+            use_lld: true
           - preset: windows-msvc
             compiler: cl
             build_type: Debug
-            unity_build: ON
+            use_lld: true
           - preset: windows-gcc
             compiler: gcc
             build_type: Release
-            unity_build: ON
           - preset: windows-gcc
             compiler: gcc
             build_type: Debug
-            unity_build: ON
           
 
     steps:
@@ -83,6 +79,26 @@ jobs:
         if: contains(matrix.preset, 'msvc')
         uses: ilammy/msvc-dev-cmd@v1
 
+      - name: Setup lld-link (MSVC only)
+        if: matrix.use_lld == true
+        shell: pwsh
+        run: |
+          # LLVM is pre-installed on windows-latest; find lld-link and put it on PATH.
+          # Prefer the LLVM install that ships with VS, fall back to standalone LLVM.
+          $candidates = @(
+            "C:\Program Files\LLVM\bin",
+            "C:\Program Files (x86)\LLVM\bin"
+          )
+          $llvmBin = $candidates | Where-Object { Test-Path "$_\lld-link.exe" } | Select-Object -First 1
+          if (-not $llvmBin) {
+            # Standalone LLVM not found — install via winget (fast, no choco overhead)
+            choco install llvm --no-progress -y | Out-Null
+            $llvmBin = "C:\Program Files\LLVM\bin"
+          }
+          Write-Host "Using lld-link from: $llvmBin"
+          "$llvmBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          lld-link --version
+
       - name: Prefer MSYS2 toolchain over preinstalled MinGW
         if: "contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc') || contains(matrix.preset, 'gcc') && !contains(matrix.preset, 'linux')"
         shell: msys2 {0}
@@ -101,7 +117,7 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: sccache
-          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}-unity-${{ matrix.unity_build }}
+          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}${{ matrix.use_lld == true && '-lld' || '' }}
           max-size: 5G
 
       - name: Setup Python
@@ -143,6 +159,11 @@ jobs:
           mkdir -p "build/${{ matrix.preset }}"
           PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
 
+          LLD_FLAG=""
+          if [[ "${{ matrix.use_lld }}" == "true" ]]; then
+            LLD_FLAG="-DCMAKE_LINKER_TYPE=LLD"
+          fi
+
           cmake --preset ${{ matrix.preset }} \
             -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
             -DCMAKE_C_COMPILER_LAUNCHER=sccache \
@@ -150,10 +171,11 @@ jobs:
             -DPython_EXECUTABLE="${PYTHON_EXE}" \
             -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=${{ matrix.unity_build }} \
+            -DENABLE_UNITY_BUILD=OFF \
             -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
             -DENABLE_LTO=OFF \
             -DENABLE_PCH=OFF \
+            ${LLD_FLAG} \
             2>&1 | tee "build/${{ matrix.preset }}/configure.log"
 
       - name: Build
