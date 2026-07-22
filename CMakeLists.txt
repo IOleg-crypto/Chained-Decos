@@ -46,11 +46,8 @@ if(USE_CCACHE)
     endif()
 endif()
 
-# === BUILD OPTIMIZATION ===
-set(CMAKE_SUPPRESS_REGENERATION OFF)
-if(MSVC)
-    add_link_options(/INCREMENTAL)
-endif()
+# Note: do NOT add /INCREMENTAL here. MSVC enables it by default in Debug;
+# forcing it globally conflicts with /OPT:ICF in Release (LNK4075).
 
 # Dependencies
 include(cmake/CompilerSettings.cmake)
