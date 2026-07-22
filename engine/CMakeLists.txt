@@ -33,7 +33,7 @@ add_subdirectory(app)
 add_subdirectory(runtime)
 
 # Create the final engine facade library that links everything together
-add_library(engine ${ENGINE_LIB_TYPE})
+add_library(engine ${ENGINE_LIB_TYPE} engine_dummy.cpp)
 
 target_link_libraries(engine PUBLIC
     engine_app
