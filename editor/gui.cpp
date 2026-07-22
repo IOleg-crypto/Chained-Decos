@@ -10,7 +10,6 @@
 #include "engine/project/project.h"
 #include "engine/scene/components.h"
 #include "events.h"
-#include "scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
