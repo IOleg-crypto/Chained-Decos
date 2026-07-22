@@ -1,7 +1,7 @@
 # 1. Core library (No UI / Graphics dependencies)
 add_library(engine_scene_core STATIC
     entity.cpp entity.h
-    scene.cpp scene.h
+    scene.h
     scene_context.h scene_events.h scene_settings.h scene_state.h
     camera.cpp camera.h
     components.h
@@ -35,7 +35,7 @@ set_target_properties(engine_scene_core PROPERTIES UNITY_BUILD OFF)
 chained_add_engine_module(engine_scene
     EXCLUDE_FILES
         entity.cpp entity.h
-        scene.cpp scene.h
+        scene.h
         scene_context.h scene_events.h scene_settings.h scene_state.h
         camera.cpp camera.h
         components.h
