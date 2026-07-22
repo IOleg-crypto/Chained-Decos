@@ -19,7 +19,7 @@ static bool s_GLFWInitialized = false;
 
 std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
 {
-    // Наразі всі підтримувані платформи (Windows, Linux, MacOS) використовують GLFW
+    
     return std::make_unique<GlfwWindow>(properties);
 }
 

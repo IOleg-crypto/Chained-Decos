@@ -1,11 +1,11 @@
-add_library(RuntimeCore STATIC
-    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/runtime_layer.cpp
+chained_add_engine_module(engine_runtime_core
+     SOURCES
+        runtime_layer.cpp
+        runtime_layer.h
+     DEPENDS
+        ChainedEngine::Framework
 )
 
-target_link_libraries(RuntimeCore PUBLIC ChainedEngine::Framework)
-target_include_directories(RuntimeCore PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(RuntimeCore)
-endif()
+target_include_directories(engine_runtime_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+

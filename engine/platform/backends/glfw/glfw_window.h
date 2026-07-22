@@ -16,8 +16,7 @@ public:
     GlfwWindow(const WindowProperties& properties);
     virtual ~GlfwWindow();
 
-    // Забороняємо копіювання вікна (Rule of 3/5), щоб уникнути подвійного видалення системного дескриптора
-    GlfwWindow(const GlfwWindow&) = delete;
+        GlfwWindow(const GlfwWindow&) = delete;
     GlfwWindow& operator=(const GlfwWindow&) = delete;
 
     virtual void BeginFrame() override;
@@ -25,7 +24,7 @@ public:
 
     virtual bool ShouldClose() const override;
 
-    // Повертають віртуальний розмір вікна в екранних координатах
+    
     virtual int GetWidth() const override
     {
         return m_Width;
@@ -35,7 +34,7 @@ public:
         return m_Height;
     }
 
-    // Нові методи для отримання реального фізичного розміру буфера кадру в пікселях (для рендерингу)
+    \
     int GetFramebufferWidth() const
     {
         return m_FramebufferWidth;
@@ -79,11 +78,11 @@ private:
 private:
     GLFWwindow* m_WindowHandle = nullptr;
 
-    // Розмір вікна у віртуальних екранних координатах (використовується для подій миші та ОС)
+   
     int m_Width = 0;
     int m_Height = 0;
 
-    // Фізичний розмір буфера кадру в пікселях (використовується для glViewport)
+   
     int m_FramebufferWidth = 0;
     int m_FramebufferHeight = 0;
 

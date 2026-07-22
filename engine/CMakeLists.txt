@@ -34,9 +34,6 @@ add_subdirectory(runtime)
 
 # Create the final engine facade library that links everything together
 add_library(engine ${ENGINE_LIB_TYPE})
-# Add a dummy file to satisfy some compilers that don't like empty targets
-target_sources(engine PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp)
-file(WRITE "${CMAKE_CURRENT_BINARY_DIR}/engine_dummy.cpp" "// dummy\n")
 
 target_link_libraries(engine PUBLIC
     engine_app
@@ -60,7 +57,6 @@ target_include_directories(engine PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-# (Redundant compiler flags removed - now in CompilerSettings.cmake)
 
 if(COMMAND apply_engine_optimizations)
     apply_engine_optimizations(engine)

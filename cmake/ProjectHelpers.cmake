@@ -133,7 +133,7 @@ function(chained_add_game TARGET_NAME)
     # 3. Create the EXECUTABLE target
     if(HAS_ENTRY_POINT)
         add_executable(${TARGET_NAME}Exe ${ENTRY_SOURCE})
-        target_link_libraries(${TARGET_NAME}Exe PRIVATE RuntimeCore)
+        target_link_libraries(${TARGET_NAME}Exe PRIVATE engine_runtime_core)
         
         if(GAME_SOURCES)
              target_link_libraries(${TARGET_NAME}Exe PRIVATE ${TARGET_NAME})

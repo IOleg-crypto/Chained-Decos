@@ -149,7 +149,7 @@ jobs:
             -DPython_EXECUTABLE="${PYTHON_EXE}" \
             -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
-            -DENABLE_UNITY_BUILD=ON \
+            -DENABLE_UNITY_BUILD=OFF \
             -DENABLE_PCH=OFF \
             -DBUILD_TESTS=OFF
 
