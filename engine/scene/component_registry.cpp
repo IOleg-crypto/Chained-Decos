@@ -1,4 +1,5 @@
 #include "component_registry.h"
+#include "components/control_component.h"
 #include "components/scripting_components.h"
 #include "engine/graphics/ui/ui_data_components.h"
 #include "engine/graphics/ui/ui_style.h"

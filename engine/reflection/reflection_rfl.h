@@ -152,19 +152,14 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
             if (props.GetMode() == ReflectionMode::UI && meta.Hint == PropertyMeta::WidgetHint::Enum)
             {
                 constexpr auto enumerators = rfl::get_enumerator_array<FieldType>();
-                static std::vector<std::string> names_str;
-                static std::vector<const char*> names_cstr;
-                if (names_str.empty())
-                {
-                    for (const auto& p : enumerators)
-                    {
-                        names_str.push_back(std::string(p.first));
-                    }
-                    for (const auto& s : names_str)
-                    {
-                        names_cstr.push_back(s.c_str());
-                    }
-                }
+                std::vector<std::string> names_str;
+                std::vector<const char*> names_cstr;
+                names_str.reserve(enumerators.size());
+                for (const auto& p : enumerators)
+                    names_str.emplace_back(p.first);
+                names_cstr.reserve(names_str.size());
+                for (const auto& s : names_str)
+                    names_cstr.push_back(s.c_str());
                 props.Enum(name_cstr, *field.get(), names_cstr.data(), (int)names_cstr.size(), meta);
             }
             else
