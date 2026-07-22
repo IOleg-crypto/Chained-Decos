@@ -5,6 +5,7 @@ chained_add_engine_module(engine_graphics
         pipeline
         ui
     DEPENDS
+        engine_scene_core
         engine_core
         engine_project
         engine_assets
