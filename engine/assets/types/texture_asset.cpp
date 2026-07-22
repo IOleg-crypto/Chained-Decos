@@ -1,9 +1,6 @@
 #include "engine/assets/types/texture_asset.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
-#include "engine/project/project.h"
-#include <filesystem>
-#include <algorithm>
 #include <stb_image.h>
 
 namespace Chained

@@ -1,5 +1,5 @@
 CompileFlags:
-  CompilationDatabase: build/linux-clang
+  CompilationDatabase: build/windows-clang
   Add:
     - -Wall
     - -Wextras

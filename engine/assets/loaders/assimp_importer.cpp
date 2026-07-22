@@ -12,8 +12,8 @@
 #include <fstream>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
-#include <stb_image.h>
 #include <unordered_map>
+#include <stb_image.h>
 
 namespace Chained
 {
