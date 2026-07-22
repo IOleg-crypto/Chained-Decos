@@ -2,6 +2,7 @@ chained_add_engine_module(engine_platform_glfw
     SOURCES
         glfw_window.cpp
         glfw_window.h
+        glfw_input_mapper.h
     DEPENDS
         engine_core
         glfw
