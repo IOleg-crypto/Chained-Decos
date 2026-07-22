@@ -115,7 +115,8 @@ const std::vector<FontChoice>& GetEditorFontChoices()
     }
 
     for (std::filesystem::recursive_directory_iterator
-             it(fontDir, std::filesystem::directory_options::skip_permission_denied, ec), end;
+             it(fontDir, std::filesystem::directory_options::skip_permission_denied, ec),
+         end;
          it != end && !ec; it.increment(ec))
     {
         if (!it->is_regular_file(ec))
@@ -125,8 +126,7 @@ const std::vector<FontChoice>& GetEditorFontChoices()
         }
 
         std::string ext = it->path().extension().string();
-        std::transform(ext.begin(), ext.end(), ext.begin(),
-                       [](unsigned char c) { return (char)std::tolower(c); });
+        std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
         if (ext != ".ttf" && ext != ".otf")
         {
             continue;
@@ -408,8 +408,8 @@ void EditorGUI::DrawEditorSettings()
     if (ImGui::Begin(ICON_FA_SLIDERS " Editor Settings", &s_ShowEditorSettings))
     {
         static int selectedCategory = 0;
-        const char* categories[] = {ICON_FA_PALETTE " Appearance", ICON_FA_CAMERA " Camera",
-                                    ICON_FA_VIDEO " Viewport", ICON_FA_IMAGE " Content Browser",
+        const char* categories[] = {ICON_FA_PALETTE " Appearance",    ICON_FA_CAMERA " Camera",
+                                    ICON_FA_VIDEO " Viewport",        ICON_FA_IMAGE " Content Browser",
                                     ICON_FA_FLOPPY_DISK " Auto-Save", ICON_FA_ROCKET " Startup",
                                     ICON_FA_GEAR " General"};
 
