@@ -32,6 +32,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Run](#run)
 - [Gameplay Scripting (C#)](#gameplay-scripting-c)
 - [Assets and Resources](#assets-and-resources)
+- [Project Export / Packaging](#project-export--packaging)
 - [Physics and Collisions](#physics-and-collisions)
 - [In-Game UI](#in-game-ui)
 - [Extending the Engine (C++)](#extending-the-engine-c)
@@ -55,6 +56,7 @@ Main capabilities:
 - Editor workflow with hierarchy/inspector/panels and in-editor play mode.
 - Flexible bootstrapping via custom Entry Points for Headless, Runtime, and Editor modes.
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
+- Project export pipeline with compressed asset packs (ZSTD) for distribution.
 
 ## Developer Resources (Deep Dives)
 
@@ -90,6 +92,7 @@ The editor is the main authoring environment for scene creation, iteration, and 
 - YAML scene/project serialization with UUID-centered identity tracking.
 - Editor undo/redo command history for common content workflows.
 - Asset loading pipeline with dedup-oriented task handling.
+- Asset pack export pipeline using cfnptr/pack (ZSTD compression) for runtime distribution.
 - Virtual file system support is currently planned/in-progress.
 
 ## Architecture
@@ -171,6 +174,7 @@ Project:
 ## Project Structure
 
 - engine/: core engine modules (graphics, scene, physics, audio, platform, assets).
+- engine/network/: networking layer (ENet-based, in progress).
 - editor/: ChainedEditor application and editor panels/tools.
 - runtime/: ChainedRuntime application and runtime layer.
 - scripting/: script host, glue bindings, and managed build integration.
@@ -181,7 +185,27 @@ Project:
 
 ## Dependencies
 
-This repository relies on git submodules for core third-party libraries (for example EnTT, Assimp, Coral, ImGui, GLFW, GLM, yaml-cpp, GoogleTest, and others under include/).
+This repository relies on git submodules for core third-party libraries:
+
+| Library | Purpose |
+| :--- | :--- |
+| EnTT | ECS framework |
+| Assimp | 3D model import |
+| Coral | C#/C++ interop |
+| ImGui + ImGuizmo | Editor UI |
+| GLFW + GLAD | Window/OpenGL |
+| GLM | Math library |
+| yaml-cpp | YAML serialization |
+| GoogleTest | Unit/integration tests |
+| zstd | ZSTD compression (shared with pack) |
+| pack (cfnptr) | Asset pack creation and runtime reading |
+| miniaudio | Audio |
+| spdlog | Logging |
+| JoltPhysics | Physics simulation |
+| stb | Image loading |
+| cereal | Binary serialization |
+| reflect-cpp | Runtime reflection |
+| ENet | UDP networking (available, not yet integrated) |
 
 Always initialize/update submodules before configuring CMake:
 
@@ -397,6 +421,38 @@ All of your 3D models, textures, animations, and sound files must go into your g
 
 1. **Importing:** Drag and drop your source file (e.g., `.gltf` model, `.png` texture) directly into the **Content Browser Panel** in the Editor. The system registers it.
 2. **Usage:** Select the Entity in your scene, find the relevant Component (like `MeshComponent`), and assign the newly loaded asset from the browser.
+
+## Project Export / Packaging
+
+The engine includes a project exporter that packages game assets into a single compressed archive for distribution.
+
+### How to Export
+
+1. Open **Editor → Project Settings → Export**.
+2. Configure compression settings (or use defaults).
+3. The exporter packages `.chproject`, `assets/`, and `resources/` into `resources.pack` using ZSTD compression (via [cfnptr/pack](https://github.com/cfnptr/pack)).
+4. The executable, DLLs, and subdirectories are copied alongside the pack.
+
+### Export Settings
+
+| Setting | Default | Description |
+| :--- | :--- | :--- |
+| `ZipThreshold` | 0.3 | Files above this ratio of compressed/original size are stored uncompressed |
+| `PreferSpeed` | false | Use faster compression (larger output) |
+| `DataVersion` | 0 | Custom data version tag for the pack |
+
+### Runtime Loading
+
+At startup, `AssetManager::OpenPack()` automatically looks for `resources.pack` next to the executable. When found, all asset loading (textures, shaders, fonts) reads from the pack first, falling back to the filesystem if not found.
+
+```bash
+# The exported output structure looks like:
+MyGame/
+  MyGame.exe
+  resources.pack
+  engine.dll
+  ...
+```
 
 ## Physics and Collisions
 

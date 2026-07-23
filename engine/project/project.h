@@ -71,7 +71,12 @@ enum class Configuration
     Release = 1
 };
 
-
+struct ExportSettings
+{
+    float ZipThreshold = 0.3f;
+    bool PreferSpeed = false;
+    uint32_t DataVersion = 0;
+};
 
 struct ProjectConfig
 {
@@ -93,6 +98,7 @@ struct ProjectConfig
     AudioSettings Audio;
     RuntimeSettings Runtime;
     ScriptingSettings Scripting;
+    ExportSettings Export;
 
     Configuration BuildConfig = Configuration::Debug;
 };
@@ -121,24 +127,35 @@ public:
     static void SetActive(std::shared_ptr<Project> project);
 
     // Returns the active project configuration.
-    const ProjectConfig& GetConfig() const { return m_Config; }
+    const ProjectConfig& GetConfig() const
+    {
+        return m_Config;
+    }
     // Returns the active project configuration for mutation.
-    ProjectConfig& GetConfig() { return m_Config; }
+    ProjectConfig& GetConfig()
+    {
+        return m_Config;
+    }
 
     // Path helpers (now non-static, relative to this project)
-    std::filesystem::path GetAssetDirectoryForProject() const {
+    std::filesystem::path GetAssetDirectoryForProject() const
+    {
         return m_Config.ProjectDirectory / m_Config.AssetDirectory;
     }
 
     static std::filesystem::path GetAssetDirectory();
 
-    std::filesystem::path GetProjectDirectoryForProject() const {
+    std::filesystem::path GetProjectDirectoryForProject() const
+    {
         return m_Config.ProjectDirectory;
     }
 
     static std::filesystem::path GetProjectDirectory();
 
-    std::filesystem::path GetAssetPathForProject(const std::filesystem::path& relative) const { return GetAssetDirectoryForProject() / relative; }
+    std::filesystem::path GetAssetPathForProject(const std::filesystem::path& relative) const
+    {
+        return GetAssetDirectoryForProject() / relative;
+    }
 
     static std::filesystem::path GetAssetPath(const std::filesystem::path& relative);
 
@@ -154,18 +171,19 @@ public:
     // static utility (Pure functions)
     static std::filesystem::path NormalizePath(const std::filesystem::path& path);
     static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
-                                                                    const std::filesystem::path& basePath);
+                                                      const std::filesystem::path& basePath);
 
     // Environment
-    std::shared_ptr<EnvironmentAsset> GetEnvironment() const { return m_Environment; }
-
+    std::shared_ptr<EnvironmentAsset> GetEnvironment() const
+    {
+        return m_Environment;
+    }
 
 private:
     static std::shared_ptr<Project> s_ActiveProject;
 
     ProjectConfig m_Config;
     std::shared_ptr<EnvironmentAsset> m_Environment;
-
 
     friend class ProjectSerializer;
 };
