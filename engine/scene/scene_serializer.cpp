@@ -230,6 +230,7 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
 static void SerializeSceneSettings(YAML::Emitter& out, const SceneSettings& settings)
 {
     out << YAML::Key << "Scene" << YAML::Value << settings.Name;
+    out << YAML::Key << "SceneType" << YAML::Value << (int)settings.Type;
     SerializeBackgroundSettings(out, settings);
     SerializeCanvasSettings(out, settings);
     SerializeEnvironmentSettings(out, settings);
@@ -245,6 +246,7 @@ static bool DeserializeSceneSettings(const YAML::Node& data, SceneSettings& sett
     }
 
     settings.Name = ReadYamlValue(data, "Scene", settings.Name);
+    settings.Type = static_cast<SceneType>(ReadYamlValue(data, "SceneType", static_cast<int>(settings.Type)));
     DeserializeBackgroundSettings(data, settings);
     DeserializeCanvasSettings(data, settings);
     DeserializeDebugSettings(data, settings);

@@ -100,9 +100,20 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     // 4. Manipulation
     ImGuizmo::MODE mode = m_IsLocalSpace ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 
+    ImGuizmo::OPERATION op = static_cast<ImGuizmo::OPERATION>(type);
+    if (m_Is2DMode)
+    {
+        if (op == ImGuizmo::TRANSLATE)
+            op = (ImGuizmo::OPERATION)(ImGuizmo::TRANSLATE_X | ImGuizmo::TRANSLATE_Y);
+        else if (op == ImGuizmo::SCALE)
+            op = (ImGuizmo::OPERATION)(ImGuizmo::SCALE_X | ImGuizmo::SCALE_Y);
+        else if (op == ImGuizmo::ROTATE)
+            op = ImGuizmo::ROTATE_Z;
+    }
+
     const bool wasUsing = m_WasUsing;
     const bool manipulated =
-        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), static_cast<ImGuizmo::OPERATION>(type),
+        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), op,
                              mode, glm::value_ptr(modelMat), nullptr, snap);
 
     const bool isUsingNow = ImGuizmo::IsUsing();

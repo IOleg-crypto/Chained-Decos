@@ -30,6 +30,9 @@ public:
     // true if the gizmo is being used (captured mouse)
     bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera);
 
+    void Set2DMode(bool enabled) { m_Is2DMode = enabled; }
+    bool Is2DMode() const { return m_Is2DMode; }
+
     bool IsHovered() const { return ImGuizmo::IsOver(); }
     bool IsDragging() const { return ImGuizmo::IsUsing(); }
 
@@ -57,6 +60,7 @@ private:
     float m_ScaleSnap = 0.1f;
     
     bool m_IsLocalSpace = false;
+    bool m_Is2DMode = false;
 
     // Undo state
     TransformComponent m_OldTransform;

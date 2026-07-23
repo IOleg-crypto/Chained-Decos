@@ -33,12 +33,19 @@ struct GridSettings
     float Spacing = 1.0f;
 };
 
+enum class SceneType
+{
+    Default = 0,
+    UI = 1
+};
+
 struct SceneSettings
 {
     std::string Name = "Untitled Scene";
     std::string ScenePath;
     std::shared_ptr<EnvironmentAsset> Environment;
 
+    SceneType Type = SceneType::Default;
     BackgroundMode Mode = BackgroundMode::Environment3D;
     Color BackgroundColor = {30, 30, 30, 255};
     std::string BackgroundTexturePath;
