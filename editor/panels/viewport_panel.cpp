@@ -1,4 +1,5 @@
 #include "viewport_panel.h"
+#include "editor/asset_types.h"
 #include "editor/editor_colors.h"
 #include "editor/layer.h"
 #include "editor/scene_picking.h"
@@ -24,7 +25,6 @@
 #include "imgui_internal.h"
 #include "scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include "editor/asset_types.h"
 #include "undo/entity_commands.h"
 
 namespace Chained
@@ -523,7 +523,6 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
                 EntitySelectedEvent e((entt::entity)entity, activeScene);
                 Application::Get().OnEvent(e);
             }
-
         }
         ImGui::EndDragDropTarget();
     }
@@ -543,13 +542,13 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
     ServiceLocator::Get<WidgetRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
-                                                  m_SceneManager.GetSceneState() == SceneState::Edit);
+                                                      m_SceneManager.GetSceneState() == SceneState::Edit);
 
     // 3. Selection Highlight
     if (isUISelected && selectedEntity && m_SceneManager.GetSceneState() == SceneState::Edit)
     {
         auto rect = ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize,
-                                                                     viewportScreenPos);
+                                                                         viewportScreenPos);
 
         ImVec2 p1 = ImVec2(rect.x, rect.y);
         ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -600,8 +599,8 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
                 continue;
             }
 
-            auto rect =
-                ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos);
+            auto rect = ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, entity, viewportSize,
+                                                                             viewportScreenPos);
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
                 mousePos.y <= rect.y + rect.height)
             {
@@ -658,6 +657,27 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         ImGui::Indent(5);
 
         DrawGizmoButtons();
+
+        ImGui::SameLine(0, 10);
+        bool is2D = m_CameraController->Is2DMode();
+        if (is2D)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveToolOrange);
+        }
+        if (ImGui::Button(is2D ? (ICON_FA_CAMERA " 2D") : (ICON_FA_CUBE " 3D"), {50, 28}))
+        {
+            m_CameraController->Set2DMode(!is2D);
+        }
+        if (is2D)
+        {
+            ImGui::PopStyleColor();
+        }
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Toggle 2D/3D Editor Mode");
+        }
+
+        ImGui::SameLine(0, 10);
         DrawCameraSelector(activeScene);
 
         ImGui::SameLine(0, 10);
@@ -800,7 +820,7 @@ void ViewportPanel::DrawScriptReloadButton()
         if (project)
         {
             auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
-                                                                   project->GetConfig().ProjectDirectory);
+                                                                  project->GetConfig().ProjectDirectory);
             auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
             scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
         }
@@ -824,7 +844,8 @@ void ViewportPanel::DrawRunInNewWindowButton()
     }
 }
 
-void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax, float iconScale)
+void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax,
+                                     float iconScale)
 {
     const glm::vec3 activeCameraPos = camera.Position;
 
@@ -848,8 +869,8 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
         const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
         const float iconSize = iconSizeFromDistance(iconPos);
 
-        glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
-                               light.LightColor.b / 255.0f, 0.95f};
+        glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f, light.LightColor.b / 255.0f,
+                               0.95f};
 
         uint32_t handle = getIconHandle(m_EditorIcons.LightIcon);
         if (handle != 0)
@@ -869,12 +890,12 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
         else if (light.Type == LightType::Point)
         {
             ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f,
-                                                                   lightTint, *ServiceLocator::Get<Renderer>());
+                                                                  lightTint, *ServiceLocator::Get<Renderer>());
         }
         else if (light.Type == LightType::Spot)
         {
             ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f,
-                                                                   lightTint, *ServiceLocator::Get<Renderer>());
+                                                                  lightTint, *ServiceLocator::Get<Renderer>());
         }
     }
 }
