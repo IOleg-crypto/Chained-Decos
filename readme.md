@@ -1,15 +1,15 @@
 
-# Chained Decos
+# ChainedEngine
 
-## A 3D Parkour Game Built on Chained Engine
+## Custom C++/C# Game Engine with Editor, OpenGL Renderer, and Managed Scripting
 
 [![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/ci.yml?label=CI)](https://github.com/IOleg-crypto/Chained-Decos/actions/workflows/ci.yml)
-[![SDK Deploy](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/deploy-sdk.yml?label=SDK%20Deploy)](https://github.com/IOleg-crypto/Chained-Decos/actions/workflows/deploy-sdk.yml)
+[![CI](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/ChainedEngine/ci.yml?label=CI)](https://github.com/IOleg-crypto/ChainedEngine/actions/workflows/ci.yml)
+[![SDK Deploy](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/ChainedEngine/deploy-sdk.yml?label=SDK%20Deploy)](https://github.com/IOleg-crypto/ChainedEngine/actions/workflows/deploy-sdk.yml)
 [![OpenGL](https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl)](https://www.khronos.org/opengl/)
 
-Chained Decos is the game project built on top of Chained Engine, a modular C++23 engine with editor tooling, runtime packaging, ECS architecture, physics, and managed gameplay scripting.
+ChainedEngine is a modular C++23 game engine with editor tooling, runtime packaging, ECS architecture, physics, OpenGL 4.3+ rendering, and managed C# gameplay scripting via Coral. Ships with a parkour game **Chained Decos**.
 
 ![Game Screenshot](https://i.imgur.com/MLIxRhB.png)
 
@@ -215,8 +215,8 @@ sudo apt-get install -y build-essential cmake ninja-build \
 1. Clone with submodules:
 
 ```bash
-git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Decos.git
-cd Chained-Decos
+git clone --recurse-submodules https://github.com/IOleg-crypto/ChainedEngine.git
+cd ChainedEngine
 git submodule update --init --recursive
 ```
 
