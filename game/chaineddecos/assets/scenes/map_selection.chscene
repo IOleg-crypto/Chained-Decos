@@ -1,4 +1,5 @@
 Scene: Map Selection
+SceneType: 1
 Background:
   Mode: 0
   Color: [0, 0, 0, 255]
@@ -34,24 +35,21 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 8414649224912176048
+  - Entity: 614408672319069357
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: back_button
+      Tag: title_map_selection
     IDComponent:
       {}
-    Scene TransitionComponent:
-      TargetScenePath: scenes/start_menu.chscene
-      Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-665.581421, 380.477661]
-        OffsetMax: [-565.581421, 420.477661]
+        OffsetMin: [-674.3255, -385.501434]
+        OffsetMax: [-391.005341, -345.501465]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -60,87 +58,33 @@ Entities:
       HiddenInHierarchy: false
     WidgetComponent:
       Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [56, 178, 166, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 8
-        Border Size: 1
-        Border Color: [255, 255, 255, 28]
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
         Gradient: false
         Gradient Color: [20, 20, 20, 255]
         Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
       Text Style:
         Font Name: font/gantari/static/gantari-black.ttf
-        Font Size: 18
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
+        Font Size: 40
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
         Shadow Offset: 2
         Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1
+        Letter Spacing: 2
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 1
-      Label: Back
-      Interactable: true
+      Widget Type: 3
+      Text: Select Map
       Auto Size: false
-  - Entity: 11682637913320615338
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: btn_map_bravo
-    IDComponent:
-      {}
-    Scene TransitionComponent:
-      TargetScenePath: scenes/test_platform_scene.chscene
-      Triggered: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-518.681274, -6.00951385]
-        OffsetMax: [-182.591827, 81.208374]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [56, 178, 166, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 10
-        Border Size: 1
-        Border Color: [255, 255, 255, 28]
-        Gradient: false
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
-      Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
-        Font Size: 22
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1.20000005
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Training Grounds
-      Interactable: true
-      Auto Size: false
-  - Entity: 8186592641987359595
+  - Entity: 6535894027793822415
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -193,21 +137,24 @@ Entities:
       Label: Laboratory Alpha
       Interactable: true
       Auto Size: false
-  - Entity: 6955681917174866586
+  - Entity: 4310280601962079134
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: title_map_selection
+      Tag: btn_map_bravo
     IDComponent:
       {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/test_platform_scene.chscene
+      Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-674.3255, -385.501434]
-        OffsetMax: [-391.005341, -345.501465]
+        OffsetMin: [-518.681274, -6.00951385]
+        OffsetMax: [-182.591827, 81.208374]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
@@ -216,29 +163,83 @@ Entities:
       HiddenInHierarchy: false
     WidgetComponent:
       Box Style:
-        BG Color: [0, 0, 0, 0]
-        Hover Color: [0, 0, 0, 0]
-        Pressed Color: [0, 0, 0, 0]
-        Rounding: 0
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 10
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
         Gradient: false
         Gradient Color: [20, 20, 20, 255]
         Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
       Text Style:
         Font Name: font/gantari/static/gantari-black.ttf
-        Font Size: 40
-        Text Color: [110, 231, 211, 255]
-        Shadow: true
+        Font Size: 22
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
         Shadow Offset: 2
         Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 2
+        Letter Spacing: 1.20000005
         Line Height: 1.20000005
         H Align: 1
         V Align: 1
-      Widget Type: 3
-      Text: Select Map
+      Widget Type: 1
+      Label: Training Grounds
+      Interactable: true
+      Auto Size: false
+  - Entity: 3209235650971615068
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: back_button
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/start_menu.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-665.581421, 380.477661]
+        OffsetMax: [-565.581421, 420.477661]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 18
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Back
+      Interactable: true
       Auto Size: false
