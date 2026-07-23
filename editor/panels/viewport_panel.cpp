@@ -694,11 +694,6 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         DrawPlaybackControls();
         DrawScriptReloadButton();
 
-        ImGui::SameLine(0, 15);
-        ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
-        ImGui::SameLine(0, 15);
-
-        DrawRunInNewWindowButton();
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
@@ -828,19 +823,6 @@ void ViewportPanel::DrawScriptReloadButton()
     if (ImGui::IsItemHovered())
     {
         ImGui::SetTooltip("Reload Scripts (Ctrl+R)");
-    }
-}
-
-void ViewportPanel::DrawRunInNewWindowButton()
-{
-    if (ImGui::Button(ICON_FA_WINDOW_MAXIMIZE "##RunSceneInNewWindow", ImVec2(28, 28)))
-    {
-        AppLaunchRuntimeEvent e;
-        Application::Get().OnEvent(e);
-    }
-    if (ImGui::IsItemHovered())
-    {
-        ImGui::SetTooltip("Run Scene in New Window (Shift+F5)");
     }
 }
 
