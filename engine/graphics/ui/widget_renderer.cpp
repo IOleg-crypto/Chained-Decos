@@ -28,6 +28,11 @@ void WidgetRenderer::Update(Timestep ts) {}
 
 void WidgetRenderer::LoadProjectFonts() {
     m_FontRegistry.LoadProjectFonts();
+    // Eagerly preload the default project font so it's baked into the atlas texture
+    // before the editor calls RefreshFontAtlasTexture.
+    // Pass 'true' for allowRuntimeMutation because the editor rebuilds the texture right after this.
+    m_FontRegistry.EnsureDefaultProjectFont(18.0f, true);
+    
     // NOTE: atlas GPU rebuild is the caller's responsibility.
     // See project_manager.cpp / EditorLayer::ReloadEditorFonts for the single-rebuild pattern.
 }

@@ -18,12 +18,63 @@
 namespace Chained
 {
 
-// stb_truetype (used by ImGui) cannot parse variable fonts (OpenType fvar table).
-// Detect them by scanning the sfnt table directory before handing the file to ImGui.
-// Передаємо std::filesystem::path замість std::string для повної підтримки Unicode/UTF-8
-static bool IsVariableFont(const std::filesystem::path& path)
+// stb_truetype (used by ImGui) ONLY supports TrueType glyph outlines (glyf table).
+// It cannot render OpenType CFF/PostScript outlines ('OTTO' header, CFF/CFF2 table)
+// or Variable Fonts (fvar table).
+static bool IsValidFontMetrics(const std::filesystem::path& path)
 {
-    // Використовуємо std::ifstream замість fopen — це автоматично вирішує проблему з UTF-8 на Windows
+    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    if (!file.is_open())
+    {
+        return false;
+    }
+
+    std::streamsize size = file.tellg();
+    if (size <= 0)
+    {
+        return false;
+    }
+    file.seekg(0, std::ios::beg);
+
+    std::vector<char> buffer(size);
+    if (!file.read(buffer.data(), size))
+    {
+        return false;
+    }
+
+    stbtt_fontinfo fontInfo;
+    if (!stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(buffer.data()), 0))
+    {
+        return false;
+    }
+
+    for (int cp = 33; cp <= 126; cp++)
+    {
+        if (cp == ' ' || cp == '\t' || cp == '\n' || cp == '\r')
+        {
+            continue;
+        }
+
+        if (stbtt_FindGlyphIndex(&fontInfo, cp) == 0)
+        {
+            continue;
+        }
+
+        int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
+        if (stbtt_GetCodepointBox(&fontInfo, cp, &x0, &y0, &x1, &y1))
+        {
+            if (x1 < x0 || y1 < y0)
+            {
+                return false;
+            }
+        }
+    }
+
+    return true;
+}
+
+static bool IsSupportedFontFormat(const std::filesystem::path& path)
+{
     std::ifstream f(path, std::ios::binary);
     if (!f.is_open())
     {
@@ -36,102 +87,33 @@ static bool IsVariableFont(const std::filesystem::path& path)
         return false;
     }
 
-    // Перевірка магічного числа (чи це взагале TrueType / OpenType шрифт)
-    // 0x00010000 - TrueType, 'OTTO' - OpenType PostScript
     uint32_t sfntVersion = (static_cast<uint32_t>(hdr[0]) << 24) | (static_cast<uint32_t>(hdr[1]) << 16) |
                            (static_cast<uint32_t>(hdr[2]) << 8) | static_cast<uint32_t>(hdr[3]);
 
-    if (sfntVersion != 0x00010000 && sfntVersion != 0x4F54544F)
+    if (sfntVersion != 0x00010000 && sfntVersion != 0x74727565 /* 'true' */)
     {
         return false;
     }
 
     const uint16_t numTables = (static_cast<uint16_t>(hdr[4]) << 8) | hdr[5];
 
-    // Шукаємо таблицю 'fvar'
     for (uint16_t i = 0; i < numTables; ++i)
     {
         uint8_t rec[16];
         if (!f.read(reinterpret_cast<char*>(rec), sizeof(rec)))
         {
-            break; // Файл пошкоджений або обірвався раніше часу
+            break;
         }
 
-        if (rec[0] == 'f' && rec[1] == 'v' && rec[2] == 'a' && rec[3] == 'r')
+        if ((rec[0] == 'f' && rec[1] == 'v' && rec[2] == 'a' && rec[3] == 'r') ||
+            (rec[0] == 'C' && rec[1] == 'F' && rec[2] == 'F'))
         {
-            return true; // Це варіативний шрифт
+            return false;
         }
     }
 
-    return false;
-}
-
-static bool IsValidFontMetrics(const std::filesystem::path& path)
-{
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file.is_open())
-    {
-        return false;
-    }
-
-    std::streamsize size = file.tellg();
-    file.seekg(0, std::ios::beg);
-
-    std::vector<char> buffer(size);
-    if (!file.read(buffer.data(), size))
-    {
-        return false;
-    }
-
-    stbtt_fontinfo fontInfo;
-    // Ініціалізуємо stbtt (індекс 0 означає перший шрифт у файлі)
-    if (!stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(buffer.data()), 0))
-    {
-        return false;
-    }
-
-    // Check bounding box for visible (non-whitespace) ASCII characters.
-    // Whitespace codepoints (space=32, etc.) legitimately have no visible glyph
-    // and stb_truetype returns inverted/zero bounds for them — that is NOT an error.
-    // We only reject a font if a codepoint that:
-    //   (a) has a glyph index in this font, AND
-    //   (b) is not a whitespace character
-    // returns a truly inverted bounding box, which indicates corrupt metrics.
-    int badGlyphs = 0;
-    int checkedGlyphs = 0;
-    for (int cp = 33; cp <= 126; cp++) // start at 33 ('!'), skip space
-    {
-        // Skip whitespace-like codepoints
-        if (cp == ' ' || cp == '\t' || cp == '\n' || cp == '\r')
-        {
-            continue;
-        }
-
-        // stbtt_FindGlyphIndex returns 0 if the codepoint is not in the font
-        if (stbtt_FindGlyphIndex(&fontInfo, cp) == 0)
-        {
-            continue; // glyph absent — not an error
-        }
-
-        int x0 = 0, y0 = 0, x1 = 0, y1 = 0;
-        if (stbtt_GetCodepointBox(&fontInfo, cp, &x0, &y0, &x1, &y1))
-        {
-            checkedGlyphs++;
-            if (x1 < x0 || y1 < y0)
-            {
-                badGlyphs++;
-            }
-        }
-    }
-
-    // Reject only if the majority of checked glyphs are broken.
-    // A single bad glyph can be a legitimate font quirk; >50% bad is clearly corrupt.
-    if (checkedGlyphs > 0 && badGlyphs > checkedGlyphs / 2)
-    {
-        return false;
-    }
-
-    return true;
+    f.close();
+    return IsValidFontMetrics(path);
 }
 
 std::string UIFontRegistry::NormalizeFontName(std::string name)
@@ -219,6 +201,12 @@ void UIFontRegistry::LoadProjectFonts()
                 continue;
             }
 
+            if (!IsSupportedFontFormat(entry.path()))
+            {
+                CH_CORE_WARN("UIFontRegistry: Skipping font '{}' (unsupported format or CFF/Variable outlines).", entry.path().string());
+                continue;
+            }
+
             std::string relKey = NormalizeFontName(relativePath.generic_string());
             std::string absPath = entry.path().string();
 
@@ -269,7 +257,7 @@ ImFont* UIFontRegistry::EnsureDefaultProjectFont(float pixelSize, bool allowRunt
     {
         if (name.rfind("font/", 0) == 0 || name.rfind("fonts/", 0) == 0)
         {
-            if (!IsVariableFont(std::filesystem::path(absPath)))
+            if (IsSupportedFontFormat(std::filesystem::path(absPath)))
             {
                 chosen = name;
                 break;
@@ -426,20 +414,9 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
         }
     }
 
-    if (IsVariableFont(std::filesystem::path(absolutePath)))
+    if (!IsSupportedFontFormat(std::filesystem::path(absolutePath)))
     {
-        CH_CORE_WARN("UIFontRegistry: Skipping variable font '{}' (not supported by stb_truetype)", absolutePath);
-        m_Fonts[normalizedName] = nullptr;
-        return nullptr;
-    }
-
-    if (!IsValidFontMetrics(std::filesystem::path(absolutePath)))
-    {
-        std::string msg = "Font has corrupted or invalid internal metrics and was skipped:\n" + absolutePath;
-        CH_CORE_ERROR("UIFontRegistry: {}", msg);
-        std::thread([msg]() {
-            Dialogs::ShowError("Font Load Error", msg);
-        }).detach();
+        CH_CORE_WARN("UIFontRegistry: Skipped font '{}' (unsupported format or CFF/Variable outlines).", absolutePath);
         m_Fonts[normalizedName] = nullptr;
         return nullptr;
     }
