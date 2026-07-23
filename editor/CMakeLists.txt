@@ -7,10 +7,14 @@ list(FILTER EDITOR_SOURCES EXCLUDE REGEX ".*/main.cpp$")
 
 target_sources(editor_core PRIVATE ${EDITOR_SOURCES})
 
-
 target_link_libraries(editor_core PUBLIC
     ChainedEngine::Framework
 )
+
+# Pack library — asset packing for shipped builds
+if(TARGET pack-static)
+    target_link_libraries(editor_core PUBLIC pack-static)
+endif()
 
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
@@ -19,11 +23,16 @@ target_include_directories(editor_core PUBLIC
 # Define the Editor executable
 add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
         icons.h)
-target_link_libraries(ChainedEditor PRIVATE editor_core ChainedDecos)
+target_link_libraries(ChainedEditor PRIVATE editor_core)
 target_include_directories(ChainedEditor PRIVATE 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_SOURCE_DIR}
 )
+
+# Packer utility — build-time tool, not linked to the editor
+if(TARGET packer)
+    add_dependencies(ChainedEditor packer)
+endif()
 
 # Apply optimizations
 if(COMMAND apply_engine_optimizations)
