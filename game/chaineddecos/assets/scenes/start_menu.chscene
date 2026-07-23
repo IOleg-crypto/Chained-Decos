@@ -34,121 +34,27 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 16494556949329899514
+  - Entity: 2680868394030261507
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: start_game_menu_options
+      Tag: start_game_title
     IDComponent:
       {}
-    Scene TransitionComponent:
-      TargetScenePath: scenes/video_scene.chscene
-      Triggered: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [56, 178, 166, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 10
-        Border Size: 1
-        Border Color: [255, 255, 255, 28]
-        Gradient: false
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
-      Text Style:
-        Font Name: Default
-        Font Size: 24
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1.5
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Options
-      Interactable: true
-      Auto Size: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-180, -52]
-        OffsetMax: [180, 12]
+        OffsetMin: [-806.656128, -410.254822]
+        OffsetMax: [-472.362244, -391.254822]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 17577768807600468680
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: start_menu_game_info
-    IDComponent:
-      {}
-    Scene TransitionComponent:
-      TargetScenePath: scenes/info_scene.chscene
-      Triggered: true
-    WidgetComponent:
-      Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [56, 178, 166, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 10
-        Border Size: 1
-        Border Color: [255, 255, 255, 28]
-        Gradient: false
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
-      Text Style:
-        Font Name: Default
-        Font Size: 24
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1.5
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Info
-      Interactable: true
-      Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-180, 36]
-        OffsetMax: [180, 100]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 667627539619280899
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: start_game_info
-    IDComponent:
-      {}
     WidgetComponent:
       Box Style:
         BG Color: [0, 0, 0, 0]
@@ -157,92 +63,27 @@ Entities:
         Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
-        Gradient: false
+        Gradient: true
         Gradient Color: [20, 20, 20, 255]
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
         Transition Speed: 0.100000001
       Text Style:
-        Font Name: Default
-        Font Size: 19
-        Text Color: [150, 156, 179, 255]
+        Font Name: font/gantari/static/gantari-blackitalic.ttf
+        Font Size: 27
+        Text Color: [150, 156, 166, 255]
         Shadow: false
         Shadow Offset: 2
         Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1.20000005
-        Line Height: 1.20000005
+        Letter Spacing: 3.3499999
+        Line Height: 5
         H Align: 1
         V Align: 1
       Widget Type: 3
-      Text: The game is currently in development.
+      Text: Chained Decos
       Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-795.553711, 450.183167]
-        OffsetMax: [-275.553711, 484.183167]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 14912850151077526320
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.exitscript
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: start_button_exit
-    IDComponent:
-      {}
-    WidgetComponent:
-      Box Style:
-        BG Color: [30, 33, 40, 255]
-        Hover Color: [200, 70, 70, 255]
-        Pressed Color: [150, 204, 50, 255]
-        Rounding: 32
-        Border Size: 1
-        Border Color: [237, 255, 255, 28]
-        Gradient: true
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 2
-      Text Style:
-        Font Name: fonts/lato/lato-lightitalic.ttf
-        Font Size: 22.5
-        Text Color: [235, 238, 242, 255]
-        Shadow: false
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 4.3499999
-        Line Height: 3.3499999
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Exit
-      Interactable: true
-      Auto Size: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-180, 124]
-        OffsetMax: [180, 188]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-  - Entity: 12837870467190960715
+  - Entity: 3507518271695264099
     ManagedScriptComponent:
       Scripts:
         []
@@ -257,6 +98,18 @@ Entities:
     Scene TransitionComponent:
       TargetScenePath: scenes/map_selection.chscene
       Triggered: true
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-180, -140]
+        OffsetMax: [180, -76]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
     WidgetComponent:
       Box Style:
         BG Color: [56, 178, 166, 255]
@@ -272,7 +125,7 @@ Entities:
         Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/alan_sans/static/alansans-black.ttf
+        Font Name: font/gantari/static/gantari-bold.ttf
         Font Size: 26
         Text Color: [15, 24, 26, 255]
         Shadow: false
@@ -286,27 +139,80 @@ Entities:
       Label: Start
       Interactable: true
       Auto Size: false
+  - Entity: 10770148396908205821
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.exitscript
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_button_exit
+    IDComponent:
+      {}
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-180, -140]
-        OffsetMax: [180, -76]
+        OffsetMin: [-180, 124]
+        OffsetMax: [180, 188]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
-  - Entity: 16006488252821899107
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [200, 70, 70, 255]
+        Pressed Color: [150, 204, 50, 255]
+        Rounding: 32
+        Border Size: 1
+        Border Color: [237, 255, 255, 28]
+        Gradient: true
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 2
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 22.5
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 4.3499999
+        Line Height: 3.3499999
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Exit
+      Interactable: true
+      Auto Size: false
+  - Entity: 5115402197685788948
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: start_game_title
+      Tag: start_game_info
     IDComponent:
       {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-795.553711, 450.183167]
+        OffsetMax: [-275.553711, 484.183167]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
     WidgetComponent:
       Box Style:
         BG Color: [0, 0, 0, 0]
@@ -315,35 +221,129 @@ Entities:
         Rounding: 0
         Border Size: 0
         Border Color: [255, 255, 255, 255]
-        Gradient: true
+        Gradient: false
         Gradient Color: [20, 20, 20, 255]
         Padding: 4
         Hover Scale: 1
         Pressed Scale: 1
         Transition Speed: 0.100000001
       Text Style:
-        Font Name: fonts/lato/lato-lightitalic.ttf
-        Font Size: 27
-        Text Color: [150, 156, 166, 255]
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 19
+        Text Color: [150, 156, 179, 255]
         Shadow: false
         Shadow Offset: 2
         Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 3.3499999
-        Line Height: 5
+        Letter Spacing: 1.20000005
+        Line Height: 1.20000005
         H Align: 1
         V Align: 1
       Widget Type: 3
-      Text: Chained Decos
+      Text: The game is currently in development.
       Auto Size: false
+  - Entity: 16095001518934046165
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_menu_game_info
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/info_scene.chscene
+      Triggered: true
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-806.656128, -410.254822]
-        OffsetMax: [-472.362244, -391.254822]
+        OffsetMin: [-180, 36]
+        OffsetMax: [180, 100]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 10
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 24
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1.5
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Info
+      Interactable: true
+      Auto Size: false
+  - Entity: 15384451659084039980
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: start_game_menu_options
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/video_scene.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-180, -52]
+        OffsetMax: [180, 12]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 10
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 24
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1.5
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Options
+      Interactable: true
+      Auto Size: false
