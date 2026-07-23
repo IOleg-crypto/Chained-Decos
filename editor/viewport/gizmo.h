@@ -4,9 +4,8 @@
 #include "engine/graphics/camera_types.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
-#include "ImGuizmo.h"
+#include <imgui.h>
+#include <ImGuizmo.h>
 
 namespace Chained
 {
