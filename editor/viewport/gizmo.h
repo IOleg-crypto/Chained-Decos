@@ -1,12 +1,12 @@
 #ifndef CH_EDITOR_GIZMO_H
 #define CH_EDITOR_GIZMO_H
 
-#include "engine/scene/scene.h"
-#include "engine/scene/components.h"
 #include "engine/graphics/camera_types.h"
+#include "engine/scene/components.h"
+#include "engine/scene/scene.h"
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "imgui.h"
 #include "ImGuizmo.h"
+#include "imgui.h"
 
 namespace Chained
 {
@@ -30,35 +30,76 @@ public:
     // true if the gizmo is being used (captured mouse)
     bool RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize, const Camera3D& camera);
 
-    void Set2DMode(bool enabled) { m_Is2DMode = enabled; }
-    bool Is2DMode() const { return m_Is2DMode; }
+    void Set2DMode(bool enabled)
+    {
+        m_Is2DMode = enabled;
+    }
+    bool Is2DMode() const
+    {
+        return m_Is2DMode;
+    }
 
-    bool IsHovered() const { return ImGuizmo::IsOver(); }
-    bool IsDragging() const { return ImGuizmo::IsUsing(); }
+    bool IsHovered() const
+    {
+        return ImGuizmo::IsOver();
+    }
+    bool IsDragging() const
+    {
+        return ImGuizmo::IsUsing();
+    }
 
     // Snapping
-    void SetSnapping(bool enabled) { m_SnappingEnabled = enabled; }
-    bool IsSnappingEnabled() const { return m_SnappingEnabled; }
+    void SetSnapping(bool enabled)
+    {
+        m_SnappingEnabled = enabled;
+    }
+    bool IsSnappingEnabled() const
+    {
+        return m_SnappingEnabled;
+    }
 
-    void SetGridSize(float size)      { m_TranslationSnap = size; }
-    void SetRotationStep(float step)  { m_RotationSnap = step; }
-    void SetScaleStep(float step)     { m_ScaleSnap = step; }
+    void SetGridSize(float size)
+    {
+        m_TranslationSnap = size;
+    }
+    void SetRotationStep(float step)
+    {
+        m_RotationSnap = step;
+    }
+    void SetScaleStep(float step)
+    {
+        m_ScaleSnap = step;
+    }
 
-    float GetGridSize() const     { return m_TranslationSnap; }
-    float GetRotationStep() const { return m_RotationSnap; }
-    float GetScaleStep() const    { return m_ScaleSnap; }
+    float GetGridSize() const
+    {
+        return m_TranslationSnap;
+    }
+    float GetRotationStep() const
+    {
+        return m_RotationSnap;
+    }
+    float GetScaleStep() const
+    {
+        return m_ScaleSnap;
+    }
 
-    void SetLocalSpace(bool local) { m_IsLocalSpace = local; }
-    bool IsLocalSpace() const      { return m_IsLocalSpace; }
+    void SetLocalSpace(bool local)
+    {
+        m_IsLocalSpace = local;
+    }
+    bool IsLocalSpace() const
+    {
+        return m_IsLocalSpace;
+    }
 
 private:
     bool m_SnappingEnabled = false;
-    
-    
+
     float m_TranslationSnap = 1.0f;
     float m_RotationSnap = 45.0f;
     float m_ScaleSnap = 0.1f;
-    
+
     bool m_IsLocalSpace = false;
     bool m_Is2DMode = false;
 
