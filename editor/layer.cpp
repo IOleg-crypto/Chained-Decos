@@ -369,6 +369,7 @@ void EditorLayer::ReloadEditorFonts()
     }
 
     AddEditorFontsToAtlas();
+    EditorGUI::ApplyTheme();
 
     // Re-add project fonts if a project is loaded.
     if (auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>())

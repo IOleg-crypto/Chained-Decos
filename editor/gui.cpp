@@ -578,6 +578,7 @@ void EditorGUI::DrawEditorSettings()
         if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Settings", ImVec2(-1, 0)))
         {
             EditorLayer::Get().SaveConfig();
+            EditorGUI::ApplyTheme();
             EditorLayer::Get().RequestEditorFontReload();
         }
         if (ImGui::IsItemHovered())
@@ -944,6 +945,8 @@ bool EditorGUI::DrawVec4(const char* label, glm::vec4& values, float resetValue)
 void EditorGUI::ApplyTheme()
 {
     ImGuiStyle& style = ImGui::GetStyle();
+    style = ImGuiStyle(); // Reset to clean defaults to prevent ScaleAllSizes from accumulating
+
     style.WindowRounding = 5.0f;
     style.FrameRounding = 4.0f;
     style.PopupRounding = 4.0f;
@@ -990,6 +993,10 @@ void EditorGUI::ApplyTheme()
     colors[ImGuiCol_NavHighlight] = ImVec4(0.26f, 0.59f, 0.98f, 1.00f);
     colors[ImGuiCol_NavWindowingHighlight] = ImVec4(1.00f, 1.00f, 1.00f, 0.70f);
     colors[ImGuiCol_NavWindowingDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.20f);
-    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.80f, 0.80f, 0.80f, 0.35f);
+    colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.10f, 0.12f, 0.14f, 0.73f);
+
+    float fontSize = EditorLayer::Get().GetConfig().FontSize;
+    float scale = fontSize > 0.0f ? (fontSize / 13.0f) : 1.0f;
+    style.ScaleAllSizes(scale);
 }
 } // namespace Chained

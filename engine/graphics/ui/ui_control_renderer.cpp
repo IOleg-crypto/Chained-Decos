@@ -20,6 +20,12 @@ bool RenderControl(UIFontRegistry& fontRegistry,
         activeFont = fontRegistry.GetFont(*fontName, control.TextStyle.FontSize);
     }
 
+    // Fall back to the project's default font, not the editor's ImGui font.
+    if (!activeFont)
+    {
+        activeFont = fontRegistry.GetDefaultFont();
+    }
+
     bool changed = false;
 
     std::visit([&](auto&& arg) {
