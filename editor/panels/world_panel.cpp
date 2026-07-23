@@ -64,7 +64,10 @@ void WorldPanel::OnImGuiRender(bool readOnly)
     if (ImGui::CollapsingHeader(ICON_FA_SLIDERS "  Scene General", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Indent(10.0f);
-        if (readOnly) ImGui::BeginDisabled();
+        if (readOnly)
+        {
+            ImGui::BeginDisabled();
+        }
 
         const char* typeModes[] = {"Default (3D)", "UI"};
         int currentType = (int)m_Context->GetSettings().Type;
@@ -78,7 +81,10 @@ void WorldPanel::OnImGuiRender(bool readOnly)
             m_Context->GetSettings().Type = (SceneType)currentType;
         }
 
-        if (readOnly) ImGui::EndDisabled();
+        if (readOnly)
+        {
+            ImGui::EndDisabled();
+        }
         ImGui::Unindent(10.0f);
     }
 

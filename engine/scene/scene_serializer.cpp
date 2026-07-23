@@ -1,12 +1,12 @@
 #include "scene_serializer.h"
-#include "engine/core/service_locator.h"
 #include "component_serializer.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/project/project.h"
-#include "engine/scene/yaml.h"
 #include "engine/assets/types/environment_asset.h"
-#include "scene.h"
+#include "engine/core/service_locator.h"
+#include "engine/project/project.h"
 #include "engine/scene/hierarchy_serializer.h"
+#include "engine/scene/yaml.h"
+#include "scene.h"
 #include <fstream>
 #include <set>
 #include <sstream>
@@ -15,8 +15,7 @@ namespace Chained
 {
 namespace
 {
-template <typename T>
-T ReadYamlValue(const YAML::Node& node, const char* key, const T& fallback)
+template <typename T> T ReadYamlValue(const YAML::Node& node, const char* key, const T& fallback)
 {
     if (!node || !node[key])
     {
@@ -133,8 +132,8 @@ static void DeserializeCanvasSettings(const YAML::Node& data, SceneSettings& set
     auto canvas = data["Canvas"];
     settings.Canvas.ReferenceResolution =
         ReadYamlValue(canvas, "ReferenceResolution", settings.Canvas.ReferenceResolution);
-    settings.Canvas.ScaleMode = static_cast<CanvasScaleMode>(
-        ReadYamlValue(canvas, "ScaleMode", static_cast<int>(settings.Canvas.ScaleMode)));
+    settings.Canvas.ScaleMode =
+        static_cast<CanvasScaleMode>(ReadYamlValue(canvas, "ScaleMode", static_cast<int>(settings.Canvas.ScaleMode)));
     settings.Canvas.MatchWidthOrHeight =
         ReadYamlValue(canvas, "MatchWidthOrHeight", settings.Canvas.MatchWidthOrHeight);
 }
@@ -164,12 +163,14 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(envPath , EnvironmentAsset::GetStaticType());
+            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(envPath, EnvironmentAsset::GetStaticType());
             auto sharedEnv = ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(envPath);
             if (sharedEnv)
             {
                 if (!settings.Environment)
+                {
                     settings.Environment = std::make_shared<EnvironmentAsset>();
+                }
 
                 settings.Environment->SetSettings(sharedEnv->GetSettings());
                 settings.Environment->SetPath(sharedEnv->GetPath());
@@ -421,13 +422,11 @@ bool SceneSerializer::DeserializeFromString(const std::string& yaml)
     try
     {
         data = YAML::Load(yaml);
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         m_LastError = std::string("SceneSerializer: invalid YAML: ") + e.what();
         return false;
-    }
-    catch (...)
+    } catch (...)
     {
         m_LastError = "SceneSerializer: invalid YAML with an unknown exception";
         return false;

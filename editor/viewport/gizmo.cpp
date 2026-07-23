@@ -1,10 +1,10 @@
 #include "editor/viewport/gizmo.h"
-#include "gui.h"
-#include "layer.h"
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/hierarchy_component.h"
-#include "undo/modify_component_command.h"
+#include "gui.h"
 #include "imgui_internal.h"
+#include "layer.h"
+#include "undo/modify_component_command.h"
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
@@ -72,8 +72,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
         projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
     }
 
-    
-    float currentSnapValues[3] = { 0.0f, 0.0f, 0.0f };
+    float currentSnapValues[3] = {0.0f, 0.0f, 0.0f};
     if (m_SnappingEnabled)
     {
         if (type == GizmoType::TRANSLATE)
@@ -84,8 +83,8 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
         }
         else if (type == GizmoType::ROTATE)
         {
-            
-            currentSnapValues[0] = m_RotationSnap; 
+
+            currentSnapValues[0] = m_RotationSnap;
         }
         else if (type == GizmoType::SCALE)
         {
@@ -94,7 +93,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
             currentSnapValues[2] = m_ScaleSnap;
         }
     }
-    
+
     float* snap = m_SnappingEnabled ? currentSnapValues : nullptr;
 
     // 4. Manipulation
@@ -104,17 +103,22 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
     if (m_Is2DMode)
     {
         if (op == ImGuizmo::TRANSLATE)
+        {
             op = (ImGuizmo::OPERATION)(ImGuizmo::TRANSLATE_X | ImGuizmo::TRANSLATE_Y);
+        }
         else if (op == ImGuizmo::SCALE)
+        {
             op = (ImGuizmo::OPERATION)(ImGuizmo::SCALE_X | ImGuizmo::SCALE_Y);
+        }
         else if (op == ImGuizmo::ROTATE)
+        {
             op = ImGuizmo::ROTATE_Z;
+        }
     }
 
     const bool wasUsing = m_WasUsing;
-    const bool manipulated =
-        ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), op,
-                             mode, glm::value_ptr(modelMat), nullptr, snap);
+    const bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), op, mode,
+                                                  glm::value_ptr(modelMat), nullptr, snap);
 
     const bool isUsingNow = ImGuizmo::IsUsing();
     if (isUsingNow && !wasUsing)
@@ -142,7 +146,7 @@ bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 vie
                                               glm::value_ptr(rotation), glm::value_ptr(scale));
 
         ComponentUtils::SetTranslation(transform, translation);
-        ComponentUtils::SetRotation(transform, glm::radians(rotation)); 
+        ComponentUtils::SetRotation(transform, glm::radians(rotation));
         ComponentUtils::SetScale(transform, scale);
     }
     else if (m_WasUsing && !isUsingNow)
