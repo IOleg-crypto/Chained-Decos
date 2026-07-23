@@ -9,4 +9,5 @@ chained_add_engine_module(engine_assets
         engine_external_miniaudio
         yaml-cpp
         assimp
+        pack-static
 )
