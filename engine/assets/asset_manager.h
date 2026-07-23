@@ -10,6 +10,12 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
+
+namespace pack
+{
+class Reader;
+}
 
 namespace Chained
 {
@@ -26,13 +32,39 @@ public:
     // Registers the loader for a specific asset type.
     void RegisterLoader(AssetType type, AssetLoader loader);
 
-    void SetAssetDirectory(const std::filesystem::path& path) { m_AssetDirectory = path; }
-    void SetProjectDirectory(const std::filesystem::path& path) { m_ProjectDirectory = path; }
-    void SetEngineRoot(const std::filesystem::path& path) { m_EngineRoot = path; }
+    void SetAssetDirectory(const std::filesystem::path& path)
+    {
+        m_AssetDirectory = path;
+    }
+    void SetProjectDirectory(const std::filesystem::path& path)
+    {
+        m_ProjectDirectory = path;
+    }
+    void SetEngineRoot(const std::filesystem::path& path)
+    {
+        m_EngineRoot = path;
+    }
 
-    [[nodiscard]] const std::filesystem::path& GetAssetDirectory() const { return m_AssetDirectory; }
-    [[nodiscard]] const std::filesystem::path& GetProjectDirectory() const { return m_ProjectDirectory; }
-    [[nodiscard]] const std::filesystem::path& GetEngineRoot() const { return m_EngineRoot; }
+    // Pack archive support
+    bool OpenPack(const std::filesystem::path& packPath);
+    bool IsPacked() const
+    {
+        return m_PackOpen;
+    }
+    std::vector<uint8_t> ReadAssetData(const std::string& assetPath);
+
+    [[nodiscard]] const std::filesystem::path& GetAssetDirectory() const
+    {
+        return m_AssetDirectory;
+    }
+    [[nodiscard]] const std::filesystem::path& GetProjectDirectory() const
+    {
+        return m_ProjectDirectory;
+    }
+    [[nodiscard]] const std::filesystem::path& GetEngineRoot() const
+    {
+        return m_EngineRoot;
+    }
 
     // Resolves a path through the project root and caches the resolved value.
     [[nodiscard]] std::string ResolvePath(const std::string& path) const;
@@ -75,8 +107,14 @@ public:
     void FinalizePendingLoads();
 
     // Interval (seconds) between .chasset staleness checks. 0 = disabled.
-    void SetHotReloadInterval(float seconds) { m_HotReloadInterval = seconds; }
-    float GetHotReloadInterval() const { return m_HotReloadInterval; }
+    void SetHotReloadInterval(float seconds)
+    {
+        m_HotReloadInterval = seconds;
+    }
+    float GetHotReloadInterval() const
+    {
+        return m_HotReloadInterval;
+    }
 
     template <typename T> void Reload(const std::string& path)
     {
@@ -107,6 +145,9 @@ private:
     std::filesystem::path m_AssetDirectory;
     std::filesystem::path m_ProjectDirectory;
     std::filesystem::path m_EngineRoot;
+
+    std::unique_ptr<pack::Reader> m_PackReader;
+    bool m_PackOpen = false;
 
     float m_HotReloadInterval = 3.0f;
     float m_HotReloadAccumulator = 0.0f;

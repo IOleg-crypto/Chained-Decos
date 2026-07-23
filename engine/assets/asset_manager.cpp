@@ -11,6 +11,7 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
+#include <pack/reader.hpp>
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/assets/loaders/shader_loader.h"
@@ -21,7 +22,6 @@ constexpr size_t kMaxAssetFinalizationsPerFrame = 32;
 constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(5);
 
 AssetManager::AssetManager() = default;
-
 
 void AssetManager::Initialize()
 {
@@ -105,10 +105,16 @@ void AssetManager::CheckModelHotReload()
                 continue;
             }
 
-            auto sourceTime  = std::filesystem::last_write_time(sourcePath, ec);
-            if (ec) continue;
+            auto sourceTime = std::filesystem::last_write_time(sourcePath, ec);
+            if (ec)
+            {
+                continue;
+            }
             auto chassetTime = std::filesystem::last_write_time(chassetPath, ec);
-            if (ec) continue;
+            if (ec)
+            {
+                continue;
+            }
 
             // Source is newer than cache → stale
             if (sourceTime > chassetTime)
@@ -128,12 +134,13 @@ void AssetManager::CheckModelHotReload()
 AssetManager::~AssetManager()
 {
     std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    m_PackReader.reset();
+    m_PackOpen = false;
     m_AssetCache.clear();
     m_PathToHandle.clear();
     m_PathCache.clear();
     m_Loaders.clear();
 }
-
 
 void AssetManager::RegisterLoader(AssetType type, AssetLoader loader)
 {
@@ -232,7 +239,6 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     return resolved;
 }
 
-
 AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
 {
     std::string resolved = ResolvePath(path);
@@ -300,22 +306,22 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
             std::string loaderError;
             if (!loader->Load(asset, resolved, &loaderError))
             {
-                asset->Fail(loaderError.empty() ? ("AssetManager: Synchronous loader returned false for '" + resolved + "'")
-                                                : loaderError);
+                asset->Fail(loaderError.empty()
+                                ? ("AssetManager: Synchronous loader returned false for '" + resolved + "'")
+                                : loaderError);
                 return asset;
             }
 
             asset->ClearError();
             asset->OnLoaded();
             asset->SetState(AssetState::Ready);
-        }
-        catch (const std::exception& e)
+        } catch (const std::exception& e)
         {
             asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "': " + e.what());
-        }
-        catch (...)
+        } catch (...)
         {
-            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "' with an unknown exception");
+            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved +
+                        "' with an unknown exception");
         }
     }
     else
@@ -326,22 +332,22 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
                 std::string loaderError;
                 if (!loader->Load(asset, resolved, &loaderError))
                 {
-                    asset->Fail(loaderError.empty() ? ("AssetManager: Async loader returned false for '" + resolved + "'")
-                                                    : loaderError);
+                    asset->Fail(loaderError.empty()
+                                    ? ("AssetManager: Async loader returned false for '" + resolved + "'")
+                                    : loaderError);
                     return;
                 }
 
                 asset->ClearError();
                 std::lock_guard<std::mutex> lock(m_PendingMutex);
                 m_PendingAssets.push_back(asset);
-            }
-            catch (const std::exception& e)
+            } catch (const std::exception& e)
             {
                 asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "': " + e.what());
-            }
-            catch (...)
+            } catch (...)
             {
-                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "' with an unknown exception");
+                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved +
+                            "' with an unknown exception");
             }
         });
     }
@@ -397,14 +403,13 @@ void AssetManager::FinalizePendingLoads()
             {
                 asset->SetState(AssetState::Ready);
             }
-        }
-        catch (const std::exception& e)
+        } catch (const std::exception& e)
         {
             asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "': " + e.what());
-        }
-        catch (...)
+        } catch (...)
         {
-            asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() + "' with an unknown exception");
+            asset->Fail(std::string("AssetManager: Finalization failed for '") + asset->GetPath() +
+                        "' with an unknown exception");
         }
 
         ++finalizedCount;
@@ -490,15 +495,67 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
         asset->ClearError();
         asset->OnLoaded();
         asset->SetState(AssetState::Ready);
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "': " + e.what());
-    }
-    catch (...)
+    } catch (...)
     {
         asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "' with an unknown exception");
     }
+}
+
+bool AssetManager::OpenPack(const std::filesystem::path& packPath)
+{
+    if (m_PackOpen)
+    {
+        return true;
+    }
+
+    if (!std::filesystem::exists(packPath))
+    {
+        CH_CORE_WARN("AssetManager: Pack file not found: {}", packPath.string());
+        return false;
+    }
+
+    try
+    {
+        m_PackReader = std::make_unique<pack::Reader>(packPath);
+        m_PackOpen = true;
+        CH_CORE_INFO("AssetManager: Opened pack '{}' ({} items)", packPath.string(), m_PackReader->getItemCount());
+        return true;
+    } catch (const pack::Error& err)
+    {
+        CH_CORE_ERROR("AssetManager: Failed to open pack '{}': {}", packPath.string(), err.what());
+        m_PackReader.reset();
+        m_PackOpen = false;
+        return false;
+    }
+}
+
+std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
+{
+    if (m_PackOpen && m_PackReader)
+    {
+        uint64_t idx = 0;
+        if (m_PackReader->getItemIndex(assetPath.c_str(), idx))
+        {
+            std::vector<uint8_t> data;
+            m_PackReader->readItemData(idx, data);
+            return data;
+        }
+    }
+
+    std::ifstream file(assetPath, std::ios::binary | std::ios::ate);
+    if (file.is_open())
+    {
+        auto size = file.tellg();
+        file.seekg(0);
+        std::vector<uint8_t> data(static_cast<size_t>(size));
+        file.read(reinterpret_cast<char*>(data.data()), size);
+        return data;
+    }
+
+    return {};
 }
 
 } // namespace Chained

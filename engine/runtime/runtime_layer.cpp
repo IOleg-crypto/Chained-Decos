@@ -7,6 +7,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/common/asset_path.h"
 #include "engine/core/events/window_events.h"
+#include "engine/core/platform.h"
 #include "engine/core/service_locator.h"
 #include "engine/core/window.h"
 #include "engine/graphics/pipeline/renderer.h"
@@ -138,9 +139,7 @@ void RuntimeLayer::OnUpdate(Timestep ts)
             auto* imguiLayer = Application::Get().GetImGuiLayer();
             if (imguiLayer)
             {
-                imguiLayer->ExecuteNextFrame([imguiLayer]() {
-                    imguiLayer->RefreshFontAtlasTexture();
-                });
+                imguiLayer->ExecuteNextFrame([imguiLayer]() { imguiLayer->RefreshFontAtlasTexture(); });
             }
             uiRenderer->GetFontRegistry().ClearRebuildFlag();
         }
@@ -478,6 +477,13 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     m_AssetManager->SetProjectDirectory(project->GetProjectDirectoryForProject());
     m_AssetManager->SetAssetDirectory(Project::GetAssetDirectory());
 
+    // Open resources.pack if it exists next to the executable
+    std::filesystem::path packPath = Platform::GetExecutableDirectory() / "resources.pack";
+    if (std::filesystem::exists(packPath))
+    {
+        m_AssetManager->OpenPack(packPath);
+    }
+
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
     m_Renderer->LoadEngineResources();
 
@@ -618,8 +624,7 @@ void RuntimeLayer::LoadInitialScene()
                         break;
                     }
                 }
-            }
-            catch (const std::filesystem::filesystem_error& e)
+            } catch (const std::filesystem::filesystem_error& e)
             {
                 CH_CORE_WARN("RuntimeSystem: Failed to enumerate scenes in '{}': {}", scenesDir.string(), e.what());
             }

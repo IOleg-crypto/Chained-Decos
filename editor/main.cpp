@@ -4,21 +4,15 @@
 
 namespace Chained
 {
-// Forward declare the game's registration function
-// This lives in the game static library
-extern void RegisterGameComponents();
-
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
-    RegisterGameComponents();
-
     ApplicationSpecification spec;
     spec.Name = "ChainedEditor";
     spec.CommandLineArgs = args;
 
     // Default editor window settings
-    spec.WindowWidth = 1600;
-    spec.WindowHeight = 900;
+    spec.WindowWidth = 0;
+    spec.WindowHeight = 0;
     spec.Headless = false;
     spec.EnableScripting = true;
     spec.Fullscreen = false;

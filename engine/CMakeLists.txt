@@ -27,7 +27,6 @@ add_subdirectory(scene)
 add_subdirectory(project)
 
 add_subdirectory(platform)
-#add_subdirectory(network)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
 add_subdirectory(app)
 add_subdirectory(runtime)

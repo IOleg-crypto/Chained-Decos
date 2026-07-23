@@ -29,11 +29,9 @@ include(assimp)
 
 include(coral)
 include(external_gtest)
+include(pack)
 include(portable-file-dialogs)
 # No time for networking right now
-
-# include(protobuf) # Required for GNS
-# include(gamenetworkingsockets)
 
 include(reflect-cpp)
 
@@ -50,8 +48,13 @@ foreach(_ext_target
     GTest gmock
     Coral.Native
     assimp
+
 )
     if(TARGET ${_ext_target})
         set_target_properties(${_ext_target} PROPERTIES UNITY_BUILD OFF)
     endif()
 endforeach()
+
+if(NOT TARGET libzstd_static AND NOT TARGET libzstd)
+    add_subdirectory(thirdparty/zstd/build/cmake/lib)
+endif()
