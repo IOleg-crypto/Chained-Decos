@@ -97,7 +97,6 @@ private:
     void DrawTransformSpaceToggle();
     void DrawPlaybackControls();
     void DrawScriptReloadButton();
-    void DrawRunInNewWindowButton();
 
     // Icon rendering helpers
     void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
