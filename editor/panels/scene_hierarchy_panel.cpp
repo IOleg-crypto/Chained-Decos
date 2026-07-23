@@ -376,55 +376,58 @@ void SceneHierarchyPanel::DrawContextMenu()
     ImGui::Separator();
 
     // --- Quick Create: Lights & Camera ---
-    struct QuickCreateEntry { const char* label; const char* icon; std::function<void()> action; };
-    static const QuickCreateEntry quickCreates[] = {
-        {"Camera", ICON_FA_VIDEO, [this]() {
-            auto e = m_Context->CreateEntity("Camera");
-            e.AddComponent<CameraComponent>();
-        }},
-        {"Point Light", ICON_FA_LIGHTBULB, [this]() {
-            auto e = m_Context->CreateEntity("Point Light");
-            e.AddComponent<LightComponent>().Type = LightType::Point;
-        }},
-        {"Spot Light", ICON_FA_LIGHTBULB, [this]() {
-            auto e = m_Context->CreateEntity("Spot Light");
-            e.AddComponent<LightComponent>().Type = LightType::Spot;
-        }},
-        {"Directional Light", ICON_FA_LIGHTBULB, [this]() {
-            auto e = m_Context->CreateEntity("Directional Light");
-            e.AddComponent<LightComponent>().Type = LightType::Directional;
-        }},
-    };
-    for (auto& entry : quickCreates)
+    if (m_Context->GetSettings().Type != SceneType::UI)
     {
-        std::string label = entry.icon ? std::string(entry.icon) + " " + entry.label : entry.label;
-        if (ImGui::MenuItem(label.c_str()))
-            entry.action();
-    }
-
-    ImGui::Separator();
-
-    // --- 3D Object Submenu ---
-    struct PrimitiveEntry { const char* label; const char* mesh; };
-    static const PrimitiveEntry primitives[] = {
-        {"Cube", ":cube:"}, {"Sphere", ":sphere:"}, {"Cylinder", ":cylinder:"},
-        {"Cone", ":cone:"}, {"Torus", ":torus:"}, {"Knot", ":knot:"}, {"Plane", ":plane:"},
-    };
-    if (ImGui::BeginMenu("3D Object"))
-    {
-        for (auto& p : primitives)
+        struct QuickCreateEntry { const char* label; const char* icon; std::function<void()> action; };
+        static const QuickCreateEntry quickCreates[] = {
+            {"Camera", ICON_FA_VIDEO, [this]() {
+                auto e = m_Context->CreateEntity("Camera");
+                e.AddComponent<CameraComponent>();
+            }},
+            {"Point Light", ICON_FA_LIGHTBULB, [this]() {
+                auto e = m_Context->CreateEntity("Point Light");
+                e.AddComponent<LightComponent>().Type = LightType::Point;
+            }},
+            {"Spot Light", ICON_FA_LIGHTBULB, [this]() {
+                auto e = m_Context->CreateEntity("Spot Light");
+                e.AddComponent<LightComponent>().Type = LightType::Spot;
+            }},
+            {"Directional Light", ICON_FA_LIGHTBULB, [this]() {
+                auto e = m_Context->CreateEntity("Directional Light");
+                e.AddComponent<LightComponent>().Type = LightType::Directional;
+            }},
+        };
+        for (auto& entry : quickCreates)
         {
-            if (ImGui::MenuItem(p.label))
-            {
-                m_CommandHistory.PushCommand(
-                    std::make_unique<CreateEntityCommand>(m_Context.get(), p.label, p.mesh));
-            }
+            std::string label = entry.icon ? std::string(entry.icon) + " " + entry.label : entry.label;
+            if (ImGui::MenuItem(label.c_str()))
+                entry.action();
         }
-        ImGui::EndMenu();
+
+        ImGui::Separator();
+
+        // --- 3D Object Submenu ---
+        struct PrimitiveEntry { const char* label; const char* mesh; };
+        static const PrimitiveEntry primitives[] = {
+            {"Cube", ":cube:"}, {"Sphere", ":sphere:"}, {"Cylinder", ":cylinder:"},
+            {"Cone", ":cone:"}, {"Torus", ":torus:"}, {"Knot", ":knot:"}, {"Plane", ":plane:"},
+        };
+        if (ImGui::BeginMenu("3D Object"))
+        {
+            for (auto& p : primitives)
+            {
+                if (ImGui::MenuItem(p.label))
+                {
+                    m_CommandHistory.PushCommand(
+                        std::make_unique<CreateEntityCommand>(m_Context.get(), p.label, p.mesh));
+                }
+            }
+            ImGui::EndMenu();
+        }
     }
 
     // --- UI Widget Submenus ---
-    if (m_Context->GetSettings().Mode != BackgroundMode::Environment3D)
+    if (m_Context->GetSettings().Type == SceneType::UI || m_Context->GetSettings().Mode != BackgroundMode::Environment3D)
     {
         struct WidgetEntry { const char* label; const char* typeName; };
         struct WidgetCategory { const char* label; const WidgetEntry* entries; int count; };

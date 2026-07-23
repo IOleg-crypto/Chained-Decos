@@ -6,10 +6,8 @@
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/transform_component.h"
 
-
 #include <algorithm>
 #include <glm/gtx/quaternion.hpp>
-
 
 namespace Chained
 {
@@ -35,6 +33,34 @@ Camera3D EditorCameraController::ToCamera3D() const
     camera.NearClip = m_NearClip;
     camera.FarClip = m_FarClip;
     return camera;
+}
+
+void EditorCameraController::Set2DMode(bool enabled)
+{
+    if (m_Is2DMode == enabled)
+    {
+        return;
+    }
+
+    m_Is2DMode = enabled;
+
+    if (m_Is2DMode)
+    {
+        m_SavedPitch = m_Pitch;
+        m_SavedYaw = m_Yaw;
+        m_SavedProjectionType = GetProjectionType();
+
+        m_Pitch = 0.0f;
+        m_Yaw = 0.0f;
+        SetProjectionType(ProjectionType::Orthographic);
+    }
+    else
+    {
+        m_Pitch = m_SavedPitch;
+        m_Yaw = m_SavedYaw;
+        SetProjectionType(m_SavedProjectionType);
+    }
+    UpdateView();
 }
 
 void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const glm::vec2& viewportSize)
@@ -96,11 +122,11 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
 
         if (Core::Input::IsKeyDown(KeyCode::W))
         {
-            currentPos += fwd * speed;
+            currentPos += (m_Is2DMode ? upg : fwd) * speed;
         }
         if (Core::Input::IsKeyDown(KeyCode::S))
         {
-            currentPos -= fwd * speed;
+            currentPos -= (m_Is2DMode ? upg : fwd) * speed;
         }
         if (Core::Input::IsKeyDown(KeyCode::D))
         {
@@ -174,6 +200,11 @@ void EditorCameraController::MousePan(const glm::vec2& delta)
 
 void EditorCameraController::MouseRotate(const glm::vec2& delta)
 {
+    if (m_Is2DMode)
+    {
+        return;
+    }
+
     float yawSign = GetUpDirection().y < 0 ? -1.0f : 1.0f;
     m_Yaw += yawSign * delta.x * RotationSpeed();
     m_Pitch += delta.y * RotationSpeed();

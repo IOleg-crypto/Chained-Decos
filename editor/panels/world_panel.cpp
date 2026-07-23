@@ -61,6 +61,27 @@ void WorldPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
+    if (ImGui::CollapsingHeader(ICON_FA_SLIDERS "  Scene General", ImGuiTreeNodeFlags_DefaultOpen))
+    {
+        ImGui::Indent(10.0f);
+        if (readOnly) ImGui::BeginDisabled();
+
+        const char* typeModes[] = {"Default (3D)", "UI"};
+        int currentType = (int)m_Context->GetSettings().Type;
+
+        ImGui::AlignTextToFramePadding();
+        ImGui::Text("Type");
+        ImGui::SameLine(100);
+        ImGui::SetNextItemWidth(-1);
+        if (ImGui::Combo("##SceneType", &currentType, typeModes, 2))
+        {
+            m_Context->GetSettings().Type = (SceneType)currentType;
+        }
+
+        if (readOnly) ImGui::EndDisabled();
+        ImGui::Unindent(10.0f);
+    }
+
     if (ImGui::CollapsingHeader(ICON_FA_GLOBE "  Scene Background", ImGuiTreeNodeFlags_DefaultOpen))
     {
         ImGui::Indent(10.0f);
