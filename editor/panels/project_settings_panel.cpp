@@ -37,10 +37,15 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         auto& config = project->GetConfig();
 
         static int selectedCategory = 0;
-        const char* categories[] = {ICON_FA_GEARS " General",     ICON_FA_CODE " Scripting",
-                                    ICON_FA_CUBES " Physics",     ICON_FA_WINDOW_RESTORE " Window",
-                                    ICON_FA_MOUNTAIN_SUN " Rendering", ICON_FA_VOLUME_HIGH " Audio",
-                                    ICON_FA_CUBE " Mesh",         ICON_FA_PLAY " Runtime"};
+        const char* categories[] = {ICON_FA_GEARS " General",
+                                    ICON_FA_CODE " Scripting",
+                                    ICON_FA_CUBES " Physics",
+                                    ICON_FA_WINDOW_RESTORE " Window",
+                                    ICON_FA_MOUNTAIN_SUN " Rendering",
+                                    ICON_FA_VOLUME_HIGH " Audio",
+                                    ICON_FA_CUBE " Mesh",
+                                    ICON_FA_PLAY " Runtime",
+                                    ICON_FA_FILE_EXPORT " Export"};
 
         // Two-column layout: sidebar left, content right
         ImGui::Columns(2, "ProjectSettingsColumns", true);
@@ -277,6 +282,35 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::IsItemHovered())
             {
                 ImGui::SetTooltip("0 = Uncapped framerate");
+            }
+        }
+        else if (selectedCategory == 8) // Export
+        {
+            ImGui::TextDisabled("Export Settings");
+            ImGui::Separator();
+            ImGui::Spacing();
+
+            ImGui::SliderFloat("Compression Threshold", &config.Export.ZipThreshold, 0.0f, 1.0f, "%.2f");
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Files with compression ratio above this threshold stay uncompressed.\n0.0 = "
+                                  "compress everything, 1.0 = compress nothing.");
+            }
+
+            ImGui::Checkbox("Prefer Speed", &config.Export.PreferSpeed);
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Use faster decompression algorithm (sacrifices file size).");
+            }
+
+            int dataVersion = static_cast<int>(config.Export.DataVersion);
+            if (ImGui::InputInt("Data Version", &dataVersion))
+            {
+                config.Export.DataVersion = static_cast<uint32_t>(dataVersion);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Increment to invalidate cached packs at runtime.");
             }
         }
 

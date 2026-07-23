@@ -10,7 +10,8 @@ namespace Chained
 {
 using namespace Serialization;
 
-bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project, const EditorSettings& editorSettings, const std::filesystem::path& filepath)
+bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project, const EditorSettings& editorSettings,
+                                        const std::filesystem::path& filepath)
 {
     const auto& config = project->GetConfig();
 
@@ -88,6 +89,12 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::Key << "AutoLoad" << YAML::Value << config.Scripting.AutoLoad;
         out << YAML::EndMap;
 
+        out << YAML::Key << "Export" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "ZipThreshold" << YAML::Value << config.Export.ZipThreshold;
+        out << YAML::Key << "PreferSpeed" << YAML::Value << config.Export.PreferSpeed;
+        out << YAML::Key << "DataVersion" << YAML::Value << config.Export.DataVersion;
+        out << YAML::EndMap;
+
         out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
 
         out << YAML::EndMap;
@@ -105,7 +112,8 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
     return false;
 }
 
-bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& project, EditorSettings& outEditorSettings, const std::filesystem::path& filepath)
+bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& project, EditorSettings& outEditorSettings,
+                                          const std::filesystem::path& filepath)
 {
     std::ifstream stream(filepath);
     if (!stream.is_open())
@@ -126,15 +134,21 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
 
     auto& config = project->GetConfig();
     if (projectNode["Name"])
+    {
         config.Name = projectNode["Name"].as<std::string>();
+    }
     if (projectNode["IconPath"])
     {
         config.IconPath = projectNode["IconPath"].as<std::string>();
     }
     if (projectNode["StartScene"])
+    {
         config.StartScene = projectNode["StartScene"].as<std::string>();
+    }
     if (projectNode["AssetDirectory"])
+    {
         config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
+    }
 
     DeserializePath(projectNode, "Environment", config.EnvironmentPath);
     DeserializePath(projectNode, "ActiveScene", config.ActiveScenePath);
@@ -165,16 +179,34 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
 
     if (projectNode["Render"])
     {
-        if (projectNode["Render"]["ShadowResolution"]) config.Render.ShadowResolution = projectNode["Render"]["ShadowResolution"].as<int>();
-        if (projectNode["Render"]["EnableShadows"]) config.Render.EnableShadows = projectNode["Render"]["EnableShadows"].as<bool>();
-        if (projectNode["Render"]["AntiAliasingSamples"]) config.Render.AntiAliasingSamples = projectNode["Render"]["AntiAliasingSamples"].as<int>();
+        if (projectNode["Render"]["ShadowResolution"])
+        {
+            config.Render.ShadowResolution = projectNode["Render"]["ShadowResolution"].as<int>();
+        }
+        if (projectNode["Render"]["EnableShadows"])
+        {
+            config.Render.EnableShadows = projectNode["Render"]["EnableShadows"].as<bool>();
+        }
+        if (projectNode["Render"]["AntiAliasingSamples"])
+        {
+            config.Render.AntiAliasingSamples = projectNode["Render"]["AntiAliasingSamples"].as<int>();
+        }
     }
 
     if (projectNode["Mesh"])
     {
-        if (projectNode["Mesh"]["ImportMaterials"]) config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
-        if (projectNode["Mesh"]["CalculateTangents"]) config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
-        if (projectNode["Mesh"]["FlipUVs"]) config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
+        if (projectNode["Mesh"]["ImportMaterials"])
+        {
+            config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
+        }
+        if (projectNode["Mesh"]["CalculateTangents"])
+        {
+            config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
+        }
+        if (projectNode["Mesh"]["FlipUVs"])
+        {
+            config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
+        }
     }
 
     if (projectNode["Window"])
@@ -194,18 +226,42 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
 
     if (projectNode["Runtime"])
     {
-        if (projectNode["Runtime"]["Fullscreen"]) config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
-        if (projectNode["Runtime"]["ShowStats"]) config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
-        if (projectNode["Runtime"]["EnableConsole"]) config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
-        if (projectNode["Runtime"]["TargetFPS"]) config.Runtime.TargetFPS = projectNode["Runtime"]["TargetFPS"].as<int>();
+        if (projectNode["Runtime"]["Fullscreen"])
+        {
+            config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
+        }
+        if (projectNode["Runtime"]["ShowStats"])
+        {
+            config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
+        }
+        if (projectNode["Runtime"]["EnableConsole"])
+        {
+            config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
+        }
+        if (projectNode["Runtime"]["TargetFPS"])
+        {
+            config.Runtime.TargetFPS = projectNode["Runtime"]["TargetFPS"].as<int>();
+        }
     }
 
     if (projectNode["Editor"])
     {
-        if (projectNode["Editor"]["CameraMoveSpeed"]) outEditorSettings.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
-        if (projectNode["Editor"]["CameraRotationSpeed"]) outEditorSettings.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
-        if (projectNode["Editor"]["CameraBoostMultiplier"]) outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
-        if (projectNode["Editor"]["DisableCameraZoom"]) outEditorSettings.DisableCameraZoom = projectNode["Editor"]["DisableCameraZoom"].as<bool>();
+        if (projectNode["Editor"]["CameraMoveSpeed"])
+        {
+            outEditorSettings.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
+        }
+        if (projectNode["Editor"]["CameraRotationSpeed"])
+        {
+            outEditorSettings.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
+        }
+        if (projectNode["Editor"]["CameraBoostMultiplier"])
+        {
+            outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
+        }
+        if (projectNode["Editor"]["DisableCameraZoom"])
+        {
+            outEditorSettings.DisableCameraZoom = projectNode["Editor"]["DisableCameraZoom"].as<bool>();
+        }
     }
 
     if (projectNode["Scripting"])
@@ -221,6 +277,22 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
         }
     }
 
+    if (projectNode["Export"])
+    {
+        if (projectNode["Export"]["ZipThreshold"])
+        {
+            config.Export.ZipThreshold = projectNode["Export"]["ZipThreshold"].as<float>();
+        }
+        if (projectNode["Export"]["PreferSpeed"])
+        {
+            config.Export.PreferSpeed = projectNode["Export"]["PreferSpeed"].as<bool>();
+        }
+        if (projectNode["Export"]["DataVersion"])
+        {
+            config.Export.DataVersion = projectNode["Export"]["DataVersion"].as<uint32_t>();
+        }
+    }
+
     if (projectNode["BuildConfig"])
     {
         config.BuildConfig = (Configuration)projectNode["BuildConfig"].as<int>();
@@ -231,4 +303,3 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
     return true;
 }
 } // namespace Chained
-

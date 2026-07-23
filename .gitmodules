@@ -48,11 +48,6 @@
     url = https://github.com/zpl-c/enet.git
     branch = master
 
-[submodule "thirdparty/GameNetworkingSockets"]
-    path = thirdparty/GameNetworkingSockets
-    url = https://github.com/ValveSoftware/GameNetworkingSockets.git
-    branch = master
-
 [submodule "thirdparty/miniaudio"]
     path = thirdparty/miniaudio
     url = https://github.com/mackron/miniaudio.git
@@ -92,3 +87,8 @@
 [submodule "cmake/external/thirdparty/portable-file-dialogs"]
 	path = cmake/external/thirdparty/portable-file-dialogs
 	url = https://github.com/samhocevar/portable-file-dialogs.git
+    
+[submodule "thirdparty/pack"]
+	path = thirdparty/pack
+	url = https://github.com/cfnptr/pack.git
+
