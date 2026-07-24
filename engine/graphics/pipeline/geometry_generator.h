@@ -3,20 +3,11 @@
 
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/api/model_data.h"
+#include "engine/assets/loaders/model_loader.h"
 #include <string>
 
 namespace Chained
 {
-    struct ProceduralParameters
-    {
-        float Radius = 0.5f;
-        float InnerRadius = 0.2f;
-        float Height = 1.0f;
-        int Slices = 16;
-        int Stacks = 16;
-        glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
-    };
-
     class GeometryGenerator
     {
     public:

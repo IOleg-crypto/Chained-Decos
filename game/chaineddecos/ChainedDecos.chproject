@@ -3,7 +3,7 @@ Project:
   IconPath: resources/icons/chaineddecos.jpg
   StartScene: scenes/rpg_strategy_scene.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/game_mode_selection.chscene
+  ActiveScene: assets/scenes/test_platform_scene.chscene
   Environment: ""
   BuildScenes:
     - scenes/start_menu.chscene
@@ -52,4 +52,8 @@ Project:
     ModuleName: ChainedDecos.Scripts.dll
     ModuleDirectory: assets/bin
     AutoLoad: true
+  Export:
+    ZipThreshold: 0.300000012
+    PreferSpeed: false
+    DataVersion: 0
   BuildConfig: 0

@@ -2,28 +2,21 @@
 #define CH_EDITOR_GUI_H
 
 #include <functional>
-#include <memory>
 #include <string>
-#include <vector>
-
-#include "layer.h"
-#include "panels.h"
+#include "editor/layer.h"
+#include "editor/panels.h"
 #include "engine/common/color.h"
-#include "engine/graphics/pipeline/renderer.h"
 
 namespace Chained
 {
+
+
+
 // Immediate-mode GUI helpers shared by editor panels and property inspectors.
 class EditorGUI
 {
 public:
-    // Draws the main editor menu bar for the provided panel set.
-    static void DrawMenuBar(EditorLayer& editorLayer, EditorPanels& panels);
-
-    // Draws the standalone Editor Settings window (toggled from the "Editor" menu).
-    static void DrawEditorSettings();
-
-    // Property layout helpers.
+    /// @brief Begins a 2-column property grid.
     static void BeginPropertyGrid();
     static void EndPropertyGrid();
     static void BeginProperty(const char* label);

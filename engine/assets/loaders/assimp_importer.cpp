@@ -58,8 +58,17 @@ static bool DecodeEmbeddedTexture(const aiTexture* texture, EmbeddedTextureData&
     out.height = (int)texture->mHeight;
     out.channels = 4;
     out.isHDR = false;
-    out.data.resize((size_t)out.width * (size_t)out.height * 4);
-    std::memcpy(out.data.data(), texture->pcData, out.data.size());
+    const size_t pixelCount = (size_t)out.width * (size_t)out.height;
+    out.data.resize(pixelCount * 4);
+    // aiTexel is BGRA; swizzle to RGBA expected by the texture pipeline
+    const aiTexel* src = texture->pcData;
+    for (size_t i = 0; i < pixelCount; ++i)
+    {
+        out.data[i * 4 + 0] = src[i].r;
+        out.data[i * 4 + 1] = src[i].g;
+        out.data[i * 4 + 2] = src[i].b;
+        out.data[i * 4 + 3] = src[i].a;
+    }
     return true;
 }
 
@@ -106,7 +115,10 @@ static T InterpolateKeys(double time, const KeyT* keys, unsigned int count, unsi
     }
 
     if (time >= keys[count - 1].mTime)
+    {
+        lastKey = count - 1;
         return convert(keys[count - 1].mValue);
+    }
 
     double dt = keys[p2].mTime - keys[p1].mTime;
     float factor = (dt > 0.0) ? (float)((time - keys[p1].mTime) / dt) : 0.0f;
@@ -152,9 +164,9 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
     std::string ext = path.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
 
-    unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
+    unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals |
                          aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                         aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
+                         aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes;
 
     if (ext != ".gltf" && ext != ".glb")
         flags |= aiProcess_FlipUVs;
@@ -365,6 +377,13 @@ void AssimpImporter::ProcessSingleMesh(uint32_t m)
 
             const int boneIdx = boneIt->second;
             offsetWrites.emplace_back(boneIdx, ToMat4(bone->mOffsetMatrix));
+
+            if (boneIdx > 255)
+            {
+                CH_CORE_WARN("AssimpImporter: Bone '{}' node index {} exceeds uint8 max — vertex weights skipped",
+                             bone->mName.C_Str(), boneIdx);
+                continue;
+            }
 
             for (unsigned int w = 0; w < bone->mNumWeights; ++w)
             {
