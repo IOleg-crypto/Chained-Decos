@@ -1,5 +1,5 @@
 Material:
-  Name: standardSurface4
+  Name: bat9-toiture
   AlbedoColor:
     - 1
     - 1
@@ -11,8 +11,7 @@ Material:
     - 0
     - 1
   EmissiveIntensity: 0
-  Metalness: 0
-  Roughness: 0.600000024
+  Metalness: 1
+  Roughness: 1
   Transparent: false
   Alpha: 1
-  AlbedoMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models_backup/building\textures/standardSurface4_baseColor.png

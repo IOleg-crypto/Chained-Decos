@@ -18,9 +18,7 @@
 
 #include "engine/project/project.h"
 
-#include <future>
 #include <memory>
-#include <mutex>
 #include <vector>
 
 namespace Chained
@@ -99,26 +97,13 @@ void Physics::InitializeBodies(Scene* scene)
         return;
     }
 
-    // Make sure the IPhysicsWorld* is in the registry context so that
-    // SceneResourceManager::Update() can detect pending bodies later too.
     auto& registry = scene->GetRegistry();
     if (!registry.ctx().contains<IPhysicsWorld*>())
     {
         registry.ctx().emplace<IPhysicsWorld*>(world);
     }
 
-    // Iterate all entities that need a physics body but don't have one yet.
-    // The actual body creation logic lives in SceneResources::OnRigidBodyConstruct;
-    // triggering it here ensures bodies are ready before the first script OnCreate/OnUpdate.
-    auto view = registry.view<RigidBodyComponent, TransformComponent>();
-    for (auto entity : view)
-    {
-        auto& rb = view.get<RigidBodyComponent>(entity);
-        if (rb.Handle == kInvalidPhysicsBody)
-        {
-            SceneResources::OnRigidBodyConstruct(registry, entity);
-        }
-    }
+    SceneResources::BatchInitializeBodies(registry, world);
 
     CH_CORE_INFO("Physics::InitializeBodies — bodies initialized for scene '{}'.", scene->GetSettings().Name);
 }

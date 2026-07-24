@@ -48,9 +48,8 @@ target_include_directories(engine_tests_integration PRIVATE
     ${CMAKE_SOURCE_DIR}
 )
 
-# Engine PCH is PRIVATE on engine modules; apply it here explicitly.
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_tests_integration)
+if(TARGET engine_pch)
+    target_link_libraries(engine_tests_integration PRIVATE engine_pch)
 endif()
 
 include(GoogleTest)

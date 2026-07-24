@@ -154,7 +154,7 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
 
     unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_LimitBoneWeights |
                          aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                         aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes;
+                         aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_OptimizeGraph;
 
     if (ext != ".gltf" && ext != ".glb")
         flags |= aiProcess_FlipUVs;
@@ -680,6 +680,20 @@ void AssimpImporter::MergeMeshesByMaterial()
     {
         return;
     }
+
+    try
+    {
+        MergeMeshesByMaterialInner();
+    }
+    catch (const std::bad_alloc& e)
+    {
+        CH_CORE_ERROR("AssimpImporter: Out of memory during mesh merge for '{}', keeping unmerged meshes: {}",
+                       m_Path.string(), e.what());
+    }
+}
+
+void AssimpImporter::MergeMeshesByMaterialInner()
+{
 
     struct InstanceGroup
     {

@@ -35,159 +35,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 3815702497947724656
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: title_game_mode
-    IDComponent:
-      {}
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-591.662598, -405.661011]
-        OffsetMax: [-491.662811, -365.66095]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [0, 0, 0, 0]
-        Hover Color: [0, 0, 0, 0]
-        Pressed Color: [0, 0, 0, 0]
-        Rounding: 0
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.100000001
-      Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
-        Font Size: 40
-        Text Color: [110, 231, 211, 255]
-        Shadow: true
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 2
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 3
-      Text: Select Mode
-      Auto Size: false
-  - Entity: 16492629629609278395
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: btn_singleplayer
-    IDComponent:
-      {}
-    Scene TransitionComponent:
-      TargetScenePath: ""
-      Triggered: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-534.694824, -170.793793]
-        OffsetMax: [-237.836258, -130.793793]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [56, 178, 166, 255]
-        Hover Color: [82, 204, 191, 255]
-        Pressed Color: [40, 130, 122, 255]
-        Rounding: 8
-        Border Size: 0
-        Border Color: [255, 255, 255, 255]
-        Gradient: false
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1.03000009
-        Pressed Scale: 0.970000029
-        Transition Speed: 0.150000006
-      Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
-        Font Size: 18
-        Text Color: [15, 24, 26, 255]
-        Shadow: false
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Singleplayer
-      Interactable: true
-      Auto Size: false
-  - Entity: 11140229448958731866
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: btn_multiplayer
-    IDComponent:
-      {}
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-535.847168, -99.7385101]
-        OffsetMax: [-230.27803, -59.7384834]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
-    WidgetComponent:
-      Box Style:
-        BG Color: [22, 24, 29, 255]
-        Hover Color: [22, 24, 29, 255]
-        Pressed Color: [22, 24, 29, 255]
-        Rounding: 8
-        Border Size: 1
-        Border Color: [255, 255, 255, 14]
-        Gradient: false
-        Gradient Color: [20, 20, 20, 255]
-        Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
-        Transition Speed: 0.150000006
-      Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
-        Font Size: 18
-        Text Color: [110, 116, 126, 255]
-        Shadow: false
-        Shadow Offset: 2
-        Shadow Color: [0, 0, 0, 255]
-        Letter Spacing: 1
-        Line Height: 1.20000005
-        H Align: 1
-        V Align: 1
-      Widget Type: 1
-      Label: Multiplayer (Coming Soon)
-      Interactable: false
-      Auto Size: false
-  - Entity: 8456649382036960430
+  - Entity: 8022080373601641388
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -239,4 +87,156 @@ Entities:
       Widget Type: 1
       Label: Back
       Interactable: true
+      Auto Size: false
+  - Entity: 7609763586537435541
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: btn_multiplayer
+    IDComponent:
+      {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-535.847168, -99.7385101]
+        OffsetMax: [-230.27803, -59.7384834]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [22, 24, 29, 255]
+        Hover Color: [22, 24, 29, 255]
+        Pressed Color: [22, 24, 29, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 14]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 18
+        Text Color: [110, 116, 126, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Multiplayer (Coming Soon)
+      Interactable: false
+      Auto Size: false
+  - Entity: 8794121719671112016
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: btn_singleplayer
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/map_selection.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-534.694824, -170.793793]
+        OffsetMax: [-237.836258, -130.793793]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [56, 178, 166, 255]
+        Hover Color: [82, 204, 191, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 18
+        Text Color: [15, 24, 26, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Singleplayer
+      Interactable: true
+      Auto Size: false
+  - Entity: 4520422631998712412
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: title_game_mode
+    IDComponent:
+      {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-591.662598, -405.661011]
+        OffsetMax: [-491.662811, -365.66095]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: font/gantari/static/gantari-black.ttf
+        Font Size: 40
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 2
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 3
+      Text: Select Mode
       Auto Size: false

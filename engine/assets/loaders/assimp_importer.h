@@ -31,6 +31,7 @@ namespace Chained
         void DecodeEmbeddedTextures();
         void ProcessAnimations();
         void MergeMeshesByMaterial();
+        void MergeMeshesByMaterialInner();
 
     private:
         std::filesystem::path m_Path;

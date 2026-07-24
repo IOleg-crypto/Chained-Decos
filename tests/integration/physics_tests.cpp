@@ -44,7 +44,9 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    scene->OnRuntimeStart(MakeTestSceneContext());
+    auto ctx = MakeTestSceneContext();
+    scene->OnRuntimeStart(ctx);
+    scene->OnUpdateRuntime(Timestep(0.016f), ctx);
 
     RaycastResult result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_TRUE(result.Hit);
@@ -72,7 +74,9 @@ TEST(PhysicsTest, RaycastMissingCollider)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    scene->OnRuntimeStart(MakeTestSceneContext());
+    auto ctx = MakeTestSceneContext();
+    scene->OnRuntimeStart(ctx);
+    scene->OnUpdateRuntime(Timestep(0.016f), ctx);
 
     RaycastResult result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
@@ -125,7 +129,9 @@ TEST(PhysicsTest, RuntimeStartInitializesRigidBodyHandles)
 
     EXPECT_EQ(rigidBody.Handle, kInvalidPhysicsBody);
 
-    scene->OnRuntimeStart(MakeTestSceneContext());
+    auto ctx = MakeTestSceneContext();
+    scene->OnRuntimeStart(ctx);
+    scene->OnUpdateRuntime(Timestep(0.016f), ctx);
 
     EXPECT_NE(rigidBody.Handle, kInvalidPhysicsBody);
 }
