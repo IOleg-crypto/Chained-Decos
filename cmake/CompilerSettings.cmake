@@ -63,50 +63,28 @@ if(ENABLE_UNITY_BUILD)
     set(CMAKE_UNITY_BUILD_BATCH_SIZE 16)
 endif()
 
-# Function to apply common engine optimizations to a target
-function(apply_engine_optimizations target_name)
-    set(NO_PCH OFF)
-    if(ARGC GREATER 1)
-        if("${ARGV1}" STREQUAL "NO_PCH")
-            set(NO_PCH ON)
-        endif()
+# ── Engine-wide PCH ──────────────────────────────────────────────────────────
+# INTERFACE library that propagates the engine precompiled header to any target
+# that links it privately.  Each consumer creates its own .pch binary matching
+# its own compiler flags, so there is no cross-TU contamination.
+if(ENABLE_PCH)
+    add_library(engine_pch INTERFACE)
+    target_precompile_headers(engine_pch INTERFACE "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+else()
+    # Force-include: injects engine_pch.h into every TU via compiler flags.
+    # Gives the same include coverage as PCH but without a .pch binary,
+    # so ccache/sccache still achieves 100% hit rates in CI.
+    add_library(engine_pch INTERFACE)
+    set(_pch_path "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
+    if(MSVC)
+        target_compile_options(engine_pch INTERFACE "/FI${_pch_path}")
+    else()
+        target_compile_options(engine_pch INTERFACE "-include" "${_pch_path}")
     endif()
+endif()
 
-    if(ENABLE_PCH AND NOT NO_PCH)
-        # Real PCH: faster local dev, but breaks sccache cache hit rates.
-        # PRIVATE: consumers that want the PCH call apply_engine_optimizations()
-        # themselves instead of inheriting it transitively.
-        target_precompile_headers(${target_name} PRIVATE "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
-    elseif(NOT NO_PCH)
-        # Force-include: injects engine_pch.h into every TU via compiler flags.
-        # This gives the same include coverage as PCH but without a .pch binary,
-        # so ccache/sccache still achieves 100% hit rates in CI.
-        set(_pch_path "${PROJECT_SOURCE_DIR}/engine/engine_pch.h")
-        if(MSVC)
-            target_compile_options(${target_name} PRIVATE "/FI${_pch_path}")
-        else()
-            target_compile_options(${target_name} PRIVATE "-include" "${_pch_path}")
-        endif()
-    endif()
-
-    if(ENABLE_LTO)
-        # Disable LTO for MinGW/GCC in Debug as it's extremely slow
-        if(MINGW OR (CMAKE_BUILD_TYPE STREQUAL "Debug"))
-            set(ipo_supported OFF)
-        else()
-            include(CheckIPOSupported)
-            check_ipo_supported(RESULT ipo_supported OUTPUT ipo_output)
-        endif()
-
-        if(ipo_supported)
-            set_property(TARGET ${target_name} PROPERTY INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
-        elseif(ipo_output AND NOT CMAKE_BUILD_TYPE STREQUAL "Debug")
-            message(STATUS "IPO/LTO is not supported or disabled for this configuration: ${ipo_output}")
-        endif()
-    endif()
-
-    # Enable Unity Build for the target if global option is ON
-    if(ENABLE_UNITY_BUILD)
-        set_target_properties(${target_name} PROPERTIES UNITY_BUILD ON)
-    endif()
-endfunction()
+# ── LTO (global) ────────────────────────────────────────────────────────────
+# Applied once here so individual targets don't need to set it.
+if(ENABLE_LTO AND NOT MINGW)
+    set(CMAKE_INTERPROCEDURAL_OPTIMIZATION_RELEASE ON)
+endif()

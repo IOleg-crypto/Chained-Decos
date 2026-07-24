@@ -16,8 +16,11 @@
 #include "engine/scene/components/sprite_component.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/scene_context.h"
+#include <algorithm>
+#include <atomic>
 #include <cmath>
 #include <entt/entt.hpp>
+#include <future>
 #include <glm/gtx/norm.hpp>
 
 namespace Chained::SceneResources
@@ -379,33 +382,28 @@ void ResolvePrimitive(entt::registry& reg, entt::entity e)
     prim.Dirty = false;
 }
 
-void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
+bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc)
 {
-    if (!reg.ctx().contains<IPhysicsWorld*>())
+    if (!reg.all_of<TransformComponent, RigidBodyComponent>(e))
     {
-        return;
-    }
-
-    // IPhysicsWorld* is only ever cached above once Scene::OnRuntimeStart has run,
-    // and that same call also caches SceneContext — see scene_context.h.
-    auto world = reg.ctx().get<SceneContext>().PhysicsSystem->GetWorld();
-    if (!world)
-    {
-        return;
+        return false;
     }
 
     auto& transform = reg.get<TransformComponent>(e);
     auto& rb = reg.get<RigidBodyComponent>(e);
 
-    if (rb.Handle != kInvalidPhysicsBody)
-    {
-        return;
-    }
-
     auto* collider = reg.try_get<ColliderComponent>(e);
     if (!collider || !collider->Enabled)
     {
-        return;
+        return false;
+    }
+
+    if (collider->AutoCalculate)
+    {
+        if (auto* physics = ServiceLocator::TryGet<Physics>())
+        {
+            physics->ApplyAutoCalculate(e, reg, *collider, transform.Scale);
+        }
     }
 
     PhysicsBodyDesc desc;
@@ -430,26 +428,19 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
     switch (collider->Type)
     {
     case ColliderType::Box:
-
         desc.Dimensions = (collider->Size * transform.Scale) * 0.5f;
         break;
 
     case ColliderType::Sphere:
-
         desc.Dimensions.x = collider->Radius * std::max({transform.Scale.x, transform.Scale.y, transform.Scale.z});
         break;
 
     case ColliderType::Capsule:
-
         desc.Dimensions.x = collider->Radius * std::max(transform.Scale.x, transform.Scale.z);
         desc.Dimensions.y = (collider->Height * transform.Scale.y) * 0.5f;
         break;
 
     case ColliderType::Mesh: {
-        // NOTE: Static/Kinematic/Dynamic is taken from the RigidBody component (set above,
-        // lines with desc.IsStatic / desc.IsKinematic). Do NOT force it here — a mesh collider
-        // on level geometry must stay Static, otherwise the whole level falls under gravity and
-        // (being a concave MeshShape) trips the Mesh-vs-Mesh assert in Jolt.
         std::string modelPath = collider->ModelPath;
         if (modelPath.empty())
         {
@@ -461,13 +452,12 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
 
         if (modelPath.empty())
         {
-            return;
+            return false;
         }
 
-        // Fast path: skip triangle extraction if mesh BVH is already cached
-        if (auto* world = reg.ctx().find<IPhysicsWorld*>())
+        if (auto* worldPtr = reg.ctx().find<IPhysicsWorld*>())
         {
-            if ((*world) && (*world)->HasCachedMeshShape(modelPath))
+            if ((*worldPtr) && (*worldPtr)->HasCachedMeshShape(modelPath))
             {
                 desc.CacheKey = modelPath;
                 desc.MeshScale = transform.Scale;
@@ -478,16 +468,12 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
         auto modelAsset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(modelPath);
         if (!modelAsset || !modelAsset->IsReady())
         {
-            return;
+            return false;
         }
 
         const auto& rawMeshes = modelAsset->GetRawMeshes();
         const auto& instances = modelAsset->GetInstances();
 
-        // Scale and offset are NOT baked into the triangles: scale is applied via a
-        // ScaledShape and offset via a translated decorator in CreateBody. This keeps the
-        // triangle data (and therefore the built BVH) identical for every instance of the
-        // same model, so they can share a single cached shape keyed by model path.
         desc.MeshScale = transform.Scale;
         desc.CacheKey = modelPath;
 
@@ -504,7 +490,6 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
                 continue;
             }
 
-            // Model-local only — no entity scale, no collider offset.
             const glm::mat4& meshToLocal = inst.localTransform;
 
             for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
@@ -538,7 +523,167 @@ void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
         break;
     }
     }
+
+    outDesc = std::move(desc);
+    return true;
+}
+
+void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
+{
+    if (!reg.ctx().contains<IPhysicsWorld*>())
+    {
+        return;
+    }
+
+    auto world = reg.ctx().get<SceneContext>().PhysicsSystem->GetWorld();
+    if (!world)
+    {
+        return;
+    }
+
+    auto& rb = reg.get<RigidBodyComponent>(e);
+
+    if (rb.Handle != kInvalidPhysicsBody)
+    {
+        return;
+    }
+
+    auto* collider = reg.try_get<ColliderComponent>(e);
+    if (!collider || !collider->Enabled)
+    {
+        return;
+    }
+
+    PhysicsBodyDesc desc;
+    if (!BuildBodyDesc(reg, e, desc))
+    {
+        return;
+    }
+
     rb.Handle = world->CreateBody(desc);
+}
+
+void BatchInitializeBodies(entt::registry& reg, IPhysicsWorld* world)
+{
+    struct PendingBody
+    {
+        entt::entity entity;
+        PhysicsBodyDesc desc;
+        int sortOrder;
+    };
+
+    std::vector<PendingBody> pending;
+
+    // Phase 1: Collect candidates + apply AutoCalculate (writes to collider, must be sequential)
+    auto view = reg.view<RigidBodyComponent, TransformComponent>();
+    for (auto entity : view)
+    {
+        auto& rb = view.get<RigidBodyComponent>(entity);
+        if (rb.Handle != kInvalidPhysicsBody)
+        {
+            continue;
+        }
+
+        auto* collider = reg.try_get<ColliderComponent>(entity);
+        if (!collider || !collider->Enabled)
+        {
+            continue;
+        }
+
+        if (collider->AutoCalculate)
+        {
+            auto& transform = view.get<TransformComponent>(entity);
+            if (auto* physics = ServiceLocator::TryGet<Physics>())
+            {
+                physics->ApplyAutoCalculate(entity, reg, *collider, transform.Scale);
+            }
+        }
+
+        pending.push_back({entity, {}, 0});
+    }
+
+    if (pending.empty())
+    {
+        return;
+    }
+
+    // Phase 2: Build BodyDescs in parallel (read-only phase — safe for concurrent access)
+    // Triangle extraction from model assets is the bottleneck for Mesh colliders.
+    size_t parallelThreshold = 4;
+    if (pending.size() >= parallelThreshold)
+    {
+        std::atomic<bool> buildFailed{false};
+        std::vector<std::future<void>> futures;
+        futures.reserve(pending.size());
+
+        for (size_t i = 0; i < pending.size(); ++i)
+        {
+            futures.push_back(std::async(std::launch::async, [&reg, &pending, i, &buildFailed]() {
+                if (!BuildBodyDesc(reg, pending[i].entity, pending[i].desc))
+                {
+                    buildFailed.store(true, std::memory_order_relaxed);
+                }
+            }));
+        }
+        for (auto& f : futures)
+            f.get();
+
+        // Remove failed entries
+        if (buildFailed.load())
+        {
+            pending.erase(
+                std::remove_if(pending.begin(), pending.end(),
+                               [](const PendingBody& pb) { return pb.desc.Triangles.empty() && pb.desc.Shape == ColliderType::Mesh; }),
+                pending.end());
+        }
+    }
+    else
+    {
+        // Few bodies: sequential is faster
+        auto it = pending.begin();
+        while (it != pending.end())
+        {
+            if (!BuildBodyDesc(reg, it->entity, it->desc))
+            {
+                it = pending.erase(it);
+            }
+            else
+            {
+                ++it;
+            }
+        }
+    }
+
+    // Set sort order and move descs
+    for (auto& pb : pending)
+    {
+        pb.sortOrder = pb.desc.IsStatic ? 0 : (pb.desc.IsKinematic ? 1 : 2);
+    }
+
+    if (pending.empty())
+    {
+        return;
+    }
+
+    std::sort(pending.begin(), pending.end(),
+              [](const PendingBody& a, const PendingBody& b) { return a.sortOrder < b.sortOrder; });
+
+    std::vector<PhysicsBodyDesc> descs;
+    descs.reserve(pending.size());
+    for (auto& pb : pending)
+    {
+        descs.push_back(std::move(pb.desc));
+    }
+
+    auto handles = world->CreateBodies(descs);
+
+    for (size_t i = 0; i < pending.size(); ++i)
+    {
+        auto& rb = reg.get<RigidBodyComponent>(pending[i].entity);
+        rb.Handle = handles[i];
+    }
+
+    CH_CORE_INFO("Physics: Batch-created {} bodies (static-first).", pending.size());
 }
 
 } // namespace Chained::SceneResources

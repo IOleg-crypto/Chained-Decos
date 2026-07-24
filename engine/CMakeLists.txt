@@ -6,9 +6,6 @@ else()
     set(ENGINE_LIB_TYPE STATIC)
 endif()
 
-# We use STATIC libraries for sub-modules to ensure binary stability and avoid DLL ABI issues in MinGW
-set(SUBMODULE_LIB_TYPE STATIC)
-
 # If building as a shared library, all internal static sub-modules need to be aware
 # they are part of a DLL build so they can dllexport their symbols.
 if(CH_ENGINE_SHARED)
@@ -31,35 +28,36 @@ add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
 add_subdirectory(app)
 add_subdirectory(runtime)
 
-# Create the final engine facade library that links everything together
-add_library(engine ${ENGINE_LIB_TYPE} engine_dummy.cpp)
-
-target_link_libraries(engine PUBLIC
-    engine_app
-)
-
-target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
+# ── Engine facade library ────────────────────────────────────────────────────
+# INTERFACE when static (header/dependency re-export only, no source needed),
+# SHARED when building as DLL (needs a translation unit for MSVC archiver).
+if(CH_ENGINE_SHARED)
+    add_library(engine SHARED engine_dummy.cpp)
+    target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
+    target_compile_definitions(engine PUBLIC CH_DYNAMIC_LINK)
+    if(WIN32)
+        set_target_properties(engine PROPERTIES PREFIX "")
+    endif()
+    install(TARGETS engine
+        EXPORT ChainedEngineTargets
+        ARCHIVE DESTINATION lib COMPONENT Runtime
+        LIBRARY DESTINATION lib COMPONENT Runtime
+        RUNTIME DESTINATION bin COMPONENT Runtime
+    )
+else()
+    add_library(engine INTERFACE)
+endif()
 
 if(CH_ENGINE_SHARED)
-    target_compile_definitions(engine PUBLIC 
-        CH_DYNAMIC_LINK
-    )
+    target_link_libraries(engine PUBLIC engine_app)
+else()
+    target_link_libraries(engine INTERFACE engine_app)
 endif()
 
-# MSVC doesn't need WINDOWS_EXPORT_ALL_SYMBOLS anymore since we use CH_API
-if(WIN32)
-    set_target_properties(engine PROPERTIES PREFIX "")
-endif()
-
-target_include_directories(engine PUBLIC
+target_include_directories(engine INTERFACE
     ${CMAKE_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
-
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine)
-endif()
 
 # ── Unified Framework Interface ──────────────────────────────────────────────
 # This provides a single target for games to link against, encapsulating all
@@ -78,16 +76,8 @@ target_compile_definitions(ChainedEngineFramework INTERFACE
     PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
 )
 
-install(TARGETS engine
-    EXPORT ChainedEngineTargets
-    ARCHIVE DESTINATION lib COMPONENT Runtime
-    LIBRARY DESTINATION lib COMPONENT Runtime
-    RUNTIME DESTINATION bin COMPONENT Runtime
-)
-
 install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
     DESTINATION .
     USE_SOURCE_PERMISSIONS
     COMPONENT Runtime
 )
-

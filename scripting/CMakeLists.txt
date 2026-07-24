@@ -1,36 +1,47 @@
-chained_add_engine_module(engine_scripting
-    SOURCES
-        scriptengine.h
-        scriptengine.cpp
-        scriptengine_services.h
-        scriptengine_services.cpp
-        scene_scripting_manager.h
-        scene_scripting_manager.cpp
-        script_glue_internal.h
-        script_glue_internal.cpp
-        script_glue_system.h
-        script_glue_system.cpp
-        script_glue_input.h
-        script_glue_input.cpp
-        #script_glue_network.cpp
-        script_glue_scene.h
-        script_glue_scene.cpp
-        script_glue_entity.h
-        script_glue_entity.cpp
-        script_glue_camera.h
-        script_glue_camera.cpp
-        script_glue_ui.h
-        script_glue_ui.cpp
-        script_glue_audio.h
-        script_glue_audio.cpp
-    DEPENDS
-        engine_core
-        engine_audio
-        engine_physics
-        engine_imgui
-        engine_graphics
-        Coral.Native
+add_library(engine_scripting STATIC
+    scriptengine.h
+    scriptengine.cpp
+    scriptengine_services.h
+    scriptengine_services.cpp
+    scene_scripting_manager.h
+    scene_scripting_manager.cpp
+    script_glue.h
+    script_glue.cpp
+    script_glue_internal.h
+    script_glue_internal.cpp
+    script_glue_system.h
+    script_glue_system.cpp
+    script_glue_input.h
+    script_glue_input.cpp
+    script_glue_scene.h
+    script_glue_scene.cpp
+    script_glue_entity.h
+    script_glue_entity.cpp
+    script_glue_camera.h
+    script_glue_camera.cpp
+    script_glue_ui.h
+    script_glue_ui.cpp
+    script_glue_audio.h
+    script_glue_audio.cpp
 )
+
+target_include_directories(engine_scripting PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
+)
+
+target_link_libraries(engine_scripting PUBLIC
+    engine_core
+    engine_audio
+    engine_physics
+    engine_imgui
+    engine_graphics
+    Coral.Native
+)
+
+if(TARGET engine_pch)
+    target_link_libraries(engine_scripting PRIVATE engine_pch)
+endif()
 
 target_include_directories(engine_scripting PRIVATE
     ${CMAKE_SOURCE_DIR}/thirdparty/coral/Coral.Native/Include
