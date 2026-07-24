@@ -15,15 +15,21 @@ namespace Chained
 {
 static uint64_t ComputeFileHash(const std::filesystem::path& path)
 {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    constexpr size_t kChunkSize = 65536;
+    std::ifstream file(path, std::ios::binary);
     if (!file.is_open()) return 0;
-    auto size = file.tellg();
-    if (size <= 0) return 0;
-    file.seekg(0, std::ios::beg);
-    std::vector<char> buffer(static_cast<size_t>(size));
-    if (!file.read(buffer.data(), size)) return 0;
-    return std::accumulate(buffer.begin(), buffer.end(), UINT64_C(14695981039346656037),
-        [](uint64_t hash, char c) { return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL; });
+    uint64_t hash = UINT64_C(14695981039346656037);
+    char buf[kChunkSize];
+    while (file.read(buf, kChunkSize) || file.gcount() > 0)
+    {
+        auto count = static_cast<size_t>(file.gcount());
+        for (size_t i = 0; i < count; ++i)
+        {
+            hash = (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(buf[i]))) * 1099511628211ULL;
+        }
+        if (count < kChunkSize) break;
+    }
+    return hash;
 }
 
 std::shared_ptr<Asset> ModelLoader::Create()
@@ -137,6 +143,10 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
                     }
                 }
             }
+            catch(const std::bad_alloc& e)
+            {
+                CH_CORE_ERROR("Out of memory deserializing .chasset ({}), falling back to Assimp: {}", chassetPath.string(), e.what());
+            }
             catch(const std::exception& e)
             {
                 CH_CORE_WARN("Failed to deserialize .chasset ({}), falling back to Assimp: {}", chassetPath.string(), e.what());
@@ -186,6 +196,10 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
                 chassetPath.filename().string(),
                 header.compressed ? "yes" : "no",
                 header.compressed ? (100.0 * compressed.size() / serializedData.size()) : 100.0);
+        }
+        catch (const std::bad_alloc& e)
+        {
+            CH_CORE_ERROR("Out of memory serializing .chasset for {}: {}", chassetPath.string(), e.what());
         }
         catch (const std::exception& e)
         {

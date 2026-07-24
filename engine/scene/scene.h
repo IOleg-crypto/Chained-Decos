@@ -6,6 +6,7 @@
 #include <memory>
 #include <string>
 #include <vector>
+#include <future>
 
 #include "engine/core/events/events.h"
 #include "engine/common/base.h"
@@ -80,6 +81,7 @@ public:
     bool IsSimulationRunning() const;
     std::vector<entt::entity> GetRootEntities();
     std::vector<entt::entity> GetRootEntities() const;
+    bool IsStartingUp() const { return m_IsStartingUp; }
 
 public: // Systems & Tools
     entt::registry& GetRegistry();
@@ -97,6 +99,7 @@ public: // Systems & Tools
 private: // Internal state lifecycle methods
     void OnStateEnter(SceneState state, const SceneContext& ctx);
     void OnStateExit(SceneState state, const SceneContext& ctx);
+    void FinishRuntimeStart(const SceneContext& ctx);
 
 private:
     SceneState m_State = SceneState::Edit;
@@ -106,6 +109,8 @@ private:
 
     std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
     EventCallbackFn m_EventCallback;
+
+    bool m_IsStartingUp = false;
 
 private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);

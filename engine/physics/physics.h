@@ -63,6 +63,10 @@ public:
     /// Casts a ray through the Jolt world and returns the closest hit.
     RaycastResult Raycast(Scene* scene, Ray ray);
 
+    /// When AutoCalculate=true: reads model bounding box and writes Size/Offset/Radius/Height
+    /// back into the collider. Call during body initialization.
+    void ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider, const glm::vec3& scale);
+
     // Scene context helpers
     PhysicsContext& GetContext(Scene* scene);
     void ResetAccumulator(Scene* scene);
@@ -74,10 +78,6 @@ private:
     /// for all Dynamic bodies. Static and Kinematic bodies are skipped because
     /// their transforms are driven by scripts or remain fixed.
     void UpdateColliders(Scene* scene);
-
-    /// When AutoCalculate=true: builds a temp Jolt MeshShape from the model,
-    /// calls GetLocalBounds() and writes Size/Offset/Radius/Height back into the collider.
-    void ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider, const glm::vec3& scale);
 
 private:
     std::unique_ptr<IPhysicsWorld> m_World;
