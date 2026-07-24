@@ -19,6 +19,8 @@
 #include "scripting/scriptengine.h"
 #include <entt/entt.hpp>
 #include <yaml-cpp/yaml.h>
+#include <thread>
+#include "engine/common/thread_pool.h"
 
 using namespace entt::literals;
 
@@ -152,7 +154,7 @@ void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 void Scene::OnEvent(Event& e)
 {
     // Scripts receive events only during full gameplay
-    if (m_State == SceneState::Play)
+    if (m_State == SceneState::Play && !m_IsStartingUp)
     {
         m_ScriptingManager->OnEvent(e);
     }
@@ -160,7 +162,7 @@ void Scene::OnEvent(Event& e)
 
 void Scene::OnRenderUI()
 {
-    if (m_State == SceneState::Play)
+    if (m_State == SceneState::Play && !m_IsStartingUp)
     {
         m_ScriptingManager->OnRenderUI();
     }
@@ -175,11 +177,14 @@ void Scene::OnRuntimeStart(const SceneContext& ctx)
     // signature) can still reach these services without going through ServiceLocator.
     m_Registry->ctx().insert_or_assign<SceneContext>(SceneContext(ctx));
 
-    // Shared physics initialization (needed for both Play and Simulate)
-    ctx.PhysicsSystem->ResetWorld(this);
-    ctx.PhysicsSystem->ResetAccumulator(this);
-    ctx.PhysicsSystem->InitializeBodies(this);
+    m_IsStartingUp = true;
 
+    // We defer physics initialization to the next frame in OnUpdateRuntime
+    // so that the engine has a chance to render the "Loading..." overlay once!
+}
+
+void Scene::FinishRuntimeStart(const SceneContext& ctx)
+{
     ctx.Scripting->SetContextScene(this);
 
     // Start scripts only when in full gameplay state
@@ -224,6 +229,8 @@ void Scene::OnRuntimeStop(const SceneContext& ctx)
 {
     CH_CORE_INFO("Scene::OnRuntimeStop - Stopping lifecycle...");
 
+    m_IsStartingUp = false;
+
     if (m_State == SceneState::Play && m_ScriptingManager)
     {
         m_ScriptingManager->OnRuntimeStop();
@@ -240,6 +247,17 @@ void Scene::OnRuntimeStop(const SceneContext& ctx)
 void Scene::OnUpdateRuntime(Timestep ts, const SceneContext& ctx)
 {
     CH_PROFILE_FUNCTION();
+
+    if (m_IsStartingUp)
+    {
+        ctx.PhysicsSystem->ResetWorld(this);
+        ctx.PhysicsSystem->ResetAccumulator(this);
+        ctx.PhysicsSystem->InitializeBodies(this);
+
+        m_IsStartingUp = false;
+        FinishRuntimeStart(ctx);
+        return;
+    }
 
     if (m_ScriptingManager)
     {
@@ -291,6 +309,18 @@ void Scene::OnUpdateRuntime(Timestep ts, const SceneContext& ctx)
 void Scene::OnUpdateSimulation(Timestep ts, const SceneContext& ctx)
 {
     CH_PROFILE_FUNCTION();
+
+    if (m_IsStartingUp)
+    {
+        // Synchronous initialization on the main thread (blocks, but loading screen is visible)
+        ctx.PhysicsSystem->ResetWorld(this);
+        ctx.PhysicsSystem->ResetAccumulator(this);
+        ctx.PhysicsSystem->InitializeBodies(this);
+
+        m_IsStartingUp = false;
+        FinishRuntimeStart(ctx);
+        return;
+    }
 
     // 1. Hierarchy Update
     Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
@@ -346,11 +376,26 @@ void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
     mapStruct.Map.erase(id.ID);
 }
 
-entt::registry* Scene::GetRegistryPtr() { return m_Registry.get(); }
-const entt::registry& Scene::GetRegistry() const { return *m_Registry; }
-entt::registry& Scene::GetRegistry() { return *m_Registry; }
-const SceneSettings& Scene::GetSettings() const { return m_Settings; }
-SceneSettings& Scene::GetSettings() { return m_Settings; }
+entt::registry* Scene::GetRegistryPtr()
+{
+    return m_Registry.get();
+}
+const entt::registry& Scene::GetRegistry() const
+{
+    return *m_Registry;
+}
+entt::registry& Scene::GetRegistry()
+{
+    return *m_Registry;
+}
+const SceneSettings& Scene::GetSettings() const
+{
+    return m_Settings;
+}
+SceneSettings& Scene::GetSettings()
+{
+    return m_Settings;
+}
 
 std::vector<entt::entity> Scene::GetRootEntities()
 {

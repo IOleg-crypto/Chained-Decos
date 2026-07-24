@@ -1,5 +1,5 @@
 Material:
-  Name: standardSurface3
+  Name: bat11-structure
   AlbedoColor:
     - 1
     - 1
@@ -12,7 +12,6 @@ Material:
     - 1
   EmissiveIntensity: 0
   Metalness: 0
-  Roughness: 0.600000024
+  Roughness: 1
   Transparent: false
   Alpha: 1
-  AlbedoMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models_backup/building\textures/standardSurface3_baseColor.png

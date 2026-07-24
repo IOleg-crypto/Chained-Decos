@@ -53,6 +53,20 @@ public:
     virtual ~IPhysicsWorld() = default;
 
     virtual PhysicsBodyHandle CreateBody(const PhysicsBodyDesc& desc) = 0;
+
+    /// Creates multiple bodies in one batch. Default implementation calls CreateBody in a loop;
+    /// backends can override for optimized batch API usage (e.g. Jolt's CreateBodies/AddBodies).
+    virtual std::vector<PhysicsBodyHandle> CreateBodies(const std::vector<PhysicsBodyDesc>& descs)
+    {
+        std::vector<PhysicsBodyHandle> handles;
+        handles.reserve(descs.size());
+        for (const auto& desc : descs)
+        {
+            handles.push_back(CreateBody(desc));
+        }
+        return handles;
+    }
+
     virtual void DestroyBody(PhysicsBodyHandle handle) = 0;
 
     /// Returns true if a mesh shape with the given cache key already exists.
