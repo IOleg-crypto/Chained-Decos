@@ -35,7 +35,43 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 13449004510230971492
+  - Entity: 575429872233423617
+    ModelComponent:
+      ModelPath: ":torus:"
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [0, 65.1090927, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    PrimitiveComponent:
+      Type: 6
+      Radius: 0.00999999978
+      InnerRadius: 1.95000005
+      Height: 1
+      Slices: 16
+      Stacks: 16
+      Dimensions: [1, 1, 1]
+      Dirty: false
+    TagComponent:
+      Tag: Torus
+    IDComponent:
+      {}
+  - Entity: 57189854629443267
+    TransformComponent:
+      Translation: [-326.500214, 311.823425, 1022.66998]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: SpawnZone
+    IDComponent:
+      {}
+    SpawnComponent:
+      IsActive: true
+      ZoneSize: [2.5999999, 4.4000001, 3.0999999]
+      RenderSpawnZoneInScene: true
+      SpawnPoint: [0, 0, 0]
+  - Entity: 6786627342000683316
     ModelComponent:
       ModelPath: models/city/after_the_rain..._-_vr__sound.glb
       MaterialPaths:
@@ -147,7 +183,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 13345287434816438156
+  - Entity: 15662035178846337257
     ModelComponent:
       ModelPath: models/stairs.glb
       MaterialPaths:
@@ -184,7 +220,7 @@ Entities:
       Handle: 8388609
       Velocity: [0, -500, 0]
       IsGrounded: false
-  - Entity: 16391568414564368949
+  - Entity: 14721004872158870442
     TransformComponent:
       Translation: [-40.4501495, 79.567894, 0]
       Rotation: [0, -0, 0]
@@ -204,7 +240,7 @@ Entities:
       MinDistance: 1
       MaxDistance: 100
       IsPlaying: true
-  - Entity: 1042912510848501415
+  - Entity: 9339386294778089876
     ModelComponent:
       ModelPath: models/arena.glb
       MaterialPaths:
@@ -239,7 +275,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: models/arena.glb
       IsColliding: false
-  - Entity: 376400603099052097
+  - Entity: 8952409004885948808
     ModelComponent:
       ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
       MaterialPaths:
@@ -271,7 +307,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 17819698706390748405
+  - Entity: 5475879732345473130
     CameraComponent:
       Primary: true
       FixedAspectRatio: false
@@ -286,14 +322,14 @@ Entities:
       verticalFov: 60
       orthographicSize: 10
     TransformComponent:
-      Translation: [468.091522, 40.1058235, 206.875732]
-      Rotation: [0.137999877, 1.58700049, 0]
+      Translation: [-6.15723467, 74.3677979, 35.6371803]
+      Rotation: [0.233999804, 0.18300049, 0]
       Scale: [1, 1, 1]
     TagComponent:
       Tag: SceneCamera
     IDComponent:
       {}
-  - Entity: 7468041981242516175
+  - Entity: 8236710908558519650
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.playercontroller
@@ -345,7 +381,7 @@ Entities:
       Handle: 8388610
       Velocity: [0, 0, 0]
       IsGrounded: true
-  - Entity: 17047109119496901591
+  - Entity: 17327105351512111177
     ModelComponent:
       ModelPath: models/minigames/hub_for_minigames_server.glb
       MaterialPaths:
@@ -393,7 +429,7 @@ Entities:
       Handle: 8388611
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 7864706534374450774
+  - Entity: 15459829081726256648
     ModelComponent:
       ModelPath: models/stairs.glb
       MaterialPaths:
@@ -420,7 +456,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: models/stairs.glb
       IsColliding: false
-  - Entity: 3217129770819168854
+  - Entity: 8507433407927913183
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.cameracontroller
@@ -449,7 +485,7 @@ Entities:
       Tag: Camera
     IDComponent:
       {}
-  - Entity: 14910128302396968332
+  - Entity: 1426911553579930299
     ModelComponent:
       ModelPath: models/container_ship/scene.gltf
       MaterialPaths:
@@ -493,7 +529,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 1055319992157596159
+  - Entity: 10646696635104006713
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       MaterialPaths:
@@ -511,9 +547,9 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 4811210735802494452
+  - Entity: 3310257751083837631
     ModelComponent:
-      ModelPath: models/toy_train/wooden_train.glb
+      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/toy_train/wooden_train.glb
       MaterialPaths:
         - models/toy_train/wooden_train_material_0.chmat
         - models/toy_train/wooden_train_material_1.chmat
@@ -527,11 +563,7 @@ Entities:
       Tag: toy_train_platform
     IDComponent:
       {}
-    AnimationComponent:
-      BlendDuration: 0.25
-      IsLooping: true
-      PlayOnStart: true
-  - Entity: 14056521921503525709
+  - Entity: 10410864754525232846
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.endgamezone
@@ -557,7 +589,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 16533275462702408370
+  - Entity: 15862677908156237984
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -594,7 +626,7 @@ Entities:
       Handle: 8388613
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 16291967094998493923
+  - Entity: 15580686753194255844
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -631,7 +663,7 @@ Entities:
       Handle: 8388614
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 3071390444138081838
+  - Entity: 12482326558449881566
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -672,7 +704,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 95561253661175500
+  - Entity: 3648759100980475954
     ModelComponent:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       MaterialPaths:
@@ -710,7 +742,7 @@ Entities:
       Handle: 8388616
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 2182323744579913610
+  - Entity: 8990673279828460167
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -751,7 +783,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
-  - Entity: 8646974216424087579
+  - Entity: 6728111947748505959
     ModelComponent:
       ModelPath: models_backup/building/scene.gltf
       MaterialPaths:

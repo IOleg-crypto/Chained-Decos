@@ -5,6 +5,7 @@
 #include "engine/imgui/imgui_layer.h"
 #include "events.h"
 #include "gui.h"
+#include "editor_menu.h"
 #include "layout.h"
 #include "panels.h"
 
@@ -79,7 +80,7 @@ EditorLayer::EditorLayer()
     // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
     m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
     m_Context.Scripting = ServiceLocator::TryGet<ScriptEngine>(); // null if scripting disabled
-    m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>(); // null in headless mode
+    m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>();      // null in headless mode
     m_ProjectManager = std::make_unique<EditorProjectManager>();
     m_SceneManager = std::make_unique<EditorSceneManager>(m_CommandHistory, *m_ProjectManager, m_Config, m_ViewportSize,
                                                           m_EditorState, m_Context);
@@ -87,6 +88,7 @@ EditorLayer::EditorLayer()
     // Forward scene events (e.g. SceneChangeRequestEvent) back to EditorLayer::OnEvent
     m_SceneManager->SetSceneEventCallback([this](Event& e) { OnEvent(e); });
 
+    m_Menu = std::make_unique<EditorMenu>();
     m_Panels = std::make_unique<EditorPanels>(*this);
 
     m_Layout = std::make_unique<EditorLayout>(*m_Panels);
@@ -101,8 +103,7 @@ EditorLayer::~EditorLayer()
     s_Instance = nullptr;
 }
 
-template <typename T>
-static void LoadYAMLField(const YAML::Node& node, const char* key, T& target)
+template <typename T> static void LoadYAMLField(const YAML::Node& node, const char* key, T& target)
 {
     if (node[key])
     {
@@ -320,25 +321,17 @@ void EditorLayer::AddEditorFontsToAtlas()
     std::string faPath = (engineRoot / "resources/font/fa-solid-900.ttf").string();
     if (baseFontLoaded && std::filesystem::exists(faPath))
     {
-        // ВАЖЛИВО: Використовуємо ImFontConfig, але налаштовуємо його так,
-        // щоб ImGui сам керував пам'яттю копії цього конфігу
         ImFontConfig icons_config;
         icons_config.MergeMode = true;
         icons_config.PixelSnapH = true;
 
-        // Замість локального масиву на стеку/static, використовуємо вбудований
-        // у ImGui інструмент для створення стійкого пулу гліфів.
-        // Якщо у вас немає окремого хелпера, ми явно просимо ImGui зберегти цей діапазон:
         static const ImWchar* font_awesome_ranges = nullptr;
         if (!font_awesome_ranges)
         {
-            // Будуємо статичний масив один раз, але гарантуємо, що він живе вічно
-            // і не руйнується при викликах ClearFonts()
             static const ImWchar ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
             font_awesome_ranges = ranges;
         }
 
-        // Передаємо надійний вказівник на діапазони
         imguiLayer->AddFontFromFile(faPath, fontSize, &icons_config, font_awesome_ranges);
         CH_CORE_INFO("Loaded and merged FontAwesome for editor: {}", faPath);
     }
@@ -425,9 +418,7 @@ void EditorLayer::OnUpdate(Timestep ts)
             auto* imguiLayer = Application::Get().GetImGuiLayer();
             if (imguiLayer)
             {
-                imguiLayer->ExecuteNextFrame([imguiLayer]() {
-                    imguiLayer->RefreshFontAtlasTexture();
-                });
+                imguiLayer->ExecuteNextFrame([imguiLayer]() { imguiLayer->RefreshFontAtlasTexture(); });
             }
             uiRenderer->GetFontRegistry().ClearRebuildFlag();
         }
