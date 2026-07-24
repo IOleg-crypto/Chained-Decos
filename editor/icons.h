@@ -1,6 +1,3 @@
-//
-// Created by olegg on 02.06.2026.
-//
 
 #ifndef CH_EDITOR_ICONS_H
 #define CH_EDITOR_ICONS_H

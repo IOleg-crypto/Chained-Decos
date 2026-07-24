@@ -20,6 +20,7 @@ namespace Chained
 {
 
 class ProjectSelectorUI;
+class EditorMenu;
 
 class EditorLayer : public Layer
 {
@@ -58,6 +59,7 @@ private:
 public:
     CommandHistory& GetCommandHistory();
     EditorPanels& GetPanels() { return *m_Panels; }
+    EditorMenu& GetMenu() { return *m_Menu; }
 
     ImVec2 GetViewportSize() const { return m_ViewportSize; }
     ImVec2& GetViewportSizeRef() { return m_ViewportSize; }
@@ -96,6 +98,7 @@ private:
     std::unique_ptr<EditorProjectManager> m_ProjectManager;
     std::unique_ptr<EditorSceneManager> m_SceneManager;
     std::unique_ptr<ProjectSelectorUI> m_ProjectSelectorUI;
+    std::unique_ptr<EditorMenu> m_Menu;
     CommandHistory m_CommandHistory;
     
     std::string m_PendingSceneTransitionPath;

@@ -1,4 +1,5 @@
 #include "console_panel.h"
+#include "engine/app/application.h"
 #include "imgui.h"
 #include <algorithm>
 #include <cctype>

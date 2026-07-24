@@ -11,10 +11,11 @@
 #include <chrono>
 #include <filesystem>
 #include <fstream>
-#include <pack/reader.hpp>
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/assets/loaders/shader_loader.h"
+
+#include "pack/reader.hpp"
 
 namespace Chained
 {
@@ -36,10 +37,16 @@ void AssetManager::Initialize()
 
 void AssetManager::Shutdown()
 {
-    while (HasBackgroundWork())
+    constexpr int kMaxIter = 5000;
+    int iter = 0;
+    while (HasBackgroundWork() && iter++ < kMaxIter)
     {
         FinalizePendingLoads();
-        std::this_thread::yield();
+        std::this_thread::sleep_for(std::chrono::milliseconds(1));
+    }
+    if (iter >= kMaxIter)
+    {
+        CH_CORE_ERROR("AssetManager: Shutdown timed out — some assets may still be loading.");
     }
     if (auto* tp = ServiceLocator::Get<ThreadPool>())
     {
@@ -534,14 +541,17 @@ bool AssetManager::OpenPack(const std::filesystem::path& packPath)
 
 std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
 {
-    if (m_PackOpen && m_PackReader)
     {
-        uint64_t idx = 0;
-        if (m_PackReader->getItemIndex(assetPath.c_str(), idx))
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        if (m_PackOpen && m_PackReader)
         {
-            std::vector<uint8_t> data;
-            m_PackReader->readItemData(idx, data);
-            return data;
+            uint64_t idx = 0;
+            if (m_PackReader->getItemIndex(assetPath.c_str(), idx))
+            {
+                std::vector<uint8_t> data;
+                m_PackReader->readItemData(idx, data);
+                return data;
+            }
         }
     }
 
