@@ -30,6 +30,7 @@ public:
     virtual ~JoltPhysicsWorld() override;
 
     virtual PhysicsBodyHandle CreateBody(const PhysicsBodyDesc& desc) override;
+    virtual std::vector<PhysicsBodyHandle> CreateBodies(const std::vector<PhysicsBodyDesc>& descs) override;
     virtual void DestroyBody(PhysicsBodyHandle handle) override;
 
     virtual void SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot) override;
@@ -55,6 +56,12 @@ public:
     /// Clear the cached mesh shapes (call on world reset).
     void ClearShapeCache();
 
+    /// Builds a Jolt shape from a PhysicsBodyDesc (used by CreateBody and CreateBodies).
+    JPH::ShapeRefC BuildShape(const PhysicsBodyDesc& desc);
+
+    /// Builds BodyCreationSettings from a desc + pre-built shape.
+    JPH::BodyCreationSettings BuildBodySettings(const PhysicsBodyDesc& desc, JPH::ShapeRefC shape);
+
 private:
     // ── Jolt subsystems ──────────────────────────────────────────────────────
     JPH::PhysicsSystem m_PhysicsSystem;
@@ -65,12 +72,20 @@ private:
     // Set of Jolt body IDs (packed as uint32) that have at least one ground
     // contact — i.e. a contact whose normal Y component is positive (pointing
     // upward relative to the body being checked).
+    // Protected by m_GroundedMutex: Jolt calls contact callbacks from worker threads.
     std::unordered_set<uint32_t> m_GroundedBodies;
+    mutable std::mutex m_GroundedMutex;
 
     // ── Mesh shape cache ─────────────────────────────────────────────────────
     // Built MeshShapes are cached per triangle fingerprint (model path + scale)
     // so that multiple bodies using the same mesh share a single BVH build.
+    mutable std::mutex m_CacheMutex;
     std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_MeshShapeCache;
+
+    // ── Convex hull shape cache ─────────────────────────────────────────────
+    // For dynamic meshes, a ConvexHull is built from deduped vertices. Cache it
+    // per model path so identical dynamic bodies reuse the same hull.
+    std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_ConvexHullCache;
 
     // Contact listener that populates m_GroundedBodies.
     class ContactListenerImpl : public JPH::ContactListener
@@ -88,10 +103,15 @@ private:
         void OnContactRemoved(const JPH::SubShapeIDPair& inPair) override;
 
         /// Set the tracker that receives ground-contact updates.
-        void SetGroundedTracker(std::unordered_set<uint32_t>* tracker) { m_Tracker = tracker; }
+        void SetGroundedTracker(std::unordered_set<uint32_t>* tracker, std::mutex* mutex)
+        {
+            m_Tracker = tracker;
+            m_Mutex = mutex;
+        }
 
     private:
         std::unordered_set<uint32_t>* m_Tracker = nullptr;
+        std::mutex* m_Mutex = nullptr;
     };
 
     ContactListenerImpl m_ContactListener;

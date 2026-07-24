@@ -3,7 +3,9 @@
 
 
 #include "engine/common/timestep.h"
+#include "engine/physics/iphysics_world.h"
 #include <entt/entt.hpp>
+#include <vector>
 
 namespace Chained
 {
@@ -32,6 +34,19 @@ namespace SceneResources
      * Used to initialize physics bodies immediately during runtime.
      */
     void OnRigidBodyConstruct(entt::registry& reg, entt::entity e);
+
+    /**
+     * @brief Builds a PhysicsBodyDesc for an entity with RigidBody + Collider components.
+     * Returns true on success, false if the entity is missing components or assets aren't ready.
+     * Does NOT create the physics body — caller is responsible for that.
+     */
+    bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc);
+
+    /**
+     * @brief Batch-creates physics bodies for all pending entities, sorted static-first.
+     * Uses the batch API for efficient broadphase insertion.
+     */
+    void BatchInitializeBodies(entt::registry& reg, IPhysicsWorld* world);
 
     // Asset resolution methods
     void ResolveSprite(entt::registry& reg, entt::entity e);

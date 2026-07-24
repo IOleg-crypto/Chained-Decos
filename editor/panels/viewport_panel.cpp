@@ -228,7 +228,10 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     m_Hovered = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows);
 
     // 2. Rendering
-    RenderViewportScene(activeScene.get());
+    if (!activeScene->IsStartingUp())
+    {
+        RenderViewportScene(activeScene.get());
+    }
 
     // 3. UI Image & Interaction
     if (!m_ViewportFramebuffer || !m_ViewportFramebuffer->IsValid())
@@ -243,6 +246,20 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
     viewportScreenPos = ImGui::GetCursorScreenPos();
 
     ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
+
+    if (activeScene->IsStartingUp())
+    {
+        ImDrawList* drawList = ImGui::GetWindowDrawList();
+        ImVec2 p0 = ImGui::GetItemRectMin();
+        ImVec2 p1 = ImGui::GetItemRectMax();
+        
+        drawList->AddRectFilled(p0, p1, IM_COL32(0, 0, 0, 180));
+        
+        const char* text = "Loading Physics...";
+        ImVec2 textSize = ImGui::CalcTextSize(text);
+        ImVec2 textPos = ImVec2(p0.x + (p1.x - p0.x - textSize.x) * 0.5f, p0.y + (p1.y - p0.y - textSize.y) * 0.5f);
+        drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), text);
+    }
 
     // 4. Drag & Drop
     HandleDragDrop(activeScene.get());

@@ -19,6 +19,8 @@
 #include <chrono>
 #include <cmath>
 #include <cstdint>
+#include <future>
+#include <mutex>
 
 namespace Chained
 {
@@ -121,7 +123,7 @@ JoltPhysicsWorld::JoltPhysicsWorld()
 
     m_PhysicsSystem.SetGravity(JPH::Vec3(0.0f, -9.81f, 0.0f));
 
-    m_ContactListener.SetGroundedTracker(&m_GroundedBodies);
+    m_ContactListener.SetGroundedTracker(&m_GroundedBodies, &m_GroundedMutex);
     m_PhysicsSystem.SetContactListener(&m_ContactListener);
 
     CH_CORE_INFO("Jolt Physics World Initialized with ContactListener.");
@@ -131,14 +133,13 @@ JoltPhysicsWorld::~JoltPhysicsWorld() = default;
 
 void JoltPhysicsWorld::ClearShapeCache()
 {
+    std::lock_guard<std::mutex> lock(m_CacheMutex);
     m_MeshShapeCache.clear();
+    m_ConvexHullCache.clear();
 }
 
-PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
+JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
 {
-    JPH::BodyInterface& bi = m_PhysicsSystem.GetBodyInterface();
-
-    // ── 1. Build shape ───────────────────────────────────────────────────────
     JPH::ShapeRefC shape;
 
     switch (desc.Shape)
@@ -189,18 +190,31 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             break;
         }
 
-        // Jolt's MeshShape is concave and only supports Static/Kinematic bodies: there is no
-        // Mesh-vs-Mesh collision function, so a Dynamic mesh touching another mesh trips
-        // JPH_ASSERT("Unsupported shape pair") in CollisionDispatch. For non-static mesh bodies
-        // we approximate the geometry with a ConvexHullShape built from the same vertices.
         if (!desc.IsStatic)
         {
-            // Feeding raw triangle vertices to the hull builder is pathological: a level-geometry
-            // mesh yields millions of near-duplicate points (3 per triangle), and the builder must
-            // scan them all only to keep at most cMaxPointsInHull (256). Deduplicate onto a coarse
-            // spatial grid first — this collapses 6M points to a few hundred and turns a 40s freeze
-            // into milliseconds, with no meaningful loss of hull accuracy.
-            constexpr float kGridCell = 0.05f; // 5cm dedup grid
+            // Convex hull path for dynamic meshes — check cache first
+            std::string convexKey = desc.CacheKey.empty() ? "" : desc.CacheKey + "_convex";
+            if (!convexKey.empty())
+            {
+                std::lock_guard<std::mutex> lock(m_CacheMutex);
+                auto it = m_ConvexHullCache.find(convexKey);
+                if (it != m_ConvexHullCache.end())
+                {
+                    shape = it->second;
+                    if (desc.MeshScale != glm::vec3(1.0f))
+                    {
+                        JPH::ScaledShapeSettings scaledSettings(
+                            shape, JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
+                        auto scaledResult = scaledSettings.Create();
+                        if (!scaledResult.HasError())
+                            shape = scaledResult.Get();
+                    }
+                    CH_CORE_TRACE("Physics: Reused cached convex hull [key='{}']", convexKey);
+                    break;
+                }
+            }
+
+            constexpr float kGridCell = 0.05f;
             std::unordered_set<uint64_t> seen;
             JPH::Array<JPH::Vec3> points;
 
@@ -222,14 +236,28 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
                 tryAdd(t.V2);
             }
 
-            // A non-static mesh this large is almost certainly level geometry mistagged as dynamic.
-            // A convex hull of it is a useless blob, so warn loudly rather than silently approximate.
             if (points.size() > 4096)
             {
                 CH_CORE_WARN("Physics: Dynamic mesh has {} unique points after dedup ({} raw tris) — this looks "
                              "like static level geometry marked non-static. A convex hull will be a crude blob; "
                              "consider making this body Static or Kinematic instead.",
                              points.size(), desc.Triangles.size());
+            }
+
+            // Cap convex hull at 256 points — Jolt's hull builder struggles above this.
+            // Downsample uniformly if needed.
+            constexpr size_t kMaxConvexPoints = 256;
+            if (points.size() > kMaxConvexPoints)
+            {
+                CH_CORE_WARN("Physics: Convex hull downsampled from {} to {} points.", points.size(), kMaxConvexPoints);
+                JPH::Array<JPH::Vec3> downsampled;
+                downsampled.reserve(kMaxConvexPoints);
+                size_t step = points.size() / kMaxConvexPoints;
+                for (size_t i = 0; i < points.size() && downsampled.size() < kMaxConvexPoints; i += step)
+                {
+                    downsampled.push_back(points[i]);
+                }
+                points = std::move(downsampled);
             }
 
             JPH::ConvexHullShapeSettings hullSettings(points);
@@ -245,8 +273,12 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             }
 
             JPH::ShapeRefC hull = hullResult.Get();
+            if (!convexKey.empty())
+            {
+                std::lock_guard<std::mutex> lock(m_CacheMutex);
+                m_ConvexHullCache[convexKey] = hull;
+            }
 
-            // Apply per-instance scale (identity scale needs no wrapper).
             shape = hull;
             if (desc.MeshScale != glm::vec3(1.0f))
             {
@@ -268,13 +300,12 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             break;
         }
 
-        // The cache holds the bare, unscaled BVH keyed by model path. Scale (ScaledShape)
-        // and offset (RotatedTranslatedShape) are layered on afterwards as cheap decorators,
-        // so every instance of the same model — regardless of scale or offset — reuses one BVH.
+        // Static mesh: BVH cache keyed by model path
         JPH::ShapeRefC baseShape;
         bool cached = false;
         if (!desc.CacheKey.empty())
         {
+            std::lock_guard<std::mutex> lock(m_CacheMutex);
             auto it = m_MeshShapeCache.find(desc.CacheKey);
             if (it != m_MeshShapeCache.end())
             {
@@ -331,19 +362,17 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
             baseShape = result.Get();
             if (!desc.CacheKey.empty())
             {
+                std::lock_guard<std::mutex> lock(m_CacheMutex);
                 m_MeshShapeCache[desc.CacheKey] = baseShape;
             }
 
             const auto buildEnd = std::chrono::steady_clock::now();
             const double buildMs =
                 std::chrono::duration<double, std::milli>(buildEnd - buildStart).count();
-            // This branch only runs on a cache miss — the BVH is being built for the first
-            // time, then stored for reuse. (Don't confuse with the cache-hit path above.)
             CH_CORE_INFO("Physics: Built mesh BVH ({} tris) in {:.2f} ms{} [key='{}']", joltTris.size(), buildMs,
                          desc.CacheKey.empty() ? " (uncached)" : " (freshly built, cached for reuse)", desc.CacheKey);
         }
 
-        // Apply per-instance scale as a decorator (identity scale needs no wrapper).
         shape = baseShape;
         if (desc.MeshScale != glm::vec3(1.0f))
         {
@@ -371,8 +400,8 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     }
     }
 
-    // ── 1b. Apply Offset if present ──────────────────────────────────────────
-    if (desc.Offset != glm::vec3(0.0f))
+    // Apply Offset if present
+    if (shape && desc.Offset != glm::vec3(0.0f))
     {
         JPH::RotatedTranslatedShapeSettings offsetSettings(JPH::Vec3(desc.Offset.x, desc.Offset.y, desc.Offset.z),
                                                            JPH::Quat::sIdentity(), shape);
@@ -383,7 +412,11 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
         }
     }
 
-    // ── 2. Determine motion type ─────────────────────────────────────────────
+    return shape;
+}
+
+JPH::BodyCreationSettings JoltPhysicsWorld::BuildBodySettings(const PhysicsBodyDesc& desc, JPH::ShapeRefC shape)
+{
     JPH::EMotionType motionType;
     JPH::ObjectLayer objectLayer;
 
@@ -403,7 +436,6 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
         objectLayer = Layers::MOVING;
     }
 
-    // ── 3. Create body ───────────────────────────────────────────────────────
     JPH::BodyCreationSettings settings(shape, JPH::RVec3(desc.Position.x, desc.Position.y, desc.Position.z),
                                        JPH::Quat(desc.Rotation.x, desc.Rotation.y, desc.Rotation.z, desc.Rotation.w),
                                        motionType, objectLayer);
@@ -467,6 +499,20 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
 
     settings.mUserData = desc.UserData;
 
+    return settings;
+}
+
+PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
+{
+    auto shape = BuildShape(desc);
+    if (!shape)
+    {
+        return kInvalidPhysicsBody;
+    }
+
+    auto settings = BuildBodySettings(desc, shape);
+
+    JPH::BodyInterface& bi = m_PhysicsSystem.GetBodyInterface();
     JPH::Body* body = bi.CreateBody(settings);
     if (!body)
     {
@@ -476,6 +522,110 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
     bi.AddBody(body->GetID(), JPH::EActivation::Activate);
 
     return (PhysicsBodyHandle)body->GetID().GetIndexAndSequenceNumber();
+}
+
+std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<PhysicsBodyDesc>& descs)
+{
+    if (descs.empty())
+        return {};
+
+    const auto buildStart = std::chrono::steady_clock::now();
+
+    // Phase 0: Build all shapes in parallel (BVH build is the bottleneck)
+    std::vector<JPH::ShapeRefC> prebuiltShapes(descs.size());
+    {
+        // Count mesh shapes that need building (non-trivial shapes)
+        size_t meshCount = 0;
+        for (const auto& desc : descs)
+        {
+            if (desc.Shape == ColliderType::Mesh && !desc.Triangles.empty())
+                ++meshCount;
+        }
+
+        if (meshCount >= 2)
+        {
+            // Parallel path: build mesh shapes concurrently
+            std::vector<std::future<void>> futures;
+            futures.reserve(descs.size());
+
+            for (size_t i = 0; i < descs.size(); ++i)
+            {
+                futures.push_back(std::async(std::launch::async, [this, &descs, &prebuiltShapes, i]() {
+                    auto shape = BuildShape(descs[i]);
+                    if (!shape)
+                        shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+                    prebuiltShapes[i] = std::move(shape);
+                }));
+            }
+            for (auto& f : futures)
+                f.get();
+        }
+        else
+        {
+            // Sequential path: few shapes, no parallelism overhead
+            for (size_t i = 0; i < descs.size(); ++i)
+            {
+                auto shape = BuildShape(descs[i]);
+                if (!shape)
+                    shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+                prebuiltShapes[i] = std::move(shape);
+            }
+        }
+    }
+
+    const auto shapesBuilt = std::chrono::steady_clock::now();
+    const double shapesMs = std::chrono::duration<double, std::milli>(shapesBuilt - buildStart).count();
+    if (shapesMs > 10.0)
+    {
+        CH_CORE_INFO("Physics: Built {} shapes in {:.1f} ms", descs.size(), shapesMs);
+    }
+
+    // Phase 1: Create bodies using pre-built shapes (fast, no BVH work)
+    JPH::BodyInterface& bi = m_PhysicsSystem.GetBodyInterface();
+    std::vector<JPH::BodyID> bodyIds;
+    bodyIds.reserve(descs.size());
+
+    for (size_t i = 0; i < descs.size(); ++i)
+    {
+        auto settings = BuildBodySettings(descs[i], prebuiltShapes[i]);
+        JPH::Body* body = bi.CreateBody(settings);
+        if (!body)
+        {
+            CH_CORE_ERROR("Physics: Batch body creation failed (user-data {}).", descs[i].UserData);
+            bodyIds.push_back(JPH::BodyID());
+            continue;
+        }
+        bodyIds.push_back(body->GetID());
+    }
+
+    // Phase 2: Batch add to physics system (avoids per-body broadphase rebuild)
+    // Filter out invalid BodyIDs that failed creation — passing them to Jolt is UB.
+    std::vector<JPH::BodyID> validIds;
+    validIds.reserve(bodyIds.size());
+    for (auto& id : bodyIds)
+    {
+        if (!id.IsInvalid())
+            validIds.push_back(id);
+    }
+
+    if (!validIds.empty())
+    {
+        auto addState = bi.AddBodiesPrepare(validIds.data(), (int)validIds.size());
+        bi.AddBodiesFinalize(validIds.data(), (int)validIds.size(), addState, JPH::EActivation::Activate);
+    }
+
+    // Phase 3: Convert to handles
+    std::vector<PhysicsBodyHandle> handles;
+    handles.reserve(bodyIds.size());
+    for (auto& id : bodyIds)
+    {
+        if (id.IsInvalid())
+            handles.push_back(kInvalidPhysicsBody);
+        else
+            handles.push_back((PhysicsBodyHandle)id.GetIndexAndSequenceNumber());
+    }
+
+    return handles;
 }
 
 void JoltPhysicsWorld::DestroyBody(PhysicsBodyHandle handle)
@@ -556,6 +706,7 @@ bool JoltPhysicsWorld::IsBodyGrounded(PhysicsBodyHandle handle) const
 {
     if (handle == 0)
         return false;
+    std::lock_guard lock(m_GroundedMutex);
     return m_GroundedBodies.count(static_cast<uint32_t>(handle)) > 0;
 }
 
@@ -568,6 +719,7 @@ bool JoltPhysicsWorld::IsBodyActive(PhysicsBodyHandle handle) const
 
 void JoltPhysicsWorld::ClearGroundedState()
 {
+    std::lock_guard lock(m_GroundedMutex);
     std::unordered_set<uint32_t> nextGrounded;
     auto& bi = m_PhysicsSystem.GetBodyInterface();
     for (uint32_t handle : m_GroundedBodies)
@@ -589,24 +741,23 @@ JPH::ValidateResult JoltPhysicsWorld::ContactListenerImpl::OnContactValidate(
     return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
 }
 
-static void RegisterGroundContact(std::unordered_set<uint32_t>* tracker,
+static void RegisterGroundContact(std::mutex& mutex, std::unordered_set<uint32_t>& tracker,
                                    const JPH::Body& body1, const JPH::Body& body2,
                                    const JPH::ContactManifold& manifold)
 {
-    if (!tracker) return;
-    
     JPH::Vec3 normal = manifold.mWorldSpaceNormal;
     uint32_t id1 = body1.GetID().GetIndexAndSequenceNumber();
     uint32_t id2 = body2.GetID().GetIndexAndSequenceNumber();
 
+    std::lock_guard lock(mutex);
     // In Jolt, mWorldSpaceNormal points from body1 to body2.
     // If normal Y > 0.5, body2 is ABOVE body1. Thus body2 is grounded on body1.
     if (normal.GetY() > 0.5f) {
-        tracker->insert(id2);
+        tracker.insert(id2);
     }
     // If normal Y < -0.5, body1 is ABOVE body2. Thus body1 is grounded on body2.
     else if (normal.GetY() < -0.5f) {
-        tracker->insert(id1);
+        tracker.insert(id1);
     }
 }
 
@@ -614,14 +765,14 @@ void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(
     const JPH::Body& body1, const JPH::Body& body2,
     const JPH::ContactManifold& manifold, JPH::ContactSettings&)
 {
-    RegisterGroundContact(m_Tracker, body1, body2, manifold);
+    RegisterGroundContact(*m_Mutex, *m_Tracker, body1, body2, manifold);
 }
 
 void JoltPhysicsWorld::ContactListenerImpl::OnContactPersisted(
     const JPH::Body& body1, const JPH::Body& body2,
     const JPH::ContactManifold& manifold, JPH::ContactSettings&)
 {
-    RegisterGroundContact(m_Tracker, body1, body2, manifold);
+    RegisterGroundContact(*m_Mutex, *m_Tracker, body1, body2, manifold);
 }
 
 void JoltPhysicsWorld::ContactListenerImpl::OnContactRemoved(const JPH::SubShapeIDPair&)
