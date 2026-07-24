@@ -5,6 +5,8 @@ add_library(editor_core STATIC
     asset_types.h
     editor_colors.h
     events.h
+    editor_menu.h
+    editor_menu.cpp
     gui.h
     gui.cpp
     icons.h

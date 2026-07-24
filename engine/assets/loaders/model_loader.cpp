@@ -3,6 +3,7 @@
 #include "engine/assets/model_data.h"
 
 #include "engine/assets/types/model_asset.h"
+#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/common/zstd_compression.h"
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
@@ -43,9 +44,15 @@ bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
 
     if (resolvedPath.starts_with(":"))
     {
+        auto pendingData = GeometryGenerator::GeneratePrimitivePendingData(resolvedPath, ProceduralParameters());
+        if (pendingData.isValid)
+        {
+            modelAsset->SetPendingData(std::move(pendingData));
+            return true;
+        }
         if (outError)
         {
-            *outError = "ModelLoader: procedural model paths are not supported: " + resolvedPath;
+            *outError = "ModelLoader: failed to generate procedural model for: " + resolvedPath;
         }
         return false;
     }

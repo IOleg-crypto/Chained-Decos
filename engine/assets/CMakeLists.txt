@@ -50,8 +50,11 @@ target_link_libraries(engine_assets PUBLIC
     engine_external_miniaudio
     yaml-cpp
     assimp
-    pack-static
 )
+
+if(TARGET pack-static)
+    target_link_libraries(engine_assets PUBLIC pack-static)
+endif()
 
 if(TARGET engine_pch)
     target_link_libraries(engine_assets PRIVATE engine_pch)

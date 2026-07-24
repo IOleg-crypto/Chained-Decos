@@ -25,6 +25,7 @@ private:
     std::vector<Material> m_Materials;
     int m_SelectedMeshIndex = -1;
     int m_SelectedMaterialIndex = 0;
+    char m_FilterBuffer[128] = "";
 };
 } // namespace Chained
 

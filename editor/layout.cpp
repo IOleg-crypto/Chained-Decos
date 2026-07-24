@@ -1,3 +1,5 @@
+#include "layer.h"
+#include "editor_menu.h"
 #include "layout.h"
 
 #include "gui.h"
@@ -141,12 +143,14 @@ void EditorLayout::OnImGuiRender()
         ImGui::DockSpace(m_DockSpaceID, ImVec2(0.0f, 0.0f), dockspace_flags);
     }
 
-    EditorGUI::DrawMenuBar(EditorLayer::Get(), m_Panels);
+    auto& menu = EditorLayer::Get().GetMenu();
+    menu.DrawMenuBar(m_Panels);
 
     bool readOnly = EditorLayer::Get().GetSceneState() == SceneState::Play;
     m_Panels.OnImGuiRender(readOnly);
 
-    EditorGUI::DrawEditorSettings();
+    menu.DrawEditorSettings();
+    menu.DrawExportProgressOverlay();
 
     ImGui::End();
 }

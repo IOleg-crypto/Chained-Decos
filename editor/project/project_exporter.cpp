@@ -4,6 +4,7 @@
 #include "engine/core/platform.h"
 #include "engine/project/project.h"
 
+#include <atomic>
 #include <filesystem>
 #include <string>
 #include <system_error>
@@ -18,14 +19,24 @@ namespace Chained
 void ProjectExporter::CollectFiles(const fs::path& dir, std::vector<fs::path>& out)
 {
     std::error_code ec;
-    for (const auto& entry : fs::recursive_directory_iterator(dir, ec))
+    fs::recursive_directory_iterator it(dir, fs::directory_options::skip_permission_denied, ec);
+    if (ec)
+    {
+        CH_CORE_ERROR("ProjectExporter: Cannot iterate '{}': {}", dir.string(), ec.message());
+        return;
+    }
+    for (const auto& entry : it)
     {
         if (!entry.is_regular_file())
         {
             continue;
         }
         std::error_code recEc;
-        out.push_back(fs::relative(entry.path(), dir, recEc));
+        auto rel = fs::relative(entry.path(), dir, recEc);
+        if (!recEc)
+        {
+            out.push_back(rel);
+        }
     }
 }
 
@@ -47,7 +58,8 @@ bool ProjectExporter::CopyFile(const fs::path& src, const fs::path& dst, std::st
     return true;
 }
 
-ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
+ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgressCallback onProgress,
+                                       const std::atomic<bool>* cancelFlag)
 {
     ExportResult result;
     result.OutDir = outputDir;
@@ -145,6 +157,14 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         return result;
     }
 
+    // ── Cancel check — before the heavy pack phase ────────────────────────────
+    if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
+    {
+        result.Cancelled = true;
+        CH_CORE_INFO("ProjectExporter: Cancelled before packing.");
+        return result;
+    }
+
     uint64_t fileCount = fileItemPaths.size() / 2;
     result.PackedFileCount = fileCount;
 
@@ -160,8 +180,35 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         try
         {
             const auto& exp = project->GetConfig().Export;
+
+            // Build a context struct so the C-callback can call onProgress.
+            struct PackCtx
+            {
+                const std::vector<std::string>& fileItemPaths;
+                uint64_t total;
+                ExportProgressCallback& cb;
+                const std::atomic<bool>* cancelFlag;
+            };
+            PackCtx ctx{fileItemPaths, fileCount, onProgress, cancelFlag};
+
+            OnPackFile cCallback = nullptr;
+            if (onProgress)
+            {
+                cCallback = [](uint64_t itemIndex, void* arg) {
+                    auto* ctx = static_cast<PackCtx*>(arg);
+                    if (!ctx->cb)
+                        return;
+                    // itemIndex is 0-based inside the library; make it 1-based for the UI.
+                    uint64_t packed = itemIndex + 1;
+                    // Each file occupies two entries (file path, item path); item path is at index*2+1.
+                    const std::string& itemPath = ctx->fileItemPaths[itemIndex * 2 + 1];
+                    ctx->cb(packed, ctx->total, itemPath);
+                };
+            }
+
             pack::Writer::pack(packPath, fileCount, rawPaths.data(), exp.DataVersion, exp.ZipThreshold, exp.PreferSpeed,
-                               false);
+                               false, cCallback, onProgress ? &ctx : nullptr);
+            CH_CORE_INFO("ProjectExporter: Packed {} files to '{}'", fileCount, packPath.string());
         } catch (const pack::Error& err)
         {
             result.Error = "Pack failed: " + std::string(err.what());
@@ -170,7 +217,7 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         }
 
         std::error_code sizeEc;
-        result.PackFileSize = static_cast<std::uint64_t>(fs::file_size(packPath, sizeEc));
+        result.PackFileSize = static_cast<uint64_t>(fs::file_size(packPath, sizeEc));
         if (sizeEc)
         {
             result.PackFileSize = 0;
@@ -178,6 +225,15 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
 
         CH_CORE_INFO("ProjectExporter: packed {} files → '{}' ({} bytes)", fileCount, packPath.string(),
                      result.PackFileSize);
+
+        // ── Cancel check — after pack, before copying binaries ────────────────
+        if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
+        {
+            fs::remove(packPath, ec);
+            result.Cancelled = true;
+            CH_CORE_INFO("ProjectExporter: Cancelled after packing.");
+            return result;
+        }
     }
 
     // ── 4. Calculate total uncompressed size ─────────────────────────────────
@@ -244,7 +300,10 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir)
         if (ext == ".dll" || ext == ".so" || ext == ".dylib")
         {
             std::string copyErr;
-            CopyFile(f.path(), outputDir / f.path().filename(), copyErr); // non-fatal
+            if (!CopyFile(f.path(), outputDir / f.path().filename(), copyErr))
+            {
+                CH_CORE_WARN("ProjectExporter: Failed to copy '{}': {}", f.path().filename().string(), copyErr);
+            }
         }
     }
 
