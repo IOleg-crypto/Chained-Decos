@@ -19,8 +19,12 @@ MaterialPanel::MaterialPanel()
     m_Name = "Material Editor";
 }
 
-static uint32_t GetTextureID(const std::string& path)
+static uint32_t GetTextureID(const std::shared_ptr<Texture>& tex, const std::string& path)
 {
+    if (tex)
+    {
+        return tex->GetNativeHandle();
+    }
     if (path.empty()) return 0;
     auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
     if (texAsset && texAsset->GetTexture())
@@ -28,6 +32,20 @@ static uint32_t GetTextureID(const std::string& path)
         return texAsset->GetTexture()->GetNativeHandle();
     }
     return 0;
+}
+
+static void UpdateTextureFromPath(std::shared_ptr<Texture>& tex, const std::string& path)
+{
+    if (path.empty())
+    {
+        tex.reset();
+        return;
+    }
+    auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+    if (texAsset && texAsset->IsReady())
+    {
+        tex = texAsset->GetTexture();
+    }
 }
 
 static bool DrawSectionHeader(const char* icon, const char* label)
@@ -47,7 +65,10 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
         ImGui::Indent();
         EditorGUI::BeginPropertyGrid();
         EditorGUI::PropertyColor("Color", mat.AlbedoColor);
-        EditorGUI::FileProperty("Texture", mat.AlbedoPath, GetTextureID(mat.AlbedoPath), "png,jpg,tga");
+        if (EditorGUI::FileProperty("Texture", mat.AlbedoPath, GetTextureID(mat.AlbedoMap, mat.AlbedoPath), "png,jpg,tga"))
+        {
+            UpdateTextureFromPath(mat.AlbedoMap, mat.AlbedoPath);
+        }
         EditorGUI::EndPropertyGrid();
         ImGui::Unindent();
     }
@@ -56,7 +77,10 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
     {
         ImGui::Indent();
         EditorGUI::BeginPropertyGrid();
-        EditorGUI::FileProperty("Normal Map", mat.NormalPath, GetTextureID(mat.NormalPath), "png,jpg,tga");
+        if (EditorGUI::FileProperty("Normal Map", mat.NormalPath, GetTextureID(mat.NormalMap, mat.NormalPath), "png,jpg,tga"))
+        {
+            UpdateTextureFromPath(mat.NormalMap, mat.NormalPath);
+        }
         EditorGUI::EndPropertyGrid();
         ImGui::Unindent();
     }
@@ -67,7 +91,10 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
         EditorGUI::BeginPropertyGrid();
         EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
         EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
-        EditorGUI::FileProperty("PBR Map", mat.MetallicRoughnessPath, GetTextureID(mat.MetallicRoughnessPath), "png,jpg,tga");
+        if (EditorGUI::FileProperty("PBR Map", mat.MetallicRoughnessPath, GetTextureID(mat.MetallicRoughnessMap, mat.MetallicRoughnessPath), "png,jpg,tga"))
+        {
+            UpdateTextureFromPath(mat.MetallicRoughnessMap, mat.MetallicRoughnessPath);
+        }
         EditorGUI::EndPropertyGrid();
         ImGui::TextDisabled("PBR map: G = Roughness, B = Metalness (glTF convention)");
         ImGui::Unindent();
@@ -79,7 +106,10 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
         EditorGUI::BeginPropertyGrid();
         EditorGUI::PropertyColor("Color", mat.EmissiveColor, /*hdr*/ true);
         EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.05f, 0.0f, 1000.0f);
-        EditorGUI::FileProperty("Emissive Map", mat.EmissivePath, GetTextureID(mat.EmissivePath), "png,jpg,tga");
+        if (EditorGUI::FileProperty("Emissive Map", mat.EmissivePath, GetTextureID(mat.EmissiveMap, mat.EmissivePath), "png,jpg,tga"))
+        {
+            UpdateTextureFromPath(mat.EmissiveMap, mat.EmissivePath);
+        }
         EditorGUI::EndPropertyGrid();
         ImGui::Unindent();
     }
@@ -133,18 +163,41 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
         if (materials && !materials->empty())
         {
             // Material Selection Sidebar / List
-            ImGui::BeginChild("MaterialList", ImVec2(170, 0), true);
+            ImGui::BeginChild("MaterialList", ImVec2(180, 0), true);
+            ImGui::SetNextItemWidth(-1.0f);
+            ImGui::InputTextWithHint("##MatFilter", ICON_FA_MAGNIFYING_GLASS " Search...", m_FilterBuffer, sizeof(m_FilterBuffer));
+            ImGui::Separator();
+            
+            std::string filterStr = m_FilterBuffer;
+            std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), ::tolower);
+
             for (int i = 0; i < (int)materials->size(); i++)
             {
                 const Material& m = (*materials)[i];
                 std::string label = m.Name;
                 if (label.empty()) label = "Material " + std::to_string(i);
 
+                if (!filterStr.empty())
+                {
+                    std::string lowerLabel = label;
+                    std::transform(lowerLabel.begin(), lowerLabel.end(), lowerLabel.begin(), ::tolower);
+                    if (lowerLabel.find(filterStr) == std::string::npos)
+                        continue;
+                }
+
                 ImGui::PushID(i);
-                ImVec4 swatch = {m.AlbedoColor.r / 255.0f, m.AlbedoColor.g / 255.0f, m.AlbedoColor.b / 255.0f, 1.0f};
-                ImGui::ColorButton("##swatch", swatch,
-                    ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoBorder,
-                    {14, 14});
+                uint32_t texHandle = GetTextureID(m.AlbedoMap, m.AlbedoPath);
+                if (texHandle != 0)
+                {
+                    ImGui::Image((ImTextureID)(uintptr_t)texHandle, ImVec2(14, 14));
+                }
+                else
+                {
+                    ImVec4 swatch = {m.AlbedoColor.r, m.AlbedoColor.g, m.AlbedoColor.b, 1.0f};
+                    ImGui::ColorButton("##swatch", swatch,
+                        ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoBorder,
+                        {14, 14});
+                }
                 ImGui::SameLine();
                 if (ImGui::Selectable(label.c_str(), m_SelectedMaterialIndex == i))
                     m_SelectedMaterialIndex = i;

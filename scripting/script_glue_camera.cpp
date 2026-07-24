@@ -40,7 +40,7 @@ void Camera_GetRight(uint64_t entityID, glm::vec3* outRight)
 }
 void Camera_SetOrbit(uint64_t entityID, float yaw, float pitch, float distance)
 {
-    CH_CORE_INFO("[Diag Camera] SetOrbit entity={} yaw={} pitch={} dist={}", entityID, yaw, pitch, distance);
+    //CH_CORE_INFO("[Diag Camera] SetOrbit entity={} yaw={} pitch={} dist={}", entityID, yaw, pitch, distance);
     Entity entity = GetEntity(entityID);
     Scene* scene = GetActiveScene();
     if (entity && entity.HasComponent<CameraComponent>() && entity.HasComponent<TransformComponent>() && scene)

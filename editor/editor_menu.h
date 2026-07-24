@@ -1,0 +1,58 @@
+#ifndef CH_EDITOR_MENU_H
+#define CH_EDITOR_MENU_H
+
+#include <string>
+#include <mutex>
+#include <atomic>
+#include <cstdint>
+
+namespace Chained
+{
+
+class EditorPanels;
+class EditorLayer;
+
+/// @brief Handles the top-level editor menu bar and associated overlays/settings.
+class EditorMenu
+{
+public:
+    EditorMenu() = default;
+    ~EditorMenu() = default;
+
+    /// @brief Draws the main menu bar.
+    /// @param panels The editor panels to potentially toggle via the menu.
+    void DrawMenuBar(EditorPanels& panels);
+
+    /// @brief Draws the standalone Editor Settings window (if active).
+    void DrawEditorSettings();
+
+    /// @brief Draws the export progress overlay (if an export is running).
+    void DrawExportProgressOverlay();
+
+private:
+    // State for the Export Project feature
+    struct ExportState
+    {
+        bool Open = false;
+        bool Success = false;
+        std::string Message;
+        std::string OutDir;
+        std::mutex Mutex;
+        bool IsExporting = false;
+        
+        // Progress tracking (updated from background thread under Mutex)
+        uint64_t PackedFiles = 0;
+        uint64_t TotalFiles = 0;
+        std::string CurrentFile;
+        
+        // Cancel flag (written by GUI, read by worker thread)
+        std::atomic<bool> CancelRequested{false};
+    };
+
+    ExportState m_ExportState;
+    bool m_ShowEditorSettings = false;
+};
+
+} // namespace Chained
+
+#endif // CH_EDITOR_MENU_H

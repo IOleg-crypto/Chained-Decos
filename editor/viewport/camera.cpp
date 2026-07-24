@@ -93,14 +93,14 @@ void EditorCameraController::OnUpdate(Entity cameraEntity, Timestep ts, const gl
         }
     }
 
-    if (Core::Input::IsMouseButtonPressed(MouseCode::ButtonRight))
-    {
-        Application::Get().GetWindow().SetCursorMode(CursorMode::Locked);
-    }
-    else if (Core::Input::IsMouseButtonReleased(MouseCode::ButtonRight))
-    {
-        Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
-    }
+    // if (Core::Input::IsMouseButtonDown(MouseCode::ButtonRight))
+    // {
+    //     Application::Get().GetWindow().SetCursorMode(CursorMode::Locked);
+    // }
+    // else if (Core::Input::IsMouseButtonReleased(MouseCode::ButtonRight))
+    // {
+    //     Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
+    // }
 
     glm::vec2 delta = Core::Input::GetMouseDelta() * 0.003f;
 
