@@ -1,4 +1,5 @@
 #include "engine/scene/components/primitive_component.h"
+#include "engine/scene/components/primitive_runtime.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
@@ -16,8 +17,11 @@ TEST(PrimitiveTest, Defaults)
     EXPECT_FLOAT_EQ(component.Dimensions.x, 1.0f);
     EXPECT_FLOAT_EQ(component.Dimensions.y, 1.0f);
     EXPECT_FLOAT_EQ(component.Dimensions.z, 1.0f);
-    EXPECT_FALSE(component.Dirty);
-    EXPECT_EQ(component.Asset, nullptr);
+
+    // Runtime state is a separate component; check its defaults independently.
+    PrimitiveRuntimeState rt;
+    EXPECT_TRUE(rt.Dirty);  // defaults to true so mesh is built on first frame
+    EXPECT_EQ(rt.Asset, nullptr);
 }
 
 TEST(PrimitiveTest, TypeConstructorSetsRequestedPrimitiveType)
@@ -27,7 +31,7 @@ TEST(PrimitiveTest, TypeConstructorSetsRequestedPrimitiveType)
     EXPECT_EQ(sphere.Type, PrimitiveType::Sphere);
     EXPECT_FLOAT_EQ(sphere.Radius, 0.5f);
     EXPECT_EQ(sphere.Slices, 16);
-    EXPECT_FALSE(sphere.Dirty);
+    // Dirty flag is no longer on PrimitiveComponent -- it lives in PrimitiveRuntimeState.
 }
 
 TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
@@ -40,7 +44,6 @@ TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
     source.Slices = 24;
     source.Stacks = 12;
     source.Dimensions = {2.0f, 3.0f, 4.0f};
-    source.Dirty = true;
 
     PrimitiveComponent copy(source);
 
@@ -53,6 +56,5 @@ TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
     EXPECT_FLOAT_EQ(copy.Dimensions.x, source.Dimensions.x);
     EXPECT_FLOAT_EQ(copy.Dimensions.y, source.Dimensions.y);
     EXPECT_FLOAT_EQ(copy.Dimensions.z, source.Dimensions.z);
-    EXPECT_EQ(copy.Dirty, source.Dirty);
-    EXPECT_EQ(copy.Asset, source.Asset);
+    // Dirty and Asset are runtime-only (PrimitiveRuntimeState) and not part of PrimitiveComponent copy.
 }

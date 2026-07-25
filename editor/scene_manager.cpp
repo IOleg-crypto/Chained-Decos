@@ -516,7 +516,12 @@ void EditorSceneManager::CancelPlayModeTransition()
     m_PlayModeStartRequested = false;
     m_IsPlayModeLoading = false;
     m_PlayModeSceneReady = false;
-    m_RuntimeScene.reset();
+    if (m_RuntimeScene)
+    {
+        CH_CORE_INFO("Editor: Stopping runtime scene during transition...");
+        m_RuntimeScene->OnRuntimeStop(m_Context);
+        m_RuntimeScene.reset();
+    }
     m_LoadingStatus = "";
 }
 

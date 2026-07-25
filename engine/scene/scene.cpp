@@ -185,7 +185,11 @@ void Scene::OnRuntimeStart(const SceneContext& ctx)
 
 void Scene::FinishRuntimeStart(const SceneContext& ctx)
 {
-    ctx.Scripting->SetContextScene(this);
+    auto* scripting = ctx.Scripting ? ctx.Scripting : ServiceLocator::TryGet<ScriptEngine>();
+    if (scripting)
+    {
+        scripting->SetContextScene(this);
+    }
 
     // Start scripts only when in full gameplay state
     if (m_State == SceneState::Play)
@@ -231,15 +235,24 @@ void Scene::OnRuntimeStop(const SceneContext& ctx)
 
     m_IsStartingUp = false;
 
-    if (m_State == SceneState::Play && m_ScriptingManager)
+    if (m_ScriptingManager)
     {
         m_ScriptingManager->OnRuntimeStop();
     }
 
     SceneResources::OnRuntimeStop(this);
 
-    ctx.PhysicsSystem->ClearContext(this);
-    ctx.Scripting->SetContextScene(nullptr);
+    auto* physics = ctx.PhysicsSystem ? ctx.PhysicsSystem : ServiceLocator::TryGet<Physics>();
+    if (physics)
+    {
+        physics->ClearContext(this);
+    }
+
+    auto* scripting = ctx.Scripting ? ctx.Scripting : ServiceLocator::TryGet<ScriptEngine>();
+    if (scripting)
+    {
+        scripting->SetContextScene(nullptr);
+    }
 
     m_Registry->ctx().erase<SceneContext>();
 }
@@ -248,11 +261,16 @@ void Scene::OnUpdateRuntime(Timestep ts, const SceneContext& ctx)
 {
     CH_PROFILE_FUNCTION();
 
+    auto* physics = ctx.PhysicsSystem ? ctx.PhysicsSystem : ServiceLocator::TryGet<Physics>();
+
     if (m_IsStartingUp)
     {
-        ctx.PhysicsSystem->ResetWorld(this);
-        ctx.PhysicsSystem->ResetAccumulator(this);
-        ctx.PhysicsSystem->InitializeBodies(this);
+        if (physics)
+        {
+            physics->ResetWorld(this);
+            physics->ResetAccumulator(this);
+            physics->InitializeBodies(this);
+        }
 
         m_IsStartingUp = false;
         FinishRuntimeStart(ctx);
@@ -271,7 +289,10 @@ void Scene::OnUpdateRuntime(Timestep ts, const SceneContext& ctx)
     SceneResources::Update(*m_Registry, ts);
 
     // 3. Physics Simulation
-    ctx.PhysicsSystem->Update(this, ts, true);
+    if (physics)
+    {
+        physics->Update(this, ts, true);
+    }
 
     // 4. Animation Playback (handled by SceneResources::Update)
 
@@ -310,12 +331,17 @@ void Scene::OnUpdateSimulation(Timestep ts, const SceneContext& ctx)
 {
     CH_PROFILE_FUNCTION();
 
+    auto* physics = ctx.PhysicsSystem ? ctx.PhysicsSystem : ServiceLocator::TryGet<Physics>();
+
     if (m_IsStartingUp)
     {
         // Synchronous initialization on the main thread (blocks, but loading screen is visible)
-        ctx.PhysicsSystem->ResetWorld(this);
-        ctx.PhysicsSystem->ResetAccumulator(this);
-        ctx.PhysicsSystem->InitializeBodies(this);
+        if (physics)
+        {
+            physics->ResetWorld(this);
+            physics->ResetAccumulator(this);
+            physics->InitializeBodies(this);
+        }
 
         m_IsStartingUp = false;
         FinishRuntimeStart(ctx);
@@ -329,7 +355,10 @@ void Scene::OnUpdateSimulation(Timestep ts, const SceneContext& ctx)
     SceneResources::Update(*m_Registry, ts);
 
     // 3. Physics Simulation
-    ctx.PhysicsSystem->Update(this, ts, true);
+    if (physics)
+    {
+        physics->Update(this, ts, true);
+    }
 
     // 4. Animation Playback (handled by SceneResources::Update)
 }
