@@ -12,6 +12,7 @@
 #include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/model_component.h"
 #include "engine/scene/components/primitive_component.h"
+#include "engine/scene/components/primitive_runtime.h"
 #include "engine/scene/components/shader_component.h"
 #include "engine/scene/components/sprite_component.h"
 #include "engine/scene/scene.h"
@@ -85,7 +86,8 @@ void Update(entt::registry& reg, Timestep ts)
     // Procedural primitives: (re)build the backing ModelAsset on the main thread when it is
     // missing or its parameters changed (Dirty). Must run before rendering.
     reg.view<PrimitiveComponent>().each([&](auto entity, auto& prim) {
-        if (prim.Type != PrimitiveType::None && (!prim.Asset || prim.Dirty))
+        auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(entity);
+        if (prim.Type != PrimitiveType::None && (!rt.Asset || rt.Dirty))
         {
             ResolvePrimitive(reg, entity);
         }
@@ -318,12 +320,13 @@ void ResolveModel(entt::registry& reg, entt::entity e)
 
 void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
 {
-    reg.get<PrimitiveComponent>(e).Dirty = true;
+    reg.get_or_emplace<PrimitiveRuntimeState>(e).Dirty = true;
 }
 
 void ResolvePrimitive(entt::registry& reg, entt::entity e)
 {
     auto& prim = reg.get<PrimitiveComponent>(e);
+    auto& rt   = reg.get_or_emplace<PrimitiveRuntimeState>(e);
 
     const char* typeMarker = nullptr;
     switch (prim.Type)
@@ -354,7 +357,7 @@ void ResolvePrimitive(entt::registry& reg, entt::entity e)
         break;
     case PrimitiveType::None:
     default:
-        prim.Dirty = false;
+        rt.Dirty = false;
         return;
     }
 
@@ -369,17 +372,70 @@ void ResolvePrimitive(entt::registry& reg, entt::entity e)
     PendingModelData data = GeometryGenerator::GeneratePrimitivePendingData(typeMarker, params);
     if (!data.isValid)
     {
-        prim.Dirty = false;
+        rt.Dirty = false;
         return;
     }
 
-    if (!prim.Asset)
+    bool hadAsset = (rt.Asset != nullptr);
+    std::vector<Material> editedMaterials;
+    if (hadAsset)
     {
-        prim.Asset = std::make_shared<ModelAsset>();
+        // A rebuild replaces the whole asset, which would otherwise reset any material the user
+        // tuned in the Material Editor back to the generated default.
+        editedMaterials = rt.Asset->GetMaterials();
     }
-    prim.Asset->SetPendingData(std::move(data));
-    prim.Asset->OnLoaded(); // main-thread GPU upload
-    prim.Dirty = false;
+
+    if (!rt.Asset)
+    {
+        rt.Asset = std::make_shared<ModelAsset>();
+    }
+    rt.Asset->SetPendingData(std::move(data));
+    rt.Asset->OnLoaded(); // main-thread GPU upload
+
+    if (!editedMaterials.empty())
+    {
+        auto& regenerated = rt.Asset->GetMaterials();
+        for (size_t i = 0; i < regenerated.size() && i < editedMaterials.size(); ++i)
+        {
+            regenerated[i] = editedMaterials[i];
+        }
+        prim.SetMaterial(regenerated[0]);
+    }
+    else
+    {
+        auto& regenerated = rt.Asset->GetMaterials();
+        if (!regenerated.empty())
+        {
+            Material mat = prim.GetMaterial();
+            // Resolve textures for mat from AssetManager if paths are non-empty
+            if (auto* assets = ServiceLocator::TryGet<AssetManager>())
+            {
+                if (!mat.AlbedoPath.empty())
+                {
+                    auto texAsset = assets->Get<TextureAsset>(mat.AlbedoPath);
+                    if (texAsset && texAsset->IsReady()) mat.AlbedoMap = texAsset->GetTexture();
+                }
+                if (!mat.NormalPath.empty())
+                {
+                    auto texAsset = assets->Get<TextureAsset>(mat.NormalPath);
+                    if (texAsset && texAsset->IsReady()) mat.NormalMap = texAsset->GetTexture();
+                }
+                if (!mat.MetallicRoughnessPath.empty())
+                {
+                    auto texAsset = assets->Get<TextureAsset>(mat.MetallicRoughnessPath);
+                    if (texAsset && texAsset->IsReady()) mat.MetallicRoughnessMap = texAsset->GetTexture();
+                }
+                if (!mat.EmissivePath.empty())
+                {
+                    auto texAsset = assets->Get<TextureAsset>(mat.EmissivePath);
+                    if (texAsset && texAsset->IsReady()) mat.EmissiveMap = texAsset->GetTexture();
+                }
+            }
+            regenerated[0] = mat;
+        }
+    }
+
+    rt.Dirty = false;
 }
 
 bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc)

@@ -13,6 +13,7 @@
 #include "components/model_component.h"
 #include "components/physics_component.h"
 #include "components/primitive_component.h"
+#include "components/primitive_runtime.h"
 #include "components/scripting_components.h"
 #include "components/shader_component.h"
 #include "components/scene_transition_component.h"
