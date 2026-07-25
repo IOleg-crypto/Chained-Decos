@@ -78,8 +78,30 @@ public:
         m_Entity = m_Scene->CreateEntity(m_Name);
         if (!m_ModelPath.empty())
         {
-            auto& mc = m_Entity.AddComponent<ModelComponent>();
-            mc.ModelPath = m_ModelPath;
+            // Procedural primitive markers start with ':' — use PrimitiveComponent.
+            if (m_ModelPath.size() > 1 && m_ModelPath.front() == ':' && m_ModelPath.back() == ':')
+            {
+                auto& prim = m_Entity.AddComponent<PrimitiveComponent>();
+                // Dirty flag lives in PrimitiveRuntimeState (kept separate so reflect-cpp
+                // can aggregate-reflect PrimitiveComponent without a shared_ptr field).
+                m_Entity.AddOrReplaceComponent<PrimitiveRuntimeState>().Dirty = true;
+
+                if      (m_ModelPath == ":cube:")       prim.Type = PrimitiveType::Cube;
+                else if (m_ModelPath == ":sphere:")     prim.Type = PrimitiveType::Sphere;
+                else if (m_ModelPath == ":plane:")      prim.Type = PrimitiveType::Plane;
+                else if (m_ModelPath == ":cylinder:")   prim.Type = PrimitiveType::Cylinder;
+                else if (m_ModelPath == ":cone:")       prim.Type = PrimitiveType::Cone;
+                else if (m_ModelPath == ":torus:")      prim.Type = PrimitiveType::Torus;
+                else if (m_ModelPath == ":knot:")       prim.Type = PrimitiveType::Knot;
+                else if (m_ModelPath == ":hemisphere:") prim.Type = PrimitiveType::Hemisphere;
+                else                                    prim.Type = PrimitiveType::Sphere; // fallback
+            }
+            else
+            {
+                // Real file path — use ModelComponent.
+                auto& mc = m_Entity.AddComponent<ModelComponent>();
+                mc.ModelPath = m_ModelPath;
+            }
         }
     }
 

@@ -331,15 +331,19 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
     for (auto entity : primView)
     {
         auto [transform, primitive] = primView.get<TransformComponent, PrimitiveComponent>(entity);
-        if (primitive.Type == PrimitiveType::None || !primitive.Asset ||
-            primitive.Asset->GetState() != AssetState::Ready)
+        if (primitive.Type == PrimitiveType::None)
+        {
+            continue;
+        }
+        auto* rt = registry.try_get<PrimitiveRuntimeState>(entity);
+        if (!rt || !rt->Asset || rt->Asset->GetState() != AssetState::Ready)
         {
             // Generation is handled by SceneResources::ResolvePrimitive on the main thread
             // before rendering; here we only consume a ready asset.
             continue;
         }
 
-        EnqueueModelAsset(registry, entity, primitive.Asset.get(), transform.WorldTransform, frustum, cameraPos);
+        EnqueueModelAsset(registry, entity, rt->Asset.get(), transform.WorldTransform, frustum, cameraPos);
     }
 }
 
