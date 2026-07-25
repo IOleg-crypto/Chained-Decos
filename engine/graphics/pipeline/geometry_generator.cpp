@@ -2,6 +2,7 @@
 #include <vector>
 #include <cmath>
 #include <algorithm>
+#include <limits>
 #include <glm/glm.hpp>
 #include <glm/gtc/constants.hpp>
 
@@ -364,7 +365,7 @@ namespace Chained
     {
         // Builds a RawMesh (de-interleaved arrays, no VAO) for a box of the given dimensions.
         // Matches the interleaved layout of GenerateCube: 24 verts, per-face normals + texcoords.
-        RawMesh BuildCubeRaw(const glm::vec3& dimensions)
+        RawMesh BuildCube(const glm::vec3& dimensions)
         {
             float w = dimensions.x * 0.5f;
             float h = dimensions.y * 0.5f;
@@ -405,7 +406,7 @@ namespace Chained
         }
 
         // UV-sphere with positions == normals*radius (unit normals), matching GenerateSphere.
-        RawMesh BuildSphereRaw(float radius, int slices, int stacks)
+        RawMesh BuildSphere(float radius, int slices, int stacks)
         {
             RawMesh raw;
             raw.materialIndex = 0;
@@ -446,7 +447,7 @@ namespace Chained
         }
 
         // Flat XZ plane (up = +Y), spanning dimensions.x by dimensions.z.
-        RawMesh BuildPlaneRaw(const glm::vec3& dimensions)
+        RawMesh BuildPlane(const glm::vec3& dimensions)
         {
             float hx = dimensions.x * 0.5f;
             float hz = dimensions.z * 0.5f;
@@ -469,7 +470,7 @@ namespace Chained
 
         // Capsule: cylinder body + two hemispheres. Normals are the unit sphere directions
         // (a good approximation; the cylinder band gets radial normals from the polar sweep).
-        RawMesh BuildCapsuleRaw(float radius, float height, int slices, int stacks)
+        RawMesh BuildCapsule(float radius, float height, int slices, int stacks)
         {
             RawMesh raw;
             raw.materialIndex = 0;
@@ -516,7 +517,7 @@ namespace Chained
 
         // Cylinder aligned to Y, centered at origin. `radiusBottom`/`radiusTop` differ for a cone
         // (top == 0) or a truncated cone. Side wall + two caps. `slices` = radial segments.
-        RawMesh BuildConeLikeRaw(float radiusBottom, float radiusTop, float height, int slices)
+        RawMesh BuildConeLike(float radiusBottom, float radiusTop, float height, int slices)
         {
             RawMesh raw;
             raw.materialIndex = 0;
@@ -598,7 +599,7 @@ namespace Chained
         }
 
         // Upper half of a sphere (dome) + a flat bottom cap. `stacks` covers the dome only.
-        RawMesh BuildHemisphereRaw(float radius, int slices, int stacks)
+        RawMesh BuildHemisphere(float radius, int slices, int stacks)
         {
             RawMesh raw;
             raw.materialIndex = 0;
@@ -659,7 +660,7 @@ namespace Chained
 
         // Torus in the XZ plane. `majorRadius` = ring center distance, `minorRadius` = tube radius.
         // `slices` = segments around the ring, `stacks` = segments around the tube.
-        RawMesh BuildTorusRaw(float majorRadius, float minorRadius, int slices, int stacks)
+        RawMesh BuildTorus(float majorRadius, float minorRadius, int slices, int stacks)
         {
             RawMesh raw;
             raw.materialIndex = 0;
@@ -702,6 +703,78 @@ namespace Chained
             raw.MaxBounds = { outer,  minorRadius,  outer};
             return raw;
         }
+
+        // Trefoil knot: a tube of radius `minorRadius` swept along a (2,3) torus knot curve
+        // scaled by `majorRadius`. `slices` = segments along the curve, `stacks` = segments
+        // around the tube. The frame is built from the analytic tangent plus an arbitrary
+        // reference axis, which is stable here because the curve never runs parallel to +Y.
+        RawMesh BuildKnot(float majorRadius, float minorRadius, int slices, int stacks)
+        {
+            RawMesh raw;
+            raw.materialIndex = 0;
+            slices = std::max(16, slices);
+            stacks = std::max(3, stacks);
+
+            // Curve point and tangent for the standard trefoil parametrization.
+            auto curve = [](float t) {
+                return glm::vec3(std::sin(t) + 2.0f * std::sin(2.0f * t),
+                                 std::cos(t) - 2.0f * std::cos(2.0f * t),
+                                 -std::sin(3.0f * t));
+            };
+            auto tangent = [](float t) {
+                return glm::normalize(glm::vec3(std::cos(t) + 4.0f * std::cos(2.0f * t),
+                                                -std::sin(t) + 4.0f * std::sin(2.0f * t),
+                                                -3.0f * std::cos(3.0f * t)));
+            };
+
+            // The raw trefoil spans roughly [-3, 3]; normalize so majorRadius is the outer extent.
+            const float curveScale = majorRadius / 3.0f;
+
+            glm::vec3 minB(std::numeric_limits<float>::max());
+            glm::vec3 maxB(std::numeric_limits<float>::lowest());
+
+            for (int i = 0; i <= slices; ++i)
+            {
+                float t = (float)i / (float)slices * 2.0f * glm::pi<float>();
+                glm::vec3 center = curve(t) * curveScale;
+                glm::vec3 tan = tangent(t);
+
+                // Build an orthonormal frame around the tangent.
+                glm::vec3 ref = std::abs(tan.y) < 0.9f ? glm::vec3(0, 1, 0) : glm::vec3(1, 0, 0);
+                glm::vec3 normal = glm::normalize(glm::cross(tan, ref));
+                glm::vec3 binormal = glm::cross(tan, normal);
+
+                for (int j = 0; j <= stacks; ++j)
+                {
+                    float v = (float)j / (float)stacks * 2.0f * glm::pi<float>();
+                    glm::vec3 n = glm::normalize(std::cos(v) * normal + std::sin(v) * binormal);
+                    glm::vec3 pos = center + minorRadius * n;
+
+                    raw.vertices.insert(raw.vertices.end(), {pos.x, pos.y, pos.z});
+                    raw.normals.insert(raw.normals.end(), {n.x, n.y, n.z});
+                    raw.texcoords.insert(raw.texcoords.end(),
+                                         {(float)i / (float)slices, (float)j / (float)stacks});
+
+                    minB = glm::min(minB, pos);
+                    maxB = glm::max(maxB, pos);
+                }
+            }
+
+            int stride = stacks + 1;
+            for (int i = 0; i < slices; ++i)
+            {
+                for (int j = 0; j < stacks; ++j)
+                {
+                    uint32_t a = i * stride + j;
+                    uint32_t b = (i + 1) * stride + j;
+                    raw.indices.insert(raw.indices.end(), {a, b, a + 1, a + 1, b, b + 1});
+                }
+            }
+
+            raw.MinBounds = minB;
+            raw.MaxBounds = maxB;
+            return raw;
+        }
     } // namespace
 
     PendingModelData GeometryGenerator::GeneratePrimitivePendingData(const std::string& type,
@@ -714,32 +787,39 @@ namespace Chained
 
         if (type == ":cube:")
         {
-            raw = BuildCubeRaw(params.Dimensions);
+            raw = BuildCube(params.Dimensions);
         }
         else if (type == ":sphere:")
         {
-            raw = BuildSphereRaw(params.Radius, params.Slices, params.Stacks);
+            raw = BuildSphere(params.Radius, params.Slices, params.Stacks);
         }
         else if (type == ":plane:")
         {
-            raw = BuildPlaneRaw(params.Dimensions);
+            raw = BuildPlane(params.Dimensions);
         }
         else if (type == ":cylinder:")
         {
-            raw = BuildConeLikeRaw(params.Radius, params.Radius, params.Height, params.Slices);
+            raw = BuildConeLike(params.Radius, params.Radius, params.Height, params.Slices);
         }
         else if (type == ":cone:")
         {
-            raw = BuildConeLikeRaw(params.Radius, 0.0f, params.Height, params.Slices);
+            raw = BuildConeLike(params.Radius, 0.0f, params.Height, params.Slices);
         }
         else if (type == ":hemisphere:")
         {
-            raw = BuildHemisphereRaw(params.Radius, params.Slices, params.Stacks);
+            raw = BuildHemisphere(params.Radius, params.Slices, params.Stacks);
         }
-        else if (type == ":torus:" || type == ":knot:")
+        else if (type == ":torus:")
         {
-            // Knot approximated by a torus until a dedicated generator is added.
-            raw = BuildTorusRaw(params.Radius, params.InnerRadius, params.Slices, params.Stacks);
+            // The tube must stay thinner than the ring it wraps, otherwise the torus turns
+            // inside out and renders as a shapeless blob.
+            float tube = std::min(params.InnerRadius, params.Radius * 0.95f);
+            raw = BuildTorus(params.Radius, tube, params.Slices, params.Stacks);
+        }
+        else if (type == ":knot:")
+        {
+            float tube = std::min(params.InnerRadius, params.Radius * 0.5f);
+            raw = BuildKnot(params.Radius, tube, params.Slices, params.Stacks);
         }
         else
         {
@@ -755,7 +835,8 @@ namespace Chained
         data.instances.push_back(MeshInstance{0, glm::mat4(1.0f)});
 
         RawMaterial defaultMat;
-        defaultMat.name = "Primitive";
+        // Named so it shows up as a selectable entry in the Material Editor's list.
+        defaultMat.name = "Primitive Material";
         defaultMat.albedoColor = {1.0f, 1.0f, 1.0f, 1.0f};
         defaultMat.roughness = 0.5f;
         defaultMat.metalness = 0.0f;
