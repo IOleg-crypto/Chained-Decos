@@ -4,7 +4,6 @@
 #include "editor/panels/viewport_panel.h"
 #include "editor/project/project_exporter.h"
 #include "engine/app/application.h"
-#include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
@@ -17,8 +16,6 @@
 #include "thirdparty/imgui/imgui_internal.h"
 #include "scripting/scriptengine.h"
 #include "editor/font_choice_gui.h"
-#include <algorithm>
-#include <cctype>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -45,14 +42,6 @@ static void DrawPropertyLabel(const char* label)
         ImGui::SameLine(ImGui::GetContentRegionAvail().x * 0.4f);
     }
 }
-
-
-
-
-
-
-
-
 
 void EditorGUI::BeginPropertyGrid()
 {

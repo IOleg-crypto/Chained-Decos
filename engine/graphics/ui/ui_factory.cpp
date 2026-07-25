@@ -3,10 +3,12 @@
 #include "engine/scene/components/ui_action_component.h"
 #include "engine/scene/components.h" // For ControlData types
 #include "engine/core/log.h"
+#include <mutex>
 
 namespace Chained
 {
 std::unordered_map<std::string, UIBuilderFunc> UIFactory::s_Builders;
+static std::once_flag s_UIFactoryInitFlag;
 
 void UIFactory::Register(const std::string& type, UIBuilderFunc builder)
 {
@@ -32,12 +34,8 @@ void UIFactory::Clear()
 
 void UIFactory::Initialize()
 {
-    if (!s_Builders.empty())
-    {
-        return;
-    }
-
-    Register("Button", [](Entity e) { e.AddOrReplaceComponent<UIControlComponent>().Data = ButtonData{}; });
+    std::call_once(s_UIFactoryInitFlag, []() {
+        Register("Button", [](Entity e) { e.AddOrReplaceComponent<UIControlComponent>().Data = ButtonData{}; });
     Register("Panel", [](Entity e) { e.AddOrReplaceComponent<UIControlComponent>().Data = PanelData{}; });
     Register("Label", [](Entity e) { e.AddOrReplaceComponent<UIControlComponent>().Data = LabelData{}; });
     Register("Slider", [](Entity e) { e.AddOrReplaceComponent<UIControlComponent>().Data = SliderData{}; });
@@ -67,5 +65,6 @@ void UIFactory::Initialize()
     Register("VerticalLayoutGroup",
              [](Entity e) { e.AddOrReplaceComponent<UIControlComponent>().Data = VerticalLayoutGroupData{}; });
     Register("UIAction", [](Entity e) { e.AddComponent<UIActionComponent>(); });
+    });
 }
 } // namespace Chained
