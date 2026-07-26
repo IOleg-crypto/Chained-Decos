@@ -49,6 +49,10 @@ namespace Chained
         // The void* is the archive pointer, and the second int is the reflection mode.
         // This allows the Editor or Serializer to pass their specific archives.
         std::function<void(Entity, void*, int)> ReflectInternal;
+
+        // Notifies EnTT that the component changed (triggers on_update observers).
+        // Called by the inspector after a reflected field is edited.
+        std::function<void(Entity)> NotifyUpdate;
         
         // Dynamic access to fields via C++ reflect-cpp (C# Interop).
         // Entity, fieldName, void* dataBuffer, bool isSet
@@ -97,6 +101,10 @@ namespace Chained
             metadata.Category = category;
             
             metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
+            metadata.NotifyUpdate = [](Entity e) {
+                if (e.HasComponent<T>())
+                    e.GetRegistry().template patch<T>(e, [](T&){});
+            };
             metadata.GetAll = [](class Scene* s) { 
                 std::vector<uint64_t> ids;
                 for (auto ent : s->GetRegistry().view<T>())
@@ -111,7 +119,7 @@ namespace Chained
 
             metadata.IsReflective = true;
             metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
-                IPropertyArchive* archive = static_cast<IPropertyArchive*>(archivePtr);
+                IPropertyArchiveBase* archive = static_cast<IPropertyArchiveBase*>(archivePtr);
                 const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
 
                 if (reflMode == ReflectionMode::Deserialize)
@@ -147,14 +155,26 @@ namespace Chained
                         ([&](auto& field) {
                             if (found) return;
                             std::string name(field.name());
+                            using FieldType = std::decay_t<decltype(*field.get())>;
                             if (name == fieldName) {
-                                using FieldType = std::decay_t<decltype(*field.get())>;
                                 if (isSet) {
                                     *field.get() = *static_cast<FieldType*>(data);
                                 } else {
                                     *static_cast<FieldType*>(data) = *field.get();
                                 }
                                 found = true;
+                            } else if constexpr (is_rfl_component<FieldType>::value) {
+                                rfl::to_view(*field.get()).apply([&](auto... sub_pack) {
+                                    ([&](auto& sub) {
+                                        if (found) return;
+                                        if (std::string(sub.name()) == fieldName) {
+                                            using SubType = std::decay_t<decltype(*sub.get())>;
+                                            if (isSet) *sub.get() = *static_cast<SubType*>(data);
+                                            else *static_cast<SubType*>(data) = *sub.get();
+                                            found = true;
+                                        }
+                                    }(sub_pack), ...);
+                                });
                             }
                         }(field_pack), ...);
                     });

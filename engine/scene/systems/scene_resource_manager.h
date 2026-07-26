@@ -60,6 +60,12 @@ namespace SceneResources
     void ResolvePrimitive(entt::registry& reg, entt::entity e);
 
     /**
+     * @brief Re-applies textures from AssetManager to an existing primitive asset without
+     * rebuilding mesh geometry. Called each frame while TexturesPending is true.
+     */
+    void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e);
+
+    /**
      * @brief Marks a PrimitiveComponent dirty so Update() regenerates its mesh next frame.
      * Connected to on_construct/on_update; does not touch the GPU (safe off the main thread).
      */

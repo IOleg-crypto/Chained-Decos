@@ -179,8 +179,8 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
         
         else if constexpr (is_rfl_component<FieldType>::value)
         {
-            props.GetArchive().Nested(name_cstr, [&](IPropertyArchive& archive) {
-                Properties<IPropertyArchive> nested(archive);
+            props.GetArchive().Nested(name_cstr, [&](IPropertyArchiveBase& archive) {
+                Properties<IPropertyArchiveBase> nested(archive);
                 ReflectFromRfl(*field.get(), nested);
             });
         }
@@ -196,6 +196,8 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
     template <> struct is_rfl_component<Type> : std::true_type                                                         \
     {                                                                                                                  \
     };
+
+#define PROPERTY(Type, Name) rfl::field<#Name, Type> Name
 
 
 struct Vec3Proxy

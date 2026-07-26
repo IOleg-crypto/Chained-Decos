@@ -29,7 +29,7 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    const auto& stats = Profiler::GetStats();
+    const auto& stats = Instrumentor::Get().GetStats();
 
     if (ImGui::CollapsingHeader("Hardware & System", ImGuiTreeNodeFlags_DefaultOpen))
     {
@@ -60,7 +60,7 @@ void ProfilerPanel::OnImGuiRender(bool readOnly)
         ImGui::Columns(1);
     }
 
-    const auto& results = Profiler::GetLastFrameResults();
+    const auto& results = Instrumentor::Get().GetLastFrameResults();
     if (ImGui::CollapsingHeader("Execution Timeline", ImGuiTreeNodeFlags_DefaultOpen))
     {
         if (!m_FrameTimeHistory.empty())
@@ -97,7 +97,7 @@ void ProfilerPanel::DrawProfileResult(const ProfileResult& result)
 
 void ProfilerPanel::UpdateHistory()
 {
-    const auto& results = Profiler::GetLastFrameResults();
+    const auto& results = Instrumentor::Get().GetLastFrameResults();
     float frameMS = 0.0f;
 
     for (const auto& res : results)

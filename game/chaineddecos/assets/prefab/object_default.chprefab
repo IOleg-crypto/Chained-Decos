@@ -1,0 +1,38 @@
+Prefab: Arena
+RootEntity: 17759443269579762832
+Entities:
+  - Entity: 17759443269579762832
+    ModelComponent:
+      ModelPath: models/arena.glb
+      MaterialPaths:
+        - models/arena_material_0.chmat
+        - models/arena_material_1.chmat
+        - models/arena_material_2.chmat
+        - models/arena_material_3.chmat
+        - models/arena_material_4.chmat
+        - models/arena_material_5.chmat
+        - models/arena_material_6.chmat
+        - models/arena_material_7.chmat
+        - models/arena_material_8.chmat
+    TransformComponent:
+      Translation: [-1.52065945, -4.32776833, -35.4009895]
+      Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
+      Scale: [0.99993974, 0.999890089, 0.999929249]
+    TagComponent:
+      Tag: Arena
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/arena.glb
+      IsColliding: false

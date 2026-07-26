@@ -132,7 +132,7 @@ void Application::Run()
         m_Timer.DeltaTime = Timestep(time - m_Timer.LastFrameTime);
         m_Timer.LastFrameTime = time;
 
-        Profiler::BeginFrame();
+        Instrumentor::Get().BeginFrame();
 
         if (m_Window)
         {
@@ -185,8 +185,6 @@ void Application::Run()
 
             m_Window->EndFrame();
         }
-        
-        Profiler::EndFrame();
     }
 }
 
