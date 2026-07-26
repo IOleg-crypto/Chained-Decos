@@ -73,7 +73,7 @@ enum class Configuration
 
 struct ExportSettings
 {
-    float ZipThreshold = 0.3f;
+    float ZipThreshold = 0.05f;
     bool PreferSpeed = false;
     uint32_t DataVersion = 0;
 };

@@ -192,7 +192,8 @@ void ContentBrowserPanel::RenderGridView()
                 if (ImGui::MenuItem(ICON_FA_PEN " Rename"))
                 {
                     m_RenamingPath = asset.path;
-                    strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer));
+                    strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer) - 1);
+                    m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
                     ImGui::OpenPopup("RenameAsset");
                 }
                 if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
@@ -305,16 +306,6 @@ void ContentBrowserPanel::OnAssetDoubleClicked(const AssetEntry& entry)
         EntitySelectedEvent e((entt::entity)entity, EditorLayer::Get().GetSceneManager().GetActiveScene().get());
         Application::Get().OnEvent(e);
     }
-}
-
-void ContentBrowserPanel::RefreshDirectory() const
-{
-    const_cast<ContentBrowserPanel*>(this)->Refresh();
-}
-
-void ContentBrowserPanel::SetRootDirectory(const std::filesystem::path& path) const
-{
-    const_cast<ContentBrowserPanel*>(this)->SetRoot(path);
 }
 
 void ContentBrowserPanel::SetRoot(const std::filesystem::path& path)

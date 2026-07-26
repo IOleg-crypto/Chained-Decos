@@ -47,13 +47,6 @@ Scene::Scene()
 
 Scene::~Scene()
 {
-    if (ServiceLocator::IsAvailable())
-    {
-        if (auto* physics = ServiceLocator::TryGet<Physics>())
-        {
-            physics->ClearContext(this);
-        }
-    }
     GetRegistry().clear();
 }
 

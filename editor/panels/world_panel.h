@@ -14,6 +14,10 @@ public:
     virtual void OnImGuiRender(bool readOnly = false) override;
 
 private:
+    void DrawSceneGeneral(bool readOnly);
+    void DrawSceneBackground(bool readOnly);
+    void DrawPhysicsSettings(bool readOnly);
+    void DrawEnvironmentSection(bool readOnly);
     void DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly);
 };
 } // namespace Chained
