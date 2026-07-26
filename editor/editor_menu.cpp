@@ -147,31 +147,44 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
                         m_ExportState.CurrentFile.clear();
                     }
                     m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
-                    ServiceLocator::Get<ThreadPool>()->QueueTask([outDirPath, this]() {
-                        ExportProgressCallback progressCb = [this](uint64_t packed, uint64_t total,
-                                                               const std::string& file) {
-                            std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                            m_ExportState.PackedFiles = packed;
-                            m_ExportState.TotalFiles = total;
-                            m_ExportState.CurrentFile = file;
-                        };
-                        auto result = ProjectExporter::ExportTo(outDirPath, progressCb, &m_ExportState.CancelRequested);
+                    auto* threadPool = ServiceLocator::Get<ThreadPool>();
+                    if (!threadPool)
+                    {
+                        CH_CORE_ERROR("EditorMenu: ThreadPool not available, cannot export");
                         std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                        m_ExportState.Success = result.Success;
-                        m_ExportState.Message = result.Cancelled ? "Export cancelled."
-                            : result.Success ? "Export complete!"
-                                             : ("Export failed: " + result.Error);
-                        m_ExportState.OutDir = result.Cancelled ? "" : result.OutDir.string();
-                        m_ExportState.Open = true;
                         m_ExportState.IsExporting = false;
-                    });
+                    }
+                    else
+                    {
+                        threadPool->QueueTask([outDirPath, this]() {
+                            ExportProgressCallback progressCb = [this](uint64_t packed, uint64_t total,
+                                                                       const std::string& file) {
+                                std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
+                                m_ExportState.PackedFiles = packed;
+                                m_ExportState.TotalFiles = total;
+                                m_ExportState.CurrentFile = file;
+                            };
+                            auto result = ProjectExporter::ExportTo(outDirPath, progressCb, &m_ExportState.CancelRequested);
+                            std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
+                            m_ExportState.Success = result.Success;
+                            m_ExportState.Message = result.Cancelled ? "Export cancelled."
+                                : result.Success ? "Export complete!"
+                                                 : ("Export failed: " + result.Error);
+                            m_ExportState.OutDir = result.Cancelled ? "" : result.OutDir.string();
+                            m_ExportState.Open = true;
+                            m_ExportState.IsExporting = false;
+                        });
+                    }
                 }
             }
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
-            ServiceLocator::Get<Renderer>()->GetShaderLibrary().ReloadAll();
+            if (auto* renderer = ServiceLocator::Get<Renderer>())
+            {
+                renderer->GetShaderLibrary().ReloadAll();
+            }
         }
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {
@@ -180,7 +193,10 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
             {
                 auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
                                                                       project->GetConfig().ProjectDirectory);
-                ServiceLocator::Get<ScriptEngine>()->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
+                if (auto* scriptEngine = ServiceLocator::Get<ScriptEngine>())
+                {
+                    scriptEngine->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
+                }
             }
         }
         ImGui::EndMenu();

@@ -326,4 +326,9 @@ void GlfwWindow::SetCursorMode(CursorMode mode)
     }
 }
 
+bool GlfwWindow::IsFocused() const
+{
+    return glfwGetWindowAttrib(m_WindowHandle, GLFW_FOCUSED) == GLFW_TRUE;
+}
+
 } // namespace Chained

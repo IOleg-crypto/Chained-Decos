@@ -1,22 +1,20 @@
 #include "project_serializer.h"
 #include "engine/core/log.h"
 #include "engine/scene/serialization.h"
-#include "editor_settings.h"
 #include <fstream>
-#include <sstream>
 #include <yaml-cpp/yaml.h>
 
 namespace Chained
 {
 using namespace Serialization;
 
-bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project, const EditorSettings& editorSettings,
+bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
                                         const std::filesystem::path& filepath)
 {
     const auto& config = project->GetConfig();
 
     YAML::Emitter out;
-    out << YAML::BeginMap; // Project
+    out << YAML::BeginMap;
     out << YAML::Key << "Project" << YAML::Value;
     {
         out << YAML::BeginMap;
@@ -76,13 +74,6 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::Key << "TargetFPS" << YAML::Value << config.Runtime.TargetFPS;
         out << YAML::EndMap;
 
-        out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
-        out << YAML::Key << "CameraMoveSpeed" << YAML::Value << editorSettings.CameraMoveSpeed;
-        out << YAML::Key << "CameraRotationSpeed" << YAML::Value << editorSettings.CameraRotationSpeed;
-        out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << editorSettings.CameraBoostMultiplier;
-        out << YAML::Key << "DisableCameraZoom" << YAML::Value << editorSettings.DisableCameraZoom;
-        out << YAML::EndMap;
-
         out << YAML::Key << "Scripting" << YAML::Value << YAML::BeginMap;
         out << YAML::Key << "ModuleName" << YAML::Value << config.Scripting.ModuleName;
         out << YAML::Key << "ModuleDirectory" << YAML::Value << config.Scripting.ModuleDirectory.string();
@@ -95,24 +86,30 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::Key << "DataVersion" << YAML::Value << config.Export.DataVersion;
         out << YAML::EndMap;
 
-        out << YAML::Key << "BuildConfig" << YAML::Value << (int)config.BuildConfig;
+        out << YAML::Key << "BuildConfig" << YAML::Value << static_cast<int>(config.BuildConfig);
 
         out << YAML::EndMap;
     }
-    out << YAML::EndMap; // Project
+    out << YAML::EndMap;
 
     std::ofstream fout(filepath);
-    if (fout.is_open())
+    if (!fout.is_open())
     {
-        fout << out.c_str();
-        return true;
+        CH_CORE_ERROR("Failed to save project file: {}", filepath.string());
+        return false;
     }
 
-    CH_CORE_ERROR("Failed to save project file: {}", filepath.string());
-    return false;
+    fout << out.c_str();
+    if (fout.fail())
+    {
+        CH_CORE_ERROR("Failed to write project file: {}", filepath.string());
+        return false;
+    }
+
+    return true;
 }
 
-bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& project, EditorSettings& outEditorSettings,
+bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& project,
                                           const std::filesystem::path& filepath)
 {
     std::ifstream stream(filepath);
@@ -122,36 +119,33 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
         return false;
     }
 
-    std::stringstream strStream;
-    strStream << stream.rdbuf();
+    YAML::Node data;
+    try
+    {
+        data = YAML::Load(stream);
+    }
+    catch (const YAML::Exception& e)
+    {
+        CH_CORE_ERROR("Failed to parse project file: {} ({})", filepath.string(), e.what());
+        return false;
+    }
 
-    YAML::Node data = YAML::Load(strStream.str());
     auto projectNode = data["Project"];
     if (!projectNode)
     {
+        CH_CORE_ERROR("Missing 'Project' root node in: {}", filepath.string());
         return false;
     }
 
     auto& config = project->GetConfig();
-    if (projectNode["Name"])
-    {
-        config.Name = projectNode["Name"].as<std::string>();
-    }
-    if (projectNode["IconPath"])
-    {
-        config.IconPath = projectNode["IconPath"].as<std::string>();
-    }
-    if (projectNode["StartScene"])
-    {
-        config.StartScene = projectNode["StartScene"].as<std::string>();
-    }
-    if (projectNode["AssetDirectory"])
-    {
-        config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
-    }
 
-    DeserializePath(projectNode, "Environment", config.EnvironmentPath);
+    DeserializeProperty(projectNode, "Name", config.Name);
+    DeserializeProperty(projectNode, "IconPath", config.IconPath);
+    DeserializeProperty(projectNode, "StartScene", config.StartScene);
+    DeserializePath(projectNode, "AssetDirectory", config.AssetDirectory);
+
     DeserializePath(projectNode, "ActiveScene", config.ActiveScenePath);
+    DeserializePath(projectNode, "Environment", config.EnvironmentPath);
 
     auto buildScenes = projectNode["BuildScenes"];
     if (buildScenes)
@@ -163,140 +157,77 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
         }
     }
 
-    if (projectNode["Physics"])
+    if (auto physics = projectNode["Physics"])
     {
-        config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
-        if (projectNode["Physics"]["FixedTimestep"])
+        DeserializeProperty(physics, "Gravity", config.Physics.Gravity);
+        DeserializeProperty(physics, "FixedTimestep", config.Physics.FixedTimestep);
+    }
+
+    if (auto anim = projectNode["Animation"])
+    {
+        DeserializeProperty(anim, "TargetFPS", config.Animation.TargetFPS);
+    }
+
+    if (auto render = projectNode["Render"])
+    {
+        DeserializeProperty(render, "ShadowResolution", config.Render.ShadowResolution);
+        DeserializeProperty(render, "EnableShadows", config.Render.EnableShadows);
+        DeserializeProperty(render, "AntiAliasingSamples", config.Render.AntiAliasingSamples);
+    }
+
+    if (auto mesh = projectNode["Mesh"])
+    {
+        DeserializeProperty(mesh, "ImportMaterials", config.Mesh.ImportMaterials);
+        DeserializeProperty(mesh, "CalculateTangents", config.Mesh.CalculateTangents);
+        DeserializeProperty(mesh, "FlipUVs", config.Mesh.FlipUVs);
+    }
+
+    if (auto window = projectNode["Window"])
+    {
+        DeserializeProperty(window, "Width", config.Window.Width);
+        DeserializeProperty(window, "Height", config.Window.Height);
+        DeserializeProperty(window, "VSync", config.Window.VSync);
+        DeserializeProperty(window, "Resizable", config.Window.Resizable);
+    }
+
+    if (auto audio = projectNode["Audio"])
+    {
+        DeserializeProperty(audio, "MasterVolume", config.Audio.MasterVolume);
+        DeserializeProperty(audio, "MusicVolume", config.Audio.MusicVolume);
+        DeserializeProperty(audio, "SFXVolume", config.Audio.SFXVolume);
+    }
+
+    if (auto runtime = projectNode["Runtime"])
+    {
+        DeserializeProperty(runtime, "Fullscreen", config.Runtime.Fullscreen);
+        DeserializeProperty(runtime, "ShowStats", config.Runtime.ShowStats);
+        DeserializeProperty(runtime, "EnableConsole", config.Runtime.EnableConsole);
+        DeserializeProperty(runtime, "TargetFPS", config.Runtime.TargetFPS);
+    }
+
+    if (auto scripting = projectNode["Scripting"])
+    {
+        DeserializeProperty(scripting, "ModuleName", config.Scripting.ModuleName);
+        DeserializeProperty(scripting, "AutoLoad", config.Scripting.AutoLoad);
+
+        std::string moduleDir;
+        DeserializeProperty(scripting, "ModuleDirectory", moduleDir);
+        if (!moduleDir.empty())
         {
-            config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
+            config.Scripting.ModuleDirectory = moduleDir;
         }
     }
 
-    if (projectNode["Animation"])
+    if (auto exportNode = projectNode["Export"])
     {
-        config.Animation.TargetFPS = projectNode["Animation"]["TargetFPS"].as<float>();
+        DeserializeProperty(exportNode, "ZipThreshold", config.Export.ZipThreshold);
+        DeserializeProperty(exportNode, "PreferSpeed", config.Export.PreferSpeed);
+        DeserializeProperty(exportNode, "DataVersion", config.Export.DataVersion);
     }
 
-    if (projectNode["Render"])
-    {
-        if (projectNode["Render"]["ShadowResolution"])
-        {
-            config.Render.ShadowResolution = projectNode["Render"]["ShadowResolution"].as<int>();
-        }
-        if (projectNode["Render"]["EnableShadows"])
-        {
-            config.Render.EnableShadows = projectNode["Render"]["EnableShadows"].as<bool>();
-        }
-        if (projectNode["Render"]["AntiAliasingSamples"])
-        {
-            config.Render.AntiAliasingSamples = projectNode["Render"]["AntiAliasingSamples"].as<int>();
-        }
-    }
-
-    if (projectNode["Mesh"])
-    {
-        if (projectNode["Mesh"]["ImportMaterials"])
-        {
-            config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
-        }
-        if (projectNode["Mesh"]["CalculateTangents"])
-        {
-            config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
-        }
-        if (projectNode["Mesh"]["FlipUVs"])
-        {
-            config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
-        }
-    }
-
-    if (projectNode["Window"])
-    {
-        config.Window.Width = projectNode["Window"]["Width"].as<int>();
-        config.Window.Height = projectNode["Window"]["Height"].as<int>();
-        config.Window.VSync = projectNode["Window"]["VSync"].as<bool>();
-        config.Window.Resizable = projectNode["Window"]["Resizable"].as<bool>();
-    }
-
-    if (projectNode["Audio"])
-    {
-        config.Audio.MasterVolume = projectNode["Audio"]["MasterVolume"].as<float>();
-        config.Audio.MusicVolume = projectNode["Audio"]["MusicVolume"].as<float>();
-        config.Audio.SFXVolume = projectNode["Audio"]["SFXVolume"].as<float>();
-    }
-
-    if (projectNode["Runtime"])
-    {
-        if (projectNode["Runtime"]["Fullscreen"])
-        {
-            config.Runtime.Fullscreen = projectNode["Runtime"]["Fullscreen"].as<bool>();
-        }
-        if (projectNode["Runtime"]["ShowStats"])
-        {
-            config.Runtime.ShowStats = projectNode["Runtime"]["ShowStats"].as<bool>();
-        }
-        if (projectNode["Runtime"]["EnableConsole"])
-        {
-            config.Runtime.EnableConsole = projectNode["Runtime"]["EnableConsole"].as<bool>();
-        }
-        if (projectNode["Runtime"]["TargetFPS"])
-        {
-            config.Runtime.TargetFPS = projectNode["Runtime"]["TargetFPS"].as<int>();
-        }
-    }
-
-    if (projectNode["Editor"])
-    {
-        if (projectNode["Editor"]["CameraMoveSpeed"])
-        {
-            outEditorSettings.CameraMoveSpeed = projectNode["Editor"]["CameraMoveSpeed"].as<float>();
-        }
-        if (projectNode["Editor"]["CameraRotationSpeed"])
-        {
-            outEditorSettings.CameraRotationSpeed = projectNode["Editor"]["CameraRotationSpeed"].as<float>();
-        }
-        if (projectNode["Editor"]["CameraBoostMultiplier"])
-        {
-            outEditorSettings.CameraBoostMultiplier = projectNode["Editor"]["CameraBoostMultiplier"].as<float>();
-        }
-        if (projectNode["Editor"]["DisableCameraZoom"])
-        {
-            outEditorSettings.DisableCameraZoom = projectNode["Editor"]["DisableCameraZoom"].as<bool>();
-        }
-    }
-
-    if (projectNode["Scripting"])
-    {
-        config.Scripting.ModuleName = projectNode["Scripting"]["ModuleName"].as<std::string>();
-        if (projectNode["Scripting"]["ModuleDirectory"])
-        {
-            config.Scripting.ModuleDirectory = projectNode["Scripting"]["ModuleDirectory"].as<std::string>();
-        }
-        if (projectNode["Scripting"]["AutoLoad"])
-        {
-            config.Scripting.AutoLoad = projectNode["Scripting"]["AutoLoad"].as<bool>();
-        }
-    }
-
-    if (projectNode["Export"])
-    {
-        if (projectNode["Export"]["ZipThreshold"])
-        {
-            config.Export.ZipThreshold = projectNode["Export"]["ZipThreshold"].as<float>();
-        }
-        if (projectNode["Export"]["PreferSpeed"])
-        {
-            config.Export.PreferSpeed = projectNode["Export"]["PreferSpeed"].as<bool>();
-        }
-        if (projectNode["Export"]["DataVersion"])
-        {
-            config.Export.DataVersion = projectNode["Export"]["DataVersion"].as<uint32_t>();
-        }
-    }
-
-    if (projectNode["BuildConfig"])
-    {
-        config.BuildConfig = (Configuration)projectNode["BuildConfig"].as<int>();
-    }
+    int buildConfig = static_cast<int>(config.BuildConfig);
+    DeserializeProperty(projectNode, "BuildConfig", buildConfig);
+    config.BuildConfig = static_cast<Configuration>(buildConfig);
 
     config.ProjectDirectory = filepath.parent_path();
 

@@ -4,6 +4,7 @@
 #include "editor/layer.h"
 #include "editor/scene_picking.h"
 #include "editor/viewport/ui_manipulator.h"
+#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/core/events/events.h"
@@ -37,7 +38,7 @@ Camera3D ViewportPanel::GetActiveOrEditorCamera(Scene* scene) const
         return {};
     }
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(scene->GetRegistry());
-    if (activeCameraOpt.has_value() && m_SceneManager.GetSceneState() == SceneState::Play)
+    if (activeCameraOpt.has_value() && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Play)
     {
         return activeCameraOpt.value();
     }
@@ -64,6 +65,15 @@ void ViewportPanel::ClearSceneBackground(Scene* scene)
     {
         GraphicsDevice::Get().Clear({0, 0, 0, 255});
     }
+}
+
+static uint32_t GetIconHandle(const std::shared_ptr<TextureAsset>& icon)
+{
+    if (icon && icon->GetTexture())
+    {
+        return icon->GetTexture()->GetNativeHandle();
+    }
+    return 0;
 }
 
 static const GizmoBtn s_GizmoBtns[] = {
@@ -157,13 +167,8 @@ static uint32_t GetConfiguredMSAASamples()
     return samples > 1 ? (uint32_t)samples : 1u;
 }
 
-ViewportPanel::ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr,
-                             EditorState& state, ImVec2& editorViewportSize)
-    : m_CommandHistory(cmd),
-      m_SceneManager(sceneMgr),
-      m_ProjectManager(projMgr),
-      m_EditorState(state),
-      m_EditorViewportSize(editorViewportSize)
+ViewportPanel::ViewportPanel(ImVec2& editorViewportSize)
+    : m_EditorViewportSize(editorViewportSize)
 {
     m_Name = "Viewport";
 
@@ -199,7 +204,7 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         return;
     }
 
-    auto activeScene = m_SceneManager.GetActiveScene();
+    auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
 
     std::string sceneName = "None";
     if (activeScene && !activeScene->GetSettings().Name.empty())
@@ -285,11 +290,34 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
 
 void ViewportPanel::OnUpdate(Timestep ts)
 {
+    // Unlock cursor if the window lost focus while locked
+    if (m_CursorLocked && !Application::Get().GetWindow().IsFocused())
+    {
+        Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
+        m_CursorLocked = false;
+    }
+
+    // Cursor lock/unlock for camera rotation
+    if (m_Hovered || m_CursorLocked)
+    {
+        bool rightDown = Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
+        if (rightDown && !m_CursorLocked)
+        {
+            Application::Get().GetWindow().SetCursorMode(CursorMode::Locked);
+            m_CursorLocked = true;
+        }
+        else if (!rightDown && m_CursorLocked)
+        {
+            Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
+            m_CursorLocked = false;
+        }
+    }
+
     // Update editor camera in Edit and Simulate modes (not during Play)
-    SceneState state = m_SceneManager.GetSceneState();
+    SceneState state = EditorLayer::Get().GetSceneManager().GetSceneState();
     if (state == SceneState::Edit || state == SceneState::Simulate)
     {
-        auto activeScene = m_SceneManager.GetActiveScene();
+        auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
         // Use m_Hovered that was set in the PREVIOUS frame's ImGuiRender.
         // Also allow update if right mouse is held (user clicked into viewport from outside).
         bool mouseInViewport = m_Hovered || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
@@ -340,21 +368,25 @@ void ViewportPanel::HandleKeyboardShortcuts()
     if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) &&
         Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
     {
-        Entity selected = m_EditorState.SelectedEntity;
+        Entity selected = EditorLayer::Get().GetEditorState().SelectedEntity;
         if (selected)
         {
-            m_CommandHistory.PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+            EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
         }
     }
 }
 
 Ray ViewportPanel::GetMouseRay(const glm::vec2& mousePosition)
 {
-    auto activeScene = m_SceneManager.GetActiveScene();
+    auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
+    if (!activeScene)
+    {
+        return {};
+    }
     auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
 
     Camera3D camera;
-    if (activeCameraOpt.has_value() && m_SceneManager.GetSceneState() == SceneState::Play)
+    if (activeCameraOpt.has_value() && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
     }
@@ -383,7 +415,10 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             }
 
             // Keep Renderer in sync so frustum & projection use correct aspect ratio
-            ServiceLocator::Get<Renderer>()->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+            {
+                renderer->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
+            }
 
             m_EditorViewportSize = {m_ViewportSize.x, m_ViewportSize.y};
             m_CameraController->SetViewportSize((uint32_t)m_ViewportSize.x, (uint32_t)m_ViewportSize.y);
@@ -447,7 +482,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     bool cameraFound = activeCameraOpt.has_value();
     auto camera = m_CameraController->ToCamera3D();
 
-    if (cameraFound && m_SceneManager.GetSceneState() == SceneState::Play)
+    if (cameraFound && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Play)
     {
         camera = activeCameraOpt.value();
     }
@@ -482,7 +517,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
                                  camera.FarClip, options);
 
     // Render proper editor icons (camera, light, spawn) with loaded textures
-    if (m_SceneManager.GetSceneState() != SceneState::Play && EditorLayer::Get().GetConfig().ShowEditorIcons)
+    if (EditorLayer::Get().GetSceneManager().GetSceneState() != SceneState::Play && EditorLayer::Get().GetConfig().ShowEditorIcons)
     {
         RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
     }
@@ -520,7 +555,7 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
 
             if (ext == ".chscene")
             {
-                m_SceneManager.OpenScene(filepath);
+                EditorLayer::Get().GetSceneManager().OpenScene(filepath);
             }
             else if (ext == ".chprefab")
             {
@@ -536,7 +571,7 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
 
                 // Select the new entity. Dispatch through the app so Inspector/Material
                 // panels (which subscribe to EntitySelectedEvent) also refresh — the event
-                // handler in EditorLayer::OnEvent updates m_EditorState.SelectedEntity for us.
+                // handler in EditorLayer::OnEvent updates EditorLayer::Get().GetEditorState().SelectedEntity for us.
                 EntitySelectedEvent e((entt::entity)entity, activeScene);
                 Application::Get().OnEvent(e);
             }
@@ -547,7 +582,7 @@ void ViewportPanel::HandleDragDrop(Scene* activeScene)
 
 void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
 {
-    auto selectedEntity = m_EditorState.SelectedEntity;
+    auto selectedEntity = EditorLayer::Get().GetEditorState().SelectedEntity;
     bool isUISelected = selectedEntity && selectedEntity.HasComponent<ControlComponent>();
     auto camera = GetActiveOrEditorCamera(activeScene);
 
@@ -559,10 +594,10 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
     ServiceLocator::Get<WidgetRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
-                                                      m_SceneManager.GetSceneState() == SceneState::Edit);
+                                                      EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit);
 
     // 3. Selection Highlight
-    if (isUISelected && selectedEntity && m_SceneManager.GetSceneState() == SceneState::Edit)
+    if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit)
     {
         auto rect = ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize,
                                                                          viewportScreenPos);
@@ -593,7 +628,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
     bool isDragging = m_UIManipulator.IsActive();
     bool isGizmoDragging = m_Gizmo.IsDragging();
     bool isGizmoHovered = m_Gizmo.IsHovered();
-    SceneState sceneState = m_SceneManager.GetSceneState();
+    SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
 
     if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && isUIChildHovered && isClicked &&
         !isGizmoDragging && !isGizmoHovered && !isDragging)
@@ -611,7 +646,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         {
             Entity entity(entityID, &activeScene->GetRegistry());
             auto& cc = uiView.get<ControlComponent>(entityID);
-            if (!cc.IsActive)
+            if (!cc.IsActive || cc.HiddenInHierarchy)
             {
                 continue;
             }
@@ -639,7 +674,7 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         {
             // Dispatch via Application so Inspector / MaterialPanel (which listen for
             // EntitySelectedEvent in their OnEvent handlers) refresh too. EditorLayer's
-            // own handler is what writes m_EditorState.SelectedEntity — don't do it twice.
+            // own handler is what writes EditorLayer::Get().GetEditorState().SelectedEntity — don't do it twice.
             EntitySelectedEvent e((entt::entity)bestHit, activeScene);
             Application::Get().OnEvent(e);
         }
@@ -767,7 +802,7 @@ void ViewportPanel::DrawTransformSpaceToggle()
 
 void ViewportPanel::DrawPlaybackControls()
 {
-    SceneState sceneState = m_SceneManager.GetSceneState();
+    SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
     bool isPlaying = (sceneState == SceneState::Play);
     bool isSimulating = (sceneState == SceneState::Simulate);
     ImGui::SameLine(0, 10);
@@ -780,11 +815,11 @@ void ViewportPanel::DrawPlaybackControls()
     {
         if (isPlaying)
         {
-            m_SceneManager.SetSceneState(SceneState::Edit);
+            EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Edit);
         }
         else
         {
-            m_SceneManager.SetSceneState(SceneState::Play);
+            EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Play);
         }
     }
     if (isPlaying)
@@ -806,11 +841,11 @@ void ViewportPanel::DrawPlaybackControls()
     {
         if (isSimulating)
         {
-            m_SceneManager.SetSceneState(SceneState::Edit);
+            EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Edit);
         }
         else
         {
-            m_SceneManager.SetSceneState(SceneState::Simulate);
+            EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Simulate);
         }
     }
     if (isSimulating)
@@ -853,14 +888,6 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
         return std::clamp(distanceToCamera * iconScale, iconMin, iconMax);
     };
 
-    auto getIconHandle = [](const std::shared_ptr<TextureAsset>& icon) -> uint32_t {
-        if (icon && icon->GetTexture())
-        {
-            return icon->GetTexture()->GetNativeHandle();
-        }
-        return 0;
-    };
-
     auto lightView = registry.view<TransformComponent, LightComponent>();
     for (auto entity : lightView)
     {
@@ -871,7 +898,7 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
         glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f, light.LightColor.b / 255.0f,
                                0.95f};
 
-        uint32_t handle = getIconHandle(m_EditorIcons.LightIcon);
+        uint32_t handle = GetIconHandle(m_EditorIcons.LightIcon);
         if (handle != 0)
         {
             ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
@@ -928,14 +955,6 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
     const float iconMax = editorCfg.IconSizeMax;
     const float iconScale = editorCfg.IconSizeScale;
 
-    auto getIconHandle = [](const std::shared_ptr<TextureAsset>& icon) -> uint32_t {
-        if (icon && icon->GetTexture())
-        {
-            return icon->GetTexture()->GetNativeHandle();
-        }
-        return 0;
-    };
-
     // Camera icons
     auto cameraView = registry.view<TransformComponent, CameraComponent>();
     for (auto entity : cameraView)
@@ -949,7 +968,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
 
         const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
-        uint32_t handle = getIconHandle(m_EditorIcons.CameraIcon);
+        uint32_t handle = GetIconHandle(m_EditorIcons.CameraIcon);
         if (handle != 0)
         {
             ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, cameraTint);
@@ -968,7 +987,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
             const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
             glm::vec4 spawnTint = {1.0f, 1.0f, 1.0f, 0.95f};
-            uint32_t handle = getIconHandle(m_EditorIcons.SpawnIcon);
+            uint32_t handle = GetIconHandle(m_EditorIcons.SpawnIcon);
             if (handle != 0)
             {
                 ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, spawnTint);
@@ -984,7 +1003,7 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
             const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
             glm::vec4 audioTint = {1.0f, 1.0f, 1.0f, 0.95f};
-            uint32_t handle = getIconHandle(m_EditorIcons.AudioIcon);
+            uint32_t handle = GetIconHandle(m_EditorIcons.AudioIcon);
             if (handle != 0)
             {
                 ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, audioTint);

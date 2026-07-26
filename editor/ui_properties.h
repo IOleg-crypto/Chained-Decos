@@ -223,6 +223,7 @@ public:
                 {
                     char buf[256];
                     strncpy(buf, values[i].c_str(), sizeof(buf) - 1);
+                    buf[sizeof(buf) - 1] = '\0';
                     ImGui::SetNextItemWidth(-1);
                     if (ImGui::InputText("##val", buf, sizeof(buf)))
                     {
@@ -291,7 +292,7 @@ public:
         }
     }
 
-    virtual bool Nested(const char* name, std::function<void(IPropertyArchive&)> callback) override
+    virtual bool Nested(const char* name, std::function<void(IPropertyArchiveBase&)> callback) override
     {
         if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
         {

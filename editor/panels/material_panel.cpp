@@ -28,7 +28,9 @@ static uint32_t GetTextureID(const std::shared_ptr<Texture>& tex, const std::str
         return tex->GetNativeHandle();
     }
     if (path.empty()) return 0;
-    auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+    auto* assetMgr = ServiceLocator::Get<AssetManager>();
+    if (!assetMgr) return 0;
+    auto texAsset = assetMgr->Get<TextureAsset>(path);
     if (texAsset && texAsset->GetTexture())
     {
         return texAsset->GetTexture()->GetNativeHandle();
@@ -43,7 +45,9 @@ static void UpdateTextureFromPath(std::shared_ptr<Texture>& tex, const std::stri
         tex.reset();
         return;
     }
-    auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+    auto* assetMgr = ServiceLocator::Get<AssetManager>();
+    if (!assetMgr) return;
+    auto texAsset = assetMgr->Get<TextureAsset>(path);
     if (texAsset && texAsset->IsReady())
     {
         tex = texAsset->GetTexture();
@@ -152,10 +156,14 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
 
             if (m_Materials.empty() && !mc.ModelPath.empty())
             {
-                auto asset = ServiceLocator::Get<AssetManager>()->Get<ModelAsset>(mc.ModelPath);
-                if (asset && asset->IsReady())
+                auto* assetMgr = ServiceLocator::Get<AssetManager>();
+                if (assetMgr)
                 {
-                    m_Materials = asset->GetMaterials();
+                    auto asset = assetMgr->Get<ModelAsset>(mc.ModelPath);
+                    if (asset && asset->IsReady())
+                    {
+                        m_Materials = asset->GetMaterials();
+                    }
                 }
             }
 
@@ -311,6 +319,7 @@ void MaterialPanel::SaveMaterials()
     std::filesystem::path modelDir = modelPath.parent_path();
 
     auto* assets = ServiceLocator::Get<AssetManager>();
+    if (!assets) return;
 
     for (int i = 0; i < (int)m_Materials.size(); i++)
     {
