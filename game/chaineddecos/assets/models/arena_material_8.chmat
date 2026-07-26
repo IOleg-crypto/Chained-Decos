@@ -1,9 +1,9 @@
 Material:
-  Name: ""
+  Name: curve_Pipe
   AlbedoColor:
-    - 1
-    - 1
-    - 1
+    - 0.0592148043
+    - 0.0465297066
+    - 0.0465297066
     - 1
   EmissiveColor:
     - 0
@@ -12,6 +12,6 @@ Material:
     - 1
   EmissiveIntensity: 0
   Metalness: 1
-  Roughness: 1
+  Roughness: 0.219999999
   Transparent: false
   Alpha: 1

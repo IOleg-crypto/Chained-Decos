@@ -33,14 +33,10 @@ public:
     const std::string& GetLastProjectPath() const;
 
     void SetLastProjectPath(const std::string& path);
-public:
-    EditorSettings& GetEditorSettings() { return m_EditorSettings; }
-    const EditorSettings& GetEditorSettings() const { return m_EditorSettings; }
 
 private:
     std::string m_LastProjectPath;
     std::string m_PendingOpenedProjectPath;
-    EditorSettings m_EditorSettings;
 };
 
 } // namespace Chained

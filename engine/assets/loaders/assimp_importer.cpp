@@ -159,14 +159,16 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
 
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-    importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
+    //importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
     std::string ext = path.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
 
-    unsigned int flags = aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                         aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                         aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes;
+    unsigned int flags = aiProcessPreset_TargetRealtime_MaxQuality;
+
+    // aiProcess_Triangulate | aiProcess_GenSmoothNormals |
+                         //aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
+                         //aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_ForceGenNormals | aiProcess_SplitLargeMeshes | aiProcess_GenSmoothNormals | 
 
     if (ext != ".gltf" && ext != ".glb")
         flags |= aiProcess_FlipUVs;
