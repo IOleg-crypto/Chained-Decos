@@ -1,20 +1,11 @@
 #ifndef CH_EDITOR_SETTINGS_H
 #define CH_EDITOR_SETTINGS_H
 
-#include <glm/glm.hpp>
 #include <string>
 #include <vector>
 
 namespace Chained
 {
-    struct EditorSettings
-    {
-        float CameraMoveSpeed = 10.0f;
-        float CameraRotationSpeed = 0.1f;
-        float CameraBoostMultiplier = 5.0f;
-        bool DisableCameraZoom = false;
-    };
-
     struct EditorConfig
     {
         std::string LastProjectPath;

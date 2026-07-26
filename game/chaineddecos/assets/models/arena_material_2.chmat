@@ -1,9 +1,9 @@
 Material:
-  Name: Fence
+  Name: Fight_Rework_Sword_MAT
   AlbedoColor:
-    - 0.35679999
-    - 0.333299994
-    - 0.305799991
+    - 1
+    - 1
+    - 1
     - 1
   EmissiveColor:
     - 0

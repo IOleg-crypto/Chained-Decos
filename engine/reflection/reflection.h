@@ -85,18 +85,19 @@ struct CH_API PropertyMeta
     }
 };
 
+class IPropertyArchiveBase;
 class IPropertyArchive;
 template <typename T_Archive> class Properties;
 
 template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chained::Properties<T_Archive>& props);
 
 /**
- * @brief Interface for any archive that can handle reflected properties.
+ * @brief Base interface for property archives — data serialization and composition only.
  */
-class CH_API IPropertyArchive
+class CH_API IPropertyArchiveBase
 {
 public:
-    virtual ~IPropertyArchive() = default;
+    virtual ~IPropertyArchiveBase() = default;
     virtual ReflectionMode GetReflectionMode() const = 0;
     virtual bool Property(const char* name, int& value, const PropertyMeta& meta = {}) = 0;
     virtual bool Property(const char* name, float& value, const PropertyMeta& meta = {}) = 0;
@@ -113,6 +114,18 @@ public:
     virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) = 0;
     virtual bool File(const char* name, std::string& value, const char* extensions = nullptr,
                       const PropertyMeta& meta = {}) = 0;
+    virtual void BeginSequence(const char* name, size_t& size) = 0;
+    virtual void EndSequence() = 0;
+    virtual bool Nested(const char* name, std::function<void(IPropertyArchiveBase&)> callback) = 0;
+};
+
+/**
+ * @brief Extended interface adding UI layout and change-tracking methods.
+ */
+class CH_API IPropertyArchive : public IPropertyArchiveBase
+{
+public:
+    virtual ~IPropertyArchive() = default;
     virtual bool Action(const char* label, std::function<void()> func) = 0;
     virtual void Header(const char* label) = 0;
     virtual void Separator() = 0;
@@ -120,9 +133,6 @@ public:
     virtual void EndGroup() = 0;
     virtual bool HasChanged() const = 0;
     virtual void SetChanged(bool changed) = 0;
-    virtual void BeginSequence(const char* name, size_t& size) = 0;
-    virtual void EndSequence() = 0;
-    virtual bool Nested(const char* name, std::function<void(IPropertyArchive&)> callback) = 0;
 };
 
 // Alias moved to end of file to resolve circular dependencies
@@ -183,8 +193,8 @@ public:
                 }
                 else if constexpr (is_rfl_component<T>::value)
                 {
-                    if (m_Archive.Nested(label.c_str(), [&](IPropertyArchive& archive) {
-                            Properties<IPropertyArchive> props(archive);
+                    if (m_Archive.Nested(label.c_str(), [&](IPropertyArchiveBase& archive) {
+                            Properties<IPropertyArchiveBase> props(archive);
                             ReflectFromRfl(values[i], props);
                         }))
                     {
@@ -212,8 +222,8 @@ public:
                 }
                 else if constexpr (is_rfl_component<T>::value)
                 {
-                    if (m_Archive.Nested(nullptr, [&](IPropertyArchive& archive) {
-                            Properties<IPropertyArchive> props(archive);
+                    if (m_Archive.Nested(nullptr, [&](IPropertyArchiveBase& archive) {
+                            Properties<IPropertyArchiveBase> props(archive);
                             ReflectFromRfl(values[i], props);
                         }))
                     {
@@ -222,8 +232,8 @@ public:
                 }
                 else
                 {
-                    if (m_Archive.Nested(nullptr, [&](IPropertyArchive& archive) {
-                            Properties<IPropertyArchive> props(archive);
+                    if (m_Archive.Nested(nullptr, [&](IPropertyArchiveBase& archive) {
+                            Properties<IPropertyArchiveBase> props(archive);
                             values[i].Reflect(props);
                         }))
                     {
@@ -239,8 +249,8 @@ public:
 
     template <typename T> bool Nested(const char* name, T& value)
     {
-        return m_Archive.Nested(name, [&](IPropertyArchive& archive) {
-            Properties<IPropertyArchive> props(archive);
+        return m_Archive.Nested(name, [&](IPropertyArchiveBase& archive) {
+            Properties<IPropertyArchiveBase> props(archive);
             value.Reflect(props);
         });
     }
@@ -420,7 +430,7 @@ private:
 /**
  * @brief Specialized properties for when the archive type is erased.
  */
-using GenericProperties = Properties<IPropertyArchive>;
+using GenericProperties = Properties<IPropertyArchiveBase>;
 
 } // namespace Chained
 #endif // CH_REFLECTION_H

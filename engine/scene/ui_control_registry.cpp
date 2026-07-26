@@ -213,7 +213,7 @@ void RegisterUIControlComponent()
     // Keep ReflectInternal for editor UI (property panel)
     metadata.IsReflective = true;
     metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
-        IPropertyArchive* archive = static_cast<IPropertyArchive*>(archivePtr);
+        IPropertyArchiveBase* archive = static_cast<IPropertyArchiveBase*>(archivePtr);
         const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
         if (reflMode == ReflectionMode::Deserialize)
         {

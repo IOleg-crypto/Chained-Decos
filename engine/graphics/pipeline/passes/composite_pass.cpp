@@ -27,7 +27,7 @@ void CompositePass::Execute(const RenderContext& ctx)
     if (!shader) return;
 
     shader->Bind();
-    ServiceLocator::Get<Renderer>()->GetLighting().ApplyFogUniforms(lightingAsset.get());
+    ServiceLocator::Get<Renderer>()->ApplyFogUniforms(lightingAsset.get());
 
     // Future: full-screen HDR blit with tone-mapping when m_HDRTarget is set.
 }

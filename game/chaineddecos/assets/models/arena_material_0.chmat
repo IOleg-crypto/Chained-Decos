@@ -1,9 +1,9 @@
 Material:
-  Name: Carpet
+  Name: Fight_Rework_skeleton_MAT1
   AlbedoColor:
-    - 0.564700007
-    - 0
-    - 0
+    - 1
+    - 1
+    - 1
     - 1
   EmissiveColor:
     - 0

@@ -1,7 +1,7 @@
 #ifndef CH_PRIMITIVE_COMPONENT_H
 #define CH_PRIMITIVE_COMPONENT_H
 
-#include "engine/reflection/reflection_rfl.h"
+#include "engine/reflection/reflection.h"
 #include "engine/graphics/api/renderer_types.h"
 
 namespace Chained
@@ -24,7 +24,7 @@ struct PrimitiveComponent
 {
     PrimitiveType Type = PrimitiveType::None;
 
-    // Parameters
+    // Geometry Parameters
     float Radius = 0.5f;
     float InnerRadius = 0.2f;
     float Height = 1.0f;
@@ -45,12 +45,41 @@ struct PrimitiveComponent
     bool Transparent = false;
     float Alpha = 1.0f;
 
-    // NOTE: Runtime-only state (Dirty flag, Asset ptr) lives in PrimitiveRuntimeState
-    //       to keep this struct aggregate-reflectable by reflect-cpp.
-
     PrimitiveComponent() = default;
 
     static const char* GetStaticName() { return "PrimitiveComponent"; }
+
+    template <typename T_Archive>
+    void Reflect(Properties<T_Archive>& props)
+    {
+        static const char* primitiveTypeNames[] = {
+            "None", "Cube", "Sphere", "Plane", "Cylinder", "Cone", "Torus", "Knot", "Hemisphere"
+        };
+
+        props.Enum("Type", Type, primitiveTypeNames, 9);
+        props.Property("Radius", Radius);
+        props.Property("InnerRadius", InnerRadius);
+        props.Property("Height", Height);
+        props.Property("Slices", Slices);
+        props.Property("Stacks", Stacks);
+        props.Property("Dimensions", Dimensions);
+
+        // Material properties belong to Material Editor UI, but must be serialized during Save/Load
+        if (props.GetMode() != ReflectionMode::UI)
+        {
+            props.Property("AlbedoPath", AlbedoPath);
+            props.Property("AlbedoColor", AlbedoColor);
+            props.Property("NormalPath", NormalPath);
+            props.Property("MetallicRoughnessPath", MetallicRoughnessPath);
+            props.Property("EmissivePath", EmissivePath);
+            props.Property("EmissiveColor", EmissiveColor);
+            props.Property("EmissiveIntensity", EmissiveIntensity);
+            props.Property("Metalness", Metalness);
+            props.Property("Roughness", Roughness);
+            props.Property("Transparent", Transparent);
+            props.Property("Alpha", Alpha);
+        }
+    }
 
     Material GetMaterial() const
     {
@@ -83,22 +112,8 @@ struct PrimitiveComponent
         Transparent = mat.Transparent;
         Alpha = mat.Alpha;
     }
-
-    struct UI
-    {
-        UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum};
-        UIMeta Radius = {.Min = 0.01f, .Max = 1000.0f, .Speed = 0.05f};
-        UIMeta InnerRadius = {.Min = 0.01f, .Max = 1000.0f, .Speed = 0.05f};
-        UIMeta Height = {.Min = 0.01f, .Max = 1000.0f, .Speed = 0.05f};
-        UIMeta Slices = {.Min = 3.0f, .Max = 256.0f, .Speed = 1.0f};
-        UIMeta Stacks = {.Min = 2.0f, .Max = 256.0f, .Speed = 1.0f};
-        UIMeta Dimensions = {.Speed = 0.1f};
-    };
 };
 
-CH_MARK_RFL(PrimitiveComponent);
-
 } // namespace Chained
-
 
 #endif // CH_PRIMITIVE_COMPONENT_H
