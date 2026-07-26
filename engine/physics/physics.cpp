@@ -269,22 +269,22 @@ void Physics::ResetAccumulator(Scene* scene)
 
 void Physics::ClearContext(Scene* scene)
 {
-    auto world = GetWorld();
-    if (world)
+    auto& registry = scene->GetRegistry();
+
+    if (m_World)
     {
-        auto& registry = scene->GetRegistry();
         auto view = registry.view<RigidBodyComponent>();
         for (auto entity : view)
         {
             auto& rb = view.get<RigidBodyComponent>(entity);
             if (rb.Handle != kInvalidPhysicsBody)
             {
-                world->DestroyBody(rb.Handle);
+                m_World->DestroyBody(rb.Handle);
                 rb.Handle = kInvalidPhysicsBody;
             }
         }
     }
-    scene->GetRegistry().ctx().erase<PhysicsContext>();
+    registry.ctx().erase<PhysicsContext>();
 }
 
 void Physics::SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback)

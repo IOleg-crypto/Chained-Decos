@@ -23,10 +23,6 @@ class Renderer;
 struct SceneSettings;
 struct Camera3D;
 class Event;
-class CommandHistory;
-class EditorSceneManager;
-class EditorProjectManager;
-struct EditorState;
 
 struct GizmoBtn
 {
@@ -39,7 +35,7 @@ struct GizmoBtn
 class ViewportPanel : public Panel
 {
 public:
-    ViewportPanel(CommandHistory& cmd, EditorSceneManager& sceneMgr, EditorProjectManager& projMgr, EditorState& state, ImVec2& editorViewportSize);
+    ViewportPanel(ImVec2& editorViewportSize);
     ~ViewportPanel() override;
 
     void OnImGuiRender(bool readOnly = false) override;
@@ -60,6 +56,7 @@ private:
     glm::vec2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;
+    bool m_CursorLocked = false;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
 
     
@@ -76,11 +73,6 @@ private:
     // Engine subsystem pointers are now accessed via static APIs (Renderer::Get(), etc.)
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
 
-    // Dependencies
-    CommandHistory& m_CommandHistory;
-    EditorSceneManager& m_SceneManager;
-    EditorProjectManager& m_ProjectManager;
-    EditorState& m_EditorState;
     ImVec2& m_EditorViewportSize;
 
 private:

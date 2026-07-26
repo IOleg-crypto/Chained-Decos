@@ -60,6 +60,7 @@ public:
     }
     virtual void SetWindowIcon(const std::string& path) override;
     virtual void SetCursorMode(CursorMode mode) override;
+    virtual bool IsFocused() const override;
 
     virtual void SetEventCallback(const EventCallbackFn& callback) override
     {

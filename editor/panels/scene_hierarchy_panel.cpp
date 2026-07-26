@@ -1,4 +1,5 @@
 #include "scene_hierarchy_panel.h"
+#include "editor/layer.h"
 #include "editor/types.h"
 #include "editor/undo/command_history.h"
 #include "engine/app/application.h"
@@ -64,16 +65,14 @@ bool IsDescendant(Chained::Entity child, Chained::Entity possibleParent)
 
 namespace Chained
 {
-SceneHierarchyPanel::SceneHierarchyPanel(CommandHistory& cmd, EditorState& state)
-    : m_CommandHistory(cmd),
-      m_EditorState(state)
+SceneHierarchyPanel::SceneHierarchyPanel()
 {
     m_Name = "Scene Hierarchy";
 }
 
 void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 {
-    ImGui::Begin("Scene Hierarchy");
+    ImGui::Begin("Scene Hierarchy##SceneHierarchyPanel");
 
     // Search Bar
     ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
@@ -132,9 +131,8 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
 
         // Focus Shortcut
         if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyPressed(KeyCode::F))
-
         {
-            Entity selected = m_EditorState.SelectedEntity;
+            Entity selected = EditorLayer::Get().GetEditorState().SelectedEntity;
             if (selected)
             {
                 ViewportFocusEntityEvent e(selected);
@@ -145,12 +143,11 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
         // Duplicate Shortcut
         if (ImGui::IsWindowFocused(ImGuiFocusedFlags_ChildWindows) && Core::Input::IsKeyDown(KeyCode::LeftControl) &&
             Core::Input::IsKeyPressed(KeyCode::D))
-
         {
-            Entity selected = m_EditorState.SelectedEntity;
+            Entity selected = EditorLayer::Get().GetEditorState().SelectedEntity;
             if (selected)
             {
-                m_CommandHistory.PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
+                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(selected));
             }
         }
 
@@ -172,7 +169,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
                 Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
                 if (sourceEntity)
                 {
-                    m_CommandHistory.PushCommand(
+                    EditorLayer::Get().GetCommandHistory().PushCommand(
                         std::make_unique<ParentEntityCommand>(sourceEntity, Entity{}, m_Context.get()));
                 }
             }
@@ -191,7 +188,7 @@ void SceneHierarchyPanel::OnImGuiRender(bool readOnly)
             Entity entity(ent, &m_Context->GetRegistry());
             if (entity.IsValid())
             {
-                m_CommandHistory.PushCommand(std::make_unique<DestroyEntityCommand>(entity));
+                EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DestroyEntityCommand>(entity));
             }
         }
         m_EntitiesToDestroyPending.clear();
@@ -267,7 +264,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
     auto& tag = entity.GetComponent<TagComponent>().Tag;
     std::string label = std::string(GetEntityIcon(entity)) + "  " + tag;
 
-    auto selectedEntity = m_EditorState.SelectedEntity;
+    auto selectedEntity = EditorLayer::Get().GetEditorState().SelectedEntity;
     ImGuiTreeNodeFlags flags = ((selectedEntity == entity) ? ImGuiTreeNodeFlags_Selected : 0);
     flags |= ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_SpanAvailWidth;
 
@@ -316,7 +313,7 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
             Entity sourceEntity = m_Context->GetEntityByUUID(droppedUUID);
             if (sourceEntity && sourceEntity != entity && !IsDescendant(entity, sourceEntity))
             {
-                m_CommandHistory.PushCommand(
+                EditorLayer::Get().GetCommandHistory().PushCommand(
                     std::make_unique<ParentEntityCommand>(sourceEntity, entity, m_Context.get()));
             }
         }
@@ -332,22 +329,18 @@ void SceneHierarchyPanel::DrawEntityNodeRecursive(Entity entity, bool readOnly)
     // Rename on F2
     if (selectedEntity == entity && ImGui::IsKeyPressed(ImGuiKey_F2) && !m_Renaming)
     {
-        m_Renaming = true;
-        m_RenamingEntity = entity;
-        strncpy(m_RenameBuffer, tag.c_str(), sizeof(m_RenameBuffer));
+        StartRename(entity);
     }
 
     if (!readOnly && ImGui::BeginPopupContextItem())
     {
         if (ImGui::MenuItem(ICON_FA_PEN " Rename", "F2"))
         {
-            m_Renaming = true;
-            m_RenamingEntity = entity;
-            strncpy(m_RenameBuffer, tag.c_str(), sizeof(m_RenameBuffer));
+            StartRename(entity);
         }
         if (ImGui::MenuItem(ICON_FA_COPY " Duplicate", "Ctrl+D"))
         {
-            m_CommandHistory.PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
+            EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<DuplicateEntityCommand>(entity));
         }
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_TRASH " Delete Entity", "Del"))
@@ -464,7 +457,7 @@ void SceneHierarchyPanel::DrawContextMenu()
             {
                 if (ImGui::MenuItem(p.label))
                 {
-                    m_CommandHistory.PushCommand(
+                    EditorLayer::Get().GetCommandHistory().PushCommand(
                         std::make_unique<CreateEntityCommand>(m_Context.get(), p.label, p.mesh));
                 }
             }
@@ -543,4 +536,11 @@ void SceneHierarchyPanel::DrawContextMenu()
         }
     }
 }
+void SceneHierarchyPanel::StartRename(Entity entity)
+{
+    m_Renaming = true;
+    m_RenamingEntity = entity;
+    snprintf(m_RenameBuffer, sizeof(m_RenameBuffer), "%s", entity.GetComponent<TagComponent>().Tag.c_str());
+}
+
 } // namespace Chained
