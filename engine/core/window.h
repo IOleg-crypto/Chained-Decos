@@ -67,6 +67,7 @@ public:
     virtual int GetTargetFramesPerSecond() const = 0;
     virtual void SetWindowIcon(const std::string& path) = 0;
     virtual void SetCursorMode(CursorMode mode) = 0;
+    virtual bool IsFocused() const = 0;
 
     virtual void* GetNativeWindow() const = 0;
 

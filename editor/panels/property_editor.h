@@ -22,8 +22,8 @@ public:
     template <typename T> static void Register(const std::string& name, const char* icon = nullptr);
 
     // Custom Drawer Registration
-    template <typename T>
-    static void RegisterCustom(const std::string& name, std::function<bool(T&, Entity)> drawer,
+    template <typename T, typename F>
+    static void RegisterCustom(const std::string& name, F&& drawer,
                                const char* icon = nullptr);
 
     static void DrawEntityHeader(Entity entity);
@@ -38,9 +38,9 @@ private:
     template <typename T> static void DrawComponentReflection(const std::string& name, const char* icon, Entity entity);
     static void DrawGenericReflection(const ComponentMetadata& metadata, Entity entity);
 
-    template <typename T>
+    template <typename T, typename F>
     static void DrawComponentContainer(const std::string& name, const char* icon, Entity entity,
-                                       std::function<bool(T&, Entity)> drawer);
+                                       F&& drawer);
 
     // Final non-template drawing core
     static void DrawComponentInternal(::entt::id_type typeId, const std::string& name, const char* icon, Entity entity,
