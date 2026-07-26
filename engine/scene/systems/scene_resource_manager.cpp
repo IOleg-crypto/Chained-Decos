@@ -91,6 +91,11 @@ void Update(entt::registry& reg, Timestep ts)
         {
             ResolvePrimitive(reg, entity);
         }
+        else if (rt.TexturesPending && rt.Asset)
+        {
+            // Textures were still loading last frame — try to apply them now without rebuilding.
+            ApplyPrimitiveTextures(reg, entity);
+        }
     });
 
     // Animation updates
@@ -392,50 +397,108 @@ void ResolvePrimitive(entt::registry& reg, entt::entity e)
     rt.Asset->SetPendingData(std::move(data));
     rt.Asset->OnLoaded(); // main-thread GPU upload
 
+    // Helper: resolve texture handle from path via AssetManager.
+    // Kicks async loading if not yet requested. Returns true if still pending.
+    auto resolveTexture = [](AssetManager* assets, const std::string& path,
+                             std::shared_ptr<Texture>& outTex) -> bool {
+        if (path.empty()) return false;
+        assets->LoadAsset(path, TextureAsset::GetStaticType());
+        auto texAsset = assets->Get<TextureAsset>(path);
+        if (texAsset && texAsset->IsReady())
+        {
+            outTex = texAsset->GetTexture();
+            return false;
+        }
+        return true; // still pending
+    };
+
+    auto applyMaterialTextures = [&](Material& mat) -> bool {
+        bool anyPending = false;
+        if (auto* assets = ServiceLocator::TryGet<AssetManager>())
+        {
+            anyPending |= resolveTexture(assets, mat.AlbedoPath,              mat.AlbedoMap);
+            anyPending |= resolveTexture(assets, mat.NormalPath,               mat.NormalMap);
+            anyPending |= resolveTexture(assets, mat.MetallicRoughnessPath,    mat.MetallicRoughnessMap);
+            anyPending |= resolveTexture(assets, mat.EmissivePath,             mat.EmissiveMap);
+        }
+        return anyPending;
+    };
+
+    auto& regenerated = rt.Asset->GetMaterials();
+    bool anyPending = false;
+
     if (!editedMaterials.empty())
     {
-        auto& regenerated = rt.Asset->GetMaterials();
+        // Rebuild after a geometry-param change: restore materials the user had tuned,
+        // and re-resolve texture handles (they may have expired or been missing earlier).
         for (size_t i = 0; i < regenerated.size() && i < editedMaterials.size(); ++i)
         {
+            anyPending |= applyMaterialTextures(editedMaterials[i]);
             regenerated[i] = editedMaterials[i];
         }
-        prim.SetMaterial(regenerated[0]);
+        if (!regenerated.empty())
+        {
+            prim.SetMaterial(regenerated[0]);
+        }
     }
     else
     {
-        auto& regenerated = rt.Asset->GetMaterials();
+        // First build: apply material stored in the component (may have been serialized).
         if (!regenerated.empty())
         {
             Material mat = prim.GetMaterial();
-            // Resolve textures for mat from AssetManager if paths are non-empty
-            if (auto* assets = ServiceLocator::TryGet<AssetManager>())
-            {
-                if (!mat.AlbedoPath.empty())
-                {
-                    auto texAsset = assets->Get<TextureAsset>(mat.AlbedoPath);
-                    if (texAsset && texAsset->IsReady()) mat.AlbedoMap = texAsset->GetTexture();
-                }
-                if (!mat.NormalPath.empty())
-                {
-                    auto texAsset = assets->Get<TextureAsset>(mat.NormalPath);
-                    if (texAsset && texAsset->IsReady()) mat.NormalMap = texAsset->GetTexture();
-                }
-                if (!mat.MetallicRoughnessPath.empty())
-                {
-                    auto texAsset = assets->Get<TextureAsset>(mat.MetallicRoughnessPath);
-                    if (texAsset && texAsset->IsReady()) mat.MetallicRoughnessMap = texAsset->GetTexture();
-                }
-                if (!mat.EmissivePath.empty())
-                {
-                    auto texAsset = assets->Get<TextureAsset>(mat.EmissivePath);
-                    if (texAsset && texAsset->IsReady()) mat.EmissiveMap = texAsset->GetTexture();
-                }
-            }
+            anyPending = applyMaterialTextures(mat);
             regenerated[0] = mat;
         }
     }
 
+    if (anyPending)
+    {
+        // Some textures are still loading. Keep asset ready for rendering (solid color
+        // fallback), but mark TexturesPending so we re-apply textures next frame.
+        rt.TexturesPending = true;
+        rt.Dirty = false;
+        return;
+    }
+
+    rt.TexturesPending = false;
     rt.Dirty = false;
+}
+
+void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e)
+{
+    auto* rt  = reg.try_get<PrimitiveRuntimeState>(e);
+    auto* prim = reg.try_get<PrimitiveComponent>(e);
+    if (!rt || !rt->Asset || !prim) return;
+
+    auto& mats = rt->Asset->GetMaterials();
+    if (mats.empty()) return;
+
+    auto* assets = ServiceLocator::TryGet<AssetManager>();
+    if (!assets) return;
+
+    Material mat = mats[0]; // working copy
+    bool anyPending = false;
+
+    auto resolveTexture = [&](const std::string& path, std::shared_ptr<Texture>& outTex) -> bool {
+        if (path.empty()) return false;
+        assets->LoadAsset(path, TextureAsset::GetStaticType());
+        auto texAsset = assets->Get<TextureAsset>(path);
+        if (texAsset && texAsset->IsReady())
+        {
+            outTex = texAsset->GetTexture();
+            return false;
+        }
+        return true;
+    };
+
+    anyPending |= resolveTexture(mat.AlbedoPath,           mat.AlbedoMap);
+    anyPending |= resolveTexture(mat.NormalPath,            mat.NormalMap);
+    anyPending |= resolveTexture(mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
+    anyPending |= resolveTexture(mat.EmissivePath,          mat.EmissiveMap);
+
+    mats[0] = mat;
+    rt->TexturesPending = anyPending;
 }
 
 bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc)

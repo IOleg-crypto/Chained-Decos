@@ -7,8 +7,7 @@
 #include "engine/graphics/camera_types.h"
 #include "engine/graphics/pipeline/renderer_data.h"
 #include "engine/graphics/pipeline/shader_storage.h"
-#include "engine/graphics/pipeline/lighting_manager.h"
-#include "engine/graphics/pipeline/frame_manager.h"
+#include "engine/assets/types/environment_asset.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <vector>
@@ -53,23 +52,23 @@ public:
     void ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
                              ShaderAsset* overrideShader = nullptr, const std::vector<ShaderUniform>& uniforms = {});
 
-    // Delegated to LightingManager
-    void SetLight(int index, const RenderLight& light)    { m_Lighting->SetLight(index, light); }
-    void SetLightCount(int count)                          { m_Lighting->SetLightCount(count); }
-    void ClearLights()                                     { m_Lighting->ClearLights(); }
-    void ApplyEnvironment(const EnvironmentSettings& s)    { m_Lighting->ApplyEnvironment(s); }
-    void SetMainLight(const LightingSettings& s)           { m_Lighting->SetMainLight(s); }
-    void SetShadowState(bool e, uint32_t id, const glm::mat4& m, float b) { m_Lighting->SetShadowState(e, id, m, b); }
-    void SetLightingUniforms(ShaderAsset* shaderAsset)     { m_Lighting->SetLightingUniforms(shaderAsset, m_Frame->GetData()); }
+    // Lighting
+    void SetLight(int index, const RenderLight& light);
+    void SetLightCount(int count);
+    void ClearLights();
+    void ApplyEnvironment(const EnvironmentSettings& s);
+    void SetMainLight(const LightingSettings& s);
+    void SetShadowState(bool e, uint32_t id, const glm::mat4& m, float b);
+    void SetLightingUniforms(ShaderAsset* shaderAsset);
+    void ApplyFogUniforms(ShaderAsset* shader);
+    void UploadLights();
 
-    // Delegated to FrameManager
-    void SetDiagnosticMode(float mode)                     { m_Frame->SetDiagnosticMode(mode); }
-    void UpdateTime(Timestep time)                         { m_Frame->SetTime(time); }
+    // Frame
+    void SetDiagnosticMode(float mode);
+    void UpdateTime(Timestep time);
 
     ShaderStorage& GetShaderLibrary() { return *m_Data->Shaders; }
-    LightingManager& GetLighting()    { return *m_Lighting; }
-    FrameManager&    GetFrame()       { return *m_Frame; }
-    RendererData&    GetData()        { return *m_Data; }
+    RendererData&  GetData()         { return *m_Data; }
 
     void     SetHeadless(bool headless)                       { m_Headless = headless; }
     void     SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
@@ -88,9 +87,7 @@ private:
     ShaderAsset* BindShader(const std::string& name);
 
 private:
-    std::unique_ptr<RendererData>    m_Data;
-    std::unique_ptr<LightingManager> m_Lighting;
-    std::unique_ptr<FrameManager>    m_Frame;
+    std::unique_ptr<RendererData> m_Data;
     bool     m_Headless       = false;
     uint32_t m_ViewportWidth  = 1280;
     uint32_t m_ViewportHeight = 720;

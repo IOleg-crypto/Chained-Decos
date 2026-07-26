@@ -101,7 +101,7 @@ inline void DeserializePath(YAML::Node node, const char* name, std::filesystem::
 // PropertyArchive - Declarative Serialization/Deserialization
 // ========================================================================
 
-class PropertyArchive : public IPropertyArchive
+class PropertyArchive : public IPropertyArchiveBase
 {
 public:
     PropertyArchive(YAML::Emitter& emitter)
@@ -194,30 +194,6 @@ public:
         }
         return false;
     }
-    virtual bool Action(const char* label, std::function<void()> func) override
-    {
-        return false;
-    }
-    virtual void Header(const char* label) override
-    {
-    }
-    virtual void Separator() override
-    {
-    }
-    virtual bool BeginGroup(const char* label, bool defaultOpen = true) override
-    {
-        return true;
-    }
-    virtual void EndGroup() override
-    {
-    }
-    virtual bool HasChanged() const override
-    {
-        return false;
-    }
-    virtual void SetChanged(bool changed) override
-    {
-    }
 
     virtual void BeginSequence(const char* name, size_t& size) override
     {
@@ -253,7 +229,7 @@ public:
         m_SequenceStack.pop_back();
     }
 
-    virtual bool Nested(const char* name, std::function<void(IPropertyArchive&)> callback) override
+    virtual bool Nested(const char* name, std::function<void(IPropertyArchiveBase&)> callback) override
     {
         if (m_Mode == ReflectionMode::Serialize)
         {
@@ -266,7 +242,7 @@ public:
                 *m_Out << YAML::BeginMap;
             }
             PropertyArchive nestedArchive(*m_Out);
-            callback(static_cast<IPropertyArchive&>(nestedArchive));
+            callback(static_cast<IPropertyArchiveBase&>(nestedArchive));
             *m_Out << YAML::EndMap;
         }
         else
@@ -288,7 +264,7 @@ public:
             if (nodeToUse && nodeToUse.IsMap())
             {
                 PropertyArchive nestedArchive(nodeToUse);
-                callback(static_cast<IPropertyArchive&>(nestedArchive));
+                callback(static_cast<IPropertyArchiveBase&>(nestedArchive));
             }
         }
         return false;

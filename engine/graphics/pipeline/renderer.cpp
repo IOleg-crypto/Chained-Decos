@@ -14,6 +14,7 @@
 #include "engine/assets/types/shader_asset.h"
 #include <algorithm>
 #include <glm/gtc/type_ptr.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <variant> // Added for type-safe variant visitation
 #include <vector>
 
@@ -36,11 +37,8 @@ void Renderer::Initialize()
     m_Data->Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
     m_Data->Lighting.LightsDirty = true;
 
-    // Initialize UBOs (must be before managers that reference them)
+    // Initialize UBOs (must be before methods that reference them)
     m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
-
-    m_Lighting = std::make_unique<LightingManager>(m_Data->Lighting, m_Data->Shadow);
-    m_Frame    = std::make_unique<FrameManager>(m_Data->Frame, m_Data->CameraUBO);
 
     // Initialize Engine static resources
     if (!m_Data->Geometry.FullscreenQuadVAO)
@@ -113,20 +111,47 @@ Renderer::~Renderer() = default;
 
 void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
 {
-    m_Lighting->UploadLights();
-    m_Frame->BeginScene(camera, m_ViewportWidth, m_ViewportHeight, nearClip, farClip);
+    UploadLights();
+
+    // View matrix
+    m_Data->Frame.CameraPosition = camera.Position;
+    m_Data->Frame.View = glm::lookAt(camera.Position, camera.Target, camera.Up);
+
+    // Projection matrix
+    float aspect = (m_ViewportHeight > 0) ? static_cast<float>(m_ViewportWidth) / static_cast<float>(m_ViewportHeight) : 1.0f;
+    if (camera.Projection == ProjectionType::Perspective)
+    {
+        m_Data->Frame.Proj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
+    }
+    else
+    {
+        float top = camera.FovDegrees / 2.0f;
+        float right = top * aspect;
+        m_Data->Frame.Proj = glm::ortho(-right, right, -top, top, nearClip, farClip);
+    }
+
+    // Upload to UBO
+    if (m_Data->CameraUBO)
+    {
+        CameraData cameraData;
+        cameraData.ViewProjection = m_Data->Frame.Proj * m_Data->Frame.View;
+        cameraData.Projection = m_Data->Frame.Proj;
+        cameraData.View = m_Data->Frame.View;
+        m_Data->CameraUBO->SetData(&cameraData, sizeof(CameraData));
+        m_Data->CameraUBO->BindBase(0);
+    }
 
     // Track the default lighting shader handle for DrawMesh fallback
     auto lightingShaderAsset = m_Data->Shaders->Exists("Lighting") ? m_Data->Shaders->Get("Lighting") : nullptr;
     if (lightingShaderAsset && lightingShaderAsset->GetShader())
     {
-        m_Frame->SetCurrentShaderId(lightingShaderAsset->GetShader()->GetNativeHandle());
+        m_Data->Frame.CurrentShaderId = lightingShaderAsset->GetShader()->GetNativeHandle();
     }
 }
 
 void Renderer::EndScene()
 {
-    m_Frame->EndScene();
+    m_Data->Frame.CurrentShaderId = 0;
 }
 
 void Renderer::Clear(const glm::vec4& color)
@@ -146,7 +171,7 @@ void Renderer::DrawMesh(const Mesh& mesh, const Material& material, const glm::m
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0)
     {
-        shaderId = m_Frame->GetData().CurrentShaderId;
+        shaderId = m_Data->Frame.CurrentShaderId;
     }
     if (shaderId == 0)
     {
@@ -203,7 +228,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     uint32_t shaderId = material.ShaderID;
     if (shaderId == 0)
     {
-        shaderId = m_Frame->GetData().CurrentShaderId;
+        shaderId = m_Data->Frame.CurrentShaderId;
     }
     if (shaderId == 0)
     {
@@ -225,7 +250,7 @@ void Renderer::DrawMeshInstanced(const Mesh& mesh, const Material& material, con
     shader->Bind();
 
     // Set up matrices
-    glm::mat4 mvp = m_Frame->GetData().Proj * m_Frame->GetData().View;
+    glm::mat4 mvp = m_Data->Frame.Proj * m_Data->Frame.View;
     shader->SetMatrix("u_ViewProjection", mvp);
     shader->SetMatrix("u_Transform", glm::mat4(1.0f));
 
@@ -296,9 +321,9 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->Bind();
 
     // Always remove translation from view matrix for skybox
-    glm::mat4 view = glm::mat4(glm::mat3(m_Frame->GetData().View));
+    glm::mat4 view = glm::mat4(glm::mat3(m_Data->Frame.View));
     shaderAsset->GetShader()->SetMatrix("u_View", view);
-    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Frame->GetData().Proj);
+    shaderAsset->GetShader()->SetMatrix("u_Projection", m_Data->Frame.Proj);
 
     shaderAsset->GetShader()->SetFloat("u_Exposure", exposure);
     shaderAsset->GetShader()->SetFloat("u_Brightness", brightness);
@@ -383,7 +408,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     model[2] = glm::vec4(look * size, 0.0f);
     model[3] = glm::vec4(position, 1.0f);
 
-    shader->SetMatrix("mvp", m_Frame->GetData().Proj * m_Frame->GetData().View * model);
+    shader->SetMatrix("mvp", m_Data->Frame.Proj * m_Data->Frame.View * model);
     shader->SetVec4("colDiffuse", tint);
 
     GraphicsDevice::Get().SetTexture(0, textureId);
@@ -458,16 +483,16 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         glm::mat4 identity = glm::mat4(1.0f);
         shader->SetMatrix("mvp", identity);
 
-        glm::mat4 invViewProj = glm::inverse(m_Frame->GetData().Proj * m_Frame->GetData().View);
+        glm::mat4 invViewProj = glm::inverse(m_Data->Frame.Proj * m_Data->Frame.View);
         shader->SetMatrix("matInverseViewProj", invViewProj);
         shader->SetVec3("viewPos", camera.Position);
 
-        float currentSeconds = (float)m_Frame->GetData().Time.GetSeconds();
+        float currentSeconds = (float)m_Data->Frame.Time.GetSeconds();
         shader->SetFloat("uTimeF", currentSeconds);
         shader->SetFloat("uTime", currentSeconds);
         shader->SetFloat("time", currentSeconds);
-        shader->SetFloat("uExposure", m_Lighting->GetData().CurrentLighting.Exposure);
-        shader->SetFloat("uGamma", m_Lighting->GetData().CurrentLighting.Gamma);
+        shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
+        shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
 
         // 2. Set Custom Uniforms using type-safe std::visit
         ApplyShaderUniforms(shader.get(), uniforms);
@@ -495,7 +520,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
 
 void Renderer::Update(Timestep ts)
 {
-    m_Frame->SetTime(ts);
+    m_Data->Frame.Time = ts;
 }
 
 ShaderAsset* Renderer::BindShader(const std::string& name)
@@ -541,7 +566,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     auto shader = shaderAsset->GetShader();
     shader->Bind();
 
-    shader->SetMatrix("mvp", m_Frame->GetData().Proj * m_Frame->GetData().View * transform);
+    shader->SetMatrix("mvp", m_Data->Frame.Proj * m_Data->Frame.View * transform);
     shader->SetMatrix("matModel", transform);
     shader->SetVec4("u_Tint", tint);
     shader->SetVec2("u_Flip", glm::vec2(flipX ? 1.0f : 0.0f, flipY ? 1.0f : 0.0f));
@@ -572,6 +597,135 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     m_Data->Geometry.SpriteVAO->Bind();
     GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.SpriteVAO, 6);
     m_Data->Geometry.SpriteVAO->Unbind();
+}
+
+// --- Lighting methods (formerly in LightingManager) ---
+
+void Renderer::SetLight(int index, const RenderLight& light)
+{
+    if (index >= 0 && index < LightingData::MaxLights)
+    {
+        m_Data->Lighting.Lights[index] = light;
+        m_Data->Lighting.LightsDirty = true;
+    }
+}
+
+void Renderer::SetLightCount(int count)
+{
+    m_Data->Lighting.LightCount = count;
+}
+
+void Renderer::ClearLights()
+{
+    for (int i = 0; i < LightingData::MaxLights; i++)
+        m_Data->Lighting.Lights[i].enabled = 0;
+    m_Data->Lighting.LightCount = 0;
+    m_Data->Lighting.LightsDirty = true;
+}
+
+void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
+{
+    m_Data->Lighting.CurrentLighting = settings.Lighting;
+    m_Data->Lighting.CurrentFog = settings.Fog;
+}
+
+void Renderer::SetMainLight(const LightingSettings& settings)
+{
+    m_Data->Lighting.CurrentLighting = settings;
+}
+
+void Renderer::UploadLights()
+{
+    if (m_Data->Lighting.LightsDirty && m_Data->Lighting.LightSSBO)
+    {
+        m_Data->Lighting.LightSSBO->SetData(m_Data->Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
+        m_Data->Lighting.LightsDirty = false;
+    }
+}
+
+void Renderer::SetShadowState(bool enabled, uint32_t mapTextureID, const glm::mat4& lightSpaceMatrix, float bias)
+{
+    m_Data->Shadow.Enabled = enabled;
+    m_Data->Shadow.MapTextureID = mapTextureID;
+    m_Data->Shadow.LightSpaceMatrix = lightSpaceMatrix;
+    m_Data->Shadow.Bias = bias;
+}
+
+void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
+{
+    if (!shaderAsset || !shaderAsset->GetShader())
+        return;
+
+    const auto& lighting = m_Data->Lighting.CurrentLighting;
+    auto shader = shaderAsset->GetShader();
+    shader->Bind();
+
+    glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
+                            lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
+    glm::vec4 skyColor = lightColor;
+    skyColor.w = lighting.Ambient * 0.35f;
+
+    shader->SetVec3("viewPos", m_Data->Frame.CameraPosition);
+    shader->SetFloat("uTime", m_Data->Frame.Time);
+    shader->SetFloat("uMode", m_Data->Frame.DiagnosticMode);
+    glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f
+                                 ? glm::normalize(lighting.Direction)
+                                 : glm::vec3(0.0f, -1.0f, 0.0f);
+    shader->SetVec3("lightDir", lightDirNorm);
+    shader->SetVec4("lightColor", lightColor);
+    shader->SetFloat("ambient", lighting.Ambient);
+    shader->SetVec4("skyAmbientColor", skyColor);
+    shader->SetInt("uLightCount", m_Data->Lighting.LightCount);
+    shader->SetFloat("uExposure", lighting.Exposure);
+    shader->SetFloat("uGamma", lighting.Gamma);
+
+    if (m_Data->Lighting.LightSSBO)
+        m_Data->Lighting.LightSSBO->BindBase(0);
+
+    // Shadow uniforms
+    shader->SetInt("u_ShadowsEnabled", m_Data->Shadow.Enabled ? 1 : 0);
+    shader->SetMatrix("u_LightSpaceMatrix", m_Data->Shadow.LightSpaceMatrix);
+    shader->SetFloat("u_ShadowBias", m_Data->Shadow.Bias);
+    if (m_Data->Shadow.Enabled && m_Data->Shadow.MapTextureID > 0)
+    {
+        GraphicsDevice::Get().SetTexture(6, m_Data->Shadow.MapTextureID);
+        shader->SetInt("u_ShadowMap", 6);
+    }
+
+    ApplyFogUniforms(shaderAsset);
+}
+
+void Renderer::ApplyFogUniforms(ShaderAsset* shader)
+{
+    if (!shader || !shader->GetShader())
+        return;
+
+    const auto& fog = m_Data->Lighting.CurrentFog;
+    auto s = shader->GetShader();
+    int enabled = fog.Enabled ? 1 : 0;
+    int mode = (int)fog.Mode;
+    glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
+                       fog.FogColor.a / 255.0f};
+
+    s->SetInt("fogEnabled", enabled);
+    s->SetVec4("fogColor", color);
+    s->SetFloat("fogDensity", fog.Density);
+    s->SetFloat("fogStart", fog.Start);
+    s->SetFloat("fogEnd", fog.End);
+    s->SetInt("fogMode", mode);
+    s->SetFloat("fogHeightFalloff", fog.HeightFalloff);
+}
+
+// --- Frame methods (formerly in FrameManager) ---
+
+void Renderer::SetDiagnosticMode(float mode)
+{
+    m_Data->Frame.DiagnosticMode = mode;
+}
+
+void Renderer::UpdateTime(Timestep time)
+{
+    m_Data->Frame.Time = time;
 }
 
 } // namespace Chained

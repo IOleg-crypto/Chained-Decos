@@ -3,7 +3,7 @@ Project:
   IconPath: resources/icons/chaineddecos.jpg
   StartScene: scenes/rpg_strategy_scene.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/test_platform_scene.chscene
+  ActiveScene: assets/scenes/map_selection.chscene
   Environment: ""
   BuildScenes:
     - scenes/start_menu.chscene
@@ -43,11 +43,6 @@ Project:
     ShowStats: true
     EnableConsole: false
     TargetFPS: 0
-  Editor:
-    CameraMoveSpeed: 64.9000015
-    CameraRotationSpeed: 0.100000001
-    CameraBoostMultiplier: 5
-    DisableCameraZoom: false
   Scripting:
     ModuleName: ChainedDecos.Scripts.dll
     ModuleDirectory: assets/bin

@@ -1,0 +1,17 @@
+Material:
+  Name: island_Metal_holders
+  AlbedoColor:
+    - 0.0205664691
+    - 0.125213563
+    - 0.257305771
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 1
+  Roughness: 0.75
+  Transparent: false
+  Alpha: 1

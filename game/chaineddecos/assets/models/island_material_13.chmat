@@ -1,0 +1,17 @@
+Material:
+  Name: machine_REACTOR_transparent
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 0.0196000002
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0.219999999
+  Roughness: 0
+  Transparent: true
+  Alpha: 0.0196000002
