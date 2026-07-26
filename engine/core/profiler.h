@@ -29,6 +29,18 @@ struct InstrumentationSession
     std::string Name;
 };
 
+struct ProfilerStats
+{
+    // Rendering
+    uint32_t DrawCalls = 0;
+    uint32_t MeshCount = 0;
+    uint32_t TextureCount = 0;
+
+    // Scene
+    uint32_t EntityCount = 0;
+    uint32_t ColliderCount = 0;
+};
+
 class Instrumentor
 {
 public:
@@ -95,6 +107,31 @@ public:
         return m_FrameResults;
     }
 
+    // --- Frame-level stats (formerly Profiler) ---
+
+    void BeginFrame()
+    {
+        s_LastFrameResults = m_FrameResults;
+        ClearFrameResults();
+        s_Stats.DrawCalls = 0;
+        s_Stats.MeshCount = 0;
+        s_Stats.TextureCount = 0;
+    }
+
+    void UpdateStats(const ProfilerStats& stats)
+    {
+        s_Stats.DrawCalls += stats.DrawCalls;
+        s_Stats.MeshCount += stats.MeshCount;
+        s_Stats.TextureCount += stats.TextureCount;
+        if (stats.EntityCount > 0)
+            s_Stats.EntityCount = stats.EntityCount;
+        if (stats.ColliderCount > 0)
+            s_Stats.ColliderCount = stats.ColliderCount;
+    }
+
+    const ProfilerStats& GetStats() const { return s_Stats; }
+    const std::vector<ProfileResult>& GetLastFrameResults() const { return s_LastFrameResults; }
+
     void WriteHeader()
     {
         m_OutputStream << "{\"otherData\": {},\"traceEvents\":[";
@@ -119,6 +156,9 @@ private:
     int m_ProfileCount;
     std::vector<ProfileResult> m_FrameResults;
     std::mutex m_Mutex;
+
+    ProfilerStats s_Stats{};
+    std::vector<ProfileResult> s_LastFrameResults;
 };
 
 class InstrumentationTimer
@@ -160,42 +200,6 @@ private:
     const char* m_Name;
     std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTimepoint;
     bool m_Stopped;
-};
-
-struct ProfilerStats
-{
-    // Rendering
-    uint32_t DrawCalls = 0;
-    uint32_t MeshCount = 0;
-    uint32_t TextureCount = 0;
-
-    // Scene
-    uint32_t EntityCount = 0;
-    uint32_t ColliderCount = 0;
-};
-
-class Profiler
-{
-public:
-    static void BeginFrame();
-    static void EndFrame();
-
-    static const ProfilerStats& GetStats()
-    {
-        return s_Stats;
-    }
-    static void UpdateStats(const ProfilerStats& stats);
-    static void ResetFrameStats();
-
-    static const std::vector<ProfileResult>& GetLastFrameResults()
-    {
-        return s_LastFrameResults;
-    }
-
-private:
-    static std::mutex s_Mutex;
-    static ProfilerStats s_Stats;
-    static std::vector<ProfileResult> s_LastFrameResults;
 };
 
 } // namespace Chained

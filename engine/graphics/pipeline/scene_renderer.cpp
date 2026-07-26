@@ -152,7 +152,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
     if (environment)
     {
         const auto& envSettings = environment->GetSettings();
-        auto& rendererLighting = renderer->GetLighting().GetData();
+        auto& rendererLighting = renderer->GetData().Lighting;
         rendererLighting.CurrentLighting = envSettings.Lighting;
         rendererLighting.CurrentFog = envSettings.Fog;
         m_CurrentEnv = envSettings;
@@ -205,7 +205,7 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 
     renderer->EndScene();
 
-    Profiler::UpdateStats(m_CurrentStats);
+    Instrumentor::Get().UpdateStats(m_CurrentStats);
 }
 
 void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& camera)
@@ -262,7 +262,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
         return;
-    auto& lighting = renderer->GetLighting().GetData();
+    auto& lighting = renderer->GetData().Lighting;
 
     for (auto& l : lighting.Lights)
     {

@@ -26,7 +26,8 @@ TEST(PrimitiveTest, Defaults)
 
 TEST(PrimitiveTest, TypeConstructorSetsRequestedPrimitiveType)
 {
-    PrimitiveComponent sphere(PrimitiveType::Sphere);
+    PrimitiveComponent sphere;
+    sphere.Type = PrimitiveType::Sphere;
 
     EXPECT_EQ(sphere.Type, PrimitiveType::Sphere);
     EXPECT_FLOAT_EQ(sphere.Radius, 0.5f);

@@ -17,12 +17,9 @@ public:
 
     void OnImGuiRender(bool readOnly = false) override;
     void OnEvent(Event& e) override;
-    void SetRootDirectory(const std::filesystem::path& path) const;
-
 private:
     void RenderToolbar();
     void RenderGridView();
-    void RefreshDirectory() const;
 
     void OnAssetDoubleClicked(const AssetEntry& entry);
 

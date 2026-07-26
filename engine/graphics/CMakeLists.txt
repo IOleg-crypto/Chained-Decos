@@ -34,13 +34,9 @@ add_library(engine_graphics STATIC
     api/opengl/gl_vertex_array.cpp
     pipeline/debug_renderer.h
     pipeline/debug_renderer.cpp
-    pipeline/frame_manager.h
-    pipeline/frame_manager.cpp
     pipeline/frustum.h
     pipeline/geometry_generator.h
     pipeline/geometry_generator.cpp
-    pipeline/lighting_manager.h
-    pipeline/lighting_manager.cpp
     pipeline/material.h
     pipeline/renderer.h
     pipeline/renderer.cpp

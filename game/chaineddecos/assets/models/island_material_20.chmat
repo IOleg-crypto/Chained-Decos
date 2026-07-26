@@ -1,0 +1,17 @@
+Material:
+  Name: machine_TELEPORT
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 1
+  EmissiveColor:
+    - 1
+    - 1
+    - 1
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 0.779999971
+  Transparent: false
+  Alpha: 1

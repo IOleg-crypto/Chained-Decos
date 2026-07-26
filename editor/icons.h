@@ -14,9 +14,6 @@ struct EditorIcons
     std::shared_ptr<TextureAsset> LightIcon;
     std::shared_ptr<TextureAsset> SpawnIcon;
     std::shared_ptr<TextureAsset> CameraIcon;
-    std::shared_ptr<TextureAsset> PointLightIcon;
-    std::shared_ptr<TextureAsset> DirectionalLightIcon;
-    std::shared_ptr<TextureAsset> SpotLightIcon;
     std::shared_ptr<TextureAsset> AudioIcon;
 };
 } // namespace Chained
