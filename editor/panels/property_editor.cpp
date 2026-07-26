@@ -18,7 +18,6 @@
 
 #include "engine/app/application.h"
 #include <yaml-cpp/yaml.h>
-#include "engine/scene/component_registry.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/graphics/ui/widget_renderer.h"
@@ -76,9 +75,9 @@ void PropertyEditor::DrawComponentReflection(const std::string& name, const char
     });
 }
 
-template <typename T>
+template <typename T, typename F>
 void PropertyEditor::DrawComponentContainer(const std::string& name, const char* icon, Entity entity,
-                                            std::function<bool(T&, Entity)> drawer)
+                                            F&& drawer)
 {
     if (entity.HasComponent<T>())
     {
@@ -112,7 +111,13 @@ void PropertyEditor::DrawGenericReflection(const ComponentMetadata& metadata, En
         [&]() {
             UIProperties ui;
             metadata.ReflectInternal(entity, &ui, (int)ReflectionMode::UI);
-            return ui.HasChanged();
+            bool changed = ui.HasChanged();
+            if (changed && metadata.NotifyUpdate)
+            {
+                // Fire registry.patch() so on_update observers (e.g. MarkPrimitiveDirty) run.
+                metadata.NotifyUpdate(entity);
+            }
+            return changed;
         },
         [&]() {
             if (metadata.Remove) metadata.Remove(entity);
@@ -159,12 +164,12 @@ void PropertyEditor::Register(const std::string& name, const char* icon)
         [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); });
 }
 
-template <typename T>
+template <typename T, typename F>
 void PropertyEditor::RegisterCustom(const std::string& name,
-    std::function<bool(T&, Entity)> drawer, const char* icon)
+    F&& drawer, const char* icon)
 {
     RegisterComponentImpl<T>(name, icon,
-        [name, icon, drawer](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); });
+        [name, icon, drawer = std::forward<F>(drawer)](Entity e) { DrawComponentContainer<T>(name, icon, e, drawer); });
 }
 
 // --- Implementation ---
@@ -199,6 +204,7 @@ void PropertyEditor::Init()
 
         return changed;
     }, ICON_FA_LIGHTBULB);
+    
     RegisterCustom<ColliderComponent>("Collider", [&](ColliderComponent& comp, Entity entity) {
         bool changed = false;
         UIProperties ui;
@@ -279,7 +285,13 @@ void PropertyEditor::Init()
                         {
                             comp.CurrentAnimationIndex = currentIdx;
                             comp.CurrentFrame = 0;
-                            comp.FrameTimeCounter = 0;
+                            comp.FrameTimeCounter = 0.0f;
+                            // Reset blend state and ensure the new animation starts playing.
+                            comp.Blending = false;
+                            comp.TargetAnimationIndex = -1;
+                            comp.TargetFrame = 0;
+                            comp.BlendTimer = 0.0f;
+                            comp.IsPlaying = true;
                             changed = true;
                         }
 
@@ -497,7 +509,10 @@ void PropertyEditor::Init()
                 if (ui.Property("Full Screen",  data.FullScreen))   changed = true;
             } else if constexpr (std::is_same_v<T, ComboBoxData>) {
                 if (ui.Property("Label",        data.Label))        changed = true;
-                if (ui.Property("Selected",     data.SelectedIndex, PropertyMeta(0, (int)data.Items.size()-1, 1))) changed = true;
+                if (!data.Items.empty())
+                {
+                    if (ui.Property("Selected",     data.SelectedIndex, PropertyMeta(0, (int)data.Items.size()-1, 1))) changed = true;
+                }
                 // Items list
                 ImGui::TableNextRow();
                 ImGui::TableSetColumnIndex(0);
@@ -526,9 +541,8 @@ void PropertyEditor::Init()
     auto markWidget = [&](entt::id_type id) {
         if (ComponentRegistry::Exists(id))
         {
-            auto metadata = ComponentRegistry::GetMetadata(id);
+            auto& metadata = ComponentRegistry::GetMetadataMutable(id);
             metadata.IsWidget = true;
-            ComponentRegistry::Register(id, metadata);
         }
     };
     markWidget(entt::type_hash<ControlComponent>::value());
@@ -537,7 +551,7 @@ void PropertyEditor::Init()
     markWidget(entt::type_hash<SpriteComponent>::value());
 }
 
-void PropertyEditor::DrawComponentInternal(::entt::id_type typeId, const std::string& name, const char* icon,
+void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon,
                                            Entity entity, std::function<bool()> contentDrawer,
                                            std::function<void()> remover)
 {

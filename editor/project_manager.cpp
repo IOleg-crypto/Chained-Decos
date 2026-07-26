@@ -285,9 +285,7 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     project->GetConfig().Scripting.ModuleDirectory = "assets/bin";
     project->GetConfig().Scripting.AutoLoad = true;
 
-    m_EditorSettings = EditorSettings(); // Reset to defaults
-
-    EditorProjectSerializer::Serialize(project, m_EditorSettings, (std::filesystem::path(path) / (name + ".chproject")));
+    EditorProjectSerializer::Serialize(project, (std::filesystem::path(path) / (name + ".chproject")));
 
     Project::SetActive(project);
     
@@ -308,7 +306,7 @@ void EditorProjectManager::OpenProject()
 void EditorProjectManager::OpenProject(const std::filesystem::path& path)
 {
     auto project = std::make_shared<Project>();
-    if (EditorProjectSerializer::Deserialize(project, m_EditorSettings, path))
+    if (EditorProjectSerializer::Deserialize(project, path))
     {
         m_LastProjectPath = path.string();
         Project::SetActive(project);
@@ -324,7 +322,7 @@ void EditorProjectManager::SaveProject()
     auto project = Project::GetActive();
     if (!project) return;
     
-    EditorProjectSerializer::Serialize(project, m_EditorSettings, (project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject")));
+    EditorProjectSerializer::Serialize(project, (project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject")));
 }
 
 
@@ -358,26 +356,40 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         std::filesystem::path resolvedPath = openedPath;
         std::filesystem::path projDir = resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
 
-        ServiceLocator::Get<AssetManager>()->SetProjectDirectory(project->GetProjectDirectoryForProject());
-        ServiceLocator::Get<AssetManager>()->SetAssetDirectory(project->GetAssetDirectoryForProject());
- 
-         // Load engine shaders and resources
-        ServiceLocator::Get<Renderer>()->LoadEngineResources();
+        auto* assetMgr = ServiceLocator::Get<AssetManager>();
+        auto* renderer = ServiceLocator::Get<Renderer>();
+        auto* widgetRenderer = ServiceLocator::Get<WidgetRenderer>();
+
+        if (!assetMgr || !renderer)
+        {
+            CH_CORE_ERROR("ProjectManager: AssetManager or Renderer not available");
+            return;
+        }
+
+        assetMgr->SetProjectDirectory(project->GetProjectDirectoryForProject());
+        assetMgr->SetAssetDirectory(project->GetAssetDirectoryForProject());
+
+        // Load engine shaders and resources
+        renderer->LoadEngineResources();
         // Rebuild font atlas with both editor fonts and project fonts.
         // Must be done in one pass: Clear → add editor fonts → add project fonts → Build().
         // Calling Build() twice (once per font group) crashes because ImGui frees
         // font file data after the first Build(), making a second Build() invalid.
         {
             auto* imguiLayer = Application::Get().GetImGuiLayer();
-            auto* widgetRenderer = ServiceLocator::Get<WidgetRenderer>();
 
             imguiLayer->ClearFonts();
-            // Invalidate cached ImFont* (dangling after ClearFonts).
-            widgetRenderer->GetFontRegistry().Clear();
+            if (widgetRenderer)
+            {
+                widgetRenderer->GetFontRegistry().Clear();
+            }
 
             EditorLayer::Get().AddEditorFontsToAtlas();
-            widgetRenderer->LoadProjectFonts(); // discovers + adds, no rebuild
-            imguiLayer->RefreshFontAtlasTexture(); // single GPU upload
+            if (widgetRenderer)
+            {
+                widgetRenderer->LoadProjectFonts();
+            }
+            imguiLayer->RefreshFontAtlasTexture();
         }
 
         m_LastProjectPath = openedPath;
@@ -393,7 +405,10 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         EditorLayer::Get().SaveConfig();
 
         // Auto-load script assembly if configured
-        ServiceLocator::Get<ScriptEngine>()->TryAutoLoad(project->GetConfig());
+        if (auto* scriptEngine = ServiceLocator::Get<ScriptEngine>())
+        {
+            scriptEngine->TryAutoLoad(project->GetConfig());
+        }
 
         // Auto-load scene if available
         std::filesystem::path sceneToLoad;

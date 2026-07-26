@@ -649,10 +649,7 @@ void RuntimeLayer::StopCurrentScene()
         return;
     }
 
-    if (m_RuntimeStarted)
-    {
-        m_Scene->OnRuntimeStop(m_Context);
-    }
+    m_Scene->OnRuntimeStop(m_Context);
 }
 
 std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const

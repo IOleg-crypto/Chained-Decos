@@ -13,7 +13,7 @@ struct EditorState;
 class SceneHierarchyPanel : public Panel
 {
 public:
-    SceneHierarchyPanel(CommandHistory& cmd, EditorState& state);
+    SceneHierarchyPanel();
 
     virtual void OnImGuiRender(bool readOnly = false) override;
 
@@ -21,6 +21,7 @@ private:
     void DrawEntityNodeRecursive(Entity entity, bool readOnly);
     void DrawContextMenu();
     const char* GetEntityIcon(Entity entity);
+    void StartRename(Entity entity);
 
 private:
     std::unordered_set<entt::entity> m_DrawnEntities;
@@ -30,9 +31,6 @@ private:
     bool m_Renaming = false;
     char m_RenameBuffer[128] = {0};
     Entity m_RenamingEntity;
-
-    CommandHistory& m_CommandHistory;
-    EditorState& m_EditorState;
 };
 
 } // namespace Chained

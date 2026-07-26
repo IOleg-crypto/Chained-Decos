@@ -1,10 +1,10 @@
 #ifndef CH_PROJECT_EXPORTER_H
 #define CH_PROJECT_EXPORTER_H
 
+#include <atomic>
 #include <cstdint>
 #include <filesystem>
 #include <functional>
-#include <atomic>
 #include <string>
 
 namespace Chained
@@ -27,24 +27,6 @@ struct ExportResult
 /// @param total   Total number of files to pack.
 /// @param file    Virtual item path of the just-packed file.
 using ExportProgressCallback = std::function<void(uint64_t packed, uint64_t total, const std::string& file)>;
-
-static struct ExportState
-{
-    bool Open = false;
-    bool Success = false;
-    std::string Message;
-    std::string OutDir;
-    std::mutex Mutex;
-    bool IsExporting = false;
-    // Progress tracking (updated from the background thread under Mutex)
-    uint64_t PackedFiles = 0;
-    uint64_t TotalFiles = 0;
-    std::string CurrentFile;
-    // Cancel flag — written by GUI thread, read by worker thread (lock-free)
-    std::atomic<bool> CancelRequested{false};
-} s_ExportState;
-
-static bool s_ShowEditorSettings = false;
 
 class ProjectExporter
 {
