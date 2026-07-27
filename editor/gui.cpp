@@ -11,11 +11,11 @@
 #include "thirdparty/IconsFontAwesome6.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
-#include "engine/app/application.h"
 #include "engine/common/thread_pool.h"
 #include "thirdparty/imgui/imgui_internal.h"
 #include "scripting/scriptengine.h"
 #include "editor/font_choice_gui.h"
+#include <cstring>
 #include <filesystem>
 #include <mutex>
 #include <string>
@@ -24,6 +24,15 @@
 namespace Chained
 {
 
+static float GetButtonSize()
+{
+    return ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+}
+
+static float GetThumbnailSize(float buttonSize)
+{
+    return buttonSize * 1.5f;
+}
 
 static void DrawPropertyLabel(const char* label)
 {
@@ -62,6 +71,8 @@ void EditorGUI::EndPropertyGrid()
 
 void EditorGUI::BeginProperty(const char* label)
 {
+    if (!label)
+        return;
     DrawPropertyLabel(label);
     ImGui::PushID(label);
     ImGui::PushItemWidth(-1);
@@ -77,6 +88,8 @@ void EditorGUI::EndProperty()
 
 template <typename F> bool EditorGUI::PropertyWidget(const char* label, F&& widgetFn)
 {
+    if (!label)
+        return false;
     DrawPropertyLabel(label);
     ImGui::PushID(label);
     bool changed = widgetFn();
@@ -106,6 +119,8 @@ bool EditorGUI::Property(const char* label, uint64_t& value)
 
 bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
 {
+    if (!label)
+        return false;
     DrawPropertyLabel(label);
     ImGui::PushID(label);
     char buffer[1024];
@@ -151,10 +166,12 @@ bool EditorGUI::Property(const char* label, glm::vec2& value)
 {
     return DrawVec2(label, value, 0.0f);
 }
+
 bool EditorGUI::Property(const char* label, glm::vec3& value)
 {
     return DrawVec3(label, value, 0.0f);
 }
+
 bool EditorGUI::Property(const char* label, glm::vec4& value)
 {
     return DrawVec4(label, value, 0.0f);
@@ -174,22 +191,30 @@ bool EditorGUI::PropertyColor(const char* label, glm::vec4& value, bool hdr)
 
 bool EditorGUI::Property(const char* label, int& value, const char** items, int itemCount)
 {
-    return PropertyWidget(label, [&]() { return ImGui::Combo("##prop", &value, items, itemCount); });
+    if (!label)
+        return false;
+    return PropertyWidget(label, [&]() {
+        if (!items || itemCount <= 0)
+            return false;
+        return ImGui::Combo("##prop", &value, items, itemCount);
+    });
 }
 
 bool EditorGUI::FilePropertyImpl(const char* label, std::string& value, const char* filter,
                                  std::function<void()> thumbnailFn)
 {
+    if (!label)
+        return false;
     DrawPropertyLabel(label);
     ImGui::PushID(label);
 
     float width = ImGui::GetContentRegionAvail().x;
-    float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    float buttonSize = GetButtonSize();
 
     float thumbnailSize = 0.0f;
     if (thumbnailFn)
     {
-        thumbnailSize = buttonSize * 1.5f;
+        thumbnailSize = GetThumbnailSize(buttonSize);
         thumbnailFn();
         ImGui::SameLine();
     }
@@ -211,9 +236,12 @@ bool EditorGUI::FilePropertyImpl(const char* label, std::string& value, const ch
     {
         if (const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("CONTENT_BROWSER_ITEM"))
         {
-            const char* dropPath = (const char*)payload->Data;
-            value = Project::GetRelativePath(dropPath);
-            changed = true;
+            const char* dropPath = static_cast<const char*>(payload->Data);
+            if (dropPath)
+            {
+                value = Project::GetRelativePath(dropPath);
+                changed = true;
+            }
         }
         ImGui::EndDragDropTarget();
     }
@@ -246,8 +274,8 @@ bool EditorGUI::FileProperty(const char* label, std::string& value, const char* 
 bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t textureId, const char* filter)
 {
     return FilePropertyImpl(label, path, filter, [textureId]() {
-        float buttonSize = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
-        float thumbnailSize = buttonSize * 1.5f;
+        float buttonSize = GetButtonSize();
+        float thumbnailSize = GetThumbnailSize(buttonSize);
         if (textureId > 0)
         {
             ImGui::Image((void*)(intptr_t)textureId, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
@@ -280,9 +308,11 @@ bool EditorGUI::ActionButton(const char* icon, const char* label)
 static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const char* label, float resetValue,
                                 float width, bool& changed)
 {
+    if (!label || !id)
+        return;
     ImGui::PushID(label);
 
-    float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+    float lineHeight = GetButtonSize();
     ImVec2 buttonSize = {lineHeight, lineHeight};
 
     ImGui::PushStyleColor(ImGuiCol_Button, color);
@@ -307,7 +337,7 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
 
     ImGui::SetNextItemWidth(width - buttonSize.x);
     char buf[32];
-    snprintf(buf, sizeof(buf), "##%s_%s", label, id);
+    snprintf(buf, sizeof(buf), "##%.8s_%.8s", label, id);
     if (ImGui::DragFloat(buf, &val, 0.1f, 0.0f, 0.0f, "%.2f"))
     {
         changed = true;
@@ -320,6 +350,8 @@ template <int N>
 bool EditorGUI::DrawVecImpl(const char* label, float* values, float resetValue, const ImVec4* colors,
                             const char* componentLabels[N])
 {
+    if (!label)
+        return false;
     DrawPropertyLabel(label);
     ImGui::PushID(label);
 
@@ -453,4 +485,5 @@ void EditorGUI::ApplyTheme()
     float scale = fontSize > 0.0f ? (fontSize / 13.0f) : 1.0f;
     style.ScaleAllSizes(scale);
 }
+
 } // namespace Chained

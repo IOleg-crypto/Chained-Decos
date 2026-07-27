@@ -61,6 +61,7 @@ public:
     EditorPanels& GetPanels() { return *m_Panels; }
     EditorMenu& GetMenu() { return *m_Menu; }
 
+    const SceneContext& GetSceneContext() const { return m_Context; }
     ImVec2 GetViewportSize() const { return m_ViewportSize; }
     ImVec2& GetViewportSizeRef() { return m_ViewportSize; }
     void OnViewportResized(const ImVec2& size) { m_ViewportSize = size; }

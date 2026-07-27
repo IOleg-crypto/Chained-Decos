@@ -137,6 +137,19 @@ public:
         return m_Config;
     }
 
+    void SetScripting(const std::string& moduleName, const std::filesystem::path& moduleDir, bool autoLoad = true)
+    {
+        m_Config.Scripting.ModuleName = moduleName;
+        m_Config.Scripting.ModuleDirectory = moduleDir;
+        m_Config.Scripting.AutoLoad = autoLoad;
+    }
+
+    const std::string& GetName() const { return m_Config.Name; }
+    const std::filesystem::path& GetActiveScenePath() const { return m_Config.ActiveScenePath; }
+    void SetActiveScenePath(const std::filesystem::path& path) { m_Config.ActiveScenePath = path; }
+    const std::string& GetStartScene() const { return m_Config.StartScene; }
+    Configuration GetBuildConfig() const { return m_Config.BuildConfig; }
+
     // Path helpers (now non-static, relative to this project)
     std::filesystem::path GetAssetDirectoryForProject() const
     {

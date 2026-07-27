@@ -1,6 +1,8 @@
 #include "layer.h"
 #include "editor_colors.h"
 #include "engine/core/input.h"
+#include "engine/core/events/input_events.h"
+#include "engine/core/key_codes.h"
 #include "engine/core/service_locator.h"
 #include "engine/imgui/imgui_layer.h"
 #include "events.h"
@@ -82,11 +84,7 @@ EditorLayer::EditorLayer()
     m_Context.Scripting = ServiceLocator::TryGet<ScriptEngine>(); // null if scripting disabled
     m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>();      // null in headless mode
     m_ProjectManager = std::make_unique<EditorProjectManager>();
-    m_SceneManager = std::make_unique<EditorSceneManager>(m_CommandHistory, *m_ProjectManager, m_Config, m_ViewportSize,
-                                                          m_EditorState, m_Context);
-
-    // Forward scene events (e.g. SceneChangeRequestEvent) back to EditorLayer::OnEvent
-    m_SceneManager->SetSceneEventCallback([this](Event& e) { OnEvent(e); });
+    m_SceneManager = std::make_unique<EditorSceneManager>();
 
     m_Menu = std::make_unique<EditorMenu>();
     m_Panels = std::make_unique<EditorPanels>(*this);
@@ -128,7 +126,7 @@ void EditorLayer::LoadConfig()
             if (node["LastProjectPath"])
             {
                 std::string lastProj = node["LastProjectPath"].as<std::string>("");
-                m_ProjectManager->SetLastProjectPath(lastProj);
+                m_ProjectManager->RestoreLastProjectPath(lastProj);
                 m_Config.LastProjectPath = lastProj;
             }
             LoadYAMLField(node, "LastScenePath", m_Config.LastScenePath);
@@ -590,10 +588,62 @@ void EditorLayer::OnEvent(Event& e)
         return true;
     });
 
-    // 3. Command/Undo — handled by scene_manager.cpp OnKeyPressed
+    // 3. Command/Undo & Scene shortcuts
+    dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) {
+        if (e.IsRepeat())
+        {
+            return false;
+        }
 
-    // 4. Input
-    dispatcher.Dispatch<KeyPressedEvent>([this](auto& e) { return m_SceneManager->OnKeyPressed(e); });
+        bool ctrl = Core::Input::IsKeyDown(KeyCode::LeftControl) || Core::Input::IsKeyDown(KeyCode::RightControl);
+        bool shift = Core::Input::IsKeyDown(KeyCode::LeftShift) || Core::Input::IsKeyDown(KeyCode::RightShift);
+        auto keyCode = e.GetKeyCode();
+
+        if (ctrl)
+        {
+            switch (keyCode)
+            {
+            case KeyCode::N:
+                if (GetSceneState() != SceneState::Play)
+                {
+                    m_SceneManager->NewScene();
+                }
+                return true;
+            case KeyCode::O:
+                if (GetSceneState() != SceneState::Play)
+                {
+                    m_SceneManager->OpenScene();
+                }
+                return true;
+            case KeyCode::S:
+                if (GetSceneState() != SceneState::Play)
+                {
+                    shift ? m_SceneManager->SaveSceneAs() : m_SceneManager->SaveScene();
+                }
+                return true;
+            case KeyCode::Z:
+                if (GetSceneState() != SceneState::Play)
+                {
+                    m_CommandHistory.Undo();
+                }
+                return true;
+            case KeyCode::Y:
+                if (GetSceneState() != SceneState::Play)
+                {
+                    m_CommandHistory.Redo();
+                }
+                return true;
+            }
+        }
+
+        if (keyCode == KeyCode::F5)
+        {
+            m_ProjectManager->LaunchStandalone(m_SceneManager->GetActiveScene());
+            return true;
+        }
+
+        return false;
+    });
     // 3. Layout/System
     dispatcher.Dispatch<AppResetLayoutEvent>([this](auto& ev) {
         ResetLayout();

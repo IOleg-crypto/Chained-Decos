@@ -90,7 +90,7 @@ AudioHandle Audio::LoadSound(const std::string& filepath)
     auto project = Project::GetActive();
     std::filesystem::path resolvedPath;
     if (project && std::filesystem::path(filepath).is_relative())
-        resolvedPath = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / filepath;
+        resolvedPath = project->GetAssetDirectoryForProject() / filepath;
     else
         resolvedPath = filepath;
 
@@ -268,7 +268,7 @@ void Audio::Stop(const std::string& filepath)
     auto project = Project::GetActive();
     std::filesystem::path resolvedPath;
     if (project && std::filesystem::path(filepath).is_relative())
-        resolvedPath = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory / filepath;
+        resolvedPath = project->GetAssetDirectoryForProject() / filepath;
     else
         resolvedPath = filepath;
 

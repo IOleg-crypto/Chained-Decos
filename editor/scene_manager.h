@@ -1,35 +1,27 @@
 #ifndef CH_EDITOR_SCENE_MANAGER_H
 #define CH_EDITOR_SCENE_MANAGER_H
 
-#include "engine/core/events/input_events.h"
-#include "engine/core/key_codes.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/scene_context.h"
 #include "engine/scene/scene_events.h"
-#include "editor/undo/command_history.h"
-#include "editor/types.h"
 #include "editor/project/editor_settings.h"
-#include <imgui.h>
 #include <filesystem>
 #include <future>
 #include <memory>
+#include <string>
 
 namespace Chained
 {
-class EditorLayer;
-class EditorProjectManager;
 
 class EditorSceneManager
 {
 public:
-    EditorSceneManager(CommandHistory& cmd, EditorProjectManager& proj,
-                       EditorConfig& config, ImVec2& viewportSize, EditorState& state,
-                       const SceneContext& sceneContext);
+    EditorSceneManager() = default;
     ~EditorSceneManager() = default;
 
     void NewScene();
     void OpenScene();
     void OpenScene(const std::filesystem::path& path);
+    void OpenSceneInPlayMode(const std::filesystem::path& path);
     void SaveScene();
     void SaveSceneAs();
     void AutoSave(float interval, float ts);
@@ -41,89 +33,61 @@ public:
     std::shared_ptr<Scene> GetRuntimeScene() const { return m_RuntimeScene; }
     std::shared_ptr<Scene> GetEditorScene() const { return m_EditorScene; }
 
-    // Dirty tracking for confirm-on-close
     bool IsSceneDirty() const { return m_SceneDirty; }
     void MarkSceneDirty() { m_SceneDirty = true; }
     void ClearSceneDirty() { m_SceneDirty = false; }
 
-    // Confirm dialogs (called by UI when IsConfirmPending)
     bool IsConfirmPending() const { return m_PendingNewScene || m_PendingOpenScene; }
     void ConfirmPendingAction();
     void CancelPendingAction();
 
-    /// @brief Set the event callback that scenes will use to dispatch events (e.g. SceneChangeRequestEvent).
-    void SetSceneEventCallback(const Scene::EventCallbackFn& callback) { m_SceneEventCallback = callback; }
-
     void OnUpdate(Timestep ts);
     void OnViewportResize(uint32_t width, uint32_t height);
 
+    bool IsLoading() const { return m_Transition.state != TransitionState::None; }
+    const std::string& GetLoadingStatus() const { return m_LoadingStatus; }
+
     bool OnSceneOpened(SceneOpenedEvent& e);
-    bool OnKeyPressed(KeyPressedEvent& e);
-
-    bool IsLoading() const
-    {
-        return m_IsPlayModeLoading || m_IsSceneOpenLoading;
-    }
-    const std::string& GetLoadingStatus() const
-    {
-        return m_LoadingStatus;
-    }
-
-public:
-    void StartSceneOpenTransition(const std::filesystem::path& path);
-    void UpdateSceneOpenTransition();
-    void CancelSceneOpenTransition();
-    void StartPlayModeTransition();
-    void UpdatePlayModeTransition();
-    void CancelPlayModeTransition();
 
 private:
+    enum class TransitionState { None, PlayStarting, SceneLoading, Finalizing };
+
+    struct SceneLoadResult
+    {
+        std::shared_ptr<Scene> scene;
+        std::string error;
+    };
+
+    struct TransitionData
+    {
+        TransitionState state = TransitionState::None;
+        SceneState targetState = SceneState::Edit;
+        bool forPlayMode = false;
+
+        std::future<SceneLoadResult> future;
+        std::filesystem::path targetPath;
+        bool sceneReady = false;
+    };
+
+    void StartSceneLoad(const std::filesystem::path& path, bool forPlayMode);
+    void UpdateSceneLoading();
+    void UpdateFinalizing();
+    void FinalizeTransition();
+    void CancelTransition();
+
     std::shared_ptr<Scene> m_EditorScene;
     std::shared_ptr<Scene> m_RuntimeScene;
 
-    // Result of an async scene load: the scene on success, or an error message on failure.
-    struct SceneLoadResult
-    {
-        std::shared_ptr<Scene> Scene;
-        std::string Error;
-    };
-
-    // Async state
-    std::future<SceneLoadResult> m_SceneOpenFuture;
-    std::filesystem::path m_PendingSceneOpenPath;
-
-    bool m_IsPlayModeLoading = false;
-    bool m_IsSceneOpenLoading = false;
-    bool m_PlayModeSceneReady = false;
-    bool m_SceneOpenSceneReady = false;
-    bool m_PlayModeStartRequested = false;
-    bool m_IsPlayModeSceneLoad = false;
-    SceneState m_TargetState = SceneState::Edit;
-
+    TransitionData m_Transition;
     std::string m_LoadingStatus;
-
     float m_AutoSaveTimer = 0.0f;
-    float m_LastAutoSaveTime = 0.0f;
+    float m_AssetWaitLogTimer = 0.0f;
 
     bool m_SceneDirty = false;
 
-    // Pending confirm actions (set when dirty scene needs user confirmation)
     bool m_PendingNewScene = false;
     bool m_PendingOpenScene = false;
     std::filesystem::path m_PendingOpenPath;
-
-    // Dependencies
-    CommandHistory& m_CommandHistory;
-    EditorProjectManager& m_ProjectManager;
-    EditorConfig& m_Config;
-    ImVec2& m_ViewportSize;
-    EditorState& m_EditorState;
-
-    // Resolved once by EditorLayer and handed down — see SceneContext for why.
-    SceneContext m_Context;
-
-    // Event callback forwarded to runtime scenes for SceneTransitionComponent support.
-    Scene::EventCallbackFn m_SceneEventCallback;
 };
 
 } // namespace Chained
