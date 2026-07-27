@@ -9,6 +9,8 @@
 #include "imgui.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include <algorithm>
+#include <unordered_map>
+#include "engine/scene/components.h"
 
 namespace Chained
 {
@@ -164,23 +166,20 @@ void ContentBrowserPanel::RenderGridView()
         for (const auto& asset : assets)
         {
             ImGui::PushID(i++);
-            const char* icon = asset.isDirectory ? ICON_FA_FOLDER : ICON_FA_FILE;
+            const char* icon = ICON_FA_FOLDER;
             if (!asset.isDirectory)
             {
-                static const char* kAssetIcons[] = {
-                    nullptr,           // Directory (not used here)
-                    ICON_FA_CUBES,     // Scene
-                    ICON_FA_FILE_CODE, // Script
-                    ICON_FA_SHAPES,    // Model
-                    ICON_FA_IMAGE,     // Texture
-                    ICON_FA_MUSIC,     // Audio
-                    ICON_FA_CUBE,      // Prefab
-                    ICON_FA_FILE       // Other
-                };
-                static constexpr int kAssetIconCount = sizeof(kAssetIcons) / sizeof(kAssetIcons[0]);
-                int typeIdx = static_cast<int>(asset.type);
-                icon = (typeIdx >= 0 && typeIdx < kAssetIconCount && kAssetIcons[typeIdx]) ? kAssetIcons[typeIdx]
-                                                                                           : ICON_FA_FILE;
+                switch (asset.type)
+                {
+                case EditorAssetType::Scene:   icon = ICON_FA_CUBES; break;
+                case EditorAssetType::Script:  icon = ICON_FA_FILE_CODE; break;
+                case EditorAssetType::Model:   icon = ICON_FA_SHAPES; break;
+                case EditorAssetType::Texture: icon = ICON_FA_IMAGE; break;
+                case EditorAssetType::Audio:   icon = ICON_FA_MUSIC; break;
+                case EditorAssetType::Prefab:  icon = ICON_FA_CUBE; break;
+                case EditorAssetType::Shader:  icon = ICON_FA_CODE; break;
+                default:                       icon = ICON_FA_FILE; break;
+                }
             }
 
             ImGui::BeginGroup();
@@ -194,48 +193,12 @@ void ContentBrowserPanel::RenderGridView()
                     m_RenamingPath = asset.path;
                     strncpy(m_RenameBuffer, asset.name.c_str(), sizeof(m_RenameBuffer) - 1);
                     m_RenameBuffer[sizeof(m_RenameBuffer) - 1] = '\0';
-                    ImGui::OpenPopup("RenameAsset");
+                    m_OpenRenamePopup = true;
                 }
                 if (ImGui::MenuItem(ICON_FA_TRASH " Delete"))
                 {
                     m_PathToDelete = asset.path;
-                    ImGui::OpenPopup("DeleteAsset?");
-                }
-                ImGui::EndPopup();
-            }
-
-            // Popups
-            if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("Enter new name:");
-                ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
-                if (ImGui::Button("OK", {120, 0}))
-                {
-                    EditorActionCommands::RenameAsset(m_RenamingPath, m_RenameBuffer);
-                    Refresh();
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Cancel", {120, 0}))
-                {
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::EndPopup();
-            }
-
-            if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-            {
-                ImGui::Text("Delete %s?", m_PathToDelete.filename().string().c_str());
-                if (ImGui::Button("Delete", {120, 0}))
-                {
-                    EditorActionCommands::DeleteAsset(m_PathToDelete);
-                    Refresh();
-                    ImGui::CloseCurrentPopup();
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("Cancel", {120, 0}))
-                {
-                    ImGui::CloseCurrentPopup();
+                    m_OpenDeletePopup = true;
                 }
                 ImGui::EndPopup();
             }
@@ -255,7 +218,6 @@ void ContentBrowserPanel::RenderGridView()
 
             ImGui::PopStyleColor();
             ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 2));
-            ImGui::SetNextItemWidth(cellSize - m_Padding);
             ImGui::PushTextWrapPos(ImGui::GetCursorPos().x + cellSize - m_Padding);
             ImGui::TextUnformatted(asset.name.c_str());
             ImGui::PopTextWrapPos();
@@ -268,18 +230,70 @@ void ContentBrowserPanel::RenderGridView()
         ImGui::Columns(1);
     }
 
-    if (ImGui::BeginPopupContextWindow(0, 1 | ImGuiPopupFlags_NoOpenOverItems))
+    if (m_OpenRenamePopup)
+    {
+        ImGui::OpenPopup("RenameAsset");
+        m_OpenRenamePopup = false;
+    }
+    if (m_OpenDeletePopup)
+    {
+        ImGui::OpenPopup("DeleteAsset?");
+        m_OpenDeletePopup = false;
+    }
+
+    if (ImGui::BeginPopupModal("RenameAsset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Enter new name:");
+        ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
+        if (ImGui::Button("OK", {120, 0}))
+        {
+            EditorActionCommands::RenameAsset(m_RenamingPath, m_RenameBuffer);
+            m_PendingRefresh = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", {120, 0}))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupModal("DeleteAsset?", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Delete %s?", m_PathToDelete.filename().string().c_str());
+        if (ImGui::Button("Delete", {120, 0}))
+        {
+            EditorActionCommands::DeleteAsset(m_PathToDelete);
+            m_PendingRefresh = true;
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", {120, 0}))
+        {
+            ImGui::CloseCurrentPopup();
+        }
+        ImGui::EndPopup();
+    }
+
+    if (ImGui::BeginPopupContextWindow(0, ImGuiPopupFlags_MouseButtonRight | ImGuiPopupFlags_NoOpenOverItems))
     {
         if (ImGui::BeginMenu(ICON_FA_PLUS " Create"))
         {
             if (ImGui::MenuItem(ICON_FA_FOLDER " New Folder"))
             {
                 EditorActionCommands::CreateFolder(GetCurrentDirectory());
-                Refresh();
+                m_PendingRefresh = true;
             }
             ImGui::EndMenu();
         }
         ImGui::EndPopup();
+    }
+
+    if (m_PendingRefresh)
+    {
+        m_PendingRefresh = false;
+        Refresh();
     }
 }
 
@@ -288,22 +302,56 @@ void ContentBrowserPanel::OnAssetDoubleClicked(const AssetEntry& entry)
     if (entry.isDirectory)
     {
         m_NextDirectory = entry.path;
+        return;
     }
+
     if (entry.type == EditorAssetType::Scene)
     {
         EditorLayer::Get().GetSceneManager().OpenScene(entry.path);
+        return;
     }
+
+    auto scene = EditorLayer::Get().GetSceneManager().GetActiveScene();
+    if (!scene)
+    {
+        return;
+    }
+
     if (entry.type == EditorAssetType::Prefab)
     {
-        PrefabSerializer::Deserialize(EditorLayer::Get().GetSceneManager().GetActiveScene().get(), entry.path.string());
+        PrefabSerializer::Deserialize(scene.get(), entry.path.string());
     }
     if (entry.type == EditorAssetType::Model)
     {
-        Entity entity = EditorLayer::Get().GetSceneManager().GetActiveScene()->CreateEntity(entry.name);
+        Entity entity = scene->CreateEntity(entry.name);
         auto& modelcomp = entity.AddComponent<ModelComponent>();
         modelcomp.ModelPath = Project::GetRelativePath(entry.path);
 
-        EntitySelectedEvent e((entt::entity)entity, EditorLayer::Get().GetSceneManager().GetActiveScene().get());
+        EntitySelectedEvent e((entt::entity)entity, scene.get());
+        Application::Get().OnEvent(e);
+    }
+    if (entry.type == EditorAssetType::Texture)
+    {
+        Entity entity = scene->CreateEntity(entry.name);
+        auto& sprite = entity.AddComponent<SpriteComponent>();
+        sprite.TexturePath = Project::GetRelativePath(entry.path);
+        EntitySelectedEvent e((entt::entity)entity, scene.get());
+        Application::Get().OnEvent(e);
+    }
+    if (entry.type == EditorAssetType::Audio)
+    {
+        Entity entity = scene->CreateEntity(entry.name);
+        auto& audiocomp = entity.AddComponent<AudioComponent>();
+        audiocomp.SoundPath = entry.path.string();
+        EntitySelectedEvent e((entt::entity)entity, scene.get());
+        Application::Get().OnEvent(e);
+    }
+    if (entry.type == EditorAssetType::Shader)
+    {
+        Entity entity = scene->CreateEntity(entry.name);
+        auto& shader = entity.AddComponent<ShaderComponent>();
+        shader.ShaderPath = Project::GetRelativePath(entry.path);
+        EntitySelectedEvent e((entt::entity)entity, scene.get());
         Application::Get().OnEvent(e);
     }
 }
@@ -426,8 +474,11 @@ EditorAssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::p
         {".cs", EditorAssetType::Script},      {".obj", EditorAssetType::Model},
         {".gltf", EditorAssetType::Model},      {".glb", EditorAssetType::Model},
         {".png", EditorAssetType::Texture},     {".jpg", EditorAssetType::Texture},
-        {".tga", EditorAssetType::Texture},     {".wav", EditorAssetType::Audio},
-        {".ogg", EditorAssetType::Audio},       {".mp3", EditorAssetType::Audio}};
+        {".tga", EditorAssetType::Texture},     {".bmp", EditorAssetType::Texture},
+        {".wav", EditorAssetType::Audio},       {".ogg", EditorAssetType::Audio},
+        {".mp3", EditorAssetType::Audio},       {".glsl", EditorAssetType::Shader},
+        {".vs", EditorAssetType::Shader},       {".fs", EditorAssetType::Shader},
+        {".vert", EditorAssetType::Shader},     {".frag", EditorAssetType::Shader}};
 
     std::string ext = path.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);

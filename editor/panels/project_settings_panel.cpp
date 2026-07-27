@@ -338,7 +338,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Button("Save Project Settings"))
         {
             std::filesystem::path path =
-                project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
+                project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
             EditorProjectSerializer::Serialize(project, path);
         }
     }

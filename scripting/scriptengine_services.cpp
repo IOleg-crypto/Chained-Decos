@@ -103,7 +103,7 @@ std::filesystem::path ResolveCoralDirectory() {
 #endif
 
     if (auto project = Project::GetActive()) {
-        const std::filesystem::path projectDir = project->GetConfig().ProjectDirectory;
+        const std::filesystem::path projectDir = project->GetProjectDirectoryForProject();
         candidateDirs.push_back(projectDir);
         AppendBuildBinCandidates(candidateDirs, projectDir);
     }
@@ -138,7 +138,7 @@ std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path &coral
     
     if (auto project = Project::GetActive()) {
         coreCandidates.push_back(project->GetConfig().Scripting.ModuleDirectory / "Chained.Managed.dll");
-        AppendBuildBinCandidates(coreCandidates, project->GetConfig().ProjectDirectory);
+        AppendBuildBinCandidates(coreCandidates, project->GetProjectDirectoryForProject());
     }
     
     const std::filesystem::path exeDir = GetCurrentBinaryDirectory();

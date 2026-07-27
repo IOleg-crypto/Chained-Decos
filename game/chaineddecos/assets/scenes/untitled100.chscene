@@ -1,4 +1,5 @@
 Scene: Untitled Scene
+SceneType: 0
 Background:
   Mode: 2
   Color: [0, 123, 0, 124]
@@ -19,1007 +20,425 @@ Skybox:
   Brightness: -0.699999988
   Contrast: 0.449999988
 Fog:
-  Enabled: false
+  Enabled: true
   Color: [255, 255, 255, 255]
   Density: 0.100000001
   Start: 180
   End: 174
 DebugSettings:
   DiagnosticMode: 0
-  DrawColliders: true
+  DrawColliders: false
   DrawHierarchy: false
-  DrawCollisionModelBox: true
-  DrawGrid: true
+  DrawGrid: false
   DrawSelection: true
   DrawLights: true
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 5204933504822756341
-    TagComponent:
-      Tag: Empty Entity
+  - Entity: 2728318674159281804
+    ModelComponent:
+      ModelPath: ""
+      MaterialPaths:
+        []
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ""
-      Materials:
-        []
-  - Entity: 11859063027363205809
     TagComponent:
-      Tag: rail#3d_copy_copy
-    TransformComponent:
-      Translation: [394.406952, 36.0981331, -15.4183016]
-      Rotation: [3.13979626, -1.54386234, -1.49447083]
-      Scale: [2.81729794, 1.83831346, 2.52311802]
+      Tag: Empty Entity
+    IDComponent:
+      {}
+  - Entity: 10680602693042542455
     ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 3962667947486927982
-    TagComponent:
-      Tag: anim_mode
+      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
+      MaterialPaths:
+        - models/pilot/animated_civilian_helicopter/scene_material_0.chmat
+        - models/pilot/animated_civilian_helicopter/scene_material_1.chmat
     TransformComponent:
-      Translation: [428.76062, 30.1878853, 305.481506]
-      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
-      Scale: [0.999992847, 0.999961555, 0.999930501]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/bridge.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-9.29998016, -130.776825, -0.718267083]
-      Size: [20.2556896, 277.196045, 14.2480259]
-      AutoCalculate: true
-    AnimationComponent:
-      AnimationPath: ""
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
-  - Entity: 1996324266450563914
-    TagComponent:
-      Tag: wooden_bridge
-    TransformComponent:
-      Translation: [226.774567, 19.4414101, 119.315414]
-      Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
-      Scale: [7.04011488, 8.74738693, 19.0374851]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: "*1"
-            OverrideMetallicRoughness: true
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 1
-      Enabled: true
-      Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
-      ModelHandle: 21545
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-      AutoCalculate: false
-  - Entity: 11499449198343814881
-    TagComponent:
-      Tag: anim_mode#3
-    TransformComponent:
-      Translation: [440.960266, 32.5502625, 581.221497]
-      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
-      Scale: [0.999992847, 0.999961555, 0.999930501]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/bridge.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-9.29998016, -130.776825, -0.718267083]
-      Size: [20.2556896, 277.196045, 14.2480259]
-      AutoCalculate: true
-    AnimationComponent:
-      AnimationPath: ""
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
-  - Entity: 17079309488884899572
-    TagComponent:
-      Tag: anim_mode#4
-    TransformComponent:
-      Translation: [456.769592, 92.3261108, 838.863159]
-      Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
-      Scale: [0.999980867, 1.0000428, 1.00002789]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/bridge.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-9.29998016, -130.776825, -0.718267083]
-      Size: [20.2556896, 277.196045, 14.2480259]
-      AutoCalculate: true
-    AnimationComponent:
-      AnimationPath: ""
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
-  - Entity: 18441510849027507452
-    TagComponent:
-      Tag: anim_mode#2
-    TransformComponent:
-      Translation: [424.876801, 17.5073452, 22.4167747]
-      Rotation: [-1.59236383, 0.0545779206, 0.0118380217]
-      Scale: [0.999992907, 1.36125314, 0.999930501]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/bridge.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-9.29998016, -130.776825, -0.718267083]
-      Size: [20.2556896, 277.196045, 14.2480259]
-      AutoCalculate: true
-    AnimationComponent:
-      AnimationPath: ""
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
-  - Entity: 16057276512691593213
-    TagComponent:
-      Tag: Static Collider
-    TransformComponent:
-      Translation: [-8.81565094, 14.7408161, -39.2663612]
+      Translation: [-216.192169, -7.62939453e-06, 0]
       Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [8.60000038, 0, 0]
-      Size: [19.1000004, 4.19999981, 16]
-      AutoCalculate: true
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.endgamezone
-  - Entity: 193077798077705471
+      Scale: [46.0502129, 47.2513962, 53.7656746]
     TagComponent:
-      Tag: rail#3d
-    TransformComponent:
-      Translation: [124.947281, 34.3363914, -15.4183016]
-      Rotation: [3.14005208, -1.54395568, -1.59915721]
-      Scale: [2.81767035, 1.83825684, 2.5230813]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 9172781978797212155
-    TagComponent:
-      Tag: rail#3d
-    TransformComponent:
-      Translation: [224.289001, -18.0577698, -348.917694]
-      Rotation: [0.00018337823, 0.0685081109, -4.0567109e-05]
-      Scale: [417.830475, 336.553497, 246.064026]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/building/scene.gltf
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface2_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface3_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface4_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 3
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface5_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 4
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface6_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 5
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/building/textures/standardSurface8_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.600000024
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 6
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-0.470180094, -1.86820998e-05, -2.96693921]
-      Size: [4.61537361, 1.63612497, 3.86329746]
-      AutoCalculate: true
-  - Entity: 7094686869644715316
-    TagComponent:
-      Tag: arena_two
-    TransformComponent:
-      Translation: [-949.601318, 51.8037796, 331.382965]
-      Rotation: [2.86779284, 1.33893979, 2.90103149]
-      Scale: [20.9453735, 17.1169147, 17.6528664]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/container_ship/scene.gltf
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/container_ship/textures/Bridge_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: models/container_ship/textures/Bridge_normal.png
-            OverrideNormal: true
-            MetallicRoughnessPath: models/container_ship/textures/Bridge_metallicRoughness.png
-            OverrideMetallicRoughness: true
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [255, 255, 255, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/container_ship/textures/Hull_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: models/container_ship/textures/Hull_normal.png
-            OverrideNormal: true
-            MetallicRoughnessPath: models/container_ship/textures/Hull_metallicRoughness.png
-            OverrideMetallicRoughness: true
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/container_ship/textures/Containers_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: models/container_ship/textures/Containers_normal.png
-            OverrideNormal: true
-            MetallicRoughnessPath: models/container_ship/textures/Containers_metallicRoughness.png
-            OverrideMetallicRoughness: true
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 3
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-33.2911491, -0.000321388245, -6.43264723]
-      Size: [91.2529068, 16.8988457, 12.8652897]
-      AutoCalculate: true
+      Tag: Empty Entity
+    IDComponent:
+      {}
     AnimationComponent:
-      AnimationPath: models/container_ship/scene.gltf
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
       BlendDuration: 0
-  - Entity: 5796298439135209667
-    TagComponent:
-      Tag: Camera
-    TransformComponent:
-      Translation: [-11.533452, -177.509445, -76.3437347]
-      Rotation: [3.01941967, 0.0261799432, 3.14159274]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      Primary: true
-      FixedAspectRatio: false
-      Projection:
-        Projection: 0
-        VerticalFOV: 60.0000038
-        Near: 0.00999999978
-        Far: 1000
-      Enabled: true
-      TargetTag: Player
-      Distance: 26
-      Yaw: 178.5
-      Pitch: -7
-      Sensitivity: 0.899999976
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.cameracontroller
-  - Entity: 6428169142076434776
-    TagComponent:
-      Tag: Entity
-    TransformComponent:
-      Translation: [411.734222, 21.1899738, 188.952682]
-      Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
-      Scale: [0.999889433, 1, 0.979455113]
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 6064633921243342758
     ModelComponent:
-      ModelHandle: 0
       ModelPath: models/stairs.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
+      MaterialPaths:
+        - models/stairs_material_0.chmat
+    TransformComponent:
+      Translation: [46.4636726, -2.98017597, 14.336463]
+      Rotation: [-3.14153385, -0.624083161, -3.1415863]
+      Scale: [2.29999304, 2.70000005, 0.979451716]
+    TagComponent:
+      Tag: Entity_copy
+    IDComponent:
+      {}
+    HierarchyComponent:
+      Parent: -1
+      Children:
+        []
     ColliderComponent:
       Type: 0
-      Enabled: true
-      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
       Size: [34.1756821, 8.59185219, 22.6057091]
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
       AutoCalculate: true
-  - Entity: 2241149956455545874
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    Hierarchy:
+      Parent: 0
+      Children:
+        []
+  - Entity: 1295158128682646344
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [89.7119217, 34.3363914, -15.4183016]
+      Rotation: [-1.96055889, -0.999783337, -2.69811749]
+      Scale: [2.81780839, 1.8383373, 2.52324486]
     TagComponent:
       Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [55.4628983, 34.3363914, -15.9756889]
-      Rotation: [-0.0299999993, 0.0617705695, -1.59763551]
-      Scale: [2.81781125, 1.83835185, 2.52317905]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 1326311650816898569
-    TagComponent:
-      Tag: Player
-    TransformComponent:
-      Translation: [-12.2089796, -181.324051, -50.5463715]
-      Rotation: [0, -1.59697628, 0]
-      Scale: [0.999942005, 1, 0.999942005]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/player_low.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ShaderComponent:
-      ShaderPath: ""
-      Enabled: true
-      Uniforms:
+    IDComponent:
+      {}
+    HierarchyComponent:
+      Parent: -1
+      Children:
         []
     ColliderComponent:
       Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
       Enabled: true
-      Offset: [-1.0896225, 0.00202974328, -0.293091357]
-      Size: [2.179245, 6.18353701, 1.20018852]
       AutoCalculate: true
-    RigidBodyComponent:
-      Mass: 91.3000031
-      Velocity: [0, -38.7638206, 0]
-      UseGravity: true
-      IsKinematic: false
-      IsGrounded: false
-    AudioComponent:
-      SoundHandle: 10242276551923400533
-      SoundPath: audio/storegraphic-soft-wind-477404.mp3
-      Volume: 1
-      Pitch: 1
-      Loop: true
-      PlayOnStart: false
-      Spatialized: false
-      Position: [0, 0, 0]
-      MinDistance: 1
-      MaxDistance: 100
-    PlayerComponent:
-      MovementSpeed: 15
-      JumpForce: 10
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    Hierarchy:
+      Parent: 0
+      Children:
+        []
+  - Entity: 217210127212770073
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [160.559677, 34.3363914, -15.4183016]
+      Rotation: [-2.88122821, -1.07542729, -1.95391703]
+      Scale: [2.81780005, 1.83833647, 2.52321053]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 11053255314081653602
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [195.275909, 34.3363914, -15.4183016]
+      Rotation: [-2.1531477, -1.10677683, -2.63240695]
+      Scale: [2.81779408, 1.83833039, 2.52320075]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 2562263663181998965
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [232.729095, 34.3363914, -15.4183016]
+      Rotation: [3.1402328, -1.54398417, -1.52254927]
+      Scale: [2.81773686, 1.83830583, 2.52309632]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 5967097730784712040
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [269.359863, 34.3363914, -15.4183016]
+      Rotation: [3.14023447, -1.543975, -1.55569565]
+      Scale: [2.81769967, 1.83829546, 2.52312875]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 7772933172421174645
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [304.469788, 34.3363914, -15.4183016]
+      Rotation: [3.14017534, -1.54393637, -1.68613875]
+      Scale: [2.81769824, 1.83826065, 2.52310705]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 8791625222606561716
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [340.353027, 34.3363914, -15.4183016]
+      Rotation: [3.14018416, -1.54396355, -1.52885783]
+      Scale: [2.81768346, 1.83830261, 2.52313828]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 8982711742810159238
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [369.179901, 34.9479713, -15.4183016]
+      Rotation: [3.14019299, -1.54396594, -1.55295646]
+      Scale: [2.81770563, 1.83824468, 2.52313542]
+    TagComponent:
+      Tag: rail#3d_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 1283719283719285
+    ModelComponent:
+      ModelPath: models/arena.glb
+      MaterialPaths:
+        - models/arena_material_0.chmat
+        - models/arena_material_1.chmat
+        - models/arena_material_2.chmat
+        - models/arena_material_3.chmat
+        - models/arena_material_4.chmat
+        - models/arena_material_5.chmat
+        - models/arena_material_6.chmat
+        - models/arena_material_7.chmat
+        - models/arena_material_8.chmat
+    TransformComponent:
+      Translation: [-1.52065945, -4.32776833, -35.4009895]
+      Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
+      Scale: [0.99993974, 0.999890089, 0.999929249]
+    TagComponent:
+      Tag: Arena
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [-0.482694626, -1.64976311, 21.6490402]
+      Radius: 47.239151
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 10653066213482940164
+    ModelComponent:
+      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
+      MaterialPaths:
+        - models_backup/mystery_skulls_ghost_lewis/scene_material_0.chmat
+        - models_backup/mystery_skulls_ghost_lewis/scene_material_1.chmat
+    TransformComponent:
+      Translation: [538.350159, 143.252487, 2173.47119]
+      Rotation: [0, -0, 0]
+      Scale: [26.4252186, 28.1715183, 26.7638988]
+    TagComponent:
+      Tag: minecrafthouse
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [1.20832253, 0.709288359, 2.00317812]
+      Offset: [-0.604161263, -0.379055023, -2.00118709]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    AnimationComponent:
+      BlendDuration: 0
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 5150207293164281694
+    CameraComponent:
+      Primary: false
+      FixedAspectRatio: false
+      IsOrbitCamera: false
+      TargetEntityTag: Player
+      OrbitDistance: 10
+      OrbitYaw: 0
+      OrbitPitch: 20
       LookSensitivity: 0.899999976
+      nearClip: 0.100000001
+      farClip: 1000
+      verticalFov: 60
+      orthographicSize: 10
+    TransformComponent:
+      Translation: [-143.294968, 200.081146, -337.524475]
+      Rotation: [376.001373, -3188.74268, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: SceneCamera
+    IDComponent:
+      {}
+    HierarchyComponent:
+      Parent: -1
+      Children:
+        []
+    Hierarchy:
+      Parent: 0
+      Children:
+        []
+  - Entity: 1326311650816898569
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.playercontroller
@@ -1038,1174 +457,454 @@ Entities:
         - ClassName: chaineddecos.scripts.gamehud
         - ClassName: chaineddecos.scripts.playerfall
         - ClassName: chaineddecos.scripts.spawnzone
+    ModelComponent:
+      ModelPath: models/player_low.glb
+      MaterialPaths:
+        - models/player_low_material_0.chmat
+    TransformComponent:
+      Translation: [-12.2089796, -181.324051, -50.5463715]
+      Rotation: [0, -1.59697628, 0]
+      Scale: [0.999942005, 1, 0.999942005]
+    TagComponent:
+      Tag: Player
+    IDComponent:
+      {}
+    HierarchyComponent:
+      Parent: -1
+      Children:
+        []
+    ShaderComponent:
+      ShaderPath: ""
+      Uniforms:
+        []
+      Enabled: true
+    ColliderComponent:
+      Type: 0
+      Size: [2.179245, 6.18353701, 1.20018852]
+      Offset: [-1.0896225, 0.00202974328, -0.293091357]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    PlayerComponent:
+      MovementSpeed: 15
+      JumpForce: 10
+      LookSensitivity: 0.899999976
+    AudioComponent:
+      SoundPath: audio/storegraphic-soft-wind-477404.mp3
+      Volume: 1
+      Pitch: 1
+      Loop: true
+      PlayOnStart: false
+      Spatialized: false
+      Position: [0, 0, 0]
+      MinDistance: 1
+      MaxDistance: 100
+      IsPlaying: false
     Hierarchy:
       Parent: 0
       Children:
         []
-  - Entity: 5150207293164281694
-    TagComponent:
-      Tag: SceneCamera
-    TransformComponent:
-      Translation: [-143.294968, 200.081146, -337.524475]
-      Rotation: [376.001373, -3188.74268, 0]
-      Scale: [1, 1, 1]
-    CameraComponent:
-      Primary: false
-      FixedAspectRatio: false
-      Projection:
-        Projection: 0
-        VerticalFOV: 60.0000038
-        Near: 0.00999999978
-        Far: 1000
-      Enabled: false
-      TargetTag: Player
-      Distance: 10
-      Yaw: 0
-      Pitch: 20
-      Sensitivity: 0.899999976
-    Hierarchy:
-      Parent: 0
-      Children:
-        []
-  - Entity: 10653066213482940164
-    TagComponent:
-      Tag: minecrafthouse
-    TransformComponent:
-      Translation: [538.350159, 143.252487, 2173.47119]
-      Rotation: [0, -0, 0]
-      Scale: [26.4252186, 28.1715183, 26.7638988]
+  - Entity: 2241149956455545874
     ModelComponent:
-      ModelHandle: 0
-      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models_backup/mystery_skulls_ghost_lewis/textures/Ghost_texture_baseColor.png
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-0.604161263, -0.379055023, -2.00118709]
-      Size: [1.20832253, 0.709288359, 2.00317812]
-      AutoCalculate: true
-    AnimationComponent:
-      AnimationPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
-  - Entity: 1283719283719285
-    TagComponent:
-      Tag: Arena
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
     TransformComponent:
-      Translation: [-1.52065945, -4.32776833, -35.4009895]
-      Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
-      Scale: [0.99993974, 0.999890089, 0.999929249]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/arena.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [143, 0, 0, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [7, 233, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [3, 255, 255, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [90, 84, 77, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 3
-          Target: 0
-          Material:
-            AlbedoColor: [91, 86, 85, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 4
-          Target: 0
-          Material:
-            AlbedoColor: [102, 70, 58, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 5
-          Target: 0
-          Material:
-            AlbedoColor: [119, 111, 102, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 6
-          Target: 0
-          Material:
-            AlbedoColor: [119, 111, 102, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 7
-          Target: 0
-          Material:
-            AlbedoColor: [83, 57, 47, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 8
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 3
-      Enabled: true
-      Offset: [-0.482694626, -1.64976311, 21.6490402]
-      Radius: 47.239151
-      AutoCalculate: true
-  - Entity: 8982711742810159238
+      Translation: [55.4628983, 34.3363914, -15.9756889]
+      Rotation: [-0.0299999993, 0.0617705695, -1.59763551]
+      Scale: [2.81781125, 1.83835185, 2.52317905]
     TagComponent:
       Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [369.179901, 34.9479713, -15.4183016]
-      Rotation: [3.14019299, -1.54396594, -1.55295646]
-      Scale: [2.81770563, 1.83824468, 2.52313542]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
+    IDComponent:
+      {}
     ColliderComponent:
       Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
       Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 8791625222606561716
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [340.353027, 34.3363914, -15.4183016]
-      Rotation: [3.14018416, -1.54396355, -1.52885783]
-      Scale: [2.81768346, 1.83830261, 2.52313828]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
       Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 7772933172421174645
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [304.469788, 34.3363914, -15.4183016]
-      Rotation: [3.14017534, -1.54393637, -1.68613875]
-      Scale: [2.81769824, 1.83826065, 2.52310705]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
       Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
       AutoCalculate: true
-  - Entity: 5967097730784712040
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [269.359863, 34.3363914, -15.4183016]
-      Rotation: [3.14023447, -1.543975, -1.55569565]
-      Scale: [2.81769967, 1.83829546, 2.52312875]
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 6428169142076434776
     ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 2562263663181998965
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [232.729095, 34.3363914, -15.4183016]
-      Rotation: [3.1402328, -1.54398417, -1.52254927]
-      Scale: [2.81773686, 1.83830583, 2.52309632]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 11053255314081653602
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [195.275909, 34.3363914, -15.4183016]
-      Rotation: [-2.1531477, -1.10677683, -2.63240695]
-      Scale: [2.81779408, 1.83833039, 2.52320075]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 217210127212770073
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [160.559677, 34.3363914, -15.4183016]
-      Rotation: [-2.88122821, -1.07542729, -1.95391703]
-      Scale: [2.81780005, 1.83833647, 2.52321053]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-  - Entity: 1295158128682646344
-    TagComponent:
-      Tag: rail#3d_copy
-    TransformComponent:
-      Translation: [89.7119217, 34.3363914, -15.4183016]
-      Rotation: [-1.96055889, -0.999783337, -2.69811749]
-      Scale: [2.81780839, 1.8383373, 2.52324486]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/toy_train/train_vagon.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*0"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: "*1"
-            OverrideAlbedo: true
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 0
-            Roughness: 0.823941708
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 2
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    ColliderComponent:
-      Type: 0
-      Enabled: true
-      Offset: [-1.23305595, -6.83498478, -4.18938494]
-      Size: [2.48870611, 13.512085, 4.18936396]
-      AutoCalculate: true
-    Hierarchy:
-      Parent: 0
-      Children:
-        []
-  - Entity: 6064633921243342758
-    TagComponent:
-      Tag: Entity_copy
-    TransformComponent:
-      Translation: [46.4636726, -2.98017597, 14.336463]
-      Rotation: [-3.14153385, -0.624083161, -3.1415863]
-      Scale: [2.29999304, 2.70000005, 0.979451716]
-    ModelComponent:
-      ModelHandle: 0
       ModelPath: models/stairs.glb
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
+      MaterialPaths:
+        - models/stairs_material_0.chmat
+    TransformComponent:
+      Translation: [411.734222, 21.1899738, 188.952682]
+      Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
+      Scale: [0.999889433, 1, 0.979455113]
+    TagComponent:
+      Tag: Entity
+    IDComponent:
+      {}
     ColliderComponent:
       Type: 0
-      Enabled: true
-      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
       Size: [34.1756821, 8.59185219, 22.6057091]
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
       AutoCalculate: true
-    Hierarchy:
-      Parent: 0
-      Children:
-        []
-  - Entity: 10680602693042542455
-    TagComponent:
-      Tag: Empty Entity
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 5796298439135209667
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.cameracontroller
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: false
+      TargetEntityTag: Player
+      OrbitDistance: 10
+      OrbitYaw: 0
+      OrbitPitch: 20
+      LookSensitivity: 0.899999976
+      nearClip: 0.100000001
+      farClip: 1000
+      verticalFov: 60
+      orthographicSize: 10
     TransformComponent:
-      Translation: [-216.192169, -7.62939453e-06, 0]
-      Rotation: [0, -0, 0]
-      Scale: [46.0502129, 47.2513962, 53.7656746]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
-      Materials:
-        - Name: ""
-          Index: 0
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_baseColor.jpeg
-            OverrideAlbedo: true
-            NormalMapPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_normal.png
-            OverrideNormal: true
-            MetallicRoughnessPath: models/pilot/animated_civilian_helicopter/textures/Helicopter_metallicRoughness.png
-            OverrideMetallicRoughness: true
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-        - Name: ""
-          Index: 1
-          Target: 0
-          Material:
-            AlbedoColor: [255, 255, 255, 255]
-            AlbedoPath: ""
-            OverrideAlbedo: false
-            NormalMapPath: ""
-            OverrideNormal: false
-            MetallicRoughnessPath: ""
-            OverrideMetallicRoughness: false
-            OcclusionMapPath: ""
-            OverrideOcclusion: false
-            EmissivePath: ""
-            EmissiveColor: [0, 0, 0, 255]
-            EmissiveIntensity: 0
-            OverrideEmissive: false
-            ShaderPath: ""
-            OverrideShader: false
-            Metalness: 1
-            Roughness: 1
-            DoubleSided: false
-            Transparent: false
-            Alpha: 1
-    AnimationComponent:
-      AnimationPath: models/pilot/animated_civilian_helicopter/scene.gltf
-      CurrentAnimation: 0
-      IsLooping: true
-      IsPlaying: true
-      BlendDuration: 0
-  - Entity: 2728318674159281804
+      Translation: [581.552856, 140.187912, 161.454971]
+      Rotation: [0.0870005861, -1.90199971, 0]
+      Scale: [1, 1, 1]
     TagComponent:
-      Tag: Empty Entity
+      Tag: Camera
+    IDComponent:
+      {}
+  - Entity: 7094686869644715316
+    ModelComponent:
+      ModelPath: models/container_ship/scene.gltf
+      MaterialPaths:
+        - models/container_ship/scene_material_0.chmat
+        - models/container_ship/scene_material_1.chmat
+        - models/container_ship/scene_material_2.chmat
+        - models/container_ship/scene_material_3.chmat
+    TransformComponent:
+      Translation: [-949.601318, 51.8037796, 331.382965]
+      Rotation: [2.86779284, 1.33893979, 2.90103149]
+      Scale: [20.9453735, 17.1169147, 17.6528664]
+    TagComponent:
+      Tag: arena_two
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [91.2529068, 16.8988457, 12.8652897]
+      Offset: [-33.2911491, -0.000321388245, -6.43264723]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    AnimationComponent:
+      BlendDuration: 0
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 9172781978797212155
+    ModelComponent:
+      ModelPath: models/building/scene.gltf
+      MaterialPaths:
+        - models/building/scene_material_0.chmat
+        - models/building/scene_material_1.chmat
+        - models/building/scene_material_2.chmat
+        - models/building/scene_material_3.chmat
+        - models/building/scene_material_4.chmat
+        - models/building/scene_material_5.chmat
+        - models/building/scene_material_6.chmat
+    TransformComponent:
+      Translation: [224.289001, -18.0577698, -348.917694]
+      Rotation: [0.00018337823, 0.0685081109, -4.0567109e-05]
+      Scale: [417.830475, 336.553497, 246.064026]
+    TagComponent:
+      Tag: rail#3d
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [4.61537361, 1.63612497, 3.86329746]
+      Offset: [-0.470180094, -1.86820998e-05, -2.96693921]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 193077798077705471
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [124.947281, 34.3363914, -15.4183016]
+      Rotation: [3.14005208, -1.54395568, -1.59915721]
+      Scale: [2.81767035, 1.83825684, 2.5230813]
+    TagComponent:
+      Tag: rail#3d
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 16057276512691593213
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.endgamezone
+    TransformComponent:
+      Translation: [-8.81565094, 14.7408161, -39.2663612]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: Static Collider
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [19.1000004, 4.19999981, 16]
+      Offset: [8.60000038, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 18441510849027507452
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      MaterialPaths:
+        - models/bridge_material_0.chmat
+    TransformComponent:
+      Translation: [424.876801, 17.5073452, 22.4167747]
+      Rotation: [-1.59236383, 0.0545779206, 0.0118380217]
+      Scale: [0.999992907, 1.36125314, 0.999930501]
+    TagComponent:
+      Tag: anim_mode#2
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [20.2556896, 277.196045, 14.2480259]
+      Offset: [-9.29998016, -130.776825, -0.718267083]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    AnimationComponent:
+      BlendDuration: 0
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 17079309488884899572
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      MaterialPaths:
+        - models/bridge_material_0.chmat
+    TransformComponent:
+      Translation: [456.769592, 92.3261108, 838.863159]
+      Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
+      Scale: [0.999980867, 1.0000428, 1.00002789]
+    TagComponent:
+      Tag: anim_mode#4
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [20.2556896, 277.196045, 14.2480259]
+      Offset: [-9.29998016, -130.776825, -0.718267083]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    AnimationComponent:
+      BlendDuration: 0
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 11499449198343814881
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      MaterialPaths:
+        - models/bridge_material_0.chmat
+    TransformComponent:
+      Translation: [440.960266, 32.5502625, 581.221497]
+      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
+      Scale: [0.999992847, 0.999961555, 0.999930501]
+    TagComponent:
+      Tag: anim_mode#3
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [20.2556896, 277.196045, 14.2480259]
+      Offset: [-9.29998016, -130.776825, -0.718267083]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    AnimationComponent:
+      BlendDuration: 0
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 1996324266450563914
+    ModelComponent:
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+      MaterialPaths:
+        - models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb_material_0.chmat
+        - models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb_material_1.chmat
+    TransformComponent:
+      Translation: [226.774567, 19.4414101, 119.315414]
+      Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
+      Scale: [7.04011488, 8.74738693, 19.0374851]
+    TagComponent:
+      Tag: wooden_bridge
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 1
+      Size: [0.5, 0.5, 0.5]
+      Offset: [-4.6624608, -3.7252903e-08, -11.7852259]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+      IsColliding: false
+  - Entity: 3962667947486927982
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      MaterialPaths:
+        - models/bridge_material_0.chmat
+    TransformComponent:
+      Translation: [428.76062, 30.1878853, 305.481506]
+      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
+      Scale: [0.999992847, 0.999961555, 0.999930501]
+    TagComponent:
+      Tag: anim_mode
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [20.2556896, 277.196045, 14.2480259]
+      Offset: [-9.29998016, -130.776825, -0.718267083]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    AnimationComponent:
+      BlendDuration: 0
+      IsLooping: true
+      PlayOnStart: true
+  - Entity: 11859063027363205809
+    ModelComponent:
+      ModelPath: models/toy_train/train_vagon.glb
+      MaterialPaths:
+        - models/toy_train/train_vagon_material_0.chmat
+        - models/toy_train/train_vagon_material_1.chmat
+        - models/toy_train/train_vagon_material_2.chmat
+    TransformComponent:
+      Translation: [394.406952, 36.0981331, -15.4183016]
+      Rotation: [3.13979626, -1.54386234, -1.49447083]
+      Scale: [2.81729794, 1.83831346, 2.52311802]
+    TagComponent:
+      Tag: rail#3d_copy_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [2.48870611, 13.512085, 4.18936396]
+      Offset: [-1.23305595, -6.83498478, -4.18938494]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+  - Entity: 5204933504822756341
+    ModelComponent:
+      ModelPath: ""
+      MaterialPaths:
+        []
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
-    ModelComponent:
-      ModelHandle: 0
-      ModelPath: ""
-      Materials:
-        []
+    TagComponent:
+      Tag: Empty Entity
+    IDComponent:
+      {}

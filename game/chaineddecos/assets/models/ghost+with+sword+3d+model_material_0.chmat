@@ -1,9 +1,9 @@
 Material:
-  Name: Carpet
+  Name: tripo_mat_a209787d-7754-49ae-942f-539aa291f896
   AlbedoColor:
-    - 0.564700007
-    - 0
-    - 0
+    - 1
+    - 1
+    - 1
     - 1
   EmissiveColor:
     - 0
@@ -11,7 +11,7 @@ Material:
     - 0
     - 1
   EmissiveIntensity: 0
-  Metalness: 0
+  Metalness: 1
   Roughness: 1
   Transparent: false
   Alpha: 1
