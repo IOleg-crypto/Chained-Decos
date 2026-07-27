@@ -27,16 +27,6 @@ void DebugRenderer::Initialize()
 
 void DebugRenderer::Shutdown()
 {
-    m_GridPlaneVAO.reset();
-
-    m_Resources.UnitCubeModel.reset();
-    m_Resources.UnitSphereModel.reset();
-    m_Resources.UnitCapsuleModel.reset();
-    m_Resources.WireCubeModel.reset();
-
-    m_Lines.VBO.reset();
-    m_Lines.VAO.reset();
-    m_Lines.Vertices.clear();
 }
 
 void DebugRenderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color)

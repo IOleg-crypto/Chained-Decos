@@ -88,12 +88,10 @@ void Renderer::Shutdown()
 
     m_Data->Lighting.LightSSBO.reset();
     m_Data->Shaders.reset();
-    m_Data->GlobalUBO.reset();
 
     m_Data->Geometry.FullscreenQuadVAO.reset();
+    m_Data->Geometry.QuadVAO.reset();
     m_Data->CameraUBO.reset();
-    m_Data->Geometry.BillboardVAO.reset();
-    m_Data->Geometry.SpriteVAO.reset();
 
     m_Data->Instancing.VAOCache.clear();
     m_Data->Instancing.Buffer.reset();
@@ -332,44 +330,29 @@ void Renderer::DrawSkybox(uint32_t textureId, int skyboxMode, bool isHDR, float 
     shaderAsset->GetShader()->SetInt("u_VFlipped", flipped ? 1 : 0);
 
     // 3. Bind Textures and Draw Mesh
+    const char* texUniform = "u_Panorama";
+    uint32_t texFlags = 0; // 0 = 2D, true = cubemap
     if (skyboxMode == 2)
     {
-        GraphicsDevice::Get().SetTexture(0, textureId, true);
-        shaderAsset->GetShader()->SetInt("u_Cubemap", 0);
-
-        if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
-        {
-            auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
-            mesh.VAO->Bind();
-            GraphicsDevice::Get().DrawIndexed(mesh.VAO, 36);
-            mesh.VAO->Unbind();
-        }
+        texUniform = "u_Cubemap";
+        texFlags = true;
     }
     else if (skyboxMode == 1)
     {
-        GraphicsDevice::Get().SetTexture(0, textureId);
-        shaderAsset->GetShader()->SetInt("u_CrossMap", 0);
-
-        if (m_Data->Skybox.SkyboxCubeModel && !m_Data->Skybox.SkyboxCubeModel->Meshes.empty())
-        {
-            auto& mesh = m_Data->Skybox.SkyboxCubeModel->Meshes[0];
-            mesh.VAO->Bind();
-            GraphicsDevice::Get().DrawIndexed(mesh.VAO, 36);
-            mesh.VAO->Unbind();
-        }
+        texUniform = "u_CrossMap";
     }
-    else if (skyboxMode == 0)
-    {
-        GraphicsDevice::Get().SetTexture(0, textureId);
-        shaderAsset->GetShader()->SetInt("u_Panorama", 0);
 
-        if (m_Data->Skybox.SkyboxSphereModel && !m_Data->Skybox.SkyboxSphereModel->Meshes.empty())
-        {
-            auto& mesh = m_Data->Skybox.SkyboxSphereModel->Meshes[0];
-            mesh.VAO->Bind();
-            GraphicsDevice::Get().DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
-            mesh.VAO->Unbind();
-        }
+    GraphicsDevice::Get().SetTexture(0, textureId, texFlags != 0);
+    shaderAsset->GetShader()->SetInt(texUniform, 0);
+
+    auto& model = (skyboxMode == 0) ? m_Data->Skybox.SkyboxSphereModel : m_Data->Skybox.SkyboxCubeModel;
+    if (model && !model->Meshes.empty())
+    {
+        auto& mesh = model->Meshes[0];
+        mesh.VAO->Bind();
+        uint32_t indexCount = (skyboxMode == 0) ? mesh.TriangleCount * 3 : 36;
+        GraphicsDevice::Get().DrawIndexed(mesh.VAO, indexCount);
+        mesh.VAO->Unbind();
     }
 
     // 4. Restore Render State
@@ -417,7 +400,7 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     PipelineStateGuard stateGuard;
     stateGuard.WithBlend().WithCullNone();
 
-    if (!m_Data->Geometry.BillboardVAO)
+    if (!m_Data->Geometry.QuadVAO)
     {
         float vertices[] = {
             // x,     y,     z,     u,    v,    nx,   ny,   nz
@@ -431,15 +414,15 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
 
-        m_Data->Geometry.BillboardVAO = VertexArray::Create();
-        m_Data->Geometry.BillboardVAO->AddVertexBuffer(vbo);
+        m_Data->Geometry.QuadVAO = VertexArray::Create();
+        m_Data->Geometry.QuadVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
-        m_Data->Geometry.BillboardVAO->SetIndexBuffer(ibo);
+        m_Data->Geometry.QuadVAO->SetIndexBuffer(ibo);
     }
 
-    m_Data->Geometry.BillboardVAO->Bind();
-    GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.BillboardVAO, 6);
-    m_Data->Geometry.BillboardVAO->Unbind();
+    m_Data->Geometry.QuadVAO->Bind();
+    GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.QuadVAO, 6);
+    m_Data->Geometry.QuadVAO->Unbind();
 }
 
 void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
@@ -476,7 +459,7 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
         }
         if (diagIntensity > 0.001f)
         {
-            CH_CORE_INFO("[RENDER DIAG] Applying shader '{}', Intensity={}", shaderAsset->GetPath(), diagIntensity);
+            CH_CORE_TRACE("[RENDER DIAG] Applying shader '{}', Intensity={}", shaderAsset->GetPath(), diagIntensity);
         }
 
         // 1. Set System Uniforms
@@ -574,7 +557,7 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     PipelineStateGuard stateGuard;
     stateGuard.WithBlend().WithCullNone();
 
-    if (!m_Data->Geometry.SpriteVAO)
+    if (!m_Data->Geometry.QuadVAO)
     {
         float vertices[] = {
             // x,     y,     z,     u,    v,    nx,   ny,   nz
@@ -588,15 +571,15 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
         vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
 
-        m_Data->Geometry.SpriteVAO = VertexArray::Create();
-        m_Data->Geometry.SpriteVAO->AddVertexBuffer(vbo);
+        m_Data->Geometry.QuadVAO = VertexArray::Create();
+        m_Data->Geometry.QuadVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
-        m_Data->Geometry.SpriteVAO->SetIndexBuffer(ibo);
+        m_Data->Geometry.QuadVAO->SetIndexBuffer(ibo);
     }
 
-    m_Data->Geometry.SpriteVAO->Bind();
-    GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.SpriteVAO, 6);
-    m_Data->Geometry.SpriteVAO->Unbind();
+    m_Data->Geometry.QuadVAO->Bind();
+    GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.QuadVAO, 6);
+    m_Data->Geometry.QuadVAO->Unbind();
 }
 
 // --- Lighting methods (formerly in LightingManager) ---

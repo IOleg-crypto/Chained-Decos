@@ -4,7 +4,6 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/project/project.h"
-#include "service_locator.h"
 #include <filesystem>
 #include <yaml-cpp/yaml.h>
 
@@ -12,10 +11,19 @@ namespace Chained
 {
 ShaderStorage::ShaderStorage() = default;
 
+void ShaderStorage::Insert(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
+{
+    m_Shaders[name] = shader;
+    if (shader && shader->GetShader())
+    {
+        m_HandleToName[shader->GetShader()->GetNativeHandle()] = name;
+    }
+}
+
 void ShaderStorage::Add(const std::string& name, const std::shared_ptr<ShaderAsset>& shader)
 {
     CH_CORE_ASSERT(!Exists(name), "Shader already exists in library!");
-    m_Shaders[name] = shader;
+    Insert(name, shader);
 }
 
 void ShaderStorage::Add(const std::shared_ptr<ShaderAsset>& shader)
@@ -38,14 +46,7 @@ void ShaderStorage::Load(const std::string& name, const std::string& path)
     auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
     if (shader)
     {
-        if (Exists(name))
-        {
-            m_Shaders[name] = shader;
-        }
-        else
-        {
-            Add(name, shader);
-        }
+        Insert(name, shader);
     }
 }
 
@@ -59,7 +60,7 @@ std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name, c
     auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
     if (shader)
     {
-        m_Shaders[name] = shader;
+        Insert(name, shader);
     }
     return shader;
 }
@@ -108,7 +109,7 @@ std::shared_ptr<ShaderAsset> ShaderStorage::Get(const std::string& name)
     {
         return it->second;
     }
-    CH_CORE_ASSERT(false, "Shader name not found!");
+    CH_CORE_WARN("ShaderStorage: Shader '{}' not found!", name);
     return nullptr;
 }
 
@@ -123,10 +124,14 @@ std::shared_ptr<Shader> ShaderStorage::GetShader(const std::string& name)
 
 std::shared_ptr<ShaderAsset> ShaderStorage::GetById(uint32_t id) const
 {
-    for (const auto& [name, shader] : m_Shaders)
+    auto it = m_HandleToName.find(id);
+    if (it != m_HandleToName.end())
     {
-        if (shader->GetShader() && shader->GetShader()->GetNativeHandle() == id)
-            return shader;
+        auto shaderIt = m_Shaders.find(it->second);
+        if (shaderIt != m_Shaders.end())
+        {
+            return shaderIt->second;
+        }
     }
     return nullptr;
 }
@@ -149,13 +154,34 @@ std::vector<std::string> ShaderStorage::GetNames() const
 void ShaderStorage::ReloadAll()
 {
     CH_CORE_INFO("ShaderStorage: Reloading all shaders...");
-    
+
     for (auto& [name, shader] : m_Shaders)
     {
         if (shader && !shader->GetPath().empty())
         {
             CH_CORE_TRACE("ShaderStorage: Reloading shader '{}' from '{}'", name, shader->GetPath());
             ServiceLocator::Get<AssetManager>()->Reload<ShaderAsset>(shader->GetPath());
+        }
+    }
+
+    // Re-fetch all from cache and update handle map
+    for (auto& [name, shader] : m_Shaders)
+    {
+        if (shader && !shader->GetPath().empty())
+        {
+            shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(shader->GetPath());
+            Insert(name, shader);
+        }
+    }
+}
+void ShaderStorage::RebuildHandleMap()
+{
+    m_HandleToName.clear();
+    for (const auto& [name, shader] : m_Shaders)
+    {
+        if (shader && shader->GetShader())
+        {
+            m_HandleToName[shader->GetShader()->GetNativeHandle()] = name;
         }
     }
 }
