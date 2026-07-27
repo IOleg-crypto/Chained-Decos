@@ -142,8 +142,17 @@ public:
     std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
 
 private:
+    struct StaleAsset
+    {
+        AssetHandle handle;
+        AssetType type;
+        std::string path;
+    };
+
     void ReloadAsset(AssetHandle handle, AssetType type);
     void CheckAssetHotReload();
+    std::vector<StaleAsset> CollectStaleAssets(int thresholdSeconds) const;
+    bool ExecuteLoad(const std::shared_ptr<Asset>& asset, AssetLoader* loader, const std::string& resolved);
 
     // Asset cache. Guarded by m_AssetLock.
     std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
