@@ -1,0 +1,17 @@
+Material:
+  Name: BALOON_BULB
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 0.00039999999
+  EmissiveColor:
+    - 0.992977262
+    - 1
+    - 0.380629063
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0.25999999
+  Roughness: 0.439999998
+  Transparent: true
+  Alpha: 0.00039999999

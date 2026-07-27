@@ -89,18 +89,17 @@ namespace Chained::ComponentUtils
         auto* assets = ServiceLocator::Get<AssetManager>();
         auto handle = assets->LoadAsset(mc.ModelPath, ModelAsset::GetStaticType());
         auto asset = assets->Get<ModelAsset>(mc.ModelPath);
-        if (asset)
+        if (asset && asset->GetState() == AssetState::Ready)
         {
             mc.ModelHandle = asset->GetID();
 
-            // Auto-generate .chmat files if MaterialPaths is empty
-            if (mc.MaterialPaths.empty())
+            const auto& materials = asset->GetMaterials();
+            if (mc.MaterialPaths.empty() || mc.MaterialPaths.size() != materials.size())
             {
                 std::filesystem::path modelPath(mc.ModelPath);
                 std::string modelName = modelPath.stem().string();
                 std::filesystem::path modelDir = modelPath.parent_path();
 
-                const auto& materials = asset->GetMaterials();
                 mc.MaterialPaths.resize(materials.size());
 
                 for (int i = 0; i < (int)materials.size(); i++)

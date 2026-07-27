@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <set>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <unordered_map>
@@ -568,6 +569,48 @@ void AssimpImporter::ProcessMaterials()
             }
         }
     }
+
+    // Remove unreferenced materials (e.g., Assimp's glTF2 importer always appends
+    // a default material even when the model already has real ones).
+    if (m_Data.materials.size() > 1)
+    {
+        std::set<int> usedIndices;
+        for (const auto& mesh : m_Data.meshes)
+        {
+            usedIndices.insert(mesh.materialIndex);
+        }
+
+        std::vector<int> remap(m_Data.materials.size(), -1);
+        std::vector<RawMaterial> filtered;
+        filtered.reserve(usedIndices.size());
+
+        int newIdx = 0;
+        for (int oldIdx = 0; oldIdx < (int)m_Data.materials.size(); ++oldIdx)
+        {
+            if (usedIndices.count(oldIdx))
+            {
+                remap[oldIdx] = newIdx++;
+                filtered.push_back(m_Data.materials[oldIdx]);
+            }
+        }
+
+        if (filtered.size() < m_Data.materials.size())
+        {
+            CH_CORE_INFO("AssimpImporter: Removed {} unreferenced material(s) ({} -> {})",
+                         m_Data.materials.size() - filtered.size(),
+                         m_Data.materials.size(), filtered.size());
+
+            m_Data.materials = std::move(filtered);
+
+            for (auto& mesh : m_Data.meshes)
+            {
+                if (mesh.materialIndex >= 0 && mesh.materialIndex < (int)remap.size())
+                {
+                    mesh.materialIndex = remap[mesh.materialIndex];
+                }
+            }
+        }
+    }
 }
 
 void AssimpImporter::DecodeEmbeddedTextures()
@@ -602,7 +645,7 @@ void AssimpImporter::ProcessAnimations()
         ra.name = anim->mName.C_Str();
         if (ra.name.empty())
         {
-            ra.name = "Anim_" + std::to_string(a);
+            continue;
         }
 
         const double ticksPerSecond =
