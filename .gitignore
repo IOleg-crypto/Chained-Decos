@@ -58,7 +58,6 @@ include/*-build/
 build/
 cmake-build-*/
 
-.cmake
 .cache
 .zencoder
 .idea/

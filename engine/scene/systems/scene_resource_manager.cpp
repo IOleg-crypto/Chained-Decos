@@ -117,6 +117,17 @@ void Update(entt::registry& reg, Timestep ts)
             continue;
         }
 
+        int animCount = modelAsset->GetAnimationCount();
+        if (animation.CurrentAnimationIndex >= animCount)
+        {
+            animation.CurrentAnimationIndex = 0;
+            animation.CurrentFrame = 0;
+        }
+        if (animation.TargetAnimationIndex >= animCount)
+        {
+            animation.TargetAnimationIndex = -1;
+        }
+
         float dt = ts.GetSeconds();
         animation.FrameTimeCounter += dt;
 

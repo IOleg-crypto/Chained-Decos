@@ -122,12 +122,28 @@ public:
         ReloadAsset(handle, T::GetStaticType());
     }
 
+    // Invalidate cache for a specific path — next LoadAsset call will reload from disk.
+    // If deleteFromDisk is true, also removes the .chasset file so re-import is forced.
+    void Invalidate(const std::string& path, bool deleteFromDisk = false);
+
+    // Delete the .chasset file for a given model path. Returns true if deleted.
+    bool DeleteChasset(const std::string& path);
+
+    // Recursively delete all .chasset files in the asset directory. Returns count deleted.
+    size_t DeleteAllChassets();
+
+    // Returns paths of all cached model/texture assets whose source file is newer than load time.
+    std::vector<std::string> GetStaleAssets() const;
+
+    // Reload all stale assets detected by GetStaleAssets().
+    size_t ReloadAllStale();
+
     std::shared_ptr<Asset> GetAsset(AssetHandle handle);
     std::shared_ptr<Asset> LoadAsset(const std::string& path, AssetType type);
 
 private:
     void ReloadAsset(AssetHandle handle, AssetType type);
-    void CheckModelHotReload();
+    void CheckAssetHotReload();
 
     // Asset cache. Guarded by m_AssetLock.
     std::unordered_map<AssetHandle, std::shared_ptr<Asset>> m_AssetCache;
