@@ -96,8 +96,6 @@ struct GpuGeometry
 {
     std::shared_ptr<VertexArray> FullscreenQuadVAO;
     std::shared_ptr<VertexArray> QuadVAO;
-    std::shared_ptr<VertexArray> BillboardVAO;
-    std::shared_ptr<VertexArray> SpriteVAO;
 };
 
 // GPU instancing cache
@@ -122,7 +120,6 @@ struct RendererData
 
     std::unique_ptr<ShaderStorage> Shaders;
     std::shared_ptr<UniformBuffer> CameraUBO;
-    std::shared_ptr<UniformBuffer> GlobalUBO;
 
     EnvironmentSettings CurrentEnv;
 };

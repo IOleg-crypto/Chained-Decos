@@ -56,8 +56,12 @@ public:
     void LoadConfig(const std::string& configPath);
 
 private:
+    void Insert(const std::string& name, const std::shared_ptr<ShaderAsset>& shader);
+    void RebuildHandleMap();
+
     std::unordered_map<std::string, std::string> m_ShaderPaths;
     std::unordered_map<std::string, std::shared_ptr<ShaderAsset>> m_Shaders;
+    std::unordered_map<uint32_t, std::string> m_HandleToName;
 };
 } // namespace Chained
 
