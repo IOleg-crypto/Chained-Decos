@@ -435,6 +435,66 @@ void PropertyEditor::Init()
         return changed;
     }, ICON_FA_FILE_CODE);
 
+    RegisterCustom<ModelComponent>("Model", [&](ModelComponent& comp, Entity entity) {
+        bool changed = false;
+        UIProperties ui;
+        Properties props(ui);
+
+        if (ui.File("Model Path", comp.ModelPath, ".glb,.gltf,.obj"))
+        {
+            comp.ModelHandle = AssetHandle(0);
+            comp.MaterialPaths.clear();
+            changed = true;
+        }
+
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (am && !comp.ModelPath.empty())
+        {
+            auto handle = am->ResolveToHandle(comp.ModelPath);
+            if (handle != AssetHandle(0))
+            {
+                auto asset = am->Get<ModelAsset>(handle);
+                if (asset)
+                {
+                    const char* stateStr = "Unknown";
+                    ImVec4 stateColor(0.7f, 0.7f, 0.7f, 1.0f);
+                    switch (asset->GetState())
+                    {
+                    case AssetState::Ready:   stateStr = "Ready";   stateColor = ImVec4(0.3f, 0.8f, 0.3f, 1.0f); break;
+                    case AssetState::Loading: stateStr = "Loading"; stateColor = ImVec4(0.9f, 0.7f, 0.2f, 1.0f); break;
+                    case AssetState::Failed:  stateStr = "Failed";  stateColor = ImVec4(0.9f, 0.2f, 0.2f, 1.0f); break;
+                    default: break;
+                    }
+                    ImGui::SameLine();
+                    ImGui::TextColored(stateColor, "%s", stateStr);
+
+                    if (asset->GetState() == AssetState::Ready)
+                    {
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("Reload"))
+                        {
+                            am->Invalidate(comp.ModelPath);
+                            comp.ModelHandle = AssetHandle(0);
+                            comp.MaterialPaths.clear();
+                            CH_CORE_INFO("ModelComponent: Invalidated '{}', will reload next frame", comp.ModelPath);
+                        }
+                        ImGui::SameLine();
+                        if (ImGui::SmallButton("Delete .chasset"))
+                        {
+                            am->DeleteChasset(comp.ModelPath);
+                            am->Invalidate(comp.ModelPath);
+                            comp.ModelHandle = AssetHandle(0);
+                            comp.MaterialPaths.clear();
+                            CH_CORE_INFO("ModelComponent: Deleted .chasset for '{}', will re-import next frame", comp.ModelPath);
+                        }
+                    }
+                }
+            }
+        }
+
+        return changed;
+    }, ICON_FA_SHAPES);
+
     // --- UI Components ---
 
     // --- UI Widgets ---

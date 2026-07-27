@@ -1,14 +1,14 @@
 Material:
-  Name: Sea_Lantern
+  Name: Redstone_Wire
   AlbedoColor:
     - 1
     - 1
     - 1
     - 1
   EmissiveColor:
-    - 1
-    - 1
-    - 1
+    - 0.100000001
+    - 0.100000001
+    - 0.100000001
     - 1
   EmissiveIntensity: 0
   Metalness: 0
