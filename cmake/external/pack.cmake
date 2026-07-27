@@ -9,7 +9,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/pack/CMakeLists.txt")
 
     # GCC 14+ treats -Wincompatible-pointer-types as error.
     # mpio/source/os.c passes char** to _spawvp() which expects const char* const*.
-    if(TARGET mpio-static)
+    if(TARGET mpio-static AND CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
         target_compile_options(mpio-static PRIVATE -Wno-error=incompatible-pointer-types)
     endif()
 endif()
