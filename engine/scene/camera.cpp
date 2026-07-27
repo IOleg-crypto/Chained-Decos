@@ -38,31 +38,31 @@ namespace Chained {
     }
 
     Camera3D Camera::GetCamera3D(const glm::mat4& transform) const {
-        Camera3D c;
-        c.Position = transform[3];
+        Camera3D camera;
+        camera.Position = transform[3];
         glm::vec3 forward = -glm::vec3(transform[2]);
-        c.Target = c.Position + forward;
-        c.Up = glm::vec3(transform[1]);
-        c.Projection = m_ProjectionType;
-        c.FovDegrees = glm::degrees(m_PerspectiveFOV);
-        c.OrthographicSize = m_OrthographicSize;
-        c.NearClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveNear : m_OrthographicNear;
-        c.FarClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveFar : m_OrthographicFar;
-        c.ProjectionMatrix = m_Projection;
-        c.ViewMatrix = glm::inverse(transform);
+        camera.Target = camera.Position + forward;
+        camera.Up = glm::vec3(transform[1]);
+        camera.Projection = m_ProjectionType;
+        camera.FovDegrees = glm::degrees(m_PerspectiveFOV);
+        camera.OrthographicSize = m_OrthographicSize;
+        camera.NearClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveNear : m_OrthographicNear;
+        camera.FarClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveFar : m_OrthographicFar;
+        camera.ProjectionMatrix = m_Projection;
+        camera.ViewMatrix = glm::inverse(transform);
         return c;
     }
 
     Camera2D Camera::GetCamera2D(const glm::mat4& transform) const {
-        Camera2D c;
-        c.Position = glm::vec2(transform[3]);
-        c.Rotation = glm::degrees(glm::atan(transform[0][1], transform[0][0]));
-        c.Zoom = 1.0f / m_OrthographicSize;
-        c.NearClip = m_OrthographicNear;
-        c.FarClip = m_OrthographicFar;
+        Camera2D camera;
+        camera.Position = glm::vec2(transform[3]);
+        camera.Rotation = glm::degrees(glm::atan(transform[0][1], transform[0][0]));
+        camera.Zoom = 1.0f / m_OrthographicSize;
+        camera.NearClip = m_OrthographicNear;
+        camera.FarClip = m_OrthographicFar;
 
-        c.ViewMatrix = glm::inverse(transform);
-        c.ProjectionMatrix = m_Projection;
-        return c;
+        camera.ViewMatrix = glm::inverse(transform);
+        camera.ProjectionMatrix = m_Projection;
+        return camera;
     }
 }
