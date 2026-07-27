@@ -415,7 +415,7 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
         return false;
     }
     auto assemblyPath =
-        ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
+        ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting, project->GetProjectDirectoryForProject());
 
     CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
@@ -470,7 +470,7 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
         return false;
     }
 
-    CH_CORE_INFO("RuntimeSystem: Project loaded: {}", project->GetConfig().Name);
+    CH_CORE_INFO("RuntimeSystem: Project loaded: {}", project->GetName());
     CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectoryForProject().string());
     CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 

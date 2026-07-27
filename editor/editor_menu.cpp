@@ -192,7 +192,7 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
             if (project)
             {
                 auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
-                                                                      project->GetConfig().ProjectDirectory);
+                                                                      project->GetProjectDirectoryForProject());
                 if (auto* scriptEngine = ServiceLocator::Get<ScriptEngine>())
                 {
                     scriptEngine->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");

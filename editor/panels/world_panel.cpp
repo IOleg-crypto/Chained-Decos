@@ -48,7 +48,7 @@ static void SaveProjectConfig()
     if (auto project = Project::GetActive())
     {
         std::filesystem::path path =
-            project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
+            project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
         EditorProjectSerializer::Serialize(project, path);
     }
 }

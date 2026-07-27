@@ -1,12 +1,10 @@
 #ifndef CH_EDITOR_PROJECT_MANAGER_H
 #define CH_EDITOR_PROJECT_MANAGER_H
 
-
 #include "editor/project/editor_settings.h"
 #include "engine/scene/scene_events.h"
 #include <filesystem>
 #include <string>
-
 
 namespace Chained
 {
@@ -16,7 +14,6 @@ public:
     EditorProjectManager();
     ~EditorProjectManager() = default;
 
-public:
     void NewProject();
     void NewProject(const std::string& name, const std::string& path);
     void OpenProject();
@@ -31,8 +28,10 @@ public:
     void ProcessPendingProjectOpen();
 
     const std::string& GetLastProjectPath() const;
+    void RestoreLastProjectPath(const std::string& path);
 
-    void SetLastProjectPath(const std::string& path);
+    // Returns the pending project path and clears it (consume-once).
+    std::string ConsumePendingProjectPath();
 
 private:
     std::string m_LastProjectPath;

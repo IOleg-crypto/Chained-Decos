@@ -3,7 +3,6 @@
 
 #include "editor/asset_types.h"
 #include "panel.h"
-#include <unordered_map>
 #include <vector>
 
 namespace Chained
@@ -56,6 +55,9 @@ private:
     char m_RenameBuffer[256] = "";
     std::filesystem::path m_PathToDelete;
     std::filesystem::path m_NextDirectory;
+    bool m_OpenRenamePopup = false;
+    bool m_OpenDeletePopup = false;
+    bool m_PendingRefresh = false;
 };
 
 } // namespace Chained
