@@ -13,7 +13,7 @@ include(entt)
 include(miniaudio)
 include(cereal)
 include(stb)
-include(zstd)
+# zstd is provided by pack — no separate include needed.
 include(spdlog)
 include(jolt)
 
