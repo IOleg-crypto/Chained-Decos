@@ -62,28 +62,30 @@ void AssetManager::Update(Timestep ts)
         if (m_HotReloadAccumulator >= m_HotReloadInterval)
         {
             m_HotReloadAccumulator = 0.0f;
-            CheckModelHotReload();
+            CheckAssetHotReload();
         }
     }
 
     FinalizePendingLoads();
 }
 
-void AssetManager::CheckModelHotReload()
+void AssetManager::CheckAssetHotReload()
 {
     CH_PROFILE_FUNCTION();
 
-    std::vector<std::pair<AssetHandle, std::string>> toReload;
+    std::vector<std::tuple<AssetHandle, AssetType, std::string>> toReload;
 
     {
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         for (const auto& [handle, asset] : m_AssetCache)
         {
-            if (!asset || asset->GetType() != AssetType::Model)
+            if (!asset || asset->GetState() == AssetState::Loading)
             {
                 continue;
             }
-            if (asset->GetState() == AssetState::Loading)
+
+            AssetType type = asset->GetType();
+            if (type != AssetType::Model && type != AssetType::Texture)
             {
                 continue;
             }
@@ -94,47 +96,30 @@ void AssetManager::CheckModelHotReload()
                 continue;
             }
 
-            std::filesystem::path sourcePath(path);
-            std::filesystem::path chassetPath = sourcePath;
-            chassetPath.replace_extension(".chasset");
-
             std::error_code ec;
-
-            // Source must exist
-            if (!std::filesystem::exists(sourcePath, ec) || ec)
-            {
-                continue;
-            }
-
-            // No .chasset yet — will be generated on next load, no reload needed now
-            if (!std::filesystem::exists(chassetPath, ec) || ec)
-            {
-                continue;
-            }
-
-            auto sourceTime = std::filesystem::last_write_time(sourcePath, ec);
-            if (ec)
-            {
-                continue;
-            }
-            auto chassetTime = std::filesystem::last_write_time(chassetPath, ec);
+            auto fileTime = std::filesystem::last_write_time(path, ec);
             if (ec)
             {
                 continue;
             }
 
-            // Source is newer than cache → stale
-            if (sourceTime > chassetTime)
+            auto now = std::filesystem::file_time_type::clock::now();
+            auto age = std::chrono::duration_cast<std::chrono::seconds>(now - fileTime).count();
+
+            // File modified very recently (within last 10 seconds) — likely just saved from external tool
+            if (age < 10)
             {
-                toReload.emplace_back(handle, sourcePath.filename().string());
+                toReload.emplace_back(handle, type, asset->GetPath());
             }
         }
     }
 
-    for (const auto& [handle, name] : toReload)
+    for (const auto& [handle, type, path] : toReload)
     {
-        CH_CORE_INFO("AssetManager: Hot-reloading stale model '{}' (.chasset outdated)", name);
-        ReloadAsset(handle, AssetType::Model);
+        CH_CORE_INFO("AssetManager: Hot-reloading recently modified {} '{}'",
+                     type == AssetType::Model ? "model" : "texture",
+                     std::filesystem::path(path).filename().string());
+        ReloadAsset(handle, type);
     }
 }
 
@@ -455,7 +440,6 @@ bool AssetManager::HasBackgroundWork() const
 {
     return GetPendingFinalizeCount() > 0 || GetLoadingAssetCount() > 0;
 }
-
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
     std::shared_ptr<Asset> asset;
@@ -507,8 +491,201 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
         asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "': " + e.what());
     } catch (...)
     {
-        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "' with an unknown exception");
+        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved +
+                    "' with an unknown exception");
     }
+}
+
+void AssetManager::Invalidate(const std::string& path, bool deleteFromDisk)
+{
+    if (path.empty())
+    {
+        return;
+    }
+
+    std::string resolved = ResolvePath(path);
+
+    if (deleteFromDisk)
+    {
+        DeleteChasset(resolved);
+    }
+
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+    auto pathIt = m_PathToHandle.find(resolved);
+    if (pathIt == m_PathToHandle.end())
+    {
+        return;
+    }
+
+    AssetHandle handle = pathIt->second;
+    m_AssetCache.erase(handle);
+    m_PathToHandle.erase(pathIt);
+
+    // Also remove any path cache entries that resolve to this path
+    for (auto it = m_PathCache.begin(); it != m_PathCache.end();)
+    {
+        if (it->second == resolved)
+        {
+            it = m_PathCache.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
+    CH_CORE_INFO("AssetManager: Invalidated cache for '{}'", resolved);
+}
+
+bool AssetManager::DeleteChasset(const std::string& path)
+{
+    std::filesystem::path modelPath = path;
+    std::filesystem::path chassetPath = modelPath;
+    chassetPath.replace_extension(".chasset");
+
+    std::error_code ec;
+    if (std::filesystem::exists(chassetPath, ec))
+    {
+        std::filesystem::remove(chassetPath, ec);
+        if (!ec)
+        {
+            CH_CORE_INFO("AssetManager: Deleted .chasset '{}'", chassetPath.filename().string());
+            return true;
+        }
+        CH_CORE_WARN("AssetManager: Failed to delete .chasset '{}': {}", chassetPath.string(), ec.message());
+    }
+    return false;
+}
+
+size_t AssetManager::DeleteAllChassets()
+{
+    if (m_AssetDirectory.empty())
+    {
+        CH_CORE_WARN("AssetManager: Asset directory not set, cannot clear .chasset cache");
+        return 0;
+    }
+
+    size_t deleted = 0;
+    std::error_code ec;
+    for (const auto& entry : std::filesystem::recursive_directory_iterator(m_AssetDirectory, ec))
+    {
+        if (entry.is_regular_file() && entry.path().extension() == ".chasset")
+        {
+            std::filesystem::remove(entry.path(), ec);
+            if (!ec)
+            {
+                CH_CORE_INFO("AssetManager: Deleted .chasset '{}'", entry.path().filename().string());
+                ++deleted;
+            }
+            else
+            {
+                CH_CORE_WARN("AssetManager: Failed to delete .chasset '{}': {}", entry.path().string(), ec.message());
+            }
+        }
+    }
+
+    CH_CORE_INFO("AssetManager: Cleared .chasset cache ({} file(s) deleted)", deleted);
+    return deleted;
+}
+
+std::vector<std::string> AssetManager::GetStaleAssets() const
+{
+    std::vector<std::string> stale;
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+    for (const auto& [handle, asset] : m_AssetCache)
+    {
+        if (!asset || asset->GetState() == AssetState::Loading)
+        {
+            continue;
+        }
+
+        AssetType type = asset->GetType();
+        if (type != AssetType::Model && type != AssetType::Texture && type != AssetType::Material)
+        {
+            continue;
+        }
+
+        const std::string& path = asset->GetPath();
+        if (path.empty())
+        {
+            continue;
+        }
+
+        std::error_code ec;
+        auto fileTime = std::filesystem::last_write_time(path, ec);
+        if (ec)
+        {
+            continue;
+        }
+
+        // Use file's modification time as proxy — if it's newer than a threshold after asset creation, it's stale.
+        // We compare against the current time minus a small grace period to avoid false positives.
+        auto now = std::filesystem::file_time_type::clock::now();
+        auto age = std::chrono::duration_cast<std::chrono::seconds>(now - fileTime).count();
+
+        // File modified very recently (within last 30 seconds) — likely just saved from external tool
+        if (age < 30)
+        {
+            stale.push_back(path);
+        }
+    }
+
+    return stale;
+}
+
+size_t AssetManager::ReloadAllStale()
+{
+    auto stale = GetStaleAssets();
+    size_t reloaded = 0;
+
+    for (const auto& path : stale)
+    {
+        AssetHandle handle = AssetHandle(0);
+        AssetType type = AssetType::Model;
+
+        {
+            std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+            auto pathIt = m_PathToHandle.find(path);
+            if (pathIt == m_PathToHandle.end())
+            {
+                continue;
+            }
+
+            handle = pathIt->second;
+            auto assetIt = m_AssetCache.find(handle);
+            if (assetIt == m_AssetCache.end())
+            {
+                continue;
+            }
+
+            type = assetIt->second->GetType();
+        }
+
+        if (type == AssetType::Model)
+        {
+            ReloadAsset(handle, AssetType::Model);
+            ++reloaded;
+        }
+        else if (type == AssetType::Texture)
+        {
+            ReloadAsset(handle, AssetType::Texture);
+            ++reloaded;
+        }
+        else if (type == AssetType::Material)
+        {
+            ReloadAsset(handle, AssetType::Material);
+            ++reloaded;
+        }
+    }
+
+    if (reloaded > 0)
+    {
+        CH_CORE_INFO("AssetManager: Reloaded {} stale assets", reloaded);
+    }
+
+    return reloaded;
 }
 
 bool AssetManager::OpenPack(const std::filesystem::path& packPath)

@@ -1,9 +1,9 @@
 Material:
-  Name: Wooden_bridge
+  Name: DROPS_PIPE
   AlbedoColor:
-    - 0.329400003
-    - 0.227400005
-    - 0.188199997
+    - 0.0109727522
+    - 0.485408843
+    - 0.0894304216
     - 1
   EmissiveColor:
     - 0
@@ -11,7 +11,7 @@ Material:
     - 0
     - 1
   EmissiveIntensity: 0
-  Metalness: 0
-  Roughness: 1
+  Metalness: 1
+  Roughness: 0.140000001
   Transparent: false
   Alpha: 1

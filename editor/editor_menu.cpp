@@ -186,6 +186,24 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
                 renderer->GetShaderLibrary().ReloadAll();
             }
         }
+        if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload All Stale Assets"))
+        {
+            auto* am = ServiceLocator::TryGet<AssetManager>();
+            if (am)
+            {
+                size_t count = am->ReloadAllStale();
+                CH_CORE_INFO("EditorMenu: Reloaded {} stale assets", count);
+            }
+        }
+        if (ImGui::MenuItem(ICON_FA_TRASH " Clear .chasset Cache"))
+        {
+            auto* am = ServiceLocator::TryGet<AssetManager>();
+            if (am)
+            {
+                size_t count = am->DeleteAllChassets();
+                CH_CORE_INFO("EditorMenu: Deleted {} .chasset file(s)", count);
+            }
+        }
         if (ImGui::MenuItem(ICON_FA_FILE_CODE " Reload Scripts", "Ctrl+R"))
         {
             auto project = Project::GetActive();
