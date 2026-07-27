@@ -1,0 +1,17 @@
+Material:
+  Name: base_island_additional_pipes_transarent
+  AlbedoColor:
+    - 0.388669074
+    - 0.00395569578
+    - 0.532920837
+    - 0.0483999997
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 1
+  Roughness: 0.119999997
+  Transparent: true
+  Alpha: 0.0483999997

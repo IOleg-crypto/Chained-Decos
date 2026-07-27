@@ -200,8 +200,8 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
             {
                 const Material& m = (*materials)[i];
                 std::string label = m.Name;
-                // FIXED : non-existing material
-                if(label.empty()) continue;
+                if (label.empty())
+                    label = "Material " + std::to_string(i);
 
                 if (!filterStr.empty())
                 {
