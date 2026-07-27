@@ -50,7 +50,7 @@ namespace Chained {
         camera.FarClip = (m_ProjectionType == ProjectionType::Perspective) ? m_PerspectiveFar : m_OrthographicFar;
         camera.ProjectionMatrix = m_Projection;
         camera.ViewMatrix = glm::inverse(transform);
-        return c;
+        return camera;
     }
 
     Camera2D Camera::GetCamera2D(const glm::mat4& transform) const {
