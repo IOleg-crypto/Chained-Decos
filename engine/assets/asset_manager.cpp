@@ -69,55 +69,57 @@ void AssetManager::Update(Timestep ts)
     FinalizePendingLoads();
 }
 
-void AssetManager::CheckAssetHotReload()
+std::vector<AssetManager::StaleAsset> AssetManager::CollectStaleAssets(int thresholdSeconds) const
 {
     CH_PROFILE_FUNCTION();
+    std::vector<StaleAsset> stale;
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 
-    std::vector<std::tuple<AssetHandle, AssetType, std::string>> toReload;
-
+    for (const auto& [handle, asset] : m_AssetCache)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-        for (const auto& [handle, asset] : m_AssetCache)
+        if (!asset || asset->GetState() == AssetState::Loading)
         {
-            if (!asset || asset->GetState() == AssetState::Loading)
-            {
-                continue;
-            }
+            continue;
+        }
 
-            AssetType type = asset->GetType();
-            if (type != AssetType::Model && type != AssetType::Texture)
-            {
-                continue;
-            }
+        AssetType type = asset->GetType();
+        if (type != AssetType::Model && type != AssetType::Texture && type != AssetType::Material)
+        {
+            continue;
+        }
 
-            const std::string& path = asset->GetPath();
-            if (path.empty())
-            {
-                continue;
-            }
+        const std::string& path = asset->GetPath();
+        if (path.empty())
+        {
+            continue;
+        }
 
-            std::error_code ec;
-            auto fileTime = std::filesystem::last_write_time(path, ec);
-            if (ec)
-            {
-                continue;
-            }
+        std::error_code ec;
+        auto fileTime = std::filesystem::last_write_time(path, ec);
+        if (ec)
+        {
+            continue;
+        }
 
-            auto now = std::filesystem::file_time_type::clock::now();
-            auto age = std::chrono::duration_cast<std::chrono::seconds>(now - fileTime).count();
+        auto now = std::filesystem::file_time_type::clock::now();
+        auto age = std::chrono::duration_cast<std::chrono::seconds>(now - fileTime).count();
 
-            // File modified very recently (within last 10 seconds) — likely just saved from external tool
-            if (age < 10)
-            {
-                toReload.emplace_back(handle, type, asset->GetPath());
-            }
+        if (age < thresholdSeconds)
+        {
+            stale.push_back({handle, type, path});
         }
     }
 
-    for (const auto& [handle, type, path] : toReload)
+    return stale;
+}
+
+void AssetManager::CheckAssetHotReload()
+{
+    auto stale = CollectStaleAssets(10);
+    for (const auto& [handle, type, path] : stale)
     {
         CH_CORE_INFO("AssetManager: Hot-reloading recently modified {} '{}'",
-                     type == AssetType::Model ? "model" : "texture",
+                     type == AssetType::Model ? "model" : type == AssetType::Texture ? "texture" : "material",
                      std::filesystem::path(path).filename().string());
         ReloadAsset(handle, type);
     }
@@ -242,6 +244,31 @@ AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
     return AssetHandle(0);
 }
 
+bool AssetManager::ExecuteLoad(const std::shared_ptr<Asset>& asset, AssetLoader* loader, const std::string& resolved)
+{
+    try
+    {
+        std::string loaderError;
+        if (!loader->Load(asset, resolved, &loaderError))
+        {
+            asset->Fail(loaderError.empty()
+                            ? ("AssetManager: Load failed for '" + resolved + "'")
+                            : loaderError);
+            return false;
+        }
+
+        asset->ClearError();
+        return true;
+    } catch (const std::exception& e)
+    {
+        asset->Fail(std::string("AssetManager: Load exception for '") + resolved + "': " + e.what());
+    } catch (...)
+    {
+        asset->Fail(std::string("AssetManager: Load exception for '") + resolved + "' with unknown exception");
+    }
+    return false;
+}
+
 std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetType type)
 {
     if (path.empty() || path.front() == '*')
@@ -293,53 +320,19 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
 
     if (!loader->IsAsync)
     {
-        try
+        if (ExecuteLoad(asset, loader, resolved))
         {
-            std::string loaderError;
-            if (!loader->Load(asset, resolved, &loaderError))
-            {
-                asset->Fail(loaderError.empty()
-                                ? ("AssetManager: Synchronous loader returned false for '" + resolved + "'")
-                                : loaderError);
-                return asset;
-            }
-
-            asset->ClearError();
             asset->OnLoaded();
             asset->SetState(AssetState::Ready);
-        } catch (const std::exception& e)
-        {
-            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved + "': " + e.what());
-        } catch (...)
-        {
-            asset->Fail(std::string("AssetManager: Synchronous load failed for '") + resolved +
-                        "' with an unknown exception");
         }
     }
     else
     {
         ServiceLocator::Get<ThreadPool>()->QueueTask([this, asset, loader, resolved]() {
-            try
+            if (ExecuteLoad(asset, loader, resolved))
             {
-                std::string loaderError;
-                if (!loader->Load(asset, resolved, &loaderError))
-                {
-                    asset->Fail(loaderError.empty()
-                                    ? ("AssetManager: Async loader returned false for '" + resolved + "'")
-                                    : loaderError);
-                    return;
-                }
-
-                asset->ClearError();
                 std::lock_guard<std::mutex> lock(m_PendingMutex);
                 m_PendingAssets.push_back(asset);
-            } catch (const std::exception& e)
-            {
-                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved + "': " + e.what());
-            } catch (...)
-            {
-                asset->Fail(std::string("AssetManager: Async load failed for '") + resolved +
-                            "' with an unknown exception");
             }
         });
     }
@@ -438,7 +431,22 @@ size_t AssetManager::GetLoadingAssetCount() const
 
 bool AssetManager::HasBackgroundWork() const
 {
-    return GetPendingFinalizeCount() > 0 || GetLoadingAssetCount() > 0;
+    {
+        std::lock_guard<std::mutex> lock(m_PendingMutex);
+        if (!m_PendingAssets.empty())
+        {
+            return true;
+        }
+    }
+    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    for (const auto& [handle, asset] : m_AssetCache)
+    {
+        if (asset && asset->GetState() == AssetState::Loading)
+        {
+            return true;
+        }
+    }
+    return false;
 }
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
@@ -472,27 +480,10 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 
     std::string resolved = ResolvePath(path);
     asset->SetState(AssetState::Loading);
-    asset->ClearError();
-
-    try
+    if (ExecuteLoad(asset, loader, resolved))
     {
-        std::string loaderError;
-        if (!loader->Load(asset, resolved, &loaderError))
-        {
-            asset->Fail(loaderError.empty() ? ("AssetManager: Reload failed for '" + resolved + "'") : loaderError);
-            return;
-        }
-
-        asset->ClearError();
         asset->OnLoaded();
         asset->SetState(AssetState::Ready);
-    } catch (const std::exception& e)
-    {
-        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved + "': " + e.what());
-    } catch (...)
-    {
-        asset->Fail(std::string("AssetManager: Reload failed for '") + resolved +
-                    "' with an unknown exception");
     }
 }
 
@@ -586,106 +577,44 @@ size_t AssetManager::DeleteAllChassets()
     }
 
     CH_CORE_INFO("AssetManager: Cleared .chasset cache ({} file(s) deleted)", deleted);
+
+    if (deleted > 0)
+    {
+        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        m_AssetCache.clear();
+        m_PathToHandle.clear();
+        m_PathCache.clear();
+    }
+
     return deleted;
 }
 
 std::vector<std::string> AssetManager::GetStaleAssets() const
 {
-    std::vector<std::string> stale;
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-
-    for (const auto& [handle, asset] : m_AssetCache)
+    auto stale = CollectStaleAssets(30);
+    std::vector<std::string> paths;
+    paths.reserve(stale.size());
+    for (auto& s : stale)
     {
-        if (!asset || asset->GetState() == AssetState::Loading)
-        {
-            continue;
-        }
-
-        AssetType type = asset->GetType();
-        if (type != AssetType::Model && type != AssetType::Texture && type != AssetType::Material)
-        {
-            continue;
-        }
-
-        const std::string& path = asset->GetPath();
-        if (path.empty())
-        {
-            continue;
-        }
-
-        std::error_code ec;
-        auto fileTime = std::filesystem::last_write_time(path, ec);
-        if (ec)
-        {
-            continue;
-        }
-
-        // Use file's modification time as proxy — if it's newer than a threshold after asset creation, it's stale.
-        // We compare against the current time minus a small grace period to avoid false positives.
-        auto now = std::filesystem::file_time_type::clock::now();
-        auto age = std::chrono::duration_cast<std::chrono::seconds>(now - fileTime).count();
-
-        // File modified very recently (within last 30 seconds) — likely just saved from external tool
-        if (age < 30)
-        {
-            stale.push_back(path);
-        }
+        paths.push_back(std::move(s.path));
     }
-
-    return stale;
+    return paths;
 }
 
 size_t AssetManager::ReloadAllStale()
 {
-    auto stale = GetStaleAssets();
-    size_t reloaded = 0;
-
-    for (const auto& path : stale)
+    auto stale = CollectStaleAssets(30);
+    for (const auto& [handle, type, path] : stale)
     {
-        AssetHandle handle = AssetHandle(0);
-        AssetType type = AssetType::Model;
-
-        {
-            std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-            auto pathIt = m_PathToHandle.find(path);
-            if (pathIt == m_PathToHandle.end())
-            {
-                continue;
-            }
-
-            handle = pathIt->second;
-            auto assetIt = m_AssetCache.find(handle);
-            if (assetIt == m_AssetCache.end())
-            {
-                continue;
-            }
-
-            type = assetIt->second->GetType();
-        }
-
-        if (type == AssetType::Model)
-        {
-            ReloadAsset(handle, AssetType::Model);
-            ++reloaded;
-        }
-        else if (type == AssetType::Texture)
-        {
-            ReloadAsset(handle, AssetType::Texture);
-            ++reloaded;
-        }
-        else if (type == AssetType::Material)
-        {
-            ReloadAsset(handle, AssetType::Material);
-            ++reloaded;
-        }
+        ReloadAsset(handle, type);
     }
 
-    if (reloaded > 0)
+    if (!stale.empty())
     {
-        CH_CORE_INFO("AssetManager: Reloaded {} stale assets", reloaded);
+        CH_CORE_INFO("AssetManager: Reloaded {} stale assets", stale.size());
     }
 
-    return reloaded;
+    return stale.size();
 }
 
 bool AssetManager::OpenPack(const std::filesystem::path& packPath)

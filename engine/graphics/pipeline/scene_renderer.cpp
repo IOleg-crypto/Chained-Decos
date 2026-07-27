@@ -246,7 +246,6 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
             continue;
         }
 
-        auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
         auto textureAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(sprite.TexturePath);
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
@@ -275,6 +274,11 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
     auto view = registry.view<LightComponent>();
     for (auto entity : view)
     {
+        if (lightCount >= LightingData::MaxLights)
+        {
+            break;
+        }
+
         auto& light = view.get<LightComponent>(entity);
         glm::vec3 worldPos = Entity(entity, &registry).GetWorldPosition();
         if (light.Type != LightType::Directional && !IsSphereVisible(frustum, worldPos, light.Radius))
@@ -293,14 +297,9 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
         rl.outerCutoff = light.OuterCutoff;
         rl.enabled = 1;
 
-        if (lightCount >= LightingData::MaxLights)
-        {
-            break;
-        }
-
         lighting.Lights[lightCount++] = rl;
-        lighting.LightsDirty = true;
     }
+    lighting.LightsDirty = true;
     lighting.LightCount = lightCount;
 }
 
@@ -317,7 +316,6 @@ void SceneRenderer::CollectAndRenderItems(entt::registry& registry, const Frustu
             continue;
         }
 
-        auto handle = assets->LoadAsset(mesh.ModelPath, ModelAsset::GetStaticType());
         auto modelAsset = assets->Get<ModelAsset>(mesh.ModelPath);
         if (!modelAsset || modelAsset->GetState() != AssetState::Ready)
         {
@@ -387,7 +385,6 @@ bool SceneRenderer::EnqueueModelAsset(entt::registry& registry, entt::entity ent
         auto& sc = registry.get<ShaderComponent>(entity);
         if (sc.Enabled && !sc.ShaderPath.empty())
         {
-            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(sc.ShaderPath, ShaderAsset::GetStaticType());
             shaderOver = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(sc.ShaderPath);
             uniforms = sc.Uniforms;
         }
@@ -517,6 +514,10 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
     if (shaderOverride)
     {
         static std::unordered_set<std::string> s_LoggedPairs;
+        if (s_LoggedPairs.size() > 256)
+        {
+            s_LoggedPairs.clear();
+        }
         std::string key = shaderOverride->GetPath() + "|" + modelAsset->GetPath();
         if (s_LoggedPairs.insert(key).second)
         {

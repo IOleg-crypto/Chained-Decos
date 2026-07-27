@@ -43,14 +43,14 @@ inline Frustum FromMatrix(const glm::mat4& vp)
     return f;
 }
 
-inline bool IsSphereVisible(Frustum frustum, const glm::vec3& center, float radius)
+inline bool IsSphereVisible(const Frustum& frustum, const glm::vec3& center, float radius)
 {
     auto outside = [&](const glm::vec4& p) { return glm::dot(glm::vec3(p), center) + p.w < -radius; };
     return !outside(frustum.Left) && !outside(frustum.Right) && !outside(frustum.Bottom) && !outside(frustum.Top) &&
            !outside(frustum.Near) && !outside(frustum.Far);
 }
 
-inline bool IsBoxVisible(Frustum frustum, const glm::vec3& center, const glm::vec3& extents)
+inline bool IsBoxVisible(const Frustum& frustum, const glm::vec3& center, const glm::vec3& extents)
 {
     auto outside = [&](const glm::vec4& p) {
         float r = glm::dot(glm::abs(glm::vec3(p)), extents);
