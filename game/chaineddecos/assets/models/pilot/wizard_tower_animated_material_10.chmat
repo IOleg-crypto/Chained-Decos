@@ -1,9 +1,9 @@
 Material:
-  Name: Carpet
+  Name: Material.004
   AlbedoColor:
-    - 0.564700007
-    - 0
-    - 0
+    - 0.800000072
+    - 0.152818009
+    - 0.544605017
     - 1
   EmissiveColor:
     - 0
@@ -12,6 +12,6 @@ Material:
     - 1
   EmissiveIntensity: 0
   Metalness: 0
-  Roughness: 1
+  Roughness: 0.171779141
   Transparent: false
   Alpha: 1

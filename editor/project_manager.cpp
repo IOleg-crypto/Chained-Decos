@@ -149,7 +149,7 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
     std::filesystem::path root = FindProjectRoot();
 
     std::filesystem::path projectFile =
-        project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
+        project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
     std::string projectPathStr = std::filesystem::absolute(projectFile).string();
 
     auto replaceAll = [&](const std::string& from, const std::string& to) {
@@ -166,8 +166,8 @@ static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Proje
 
     if (str.find("${BUILD}") != std::string::npos)
     {
-        std::string configStr = (project->GetConfig().BuildConfig == Configuration::Release) ? "Release" : "Debug";
-        std::filesystem::path exePath = FindRuntimeExecutable(project->GetConfig().Name, configStr);
+        std::string configStr = (project->GetBuildConfig() == Configuration::Release) ? "Release" : "Debug";
+        std::filesystem::path exePath = FindRuntimeExecutable(project->GetName(), configStr);
         std::filesystem::path buildPath = exePath.parent_path();
 
         if (buildPath.empty())
@@ -281,9 +281,7 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     }
 
     // Configure scripting settings
-    project->GetConfig().Scripting.ModuleName = name + ".Scripts.dll";
-    project->GetConfig().Scripting.ModuleDirectory = "assets/bin";
-    project->GetConfig().Scripting.AutoLoad = true;
+    project->SetScripting(name + ".Scripts.dll", "assets/bin");
 
     EditorProjectSerializer::Serialize(project, (std::filesystem::path(path) / (name + ".chproject")));
 
@@ -322,7 +320,7 @@ void EditorProjectManager::SaveProject()
     auto project = Project::GetActive();
     if (!project) return;
     
-    EditorProjectSerializer::Serialize(project, (project->GetConfig().ProjectDirectory / (project->GetConfig().Name + ".chproject")));
+    EditorProjectSerializer::Serialize(project, (project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject")));
 }
 
 
@@ -343,12 +341,11 @@ bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 
 void EditorProjectManager::ProcessPendingProjectOpen()
 {
-    if (m_PendingOpenedProjectPath.empty())
+    const std::string openedPath = ConsumePendingProjectPath();
+    if (openedPath.empty())
     {
         return;
     }
-
-    const std::string openedPath = std::exchange(m_PendingOpenedProjectPath, {});
 
     auto project = Project::GetActive();
     if (project)
@@ -414,18 +411,18 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         std::filesystem::path sceneToLoad;
 
         // 1. Try loading ActiveScene
-        if (!project->GetConfig().ActiveScenePath.empty())
+        if (!project->GetActiveScenePath().empty())
         {
-            sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().ActiveScenePath;
+            sceneToLoad = project->GetProjectDirectoryForProject() / project->GetActiveScenePath();
         }
 
         // 2. Fallback to StartScene
         if (sceneToLoad.empty() || !std::filesystem::exists(sceneToLoad))
         {
-            if (!project->GetConfig().StartScene.empty())
+            if (!project->GetStartScene().empty())
             {
-                sceneToLoad = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory /
-                               project->GetConfig().StartScene;
+                sceneToLoad = project->GetAssetDirectoryForProject() /
+                               project->GetStartScene();
             }
         }
 
@@ -438,13 +435,22 @@ void EditorProjectManager::ProcessPendingProjectOpen()
     }
 }
 
-const std::string & EditorProjectManager::GetLastProjectPath() const {
+const std::string& EditorProjectManager::GetLastProjectPath() const
+{
     return m_LastProjectPath;
 }
 
-void EditorProjectManager::SetLastProjectPath(const std::string &path) {
+void EditorProjectManager::RestoreLastProjectPath(const std::string& path)
+{
     m_LastProjectPath = path;
 }
+
+std::string EditorProjectManager::ConsumePendingProjectPath()
+{
+    return std::exchange(m_PendingOpenedProjectPath, {});
+}
+
+
 void EditorProjectManager::LaunchStandalone(std::shared_ptr<Scene> editorScene)
 {
     CH_PROFILE_FUNCTION();
@@ -484,7 +490,7 @@ void EditorProjectManager::LaunchStandalone(std::shared_ptr<Scene> editorScene)
             }
 
             scenePath = std::filesystem::absolute(scenePath);
-            project->GetConfig().ActiveScenePath = Project::GetRelativePath(scenePath);
+            project->SetActiveScenePath(Project::GetRelativePath(scenePath));
             sceneArgument = std::format(" --scene \"{}\"", scenePath.string());
         }
     }
@@ -492,7 +498,7 @@ void EditorProjectManager::LaunchStandalone(std::shared_ptr<Scene> editorScene)
     std::string configStr = (config.BuildConfig == Configuration::Release) ? "Release" : "Debug";
     std::string runtimePath = FindRuntimeExecutable(config.Name, configStr).string();
 
-    std::filesystem::path projectFile = project->GetProjectDirectoryForProject() / (project->GetConfig().Name + ".chproject");
+    std::filesystem::path projectFile = project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
     std::string arguments = std::format("\"{}\"", std::filesystem::absolute(projectFile).string());
 
     if (!sceneArgument.empty())

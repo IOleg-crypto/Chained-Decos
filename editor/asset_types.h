@@ -17,6 +17,7 @@ enum class EditorAssetType
     Texture,
     Audio,
     Prefab,
+    Shader,
     Other
 };
 

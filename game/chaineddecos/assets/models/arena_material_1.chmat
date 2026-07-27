@@ -1,14 +1,14 @@
 Material:
-  Name: Fight_Rework_Shield_MAT
+  Name: Diamond_Sign
   AlbedoColor:
-    - 1
-    - 1
+    - 0.0313000008
+    - 0.917599976
     - 1
     - 1
   EmissiveColor:
-    - 0
-    - 0
-    - 0
+    - 0.0134565448
+    - 1
+    - 1
     - 1
   EmissiveIntensity: 0
   Metalness: 0
