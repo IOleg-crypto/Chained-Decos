@@ -23,7 +23,7 @@ void Update(entt::registry& reg, Timestep ts)
             glm::vec3 pos = glm::vec3(transform.WorldTransform[3]);
             glm::mat3 rot = glm::mat3(transform.WorldTransform);
             glm::vec3 forward = rot * glm::vec3(0, 0, -1);
-            glm::vec3 up = rot * glm::vec3(1, 0, 0);
+            glm::vec3 up = rot * glm::vec3(0, 1, 0);
 
             if (auto* audioSvc = ServiceLocator::TryGet<Audio>())
                 audioSvc->SetListenerPosition(pos, forward, up);
