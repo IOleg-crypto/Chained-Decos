@@ -5,7 +5,7 @@
 
 [![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Workflows](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml/badge.svg)](https://github.com/IOleg-crypto/Chained-Engine/actions)
+![Workflow Status](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml/badge.svg)
 [![Linux](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/linux.yml/badge.svg)](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/linux.yml)
 [![Windows](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/windows.yml/badge.svg)](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/windows.yml)
 [![OpenGL](https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl)](https://www.khronos.org/opengl/)
