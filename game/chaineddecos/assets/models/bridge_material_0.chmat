@@ -1,9 +1,9 @@
 Material:
   Name: ""
   AlbedoColor:
-    - 0.123312578
-    - 0.396361232
-    - 0.426540256
+    - 1
+    - 1
+    - 1
     - 1
   EmissiveColor:
     - 0
