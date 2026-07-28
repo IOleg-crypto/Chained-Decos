@@ -163,17 +163,21 @@ static void DeserializeEnvironmentSettings(const YAML::Node& data, SceneSettings
         std::string envPath = ReadYamlValue(data, "EnvironmentPath", std::string());
         if (Project::GetActive())
         {
-            auto handle = ServiceLocator::Get<AssetManager>()->LoadAsset(envPath, EnvironmentAsset::GetStaticType());
-            auto sharedEnv = ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(envPath);
-            if (sharedEnv)
+            auto* assets = ServiceLocator::TryGet<AssetManager>();
+            if (assets)
             {
-                if (!settings.Environment)
+                auto handle = assets->LoadAsset(envPath, EnvironmentAsset::GetStaticType());
+                auto sharedEnv = assets->Get<EnvironmentAsset>(envPath);
+                if (sharedEnv)
                 {
-                    settings.Environment = std::make_shared<EnvironmentAsset>();
-                }
+                    if (!settings.Environment)
+                    {
+                        settings.Environment = std::make_shared<EnvironmentAsset>();
+                    }
 
-                settings.Environment->SetSettings(sharedEnv->GetSettings());
-                settings.Environment->SetPath(sharedEnv->GetPath());
+                    settings.Environment->SetSettings(sharedEnv->GetSettings());
+                    settings.Environment->SetPath(sharedEnv->GetPath());
+                }
             }
         }
     }

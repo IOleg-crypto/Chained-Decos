@@ -20,7 +20,7 @@ namespace Chained
 struct Frustum;
 class AssetManager;
 class Renderer; // forward declaration — full include in .cpp only
-class ShaderAsset; // forward declaration
+class Shader; // forward declaration — full include in .cpp only
 
 enum class RenderPassStage
 {
@@ -48,7 +48,7 @@ struct AnimatedEntry
 {
     ModelAsset* Asset;
     glm::mat4 WorldTransform;
-    ShaderAsset* ShaderOverride;
+    Shader* ShaderOverride;
     std::vector<ShaderUniform> CustomUniforms;
     AnimationComponent Animation;
 };
@@ -59,7 +59,7 @@ struct RenderItem
     glm::mat4 Transform;
     std::vector<glm::mat4> BoneMatrices;
     std::vector<Material> Materials;
-    ShaderAsset* ShaderOverride;
+    Shader* ShaderOverride;
     std::vector<ShaderUniform> CustomUniforms;
     float Distance = 0.0f;
 };
@@ -97,7 +97,7 @@ public:
     void DrawModel(ModelAsset* modelAsset, const glm::mat4& transform,
                    const std::vector<glm::mat4>& boneMatrices = {},
                    const std::vector<Material>& materials = {},
-                   ShaderAsset* shaderOverride = nullptr,
+                   Shader* shaderOverride = nullptr,
                    const std::vector<ShaderUniform>& shaderUniformOverrides = {},
                    RenderPassStage pass = RenderPassStage::Both);
 
@@ -105,10 +105,10 @@ public:
                                    const std::vector<Material>& materials = {},
                                    ModelAsset* modelAsset = nullptr);
 
-    void BindShaderUniforms(ShaderAsset* shaderAsset, const std::vector<glm::mat4>& boneMatrices,
+    void BindShaderUniforms(Shader* shader, const std::vector<glm::mat4>& boneMatrices,
                            const std::vector<ShaderUniform>& shaderUniformOverrides);
 
-    void BindMaterialUniforms(ShaderAsset* shaderAsset, const Material& material, int meshIndex,
+    void BindMaterialUniforms(Shader* shader, const Material& material, int meshIndex,
                              const Model& model);
 
     // Expose internals for passes

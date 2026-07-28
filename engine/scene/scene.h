@@ -12,22 +12,14 @@
 #include "engine/common/base.h"
 #include "engine/common/timestep.h"
 #include "engine/scene/entity.h"
-#include "engine/scene/scene_context.h"
 #include "engine/scene/scene_settings.h"
 #include "engine/scene/scene_state.h"
 
 namespace Chained
 {
-class Physics;
-class ScriptEngine;
 class SceneScriptingManager;
 class Event;
 
-/// @brief Owns the scene registry, scene settings, and manages its own execution state lifecycle.
-///
-/// Scenes are the primary container for ECS entities and systems. They manage
-/// state transitions between Edit, Runtime, and Simulation modes, and coordinate
-/// script execution, physics, animation, and scene transitions.
 class CH_API Scene
 {
 public:
@@ -42,26 +34,20 @@ public:
     }
 
 public:
-    /// @brief Create a new scene with default entities (Main Camera).
     static std::shared_ptr<Scene> CreateDefault();
-
-    /// @brief Deep-copy another scene, duplicating all entities and components.
     static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
     virtual void OnEvent(Event& e);
     virtual void OnRenderUI();
 
 public: // Scene State Management
-    /// @brief Transition the scene to a new state (Edit, Runtime, Simulation).
-    /// Calls OnStateExit for the current state and OnStateEnter for the new one.
-    void TransitionToState(SceneState newState, const SceneContext& ctx);
+    void TransitionToState(SceneState newState);
     SceneState GetSceneState() const
     {
         return m_State;
     }
 
-    /// @brief Single update entry point — dispatches to the correct sub-update based on current state.
-    void OnUpdate(Timestep timestep, const SceneContext& ctx);
+    void OnUpdate(Timestep timestep);
     void OnViewportResize(uint32_t width, uint32_t height);
 
 public: // Entity Management
@@ -79,8 +65,7 @@ public:
     SceneSettings& GetSettings();
     const SceneSettings& GetSettings() const;
     bool IsSimulationRunning() const;
-    std::vector<entt::entity> GetRootEntities();
-    std::vector<entt::entity> GetRootEntities() const;
+    const std::vector<entt::entity>& GetRootEntities() const;
     bool IsStartingUp() const { return m_IsStartingUp; }
 
 public: // Systems & Tools
@@ -88,18 +73,20 @@ public: // Systems & Tools
     const entt::registry& GetRegistry() const;
     entt::registry* GetRegistryPtr();
 
-    void OnRuntimeStop(const SceneContext& ctx);
-    void OnRuntimeStart(const SceneContext& ctx);
-    void OnUpdateSimulation(Timestep timestep, const SceneContext& ctx);
-    void OnUpdateEditor(Timestep timestep, const SceneContext& ctx);
+    void OnRuntimeStop();
+    void OnRuntimeStart();
+    void OnUpdateSimulation(Timestep timestep);
+    void OnUpdateEditor(Timestep timestep);
+    void OnUpdateRuntime(Timestep timestep);
 
-    /// @brief Runtime update — runs scripts, physics, animations, and scene transitions.
-    void OnUpdateRuntime(Timestep timestep, const SceneContext& ctx);
+private:
+    void UpdateCommon(Timestep ts, bool runScripting, bool runPhysics, bool runTransitions);
+    void RebuildRootCache() const;
 
-private: // Internal state lifecycle methods
-    void OnStateEnter(SceneState state, const SceneContext& ctx);
-    void OnStateExit(SceneState state, const SceneContext& ctx);
-    void FinishRuntimeStart(const SceneContext& ctx);
+private:
+    void OnStateEnter(SceneState state);
+    void OnStateExit(SceneState state);
+    void FinishRuntimeStart();
 
 private:
     SceneState m_State = SceneState::Edit;
@@ -112,12 +99,15 @@ private:
 
     bool m_IsStartingUp = false;
 
+    mutable std::vector<entt::entity> m_CachedRoots;
+    mutable bool m_RootsDirty = true;
+
 private:
     void OnIDConstruct(entt::registry& registry, entt::entity entity);
     void OnIDDestroy(entt::registry& registry, entt::entity entity);
+    void OnHierarchyConstruct(entt::registry& registry, entt::entity entity);
     void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
     Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
-    std::vector<entt::entity> GetRootEntitiesImpl() const;
 };
 
 } // namespace Chained

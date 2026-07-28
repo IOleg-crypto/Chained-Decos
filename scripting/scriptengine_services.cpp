@@ -167,13 +167,13 @@ std::filesystem::path ResolveCoreAssemblyPath(const std::filesystem::path &coral
 } // namespace
 
 ScriptHost &GetScriptHost() {
-    auto scriptEngine = ServiceLocator::Get<ScriptEngine>();
+    auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
     CH_ASSERT(scriptEngine && "ScriptEngine module is not registered in ServiceLocator!");
     return scriptEngine->GetHost();
 }
 
 ScriptRegistry &GetScriptRegistry() {
-    auto scriptEngine = ServiceLocator::Get<ScriptEngine>();
+    auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
     CH_ASSERT(scriptEngine && "ScriptEngine module is not registered in ServiceLocator!");
     return scriptEngine->GetRegistry();
 }

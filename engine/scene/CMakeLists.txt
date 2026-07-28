@@ -2,7 +2,7 @@
 add_library(engine_scene_core STATIC
     entity.cpp entity.h
     scene.h
-    scene_context.h scene_events.h scene_settings.h scene_state.h
+    scene_events.h scene_settings.h scene_state.h
     camera.cpp camera.h
     components.h
     components/animation_component.h
@@ -33,7 +33,6 @@ set_target_properties(engine_scene_core PROPERTIES UNITY_BUILD OFF)
 
 # 2. Main scene library (Serialization, Registry, UI Components)
 add_library(engine_scene STATIC
-    animation_systems.cpp
     component_registry.cpp
     component_registry_core.cpp
     component_registry_gameplay.cpp
@@ -49,8 +48,16 @@ add_library(engine_scene STATIC
     ui_control_registry.cpp
     systems/hierarchy_system.h
     systems/hierarchy_system.cpp
-    systems/scene_resource_manager.h
-    systems/scene_resource_manager.cpp
+    systems/animation_system.h
+    systems/animation_system.cpp
+    systems/audio_system.h
+    systems/audio_system.cpp
+    systems/physics_body_system.h
+    systems/physics_body_system.cpp
+    systems/asset_resolution_system.h
+    systems/asset_resolution_system.cpp
+    systems/scene_transition_system.h
+    systems/scene_transition_system.cpp
 )
 
 target_include_directories(engine_scene PUBLIC

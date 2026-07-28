@@ -6,7 +6,10 @@ namespace Chained
 {
     NativeFont FontAsset::CreateFromFile(const std::string& path)
     {
-        auto asset = ServiceLocator::Get<AssetManager>()->Get<FontAsset>(path);
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (!am) return NativeFont{};
+
+        auto asset = am->Get<FontAsset>(path);
         if (asset && asset->GetState() == AssetState::Ready)
         {
             return asset->GetFont();

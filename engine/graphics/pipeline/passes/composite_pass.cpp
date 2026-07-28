@@ -18,16 +18,18 @@ void CompositePass::Execute(const RenderContext& ctx)
     const auto& env = ctx.Renderer->GetEnvironment();
 
     // Delegate fog uniform upload to LightingManager to avoid duplication.
-    if (!ServiceLocator::Get<Renderer>()->GetShaderLibrary().Exists("Lighting")) return;
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer) return;
+    if (!renderer->GetShaderLibrary().Exists("Lighting")) return;
 
-    auto lightingAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().Get("Lighting");
+    auto lightingAsset = renderer->GetShaderLibrary().Get("Lighting");
     if (!lightingAsset) return;
 
     auto shader = lightingAsset->GetShader();
     if (!shader) return;
 
     shader->Bind();
-    ServiceLocator::Get<Renderer>()->ApplyFogUniforms(lightingAsset.get());
+    renderer->ApplyFogUniforms(shader.get());
 
     // Future: full-screen HDR blit with tone-mapping when m_HDRTarget is set.
 }

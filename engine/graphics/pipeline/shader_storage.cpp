@@ -34,7 +34,8 @@ void ShaderStorage::Add(const std::shared_ptr<ShaderAsset>& shader)
 
 void ShaderStorage::Load(const std::string& path)
 {
-    auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    auto shader = am ? am->Get<ShaderAsset>(path) : nullptr;
     if (shader)
     {
         Add(shader);
@@ -43,7 +44,8 @@ void ShaderStorage::Load(const std::string& path)
 
 void ShaderStorage::Load(const std::string& name, const std::string& path)
 {
-    auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    auto shader = am ? am->Get<ShaderAsset>(path) : nullptr;
     if (shader)
     {
         Insert(name, shader);
@@ -57,7 +59,8 @@ std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name, c
         return it->second;
     }
 
-    auto shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(path);
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    auto shader = am ? am->Get<ShaderAsset>(path) : nullptr;
     if (shader)
     {
         Insert(name, shader);
@@ -83,7 +86,8 @@ std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name)
 
 void ShaderStorage::LoadConfig(const std::string& configPath)
 {
-    std::string resolvedPath = ServiceLocator::Get<AssetManager>()->ResolvePath(configPath);
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    std::string resolvedPath = am ? am->ResolvePath(configPath) : configPath;
     try
     {
         YAML::Node config = YAML::LoadFile(resolvedPath);
@@ -160,7 +164,8 @@ void ShaderStorage::ReloadAll()
         if (shader && !shader->GetPath().empty())
         {
             CH_CORE_TRACE("ShaderStorage: Reloading shader '{}' from '{}'", name, shader->GetPath());
-            ServiceLocator::Get<AssetManager>()->Reload<ShaderAsset>(shader->GetPath());
+            if (auto* am = ServiceLocator::TryGet<AssetManager>())
+                am->Reload<ShaderAsset>(shader->GetPath());
         }
     }
 
@@ -169,7 +174,8 @@ void ShaderStorage::ReloadAll()
     {
         if (shader && !shader->GetPath().empty())
         {
-            shader = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(shader->GetPath());
+            if (auto* am = ServiceLocator::TryGet<AssetManager>())
+                shader = am->Get<ShaderAsset>(shader->GetPath());
             Insert(name, shader);
         }
     }

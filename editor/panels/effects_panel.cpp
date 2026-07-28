@@ -37,7 +37,7 @@ void EffectsPanel::OnImGuiRender(bool readOnly)
         if (ImGui::Combo("Diagnostic Mode", &currentDiag, diagnosticModes, 4))
         {
             m_Context->GetSettings().DiagnosticMode = (float)currentDiag;
-            if (auto* renderer = ServiceLocator::Get<Renderer>())
+            if (auto* renderer = ServiceLocator::TryGet<Renderer>())
             {
                 renderer->SetDiagnosticMode((float)currentDiag);
             }

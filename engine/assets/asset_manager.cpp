@@ -48,7 +48,7 @@ void AssetManager::Shutdown()
     {
         CH_CORE_ERROR("AssetManager: Shutdown timed out — some assets may still be loading.");
     }
-    if (auto* tp = ServiceLocator::Get<ThreadPool>())
+    if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
     {
         tp->WaitIdle();
     }
@@ -328,13 +328,16 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
     }
     else
     {
-        ServiceLocator::Get<ThreadPool>()->QueueTask([this, asset, loader, resolved]() {
-            if (ExecuteLoad(asset, loader, resolved))
-            {
-                std::lock_guard<std::mutex> lock(m_PendingMutex);
-                m_PendingAssets.push_back(asset);
-            }
-        });
+        if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+        {
+            tp->QueueTask([this, asset, loader, resolved]() {
+                if (ExecuteLoad(asset, loader, resolved))
+                {
+                    std::lock_guard<std::mutex> lock(m_PendingMutex);
+                    m_PendingAssets.push_back(asset);
+                }
+            });
+        }
     }
 
     return asset;
