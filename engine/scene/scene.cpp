@@ -1,7 +1,3 @@
-// scene.cpp
-// Chained Engine — ECS scene management and update pipeline.
-// Coordinates entity lifecycle, hierarchy, scripting, physics, animation, and scene transitions.
-
 #include "engine/scene/scene.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
@@ -9,23 +5,24 @@
 #include "engine/graphics/ui/ui_factory.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/components/control_component.h"
+#include "engine/scene/components/animation_component.h"
+#include "engine/scene/components/hierarchy_component.h"
 #include "engine/scene/components/scene_transition_component.h"
 #include "engine/scene/scene_events.h"
 #include "engine/scene/systems/hierarchy_system.h"
-#include "engine/scene/systems/scene_resource_manager.h"
+#include "engine/scene/systems/animation_system.h"
+#include "engine/scene/systems/audio_system.h"
+#include "engine/scene/systems/physics_body_system.h"
+#include "engine/scene/systems/asset_resolution_system.h"
+#include "engine/scene/systems/scene_transition_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
 #include <entt/entt.hpp>
-#include <yaml-cpp/yaml.h>
-#include <thread>
-#include "engine/common/thread_pool.h"
-
-using namespace entt::literals;
 
 namespace Chained
 {
+
 Scene::Scene()
 {
     m_Registry = std::make_unique<entt::registry>();
@@ -37,7 +34,11 @@ Scene::Scene()
     reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
     reg.on_destroy<IDComponent>().connect<&Scene::OnIDDestroy>(this);
 
-    SceneResources::RegisterObservers(reg);
+    reg.on_construct<HierarchyComponent>().connect<&Scene::OnHierarchyConstruct>(this);
+    reg.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
+
+    AssetResolutionSystem::RegisterObservers(reg);
+    PhysicsBodySystem::RegisterObservers(reg);
 
     m_Settings.Environment = std::make_shared<EnvironmentAsset>();
     m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
@@ -75,7 +76,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
 
     std::unordered_map<entt::entity, entt::entity> entityMap;
 
-    // First pass: Create all entities and copy basic components
     {
         CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass1");
         for (auto entityHandle : srcRegistry.view<IDComponent>())
@@ -94,7 +94,6 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         }
     }
 
-    // Second pass: Copy hierarchy relationships
     {
         CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass2");
         srcRegistry.view<HierarchyComponent>().each([&](auto entityHandle, auto& srcHC) {
@@ -126,11 +125,24 @@ std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
         });
     }
 
+    newScene->m_RootsDirty = true;
     return newScene;
+}
+
+void Scene::OnHierarchyConstruct(entt::registry& reg, entt::entity entity)
+{
+    m_RootsDirty = true;
 }
 
 void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 {
+    m_RootsDirty = true;
+
+    if (!reg.valid(entity) || !reg.all_of<HierarchyComponent>(entity))
+    {
+        return;
+    }
+
     auto& hc = reg.get<HierarchyComponent>(entity);
 
     if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<HierarchyComponent>(hc.Parent))
@@ -146,7 +158,6 @@ void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
 
 void Scene::OnEvent(Event& e)
 {
-    // Scripts receive events only during full gameplay
     if (m_State == SceneState::Play && !m_IsStartingUp)
     {
         m_ScriptingManager->OnEvent(e);
@@ -161,30 +172,19 @@ void Scene::OnRenderUI()
     }
 }
 
-void Scene::OnRuntimeStart(const SceneContext& ctx)
+void Scene::OnRuntimeStart()
 {
     CH_CORE_INFO("Scene::OnRuntimeStart - Starting activation for state: {}", (int)m_State);
-
-    // Cache the context on the registry so code that only has an entt::registry&
-    // (e.g. SceneResources::OnRigidBodyConstruct, invoked with a fixed EnTT callback
-    // signature) can still reach these services without going through ServiceLocator.
-    m_Registry->ctx().insert_or_assign<SceneContext>(SceneContext(ctx));
-
     m_IsStartingUp = true;
-
-    // We defer physics initialization to the next frame in OnUpdateRuntime
-    // so that the engine has a chance to render the "Loading..." overlay once!
 }
 
-void Scene::FinishRuntimeStart(const SceneContext& ctx)
+void Scene::FinishRuntimeStart()
 {
-    auto* scripting = ctx.Scripting ? ctx.Scripting : ServiceLocator::TryGet<ScriptEngine>();
-    if (scripting)
+    if (auto* scripting = ServiceLocator::TryGet<ScriptEngine>())
     {
         scripting->SetContextScene(this);
     }
 
-    // Start scripts only when in full gameplay state
     if (m_State == SceneState::Play)
     {
         if (m_ScriptingManager)
@@ -197,21 +197,15 @@ void Scene::FinishRuntimeStart(const SceneContext& ctx)
         }
     }
 
-    SceneResources::OnRuntimeStart(this);
+    AudioSystem::OnRuntimeStart(*m_Registry);
 
-    // Reset any stale SceneTransitionComponent::Triggered flags that may have been
-    // serialized as `true` in the scene file — transitions should only fire on user input.
+    auto transitionView = m_Registry->view<SceneTransitionComponent>();
+    for (auto entity : transitionView)
     {
-        auto transitionView = m_Registry->view<SceneTransitionComponent>();
-        for (auto entity : transitionView)
-        {
-            transitionView.get<SceneTransitionComponent>(entity).Triggered = false;
-        }
+        transitionView.get<SceneTransitionComponent>(entity).Triggered = false;
     }
 
-    // Start animations
-    auto& registry = GetRegistry();
-    auto view = registry.view<AnimationComponent>();
+    auto view = m_Registry->view<AnimationComponent>();
     for (auto entity : view)
     {
         auto& anim = view.get<AnimationComponent>(entity);
@@ -222,7 +216,7 @@ void Scene::FinishRuntimeStart(const SceneContext& ctx)
     }
 }
 
-void Scene::OnRuntimeStop(const SceneContext& ctx)
+void Scene::OnRuntimeStop()
 {
     CH_CORE_INFO("Scene::OnRuntimeStop - Stopping lifecycle...");
 
@@ -233,103 +227,56 @@ void Scene::OnRuntimeStop(const SceneContext& ctx)
         m_ScriptingManager->OnRuntimeStop();
     }
 
-    SceneResources::OnRuntimeStop(this);
+    AudioSystem::OnRuntimeStop(*m_Registry);
 
-    auto* physics = ctx.PhysicsSystem ? ctx.PhysicsSystem : ServiceLocator::TryGet<Physics>();
-    if (physics)
+    if (auto* physics = ServiceLocator::TryGet<Physics>())
     {
         physics->ClearContext(this);
     }
 
-    auto* scripting = ctx.Scripting ? ctx.Scripting : ServiceLocator::TryGet<ScriptEngine>();
-    if (scripting)
+    if (auto* scripting = ServiceLocator::TryGet<ScriptEngine>())
     {
         scripting->SetContextScene(nullptr);
     }
-
-    m_Registry->ctx().erase<SceneContext>();
 }
 
-void Scene::OnUpdateRuntime(Timestep ts, const SceneContext& ctx)
+void Scene::UpdateCommon(Timestep ts, bool runScripting, bool runPhysics, bool runTransitions)
 {
     CH_PROFILE_FUNCTION();
 
-    auto* physics = ctx.PhysicsSystem ? ctx.PhysicsSystem : ServiceLocator::TryGet<Physics>();
-
-    if (m_IsStartingUp)
-    {
-        if (physics)
-        {
-            physics->ResetWorld(this);
-            physics->ResetAccumulator(this);
-            physics->InitializeBodies(this);
-        }
-
-        m_IsStartingUp = false;
-        FinishRuntimeStart(ctx);
-        return;
-    }
-
-    if (m_ScriptingManager)
+    if (runScripting && m_ScriptingManager)
     {
         m_ScriptingManager->OnUpdate(ts);
     }
 
-    // 1. Hierarchy Update
     Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
 
-    // 2. Resource & Asset Resolution
-    SceneResources::Update(*m_Registry, ts);
+    AssetResolutionSystem::Update(*m_Registry);
+    AnimationSystem::Update(*m_Registry, ts);
+    AudioSystem::Update(*m_Registry, ts);
+    PhysicsBodySystem::Update(*m_Registry);
 
-    // 3. Physics Simulation
-    if (physics)
+    if (runPhysics)
     {
-        physics->Update(this, ts, true);
+        if (auto* physics = ServiceLocator::TryGet<Physics>())
+        {
+            physics->Update(this, ts, true);
+        }
     }
 
-    // 4. Animation Playback (handled by SceneResources::Update)
-
-    // 5. Scene Transitions
-    auto transitionView = m_Registry->view<SceneTransitionComponent>();
-    for (auto entity : transitionView)
+    if (runTransitions)
     {
-        auto& transition = transitionView.get<SceneTransitionComponent>(entity);
-        if (m_Registry->all_of<UIControlComponent>(entity))
-        {
-            auto& widget = m_Registry->get<UIControlComponent>(entity);
-            if (widget.PressedThisFrame)
-            {
-                transition.Triggered = true;
-            }
-        }
-
-        if (transition.Triggered && !transition.TargetScenePath.empty())
-        {
-            SceneChangeRequestEvent ev(transition.TargetScenePath);
-            if (m_EventCallback)
-            {
-                m_EventCallback(ev);
-            }
-            else
-            {
-                CH_CORE_WARN("Scene transition triggered but no EventCallback bound!");
-            }
-
-            transition.Triggered = false;
-        }
+        SceneTransitionSystem::Update(*m_Registry, m_EventCallback);
     }
 }
 
-void Scene::OnUpdateSimulation(Timestep ts, const SceneContext& ctx)
+void Scene::OnUpdateRuntime(Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
-    auto* physics = ctx.PhysicsSystem ? ctx.PhysicsSystem : ServiceLocator::TryGet<Physics>();
-
     if (m_IsStartingUp)
     {
-        // Synchronous initialization on the main thread (blocks, but loading screen is visible)
-        if (physics)
+        if (auto* physics = ServiceLocator::TryGet<Physics>())
         {
             physics->ResetWorld(this);
             physics->ResetAccumulator(this);
@@ -337,37 +284,46 @@ void Scene::OnUpdateSimulation(Timestep ts, const SceneContext& ctx)
         }
 
         m_IsStartingUp = false;
-        FinishRuntimeStart(ctx);
+        FinishRuntimeStart();
         return;
     }
 
-    // 1. Hierarchy Update
-    Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
-
-    // 2. Resource & Asset Resolution
-    SceneResources::Update(*m_Registry, ts);
-
-    // 3. Physics Simulation
-    if (physics)
-    {
-        physics->Update(this, ts, true);
-    }
-
-    // 4. Animation Playback (handled by SceneResources::Update)
+    UpdateCommon(ts, true, true, true);
 }
 
-void Scene::OnUpdateEditor(Timestep timestep, const SceneContext& ctx)
+void Scene::OnUpdateSimulation(Timestep ts)
+{
+    CH_PROFILE_FUNCTION();
+
+    if (m_IsStartingUp)
+    {
+        if (auto* physics = ServiceLocator::TryGet<Physics>())
+        {
+            physics->ResetWorld(this);
+            physics->ResetAccumulator(this);
+            physics->InitializeBodies(this);
+        }
+
+        m_IsStartingUp = false;
+        FinishRuntimeStart();
+        return;
+    }
+
+    UpdateCommon(ts, false, true, false);
+}
+
+void Scene::OnUpdateEditor(Timestep timestep)
 {
     CH_PROFILE_FUNCTION();
 
     Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
 
-    if (ctx.PhysicsSystem)
+    if (auto* physics = ServiceLocator::TryGet<Physics>())
     {
-        ctx.PhysicsSystem->Update(this, timestep, false);
+        physics->Update(this, timestep, false);
     }
 
-    SceneResources::Update(*m_Registry, timestep);
+    AssetResolutionSystem::Update(*m_Registry);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
@@ -402,55 +358,58 @@ entt::registry* Scene::GetRegistryPtr()
 {
     return m_Registry.get();
 }
+
 const entt::registry& Scene::GetRegistry() const
 {
     return *m_Registry;
 }
+
 entt::registry& Scene::GetRegistry()
 {
     return *m_Registry;
 }
+
 const SceneSettings& Scene::GetSettings() const
 {
     return m_Settings;
 }
+
 SceneSettings& Scene::GetSettings()
 {
     return m_Settings;
 }
 
-std::vector<entt::entity> Scene::GetRootEntities()
+const std::vector<entt::entity>& Scene::GetRootEntities() const
 {
-    return GetRootEntitiesImpl();
+    if (m_RootsDirty)
+    {
+        RebuildRootCache();
+    }
+    return m_CachedRoots;
 }
 
-std::vector<entt::entity> Scene::GetRootEntities() const
+void Scene::RebuildRootCache() const
 {
-    return GetRootEntitiesImpl();
-}
-
-std::vector<entt::entity> Scene::GetRootEntitiesImpl() const
-{
-    std::vector<entt::entity> roots;
+    m_CachedRoots.clear();
     auto& reg = GetRegistry();
 
-    auto view = reg.template view<TransformComponent>();
+    auto view = reg.view<TransformComponent>();
     for (auto entity : view)
     {
-        if (reg.template all_of<HierarchyComponent>(entity))
+        if (reg.all_of<HierarchyComponent>(entity))
         {
-            auto& hc = reg.template get<HierarchyComponent>(entity);
+            auto& hc = reg.get<HierarchyComponent>(entity);
             if (hc.Parent == entt::null)
             {
-                roots.push_back(entity);
+                m_CachedRoots.push_back(entity);
             }
         }
         else
         {
-            roots.push_back(entity);
+            m_CachedRoots.push_back(entity);
         }
     }
-    return roots;
+    m_RootsDirty = false;
 }
 
 bool Scene::IsSimulationRunning() const
@@ -575,60 +534,61 @@ Entity Scene::GetEntityByUUID(UUID uuid)
     return {};
 }
 
-void Scene::TransitionToState(SceneState newState, const SceneContext& ctx)
+void Scene::TransitionToState(SceneState newState)
 {
     if (m_State == newState)
     {
         return;
     }
 
-    OnStateExit(m_State, ctx);
+    OnStateExit(m_State);
     SceneState oldState = m_State;
     m_State = newState;
-    OnStateEnter(m_State, ctx);
+    OnStateEnter(m_State);
 
     CH_CORE_TRACE("Scene: Transitioned state from {} to {}", (int)oldState, (int)newState);
 }
 
-void Scene::OnStateEnter(SceneState state, const SceneContext& ctx)
+void Scene::OnStateEnter(SceneState state)
 {
     switch (state)
     {
     case SceneState::Play:
     case SceneState::Simulate:
-        OnRuntimeStart(ctx);
+        OnRuntimeStart();
         break;
     case SceneState::Edit:
         break;
     }
 }
 
-void Scene::OnStateExit(SceneState state, const SceneContext& ctx)
+void Scene::OnStateExit(SceneState state)
 {
     switch (state)
     {
     case SceneState::Play:
     case SceneState::Simulate:
-        OnRuntimeStop(ctx);
+        OnRuntimeStop();
         break;
     case SceneState::Edit:
         break;
     }
 }
 
-void Scene::OnUpdate(Timestep timestep, const SceneContext& ctx)
+void Scene::OnUpdate(Timestep timestep)
 {
     switch (m_State)
     {
     case SceneState::Edit:
-        OnUpdateEditor(timestep, ctx);
+        OnUpdateEditor(timestep);
         break;
     case SceneState::Play:
-        OnUpdateRuntime(timestep, ctx);
+        OnUpdateRuntime(timestep);
         break;
     case SceneState::Simulate:
-        OnUpdateSimulation(timestep, ctx);
+        OnUpdateSimulation(timestep);
         break;
     }
 }
+
 } // namespace Chained

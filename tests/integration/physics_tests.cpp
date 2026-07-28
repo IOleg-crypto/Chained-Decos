@@ -1,30 +1,12 @@
 
 #include "engine/core/service_locator.h"
-#include "engine/graphics/ui/widget_renderer.h"
 #include "engine/physics/iphysics_world.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/scene_context.h"
-#include "scripting/scriptengine.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
-
-namespace
-{
-// Mirrors how RuntimeLayer/EditorLayer build a SceneContext in production code —
-// see scene_context.h. UI is expected to be null here: the test harness boots
-// Application with Headless = true (test_environment.cpp), so WidgetRenderer never exists.
-SceneContext MakeTestSceneContext()
-{
-    SceneContext ctx;
-    ctx.PhysicsSystem = ServiceLocator::Get<Physics>();
-    ctx.Scripting = ServiceLocator::Get<ScriptEngine>();
-    ctx.UI = ServiceLocator::TryGet<WidgetRenderer>();
-    return ctx;
-}
-} // namespace
 
 TEST(PhysicsTest, Raycast)
 {
@@ -35,7 +17,7 @@ TEST(PhysicsTest, Raycast)
 
     auto& collider = entity.AddComponent<ColliderComponent>();
     collider.Size = {1.0f, 1.0f, 1.0f};
-    collider.Offset = {-0.5f, -0.5f, -0.5f}; // Center it
+    collider.Offset = {-0.5f, -0.5f, -0.5f};
 
     auto& rb = entity.AddComponent<RigidBodyComponent>();
     rb.Type = RigidBodyComponent::BodyType::Static;
@@ -44,16 +26,14 @@ TEST(PhysicsTest, Raycast)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    auto ctx = MakeTestSceneContext();
-    scene->OnRuntimeStart(ctx);
-    scene->OnUpdateRuntime(Timestep(0.016f), ctx);
+    scene->OnRuntimeStart();
+    scene->OnUpdateRuntime(Timestep(0.016f));
 
     RaycastResult result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_TRUE(result.Hit);
     EXPECT_NEAR(result.Distance, 4.0f, 0.001f);
     EXPECT_EQ(result.Entity, (entt::entity)entity);
 
-    // Ray looking away
     ray.direction = {0.0f, 0.0f, -1.0f};
     result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
@@ -66,7 +46,6 @@ TEST(PhysicsTest, RaycastMissingCollider)
     auto& transform = entity.GetComponent<TransformComponent>();
     transform.Translation = {0.0f, 0.0f, 5.0f};
 
-    // No ColliderComponent added
     auto& rb = entity.AddComponent<RigidBodyComponent>();
     rb.Type = RigidBodyComponent::BodyType::Static;
 
@@ -74,9 +53,8 @@ TEST(PhysicsTest, RaycastMissingCollider)
     ray.position = {0.0f, 0.0f, 0.0f};
     ray.direction = {0.0f, 0.0f, 1.0f};
 
-    auto ctx = MakeTestSceneContext();
-    scene->OnRuntimeStart(ctx);
-    scene->OnUpdateRuntime(Timestep(0.016f), ctx);
+    scene->OnRuntimeStart();
+    scene->OnUpdateRuntime(Timestep(0.016f));
 
     RaycastResult result = ServiceLocator::Get<Physics>()->Raycast(scene.get(), ray);
     EXPECT_FALSE(result.Hit);
@@ -129,9 +107,8 @@ TEST(PhysicsTest, RuntimeStartInitializesRigidBodyHandles)
 
     EXPECT_EQ(rigidBody.Handle, kInvalidPhysicsBody);
 
-    auto ctx = MakeTestSceneContext();
-    scene->OnRuntimeStart(ctx);
-    scene->OnUpdateRuntime(Timestep(0.016f), ctx);
+    scene->OnRuntimeStart();
+    scene->OnUpdateRuntime(Timestep(0.016f));
 
     EXPECT_NE(rigidBody.Handle, kInvalidPhysicsBody);
 }

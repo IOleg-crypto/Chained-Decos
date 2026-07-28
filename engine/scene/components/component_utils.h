@@ -86,7 +86,9 @@ namespace Chained::ComponentUtils
             return;
         }
 
-        auto* assets = ServiceLocator::Get<AssetManager>();
+        auto* assets = ServiceLocator::TryGet<AssetManager>();
+        if (!assets) return;
+
         auto handle = assets->LoadAsset(mc.ModelPath, ModelAsset::GetStaticType());
         auto asset = assets->Get<ModelAsset>(mc.ModelPath);
         if (asset && asset->GetState() == AssetState::Ready)

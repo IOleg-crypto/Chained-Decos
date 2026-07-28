@@ -30,7 +30,10 @@ std::shared_ptr<Texture> Texture::CreateCubemap(uint32_t size, TextureFormat for
 
 std::shared_ptr<Texture> Texture::CreateFromFile(const std::string& path)
 {
-    auto texAsset = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (!am) return nullptr;
+
+    auto texAsset = am->Get<TextureAsset>(path);
     if (texAsset && texAsset->GetTexture())
     {
         return texAsset->GetTexture();

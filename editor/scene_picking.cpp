@@ -83,7 +83,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
             return;
         }
 
-        AssetManager* assetManager = ServiceLocator::Get<AssetManager>();
+        AssetManager* assetManager = ServiceLocator::TryGet<AssetManager>();
         if (!assetManager) return;
         auto modelAsset = assetManager->Get<ModelAsset>(modelComp.ModelPath);
         if (!modelAsset || !modelAsset->IsReady())

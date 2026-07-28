@@ -428,7 +428,8 @@ void AssimpImporter::ProcessMeshes()
         futures.reserve(m_Scene->mNumMeshes);
         for (uint32_t m = 0; m < m_Scene->mNumMeshes; ++m)
         {
-            futures.push_back(ServiceLocator::Get<ThreadPool>()->Enqueue([this, m]() { ProcessSingleMesh(m); }));
+            if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+                futures.push_back(tp->Enqueue([this, m]() { ProcessSingleMesh(m); }));
         }
         for (auto& ft : futures)
         {
@@ -720,7 +721,9 @@ void AssimpImporter::ProcessAnimations()
             }
 
             const int boneIdx = boneIt->second;
-            animFutures.push_back(ServiceLocator::Get<ThreadPool>()->Enqueue([&ra, channel, boneIdx, &bindPoses, ticksPerFrame]() {
+            if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+            {
+                animFutures.push_back(tp->Enqueue([&ra, channel, boneIdx, &bindPoses, ticksPerFrame]() {
                 unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
                 for (int f = 0; f < ra.frameCount; ++f)
                 {
@@ -731,6 +734,7 @@ void AssimpImporter::ProcessAnimations()
                     ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
                 }
             }));
+            }
         }
         for (auto& f : animFutures) f.get();
         CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps, {} channels)", ra.name, ra.frameCount, ra.frameRate, anim->mNumChannels);

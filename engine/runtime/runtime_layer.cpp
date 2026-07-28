@@ -57,14 +57,8 @@ RuntimeLayer::RuntimeLayer(const std::string& projectPath)
 {
     m_SceneRenderer = std::make_unique<SceneRenderer>();
 
-    // Safe here: Application's constructor already calls ServiceLocator::Lock() before
-    // any layer is constructed (layers are pushed from CreateApplication after `new
-    // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
-    m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
-    m_Context.Scripting = ServiceLocator::Get<ScriptEngine>();
-    m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>(); // null in headless mode
-    m_Renderer = ServiceLocator::Get<Renderer>();
-    m_AssetManager = ServiceLocator::Get<AssetManager>();
+    m_Renderer = ServiceLocator::TryGet<Renderer>();
+    m_AssetManager = ServiceLocator::TryGet<AssetManager>();
 }
 
 RuntimeLayer::~RuntimeLayer()
@@ -90,11 +84,14 @@ void RuntimeLayer::OnAttach()
 
     InitProject(m_ProjectPath);
 
-    if (ImFont* projectDefaultFont =
-            ServiceLocator::Get<WidgetRenderer>()->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+    if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
     {
-        io.FontDefault = projectDefaultFont;
-        CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
+        if (ImFont* projectDefaultFont =
+                wr->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+        {
+            io.FontDefault = projectDefaultFont;
+            CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
+        }
     }
 
     if (imguiLayer)
@@ -116,7 +113,8 @@ void RuntimeLayer::OnDetach()
     StopCurrentScene();
 
     m_Scene = nullptr;
-    ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
+    if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
+        se->SetContextScene(nullptr);
     m_RuntimeStarted = false;
     m_IsSceneLoading = false;
     m_LoadingOverlayElapsed = 0.0f;
@@ -154,9 +152,10 @@ void RuntimeLayer::OnUpdate(Timestep ts)
             // Clear stale button press flags from the previous scene before starting runtime.
             // Without this, a button press that triggered the scene change would still be "pressed"
             // on the first frame of the new scene, causing immediate unintended transitions.
-            ServiceLocator::Get<WidgetRenderer>()->ResetButtonStates(m_Scene.get());
+            if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+                wr->ResetButtonStates(m_Scene.get());
             // TransitionToState handles OnRuntimeStart internally — this is the single call site.
-            m_Scene->TransitionToState(SceneState::Play, m_Context);
+            m_Scene->TransitionToState(SceneState::Play);
             m_RuntimeStarted = true;
             m_IsSceneLoading = false;
             m_SuppressNextUIInput = true;
@@ -173,9 +172,10 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         // and re-fires script actions on subsequent frames.
         bool suppress = m_SuppressNextUIInput;
         m_SuppressNextUIInput = false;
-        ServiceLocator::Get<WidgetRenderer>()->ProcessInput(m_Scene.get(), suppress);
+        if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+            wr->ProcessInput(m_Scene.get(), suppress);
 
-        m_Scene->OnUpdateRuntime(ts, m_Context);
+        m_Scene->OnUpdateRuntime(ts);
     }
 
     if (m_IsBoostingUploads)
@@ -303,7 +303,8 @@ void RuntimeLayer::OnImGuiRender()
                 {
                     ImVec2 canvasPos = ImGui::GetCursorScreenPos();
                     ImVec2 canvasSize = ImGui::GetContentRegionAvail();
-                    ServiceLocator::Get<WidgetRenderer>()->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
+                    if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+                        wr->DrawCanvas(m_Scene.get(), canvasPos, canvasSize, false);
                     m_Scene->OnRenderUI();
                 }
                 ImGui::EndChild();
@@ -420,7 +421,8 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
     // Initialize Scripting for the loaded project
-    if (assemblyPath.empty() || !ServiceLocator::Get<ScriptEngine>()->ReloadAssembly(assemblyPath.string()))
+    auto* se = ServiceLocator::TryGet<ScriptEngine>();
+    if (assemblyPath.empty() || !se || !se->ReloadAssembly(assemblyPath.string()))
     {
         CH_CORE_WARN("RuntimeSystem: Script reload failed during project initialization (path: {}). Runtime continues "
                      "without scripts.",
@@ -428,7 +430,8 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
     }
 
     // Discover project fonts once before any scene loads.
-    ServiceLocator::Get<WidgetRenderer>()->LoadProjectFonts();
+    if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+        wr->LoadProjectFonts();
 
     ApplyWindowConfiguration();
     SetupBrandingAndIcon();
@@ -487,7 +490,8 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     // CRITICAL: Load engine shaders and resources immediately after project is resolved
     m_Renderer->LoadEngineResources();
 
-    ServiceLocator::Get<ScriptEngine>()->TryAutoLoad(project->GetConfig());
+    if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
+        se->TryAutoLoad(project->GetConfig());
 
     return true;
 }
@@ -649,7 +653,7 @@ void RuntimeLayer::StopCurrentScene()
         return;
     }
 
-    m_Scene->OnRuntimeStop(m_Context);
+    m_Scene->OnRuntimeStop();
 }
 
 std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const
@@ -680,8 +684,11 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
         return;
     }
 
-    const int loadedCount =
-        ServiceLocator::Get<WidgetRenderer>()->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+    const int loadedCount = [&]() {
+        if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+            return wr->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+        return 0;
+    }();
     if (loadedCount <= 0)
     {
         return;
@@ -716,7 +723,8 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     if (!serializer.Deserialize(scenePath.string()))
     {
         m_Scene = nullptr;
-        ServiceLocator::Get<ScriptEngine>()->SetContextScene(nullptr);
+        if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
+            se->SetContextScene(nullptr);
         return false;
     }
 
@@ -728,7 +736,8 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
     m_Scene->SetEventCallback([this](Event& e) { OnEvent(e); });
 
     // Keep current ScriptEngine behavior intact while runtime owns transition flow.
-    ServiceLocator::Get<ScriptEngine>()->SetContextScene(m_Scene.get());
+    if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
+        se->SetContextScene(m_Scene.get());
 
     // NOTE: Scene is left in Edit state here. TransitionToState(Play) — which calls
     // OnRuntimeStart — will happen once in OnUpdate when all async assets are ready.

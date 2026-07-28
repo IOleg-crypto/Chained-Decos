@@ -49,7 +49,13 @@ inline const std::vector<FontChoice>& GetEditorFontChoices()
     }
     s_Scanned = true;
 
-    auto engineRoot = ServiceLocator::Get<AssetManager>()->GetEngineRoot();
+    auto* assetManager = ServiceLocator::TryGet<AssetManager>();
+    if (!assetManager)
+    {
+        CH_CORE_WARN("EditorGUI: AssetManager not available; font picker will be empty.");
+        return s_Choices;
+    }
+    auto engineRoot = assetManager->GetEngineRoot();
     const std::filesystem::path fontDir = engineRoot / "resources" / "font";
 
     std::error_code ec;
