@@ -147,7 +147,7 @@ void RigidBody_GetVelocity(uint64_t entityID, glm::vec3* outVelocity)
         auto& rb = entity.GetComponent<RigidBodyComponent>();
         if (rb.Handle != kInvalidPhysicsBody)
         {
-            auto* physics = ServiceLocator::Get<Physics>();
+            auto* physics = ServiceLocator::TryGet<Physics>();
             if (physics && physics->GetWorld())
             {
                 *outVelocity = physics->GetWorld()->GetVelocity(rb.Handle);
@@ -170,7 +170,7 @@ void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
         rb.Velocity = *inVelocity;
         if (rb.Handle != kInvalidPhysicsBody)
         {
-            auto* physics = ServiceLocator::Get<Physics>();
+            auto* physics = ServiceLocator::TryGet<Physics>();
             if (physics && physics->GetWorld())
             {
                 glm::vec3 toSet = *inVelocity;

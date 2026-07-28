@@ -6,10 +6,10 @@ namespace ChainedDecos.Scripts
 {
     public class PlayerController : Script
     {
-        public float MovementSpeed = 15.0f;
-        public float JumpForce    = 15.0f;
-        public float Gravity      = 30.0f;   // Units per second^2 (should match physics config)
-        public string MenuScene   = "scenes/start_menu.chscene";
+        private float MovementSpeed => Entity.GetComponent<PlayerComponent>()?.MovementSpeed ?? 15.0f;
+        private float JumpForce    => Entity.GetComponent<PlayerComponent>()?.JumpForce ?? 15.0f;
+        public  float Gravity      = 30.0f;   // Units per second^2 (should match physics config)
+        public  string MenuScene   = "scenes/start_menu.chscene";
 
         public override void OnCreate()
         {
@@ -18,15 +18,6 @@ namespace ChainedDecos.Scripts
             // Read gravity from the engine's project configuration so it always
             // matches the value set in Project Settings -> Physics -> World Gravity.
             Gravity = Physics.GetGravity();
-
-            // Read settings from the C++ PlayerComponent if the entity has one.
-            // This allows tweaking values from the Inspector without modifying the script.
-            PlayerComponent? pc = Entity.GetComponent<PlayerComponent>();
-            if (pc != null)
-            {
-                if (pc.MovementSpeed > 0.0f) MovementSpeed = pc.MovementSpeed;
-                if (pc.JumpForce > 0.0f)     JumpForce     = pc.JumpForce;
-            }
         }
 
         public override void OnUpdate(float deltaTime)

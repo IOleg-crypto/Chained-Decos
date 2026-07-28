@@ -147,7 +147,7 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
                         m_ExportState.CurrentFile.clear();
                     }
                     m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
-                    auto* threadPool = ServiceLocator::Get<ThreadPool>();
+                    auto* threadPool = ServiceLocator::TryGet<ThreadPool>();
                     if (!threadPool)
                     {
                         CH_CORE_ERROR("EditorMenu: ThreadPool not available, cannot export");
@@ -181,7 +181,7 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
         ImGui::Separator();
         if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reload Shaders"))
         {
-            if (auto* renderer = ServiceLocator::Get<Renderer>())
+            if (auto* renderer = ServiceLocator::TryGet<Renderer>())
             {
                 renderer->GetShaderLibrary().ReloadAll();
             }
@@ -211,7 +211,7 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
             {
                 auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
                                                                       project->GetProjectDirectoryForProject());
-                if (auto* scriptEngine = ServiceLocator::Get<ScriptEngine>())
+                if (auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>())
                 {
                     scriptEngine->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");
                 }

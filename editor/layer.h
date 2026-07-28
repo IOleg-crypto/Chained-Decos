@@ -6,7 +6,6 @@
 #include "imgui.h"
 
 #include "engine/scene/scene.h"
-#include "engine/scene/scene_context.h"
 #include "editor/project_manager.h"
 #include "editor/types.h"
 #include "editor/scene_manager.h"
@@ -61,7 +60,6 @@ public:
     EditorPanels& GetPanels() { return *m_Panels; }
     EditorMenu& GetMenu() { return *m_Menu; }
 
-    const SceneContext& GetSceneContext() const { return m_Context; }
     ImVec2 GetViewportSize() const { return m_ViewportSize; }
     ImVec2& GetViewportSizeRef() { return m_ViewportSize; }
     void OnViewportResized(const ImVec2& size) { m_ViewportSize = size; }
@@ -87,10 +85,6 @@ public:
     std::shared_ptr<Scene> GetActiveScene() const;
 
 private:
-    // Resolved once in the constructor (ServiceLocator is already locked by then —
-    // see Application::Application) and reused for the layer's whole lifetime.
-    SceneContext m_Context;
-
     EditorConfig m_Config;
     EditorState m_EditorState;
 

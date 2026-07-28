@@ -27,7 +27,7 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     auto& cc = selectedEntity.GetComponent<ControlComponent>();
     auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
     Scene* scene = (sceneCtx && *sceneCtx) ? *sceneCtx : nullptr;
-    auto* uiRenderer = ServiceLocator::Get<WidgetRenderer>();
+    auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>();
     UIRect rect = (scene && uiRenderer) ? uiRenderer->GetEntityRect(scene, selectedEntity, viewportSize, viewportPos)
                                         : UIRect{};
 

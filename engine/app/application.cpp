@@ -39,7 +39,10 @@ Application::Application(const ApplicationSpecification& spec)
     ComponentRegistry::RegisterEngineComponents();
 
     unsigned int threads = std::thread::hardware_concurrency();
-    if (threads == 0) threads = 1;
+    if (threads == 0)
+    {
+        threads = 1;
+    }
     unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
 
     if (!m_Specification.WorkingDirectory.empty())
@@ -66,15 +69,19 @@ Application::Application(const ApplicationSpecification& spec)
     // Set engine root BEFORE any other modules (like Renderer) try to load assets!
     if (!m_Specification.EngineRoot.empty())
     {
-        ServiceLocator::Get<AssetManager>()->SetEngineRoot(m_Specification.EngineRoot);
+        if (auto* am = ServiceLocator::TryGet<AssetManager>())
+            am->SetEngineRoot(m_Specification.EngineRoot);
         CH_CORE_INFO("AssetManager: Engine root set to '{}'", m_Specification.EngineRoot.string());
     }
 
     if (!m_Specification.Headless)
     {
         ServiceLocator::Provide(std::make_unique<Renderer>());
-        ServiceLocator::Provide(std::make_unique<WidgetRenderer>());
-        ServiceLocator::Provide(std::make_unique<DebugRenderer>());
+        if (ServiceLocator::Has<Renderer>())
+        {
+            ServiceLocator::Provide(std::make_unique<WidgetRenderer>());
+            ServiceLocator::Provide(std::make_unique<DebugRenderer>());
+        }
     }
     ServiceLocator::Provide(std::make_unique<Audio>());
     ServiceLocator::Provide(std::make_unique<Physics>());
@@ -83,10 +90,10 @@ Application::Application(const ApplicationSpecification& spec)
     ServiceLocator::InitializeModule();
     ServiceLocator::Lock();
 
-
     if (m_Window)
     {
-        ServiceLocator::Get<Renderer>()->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
+        if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+            renderer->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
     }
 
     m_LayerStack = std::make_unique<LayerStack>();
@@ -142,8 +149,10 @@ void Application::Run()
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
             // 1. Systems Update
-            ServiceLocator::Get<Audio>()->Update(m_Timer.DeltaTime);
-            ServiceLocator::Get<AssetManager>()->Update(m_Timer.DeltaTime);
+            if (auto* audio = ServiceLocator::TryGet<Audio>())
+                audio->Update(m_Timer.DeltaTime);
+            if (auto* am = ServiceLocator::TryGet<AssetManager>())
+                am->Update(m_Timer.DeltaTime);
 
             // 2. Fixed Update
             m_Timer.Accumulator += (float)m_Timer.DeltaTime;
@@ -193,7 +202,8 @@ void Application::OnEvent(Event& e)
     if (e.GetEventType() == EventType::WindowResize)
     {
         auto& re = static_cast<WindowResizeEvent&>(e);
-        ServiceLocator::Get<Renderer>()->SetViewportSize(re.GetWidth(), re.GetHeight());
+        if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+            renderer->SetViewportSize(re.GetWidth(), re.GetHeight());
     }
 
     for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)
@@ -206,13 +216,15 @@ void Application::OnEvent(Event& e)
     }
 }
 
-void Application::PushLayer(std::unique_ptr<Layer> layer) const {
+void Application::PushLayer(std::unique_ptr<Layer> layer) const
+{
     Layer* raw = layer.get();
     m_LayerStack->PushLayer(std::move(layer));
     raw->OnAttach();
 }
 
-void Application::PushOverlay(std::unique_ptr<Layer> overlay) const {
+void Application::PushOverlay(std::unique_ptr<Layer> overlay) const
+{
     Layer* raw = overlay.get();
     m_LayerStack->PushOverlay(std::move(overlay));
     raw->OnAttach();
