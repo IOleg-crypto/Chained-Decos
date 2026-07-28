@@ -1,14 +1,14 @@
 Material:
-  Name: Firefly_yellow
+  Name: Flag_blue
   AlbedoColor:
     - 1
     - 1
     - 1
     - 1
   EmissiveColor:
-    - 1
-    - 0.407043993
-    - 0.407043993
+    - 0
+    - 0
+    - 0
     - 1
   EmissiveIntensity: 0
   Metalness: 1

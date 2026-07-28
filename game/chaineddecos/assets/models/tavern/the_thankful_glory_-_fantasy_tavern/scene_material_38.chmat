@@ -1,12 +1,12 @@
 Material:
-  Name: Staff_blue_orb
+  Name: Shield_outer_ring
   AlbedoColor:
     - 1
     - 1
     - 1
     - 1
   EmissiveColor:
-    - 1
+    - 0
     - 0
     - 0
     - 1
