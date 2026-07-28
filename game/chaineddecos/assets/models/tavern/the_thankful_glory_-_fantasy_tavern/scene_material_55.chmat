@@ -1,14 +1,14 @@
 Material:
-  Name: Grass2
+  Name: Firefly_red
   AlbedoColor:
     - 1
     - 1
     - 1
     - 1
   EmissiveColor:
-    - 0
-    - 0
-    - 0
+    - 0.512242019
+    - 0.462790996
+    - 0.0620450005
     - 1
   EmissiveIntensity: 0
   Metalness: 1

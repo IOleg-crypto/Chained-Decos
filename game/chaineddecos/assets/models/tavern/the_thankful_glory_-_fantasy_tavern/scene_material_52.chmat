@@ -1,5 +1,5 @@
 Material:
-  Name: Leaf2
+  Name: Untitled_drawing
   AlbedoColor:
     - 1
     - 1
@@ -15,3 +15,4 @@ Material:
   Roughness: 1
   Transparent: false
   Alpha: 1
+  AlbedoMap: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/tavern/the_thankful_glory_-_fantasy_tavern\textures/Untitled_drawing_diffuse.png

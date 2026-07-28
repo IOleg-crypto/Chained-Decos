@@ -1,12 +1,12 @@
 Material:
-  Name: Wood_inside_tree
+  Name: Creature_red_eyes
   AlbedoColor:
     - 1
     - 1
     - 1
     - 1
   EmissiveColor:
-    - 0
+    - 1
     - 0
     - 0
     - 1

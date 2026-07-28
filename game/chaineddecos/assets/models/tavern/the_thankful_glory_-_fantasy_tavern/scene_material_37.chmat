@@ -1,12 +1,12 @@
 Material:
-  Name: Grip_bottom
+  Name: Staff_blue_orb
   AlbedoColor:
     - 1
     - 1
     - 1
     - 1
   EmissiveColor:
-    - 0
+    - 1
     - 0
     - 0
     - 1
