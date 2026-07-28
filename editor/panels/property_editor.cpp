@@ -262,7 +262,7 @@ void PropertyEditor::Init()
         if (entity.HasComponent<ModelComponent>())
         {
             auto& mc = entity.GetComponent<ModelComponent>();
-            auto* am = ServiceLocator::Get<AssetManager>();
+            auto* am = ServiceLocator::TryGet<AssetManager>();
             if (mc.ModelHandle != 0 && am)
             {
                 if (auto asset = am->Get<ModelAsset>(mc.ModelHandle))
@@ -521,7 +521,8 @@ void PropertyEditor::Init()
         // Text Style
         ui.Header("Text Style");
         {
-            auto fontNames = ServiceLocator::Get<WidgetRenderer>()->GetFontRegistry().GetKnownFontNames();
+            auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>();
+            auto fontNames = widgetRenderer ? widgetRenderer->GetFontRegistry().GetKnownFontNames() : std::vector<std::string>{};
             fontNames.insert(fontNames.begin(), "Default");
             if (ui.StringEnum("Font Name", comp.TextStyle.FontName, fontNames)) changed = true;
         }

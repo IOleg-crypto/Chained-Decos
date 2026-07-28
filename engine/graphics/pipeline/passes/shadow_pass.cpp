@@ -19,7 +19,9 @@ void ShadowPass::Init()
     // Grab the depth-pass shader from the library. Use LoadOrGet so it resolves the
     // path from the config and loads it on demand — LoadEngineResources only eagerly
     // loads the common material shaders (Lighting/Skinned/Unlit/Billboard), not ShadowDepth.
-    m_DepthShaderAsset = ServiceLocator::Get<Renderer>()->GetShaderLibrary().LoadOrGet("ShadowDepth");
+    auto* renderer = ServiceLocator::TryGet<Renderer>();
+    if (!renderer) return;
+    m_DepthShaderAsset = renderer->GetShaderLibrary().LoadOrGet("ShadowDepth");
 
     // Only mark initialized once the shader is really loaded. If SceneRenderer was
     // constructed before the shader config was parsed, Execute() will retry the load.
@@ -98,7 +100,8 @@ void ShadowPass::Execute(const RenderContext& ctx)
     m_LightSpaceMatrix = lightProjection * lightView;
 
     // Set shadow bias on renderer
-    ServiceLocator::Get<Renderer>()->GetData().Shadow.Bias = 0.003f;
+    if (auto* r = ServiceLocator::TryGet<Renderer>())
+        r->GetData().Shadow.Bias = 0.003f;
 
     auto* shader = m_DepthShaderAsset->GetShader().get();
     shader->Bind();
@@ -120,7 +123,7 @@ void ShadowPass::Execute(const RenderContext& ctx)
     // Render all opaque items into the depth buffer using the depth shader.
     for (const auto& item : ctx.Renderer->GetOpaqueQueue())
     {
-        ctx.Renderer->DrawModel(item.Asset, item.Transform, item.BoneMatrices, item.Materials, m_DepthShaderAsset.get(),
+        ctx.Renderer->DrawModel(item.Asset, item.Transform, item.BoneMatrices, item.Materials, m_DepthShaderAsset->GetShader().get(),
                                 {}, RenderPassStage::Opaque);
     }
 

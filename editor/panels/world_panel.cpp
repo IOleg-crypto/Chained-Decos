@@ -266,9 +266,12 @@ void WorldPanel::DrawEnvironmentSection(bool readOnly)
             {
                 if (auto project = Project::GetActive())
                 {
-                    auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(result->string());
-                    m_Context->GetSettings().Environment =
-                        ServiceLocator::Get<AssetManager>()->Get<EnvironmentAsset>(result->string());
+                    if (auto* am = ServiceLocator::TryGet<AssetManager>())
+                    {
+                        auto handle = am->ResolveToHandle(result->string());
+                        m_Context->GetSettings().Environment =
+                            am->Get<EnvironmentAsset>(result->string());
+                    }
                 }
             }
         }

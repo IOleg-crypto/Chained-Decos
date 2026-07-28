@@ -58,7 +58,8 @@ void EditorLayer::DrawLoadingOverlay(const char* title, const char* status)
         ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
         ImGui::TextUnformatted(status);
 
-        uint32_t totalPending = (uint32_t)ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount();
+        auto* assetManager = ServiceLocator::TryGet<AssetManager>();
+        uint32_t totalPending = assetManager ? (uint32_t)assetManager->GetPendingFinalizeCount() : 0;
         char pendingBuffer[64];
         snprintf(pendingBuffer, sizeof(pendingBuffer), "Pending assets: %u", totalPending);
 
@@ -77,12 +78,6 @@ EditorLayer::EditorLayer()
 {
     s_Instance = this;
 
-    // Safe here: Application's constructor already calls ServiceLocator::Lock() before
-    // any layer is constructed (layers are pushed from CreateApplication after `new
-    // Application(spec)` returns). Resolved once, reused for the layer's whole lifetime.
-    m_Context.PhysicsSystem = ServiceLocator::Get<Physics>();
-    m_Context.Scripting = ServiceLocator::TryGet<ScriptEngine>(); // null if scripting disabled
-    m_Context.UI = ServiceLocator::TryGet<WidgetRenderer>();      // null in headless mode
     m_ProjectManager = std::make_unique<EditorProjectManager>();
     m_SceneManager = std::make_unique<EditorSceneManager>();
 
@@ -274,15 +269,19 @@ void EditorLayer::OnAttach()
         GetEditorState().NeedsLayoutReset = true;
     }
 
-    std::string iconPath =
-        (ServiceLocator::Get<AssetManager>()->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
-    if (std::filesystem::exists(iconPath))
+    auto* assetManager = ServiceLocator::TryGet<AssetManager>();
+    if (assetManager)
     {
-        app.GetWindow().SetWindowIcon(iconPath);
-    }
-    else
-    {
-        CH_CORE_WARN("Editor icon not found at: {}", iconPath);
+        std::string iconPath =
+            (assetManager->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
+        if (std::filesystem::exists(iconPath))
+        {
+            app.GetWindow().SetWindowIcon(iconPath);
+        }
+        else
+        {
+            CH_CORE_WARN("Editor icon not found at: {}", iconPath);
+        }
     }
     CH_CORE_INFO("EditorLayer Attached with modular panels.");
 }
@@ -296,7 +295,12 @@ void EditorLayer::AddEditorFontsToAtlas()
     }
 
     float fontSize = m_Config.FontSize > 0.0f ? m_Config.FontSize : 16.0f;
-    auto engineRoot = ServiceLocator::Get<AssetManager>()->GetEngineRoot();
+    auto* assetManager = ServiceLocator::TryGet<AssetManager>();
+    if (!assetManager)
+    {
+        return;
+    }
+    auto engineRoot = assetManager->GetEngineRoot();
 
     std::string relFont = !m_Config.FontPath.empty() ? m_Config.FontPath : "resources/font/lato/lato-bold.ttf";
     std::string fontPath = (engineRoot / relFont).string();
@@ -377,7 +381,7 @@ void EditorLayer::OnDetach()
     {
         if (scene->GetSceneState() != SceneState::Edit)
         {
-            scene->OnRuntimeStop(m_Context);
+            scene->OnRuntimeStop();
         }
     }
     SaveConfig();
@@ -475,16 +479,16 @@ void EditorLayer::OnUpdate(Timestep ts)
             auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
             if (scriptEngine && scriptEngine->GetHost().IsInitialized() && scriptEngine->CanExecuteFrameScripts())
             {
-                scene->OnUpdateRuntime(ts, m_Context);
+                scene->OnUpdateRuntime(ts);
             }
         }
         else if (scene->GetSceneState() == SceneState::Simulate)
         {
-            scene->OnUpdateSimulation(ts, m_Context);
+            scene->OnUpdateSimulation(ts);
         }
         else
         {
-            scene->OnUpdateEditor(ts, m_Context);
+            scene->OnUpdateEditor(ts);
 
             if (m_Config.AutoSaveEnabled)
             {

@@ -119,7 +119,7 @@ void EditorSceneManager::SetScene(const std::shared_ptr<Scene>& scene)
     m_EditorScene = scene;
     if (m_EditorScene)
     {
-        m_EditorScene->TransitionToState(SceneState::Edit, EditorLayer::Get().GetSceneContext());
+        m_EditorScene->TransitionToState(SceneState::Edit);
     }
 
     EditorLayer::Get().GetEditorState().SelectedEntity = {};
@@ -207,13 +207,13 @@ void EditorSceneManager::SetSceneState(SceneState state)
         if (m_RuntimeScene)
         {
             CH_CORE_INFO("Editor: Cleaning up runtime scene...");
-            m_RuntimeScene->OnRuntimeStop(EditorLayer::Get().GetSceneContext());
+            m_RuntimeScene->OnRuntimeStop();
             m_RuntimeScene.reset();
         }
 
         if (m_EditorScene)
         {
-            m_EditorScene->TransitionToState(SceneState::Edit, EditorLayer::Get().GetSceneContext());
+        m_EditorScene->TransitionToState(SceneState::Edit);
         }
 
         EditorLayer::Get().GetEditorState().SelectedEntity = {};
@@ -281,7 +281,15 @@ void EditorSceneManager::StartSceneLoad(const std::filesystem::path& path, bool 
 
     try
     {
-        m_Transition.future = ServiceLocator::Get<ThreadPool>()->Enqueue(
+        auto* threadPool = ServiceLocator::TryGet<ThreadPool>();
+        if (!threadPool)
+        {
+            CH_CORE_ERROR("Editor: ThreadPool not available, cannot load scene");
+            Dialogs::ShowError("Scene loading failed", "ThreadPool not available");
+            CancelTransition();
+            return;
+        }
+        m_Transition.future = threadPool->Enqueue(
             [scenePath]() -> SceneLoadResult
             {
                 auto newScene = std::make_shared<Scene>();
@@ -347,15 +355,13 @@ void EditorSceneManager::UpdateSceneLoading()
         return;
     }
 
-    auto& ctx = EditorLayer::Get().GetSceneContext();
-
     if (m_Transition.forPlayMode)
     {
         if (m_RuntimeScene)
         {
             CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.",
                          m_Transition.targetPath.string());
-            m_RuntimeScene->OnRuntimeStop(ctx);
+            m_RuntimeScene->OnRuntimeStop();
         }
         m_RuntimeScene = loadResult.scene;
         m_RuntimeScene->SetEventCallback([](Event& e) { EditorLayer::Get().OnEvent(e); });
@@ -374,13 +380,14 @@ void EditorSceneManager::UpdateFinalizing()
 {
     if (!m_Transition.sceneReady)
     {
-        if (ServiceLocator::Get<AssetManager>()->HasBackgroundWork())
+        auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
+        if (assetMgr && assetMgr->HasBackgroundWork())
         {
             m_AssetWaitLogTimer += 0.016f;
             if (m_AssetWaitLogTimer > 1.0f)
             {
                 CH_CORE_INFO("Editor: Waiting for {} assets...",
-                             ServiceLocator::Get<AssetManager>()->GetPendingFinalizeCount());
+                             assetMgr->GetPendingFinalizeCount());
                 m_AssetWaitLogTimer = 0.0f;
             }
             return;
@@ -401,7 +408,6 @@ void EditorSceneManager::FinalizeTransition()
     }
 
     auto& layer = EditorLayer::Get();
-    auto& ctx = layer.GetSceneContext();
 
     if (auto project = Project::GetActive(); project && project->GetEnvironment())
     {
@@ -424,12 +430,12 @@ void EditorSceneManager::FinalizeTransition()
 
     if (m_Transition.forPlayMode)
     {
-        m_RuntimeScene->TransitionToState(m_Transition.targetState, ctx);
+        m_RuntimeScene->TransitionToState(m_Transition.targetState);
         CH_CORE_INFO("Editor: Play Mode Started Successfully");
     }
     else
     {
-        m_EditorScene->TransitionToState(SceneState::Edit, ctx);
+        m_EditorScene->TransitionToState(SceneState::Edit);
 
         SceneOpenedEvent e(m_Transition.targetPath.string());
         OnSceneOpened(e);
@@ -443,13 +449,11 @@ void EditorSceneManager::FinalizeTransition()
 
 void EditorSceneManager::CancelTransition()
 {
-    auto& ctx = EditorLayer::Get().GetSceneContext();
-
     if (m_RuntimeScene && m_Transition.forPlayMode &&
         m_Transition.state != TransitionState::None)
     {
         CH_CORE_INFO("Editor: Stopping runtime scene during transition...");
-        m_RuntimeScene->OnRuntimeStop(ctx);
+        m_RuntimeScene->OnRuntimeStop();
         m_RuntimeScene.reset();
     }
 

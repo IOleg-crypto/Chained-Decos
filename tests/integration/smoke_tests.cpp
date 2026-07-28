@@ -33,7 +33,7 @@ TEST(SmokeTest, SceneCreateAndDestroy)
 
 TEST(SmokeTest, AssetManagerLoadDummy)
 {
-    auto* am = ServiceLocator::Get<AssetManager>();
+    auto* am = ServiceLocator::TryGet<AssetManager>();
     ASSERT_NE(am, nullptr);
     EXPECT_TRUE(am->GetAssetDirectory().empty() || std::filesystem::exists(am->GetAssetDirectory()));
 }

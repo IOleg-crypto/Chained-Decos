@@ -353,9 +353,9 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         std::filesystem::path resolvedPath = openedPath;
         std::filesystem::path projDir = resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
 
-        auto* assetMgr = ServiceLocator::Get<AssetManager>();
-        auto* renderer = ServiceLocator::Get<Renderer>();
-        auto* widgetRenderer = ServiceLocator::Get<WidgetRenderer>();
+        auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
+        auto* renderer = ServiceLocator::TryGet<Renderer>();
+        auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>();
 
         if (!assetMgr || !renderer)
         {
@@ -402,7 +402,7 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         EditorLayer::Get().SaveConfig();
 
         // Auto-load script assembly if configured
-        if (auto* scriptEngine = ServiceLocator::Get<ScriptEngine>())
+        if (auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>())
         {
             scriptEngine->TryAutoLoad(project->GetConfig());
         }

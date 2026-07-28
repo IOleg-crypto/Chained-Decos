@@ -15,6 +15,7 @@
 namespace Chained
 {
 
+class Shader;
 class ShaderAsset;
 
 /// @brief Singleton renderer facade that owns GPU resources, frame state, and low-level draw calls.
@@ -59,8 +60,8 @@ public:
     void ApplyEnvironment(const EnvironmentSettings& s);
     void SetMainLight(const LightingSettings& s);
     void SetShadowState(bool e, uint32_t id, const glm::mat4& m, float b);
-    void SetLightingUniforms(ShaderAsset* shaderAsset);
-    void ApplyFogUniforms(ShaderAsset* shader);
+    void SetLightingUniforms(Shader* shader);
+    void ApplyFogUniforms(Shader* shader);
     void UploadLights();
 
     // Frame

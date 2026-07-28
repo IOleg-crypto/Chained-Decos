@@ -4,7 +4,6 @@
 #include "engine/core/layer.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/scene_context.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/assets/asset_manager.h"
@@ -57,9 +56,6 @@ private:
 private:
     std::shared_ptr<Scene> m_Scene;
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
-    // Resolved once in the constructor (ServiceLocator is already locked by then —
-    // see Application::Application) and reused for the layer's whole lifetime.
-    SceneContext m_Context;
     Renderer* m_Renderer = nullptr;
     AssetManager* m_AssetManager = nullptr;
 private:
