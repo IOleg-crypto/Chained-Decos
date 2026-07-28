@@ -324,6 +324,8 @@ void Scene::OnUpdateEditor(Timestep timestep)
     }
 
     AssetResolutionSystem::Update(*m_Registry);
+    AnimationSystem::Update(*m_Registry, timestep);
+    AudioSystem::Update(*m_Registry, timestep);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
