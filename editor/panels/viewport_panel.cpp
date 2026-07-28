@@ -666,6 +666,92 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             }
         }
 
+        // Icon Picking — screen-space hit test against billboard icons
+        if (!bestHit && EditorLayer::Get().GetConfig().ShowEditorIcons)
+        {
+            const auto& editorCfg = EditorLayer::Get().GetConfig();
+            const float iconMin   = editorCfg.IconSizeMin;
+            const float iconMax   = editorCfg.IconSizeMax;
+            const float iconScale = editorCfg.IconSizeScale;
+
+            Camera3D cam = m_CameraController->ToCamera3D();
+            const float aspect = viewportSize.x / std::max(viewportSize.y, 1.0f);
+            const glm::mat4 view = glm::lookAt(cam.Position, cam.Target, cam.Up);
+            glm::mat4 proj;
+            if (cam.Projection == ProjectionType::Perspective)
+                proj = glm::perspective(glm::radians(cam.FovDegrees), aspect, cam.NearClip, cam.FarClip);
+            else
+            {
+                const float h = cam.OrthographicSize;
+                proj = glm::ortho(-aspect * h, aspect * h, -h, h, cam.NearClip, cam.FarClip);
+            }
+            const glm::mat4 vp = proj * view;
+
+            // Project world point to screen pixels; returns {-1,-1} if behind camera.
+            auto worldToScreen = [&](const glm::vec3& wp) -> glm::vec2 {
+                glm::vec4 clip = vp * glm::vec4(wp, 1.0f);
+                if (clip.w <= 0.0f) return {-1.f, -1.f};
+                const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+                return {(ndc.x * 0.5f + 0.5f) * viewportSize.x + viewportScreenPos.x,
+                        (1.0f - (ndc.y * 0.5f + 0.5f)) * viewportSize.y + viewportScreenPos.y};
+            };
+
+            // Pixel radius of billboard at given world position (mirrors RenderEditorIcons sizing).
+            auto iconPixelRadius = [&](const glm::vec3& wp) -> float {
+                const float dist     = glm::distance(wp, cam.Position);
+                const float worldSz  = std::clamp(dist * iconScale, iconMin, iconMax);
+                float ppu;
+                if (cam.Projection == ProjectionType::Perspective && dist > 0.001f)
+                    ppu = (viewportSize.y * 0.5f) / (std::tan(glm::radians(cam.FovDegrees) * 0.5f) * dist);
+                else
+                    ppu = (viewportSize.y * 0.5f) / std::max(cam.OrthographicSize, 0.001f);
+                return std::max(worldSz * ppu * 0.5f, 14.0f); // 14px minimum for comfortable clicking
+            };
+
+            float bestIconDist = FLT_MAX;
+
+            auto testIcon = [&](entt::entity id, const glm::vec3& wp) {
+                const glm::vec2 sp = worldToScreen(wp);
+                if (sp.x < 0.f) return;
+                const float r  = iconPixelRadius(wp);
+                const float dx = mousePos.x - sp.x;
+                const float dy = mousePos.y - sp.y;
+                if (dx * dx + dy * dy <= r * r)
+                {
+                    const float d = glm::distance(wp, cam.Position);
+                    if (d < bestIconDist)
+                    {
+                        bestIconDist = d;
+                        bestHit = Entity(id, &activeScene->GetRegistry());
+                    }
+                }
+            };
+
+            auto& reg = activeScene->GetRegistry();
+
+            reg.view<TransformComponent, CameraComponent>().each(
+                [&](entt::entity id, TransformComponent& tc, CameraComponent&) {
+                    const glm::vec3 wp = glm::vec3(tc.WorldTransform[3]);
+                    if (glm::distance(wp, cam.Position) >= 0.25f)
+                        testIcon(id, wp);
+                });
+
+            reg.view<TransformComponent, LightComponent>().each(
+                [&](entt::entity id, TransformComponent& tc, LightComponent&) {
+                    testIcon(id, glm::vec3(tc.WorldTransform[3]));
+                });
+
+            reg.view<TransformComponent, SpawnComponent>().each(
+                [&](entt::entity id, TransformComponent& tc, SpawnComponent&) {
+                    testIcon(id, glm::vec3(tc.WorldTransform[3]));
+                });
+
+            reg.view<TransformComponent, AudioComponent>().each(
+                [&](entt::entity id, TransformComponent& tc, AudioComponent&) {
+                    testIcon(id, glm::vec3(tc.WorldTransform[3]));
+                });
+        }
+
         // 3D Picking
         if (!bestHit)
         {
