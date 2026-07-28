@@ -57,7 +57,7 @@ SceneScriptingManager::SceneScriptingManager(Scene* scene)
 SceneScriptingManager::ScriptEngineContext SceneScriptingManager::AcquireScriptEngine()
 {
     ScriptEngineContext ctx;
-    ctx.engine = ServiceLocator::Get<ScriptEngine>();
+    ctx.engine = ServiceLocator::TryGet<ScriptEngine>();
     if (!ctx.engine || !ctx.engine->GetHost().IsInitialized())
     {
         return {};
@@ -113,7 +113,9 @@ void SceneScriptingManager::OnRuntimeStart()
     }
 
     entt::registry* registryPtr = m_Scene->GetRegistryPtr();
-    ServiceLocator::Get<Physics>()->SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
+    if (auto* physics = ServiceLocator::TryGet<Physics>())
+    {
+        physics->SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
         if (!registryPtr)
         {
             return;
@@ -138,6 +140,7 @@ void SceneScriptingManager::OnRuntimeStart()
                 ManagedCallbacks_::OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
         }
     });
+    }
 }
 
 void SceneScriptingManager::OnRuntimeStop()

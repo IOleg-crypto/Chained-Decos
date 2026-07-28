@@ -22,7 +22,7 @@ protected:
 
     Renderer* GetRenderer()
     {
-        return ServiceLocator::Get<Renderer>();
+        return ServiceLocator::TryGet<Renderer>();
     }
 };
 

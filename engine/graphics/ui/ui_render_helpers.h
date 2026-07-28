@@ -63,7 +63,7 @@ inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
 
 inline std::shared_ptr<TextureAsset> ResolveTexture(AssetHandle& handle, const std::string& path)
 {
-    auto* am = ServiceLocator::Get<AssetManager>();
+    auto* am = ServiceLocator::TryGet<AssetManager>();
     if (!am) return nullptr;
 
     if (!path.empty())

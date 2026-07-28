@@ -535,9 +535,12 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     m_ViewportFramebuffer->Bind();
     GraphicsDevice::Get().Clear({0, 0, 0, 255});
 
-    ServiceLocator::Get<Renderer>()->ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                                         m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
-                                                         nullptr, {});
+    if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+    {
+        renderer->ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
+                                       m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
+                                       nullptr, {});
+    }
 
     m_ViewportFramebuffer->Unbind();
 }
@@ -593,14 +596,17 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
 
     // 2. Game UI Overlay
     ImVec2 canvasOrigin = viewportScreenPos;
-    ServiceLocator::Get<WidgetRenderer>()->DrawCanvas(activeScene, canvasOrigin, viewportSize,
-                                                      EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit);
+    if (auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+    {
+        widgetRenderer->DrawCanvas(activeScene, canvasOrigin, viewportSize,
+                                    EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit);
+    }
 
     // 3. Selection Highlight
     if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit)
     {
-        auto rect = ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, selectedEntity, viewportSize,
-                                                                         viewportScreenPos);
+        auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>();
+        auto rect = widgetRenderer ? widgetRenderer->GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos) : UIRect{0, 0, 0, 0};
 
         ImVec2 p1 = ImVec2(rect.x, rect.y);
         ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -651,8 +657,8 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
                 continue;
             }
 
-            auto rect = ServiceLocator::Get<WidgetRenderer>()->GetEntityRect(activeScene, entity, viewportSize,
-                                                                             viewportScreenPos);
+            auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>();
+            auto rect = widgetRenderer ? widgetRenderer->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos) : UIRect{0, 0, 0, 0};
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
                 mousePos.y <= rect.y + rect.height)
             {
@@ -868,8 +874,10 @@ void ViewportPanel::DrawScriptReloadButton()
         {
             auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
                                                                   project->GetProjectDirectoryForProject());
-            auto& scriptEngine = *ServiceLocator::Get<ScriptEngine>();
-            scriptEngine.RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
+            if (auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>())
+            {
+                scriptEngine->RequestAssemblyReload(assemblyPath.string(), "ViewportPanel");
+            }
         }
     }
     if (ImGui::IsItemHovered())
@@ -901,27 +909,46 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
         uint32_t handle = GetIconHandle(m_EditorIcons.LightIcon);
         if (handle != 0)
         {
-            ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
+            if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+            {
+                renderer->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
+            }
             if (light.Type == LightType::Directional)
             {
                 glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-                ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
+                if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
+                {
+                    debugRenderer->DrawLine(iconPos, iconPos + dir, lightTint);
+                }
             }
         }
         else if (light.Type == LightType::Directional)
         {
             glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
-            ServiceLocator::Get<DebugRenderer>()->DrawLine(iconPos, iconPos + dir, lightTint);
+            if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
+            {
+                debugRenderer->DrawLine(iconPos, iconPos + dir, lightTint);
+            }
         }
         else if (light.Type == LightType::Point)
         {
-            ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f,
-                                                                  lightTint, *ServiceLocator::Get<Renderer>());
+            if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
+            {
+                if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+                {
+                    debugRenderer->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint, *renderer);
+                }
+            }
         }
         else if (light.Type == LightType::Spot)
         {
-            ServiceLocator::Get<DebugRenderer>()->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f,
-                                                                  lightTint, *ServiceLocator::Get<Renderer>());
+            if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
+            {
+                if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+                {
+                    debugRenderer->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint, *renderer);
+                }
+            }
         }
     }
 }
@@ -936,7 +963,10 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             return;
         }
 
-        cachedIcon = ServiceLocator::Get<AssetManager>()->Load<TextureAsset>(path);
+        if (auto* assetManager = ServiceLocator::TryGet<AssetManager>())
+        {
+            cachedIcon = assetManager->Load<TextureAsset>(path);
+        }
     };
 
     tryLoadIcon("engine/resources/icons/camera_icon.png", m_EditorIcons.CameraIcon);
@@ -971,7 +1001,10 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
         uint32_t handle = GetIconHandle(m_EditorIcons.CameraIcon);
         if (handle != 0)
         {
-            ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, cameraTint);
+            if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+            {
+                renderer->DrawBillboard(camera, handle, iconPos, iconSize, cameraTint);
+            }
         }
     }
 
@@ -990,7 +1023,10 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             uint32_t handle = GetIconHandle(m_EditorIcons.SpawnIcon);
             if (handle != 0)
             {
-                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, spawnTint);
+                if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+                {
+                    renderer->DrawBillboard(camera, handle, iconPos, iconSize, spawnTint);
+                }
             }
         }
     }
@@ -1006,7 +1042,10 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             uint32_t handle = GetIconHandle(m_EditorIcons.AudioIcon);
             if (handle != 0)
             {
-                ServiceLocator::Get<Renderer>()->DrawBillboard(camera, handle, iconPos, iconSize, audioTint);
+                if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+                {
+                    renderer->DrawBillboard(camera, handle, iconPos, iconSize, audioTint);
+                }
             }
         }
     }

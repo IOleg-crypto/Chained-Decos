@@ -432,8 +432,11 @@ void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextu
 
     if (overrideShader)
     {
-        auto handle = ServiceLocator::Get<AssetManager>()->ResolveToHandle(overrideShader->GetPath());
-        shaderAsset = ServiceLocator::Get<AssetManager>()->Get<ShaderAsset>(handle);
+        if (auto* am = ServiceLocator::TryGet<AssetManager>())
+        {
+            auto handle = am->ResolveToHandle(overrideShader->GetPath());
+            shaderAsset = am->Get<ShaderAsset>(handle);
+        }
     }
     else
     {
@@ -634,13 +637,12 @@ void Renderer::SetShadowState(bool enabled, uint32_t mapTextureID, const glm::ma
     m_Data->Shadow.Bias = bias;
 }
 
-void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
+void Renderer::SetLightingUniforms(Shader* shader)
 {
-    if (!shaderAsset || !shaderAsset->GetShader())
+    if (!shader)
         return;
 
     const auto& lighting = m_Data->Lighting.CurrentLighting;
-    auto shader = shaderAsset->GetShader();
     shader->Bind();
 
     glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
@@ -675,28 +677,27 @@ void Renderer::SetLightingUniforms(ShaderAsset* shaderAsset)
         shader->SetInt("u_ShadowMap", 6);
     }
 
-    ApplyFogUniforms(shaderAsset);
+    ApplyFogUniforms(shader);
 }
 
-void Renderer::ApplyFogUniforms(ShaderAsset* shader)
+void Renderer::ApplyFogUniforms(Shader* shader)
 {
-    if (!shader || !shader->GetShader())
+    if (!shader)
         return;
 
     const auto& fog = m_Data->Lighting.CurrentFog;
-    auto s = shader->GetShader();
     int enabled = fog.Enabled ? 1 : 0;
     int mode = (int)fog.Mode;
     glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
                        fog.FogColor.a / 255.0f};
 
-    s->SetInt("fogEnabled", enabled);
-    s->SetVec4("fogColor", color);
-    s->SetFloat("fogDensity", fog.Density);
-    s->SetFloat("fogStart", fog.Start);
-    s->SetFloat("fogEnd", fog.End);
-    s->SetInt("fogMode", mode);
-    s->SetFloat("fogHeightFalloff", fog.HeightFalloff);
+    shader->SetInt("fogEnabled", enabled);
+    shader->SetVec4("fogColor", color);
+    shader->SetFloat("fogDensity", fog.Density);
+    shader->SetFloat("fogStart", fog.Start);
+    shader->SetFloat("fogEnd", fog.End);
+    shader->SetInt("fogMode", mode);
+    shader->SetFloat("fogHeightFalloff", fog.HeightFalloff);
 }
 
 // --- Frame methods (formerly in FrameManager) ---

@@ -80,13 +80,11 @@ TEST_F(SceneIntegrationTest, ReloadSceneLifecycle)
     auto entity = scene->CreateEntity("Player");
     entity.AddComponent<SceneTransitionComponent>().TargetScenePath = "test_reload.chscene";
 
-    // Simulate transition start and stop lifecycle
-    SceneContext ctx;
-    scene->TransitionToState(SceneState::Play, ctx);
+    scene->TransitionToState(SceneState::Play);
     EXPECT_EQ(scene->GetSceneState(), SceneState::Play);
 
-    scene->OnRuntimeStop(ctx);
-    scene->TransitionToState(SceneState::Edit, ctx);
+    scene->OnRuntimeStop();
+    scene->TransitionToState(SceneState::Edit);
     EXPECT_EQ(scene->GetSceneState(), SceneState::Edit);
 
     // Deep copy / reload simulation

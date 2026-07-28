@@ -76,10 +76,13 @@ struct ManagedScriptInstance
         {
             std::vector<std::string> options;
             options.emplace_back("-- Select script --");
-            for (const auto& [scriptName, scriptType] :
-                 ::Chained::ServiceLocator::Get<::Chained::ScriptEngine>()->GetScriptClasses())
+            auto* scriptEngine = ::Chained::ServiceLocator::TryGet<::Chained::ScriptEngine>();
+            if (scriptEngine)
             {
-                options.emplace_back(scriptName);
+                for (const auto& [scriptName, scriptType] : scriptEngine->GetScriptClasses())
+                {
+                    options.emplace_back(scriptName);
+                }
             }
             std::sort(options.begin() + 1, options.end());
             props.StringEnum("ClassName", ClassName, options);

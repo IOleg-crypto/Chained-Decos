@@ -6,7 +6,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
-#include "engine/scene/systems/scene_resource_manager.h"
+#include "engine/scene/systems/physics_body_system.h"
 #include "iphysics_world.h"
 #include "jolt_physics_world.h"
 
@@ -103,7 +103,7 @@ void Physics::InitializeBodies(Scene* scene)
         registry.ctx().emplace<IPhysicsWorld*>(world);
     }
 
-    SceneResources::BatchInitializeBodies(registry, world);
+    PhysicsBodySystem::BatchInitializeBodies(registry, world);
 
     CH_CORE_INFO("Physics::InitializeBodies — bodies initialized for scene '{}'.", scene->GetSettings().Name);
 }
@@ -310,7 +310,9 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
         return;
     }
 
-    auto* am = ServiceLocator::Get<AssetManager>();
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (!am) return;
+
     auto handle = am->ResolveToHandle(modelPath);
     if (handle == AssetHandle(0))
     {

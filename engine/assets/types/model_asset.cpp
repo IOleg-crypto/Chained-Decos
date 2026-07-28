@@ -180,7 +180,10 @@ void ModelAsset::OnLoaded()
             return;
         }
 
-        auto tex = ServiceLocator::Get<AssetManager>()->Get<TextureAsset>(path);
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (!am) return;
+
+        auto tex = am->Get<TextureAsset>(path);
         if (!tex)
         {
             return;

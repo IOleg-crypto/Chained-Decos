@@ -48,7 +48,7 @@ void ProjectSelectorUI::LoadEditorIcons()
         return;
     }
 
-    auto assetManager = ServiceLocator::Get<AssetManager>();
+    auto assetManager = ServiceLocator::TryGet<AssetManager>();
     if (assetManager)
     {
         assetManager->LoadAsset("resources/icons/newproject.jpg", TextureAsset::GetStaticType());
