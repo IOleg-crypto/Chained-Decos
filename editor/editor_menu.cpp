@@ -132,49 +132,11 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
         {
             if (!isExporting)
             {
-                auto outDir = Dialogs::PickFolder();
-                if (outDir)
+                m_ExportDialog.Open = true;
+                auto project = Project::GetActive();
+                if (project)
                 {
-                    {
-                        std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                        m_ExportState.IsExporting = true;
-                    }
-                    std::string outDirPath = outDir->string();
-                    {
-                        std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                        m_ExportState.PackedFiles = 0;
-                        m_ExportState.TotalFiles = 0;
-                        m_ExportState.CurrentFile.clear();
-                    }
-                    m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
-                    auto* threadPool = ServiceLocator::TryGet<ThreadPool>();
-                    if (!threadPool)
-                    {
-                        CH_CORE_ERROR("EditorMenu: ThreadPool not available, cannot export");
-                        std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                        m_ExportState.IsExporting = false;
-                    }
-                    else
-                    {
-                        threadPool->QueueTask([outDirPath, this]() {
-                            ExportProgressCallback progressCb = [this](uint64_t packed, uint64_t total,
-                                                                       const std::string& file) {
-                                std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                                m_ExportState.PackedFiles = packed;
-                                m_ExportState.TotalFiles = total;
-                                m_ExportState.CurrentFile = file;
-                            };
-                            auto result = ProjectExporter::ExportTo(outDirPath, progressCb, &m_ExportState.CancelRequested);
-                            std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
-                            m_ExportState.Success = result.Success;
-                            m_ExportState.Message = result.Cancelled ? "Export cancelled."
-                                : result.Success ? "Export complete!"
-                                                 : ("Export failed: " + result.Error);
-                            m_ExportState.OutDir = result.Cancelled ? "" : result.OutDir.string();
-                            m_ExportState.Open = true;
-                            m_ExportState.IsExporting = false;
-                        });
-                    }
+                    m_ExportDialog.SelectedMode = project->GetConfig().Export.Mode;
                 }
             }
         }
@@ -316,6 +278,121 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
     ImGui::EndMenuBar();
 }
 
+void EditorMenu::DrawExportDialog()
+{
+    if (!m_ExportDialog.Open)
+    {
+        return;
+    }
+
+    ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Once);
+    if (ImGui::BeginPopupModal("Export Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    {
+        ImGui::Text("Choose export mode:");
+        ImGui::Spacing();
+
+        struct ModeInfo
+        {
+            PackMode mode;
+            const char* label;
+            const char* desc;
+        };
+        ModeInfo modes[] = {
+            {PackMode::Fast, "Fast", "LZ4 HC compression. Faster export, larger pack file."},
+            {PackMode::Balanced, "Balanced", "ZSTD compression. Slower export, smaller pack file."},
+            {PackMode::Raw, "Raw", "No compression. Stored as-is."},
+        };
+
+        for (const auto& m : modes)
+        {
+            bool selected = (m_ExportDialog.SelectedMode == m.mode);
+            if (ImGui::RadioButton(m.label, selected))
+            {
+                m_ExportDialog.SelectedMode = m.mode;
+            }
+            ImGui::SameLine();
+            ImGui::TextDisabled("%s", m.desc);
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
+        if (ImGui::Button("Browse Output Folder...", ImVec2(-1, 0)))
+        {
+            auto outDir = Dialogs::PickFolder();
+            if (outDir)
+            {
+                m_ExportDialog.OutputDir = outDir->string();
+
+                // Save selected mode to project config
+                auto project = Project::GetActive();
+                if (project)
+                {
+                    project->GetConfig().Export.Mode = m_ExportDialog.SelectedMode;
+                }
+
+                // Close dialog and start export
+                ImGui::CloseCurrentPopup();
+                m_ExportDialog.Open = false;
+
+                // Start the export
+                {
+                    std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
+                    m_ExportState.IsExporting = true;
+                    m_ExportState.PackedFiles = 0;
+                    m_ExportState.TotalFiles = 0;
+                    m_ExportState.CurrentFile.clear();
+                }
+                m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
+
+                auto* threadPool = ServiceLocator::TryGet<ThreadPool>();
+                if (!threadPool)
+                {
+                    CH_CORE_ERROR("EditorMenu: ThreadPool not available, cannot export");
+                    std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
+                    m_ExportState.IsExporting = false;
+                }
+                else
+                {
+                    std::string outDirPath = m_ExportDialog.OutputDir;
+                    threadPool->QueueTask([outDirPath, this]() {
+                        ExportProgressCallback progressCb = [this](uint64_t packed, uint64_t total,
+                                                                   const std::string& file) {
+                            std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
+                            m_ExportState.PackedFiles = packed;
+                            m_ExportState.TotalFiles = total;
+                            m_ExportState.CurrentFile = file;
+                        };
+                        auto result =
+                            ProjectExporter::ExportTo(outDirPath, progressCb, &m_ExportState.CancelRequested);
+                        std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
+                        m_ExportState.Success = result.Success;
+                        m_ExportState.Message = result.Cancelled ? "Export cancelled."
+                                                : result.Success ? "Export complete!"
+                                                                 : ("Export failed: " + result.Error);
+                        m_ExportState.OutDir = result.Cancelled ? "" : result.OutDir.string();
+                        m_ExportState.Open = true;
+                        m_ExportState.IsExporting = false;
+                    });
+                }
+            }
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Cancel", ImVec2(-1, 0)))
+        {
+            ImGui::CloseCurrentPopup();
+            m_ExportDialog.Open = false;
+        }
+
+        ImGui::EndPopup();
+    }
+
+    // Open the popup on first call
+    ImGui::OpenPopup("Export Project");
+}
+
 void EditorMenu::DrawExportProgressOverlay()
 {
     bool showProgress = false;
@@ -330,14 +407,15 @@ void EditorMenu::DrawExportProgressOverlay()
     }
 
     if (!showProgress)
+    {
         return;
+    }
 
     // Position: bottom-right corner with a small margin.
     ImGuiViewport* vp = ImGui::GetMainViewport();
     const float margin = 16.0f;
     const float windowW = 400.0f;
-    ImVec2 winPos = ImVec2(vp->WorkPos.x + vp->WorkSize.x - windowW - margin,
-                           vp->WorkPos.y + vp->WorkSize.y - margin);
+    ImVec2 winPos = ImVec2(vp->WorkPos.x + vp->WorkSize.x - windowW - margin, vp->WorkPos.y + vp->WorkSize.y - margin);
     ImGui::SetNextWindowPos(winPos, ImGuiCond_Always, ImVec2(0.0f, 1.0f));
     ImGui::SetNextWindowSize(ImVec2(windowW, 0.0f), ImGuiCond_Always);
     ImGui::SetNextWindowBgAlpha(0.92f);
@@ -345,8 +423,7 @@ void EditorMenu::DrawExportProgressOverlay()
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(14.0f, 12.0f));
 
     if (ImGui::Begin("##ExportProgress", nullptr,
-                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove |
-                         ImGuiWindowFlags_NoSavedSettings |
+                     ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
                          ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_AlwaysAutoResize))
     {
         // ── Title
@@ -355,9 +432,13 @@ void EditorMenu::DrawExportProgressOverlay()
 
         // ── File counter
         if (total > 0)
+        {
             ImGui::Text("Packed %llu of %llu files", (unsigned long long)packed, (unsigned long long)total);
+        }
         else
+        {
             ImGui::TextDisabled("Preparing...");
+        }
 
         ImGui::Spacing();
 
@@ -381,7 +462,9 @@ void EditorMenu::DrawExportProgressOverlay()
         // ── Cancel button
         bool alreadyCancelling = m_ExportState.CancelRequested.load(std::memory_order_relaxed);
         if (alreadyCancelling)
+        {
             ImGui::BeginDisabled();
+        }
 
         if (ImGui::Button(alreadyCancelling ? ICON_FA_BOLT " Cancelling..." : ICON_FA_BOLT " Cancel",
                           ImVec2(-1.0f, 0.0f)))
@@ -390,7 +473,9 @@ void EditorMenu::DrawExportProgressOverlay()
         }
 
         if (alreadyCancelling)
+        {
             ImGui::EndDisabled();
+        }
     }
     ImGui::End();
     ImGui::PopStyleVar(2);
@@ -591,4 +676,4 @@ void EditorMenu::DrawEditorSettings()
     ImGui::End();
 }
 
-}
+} // namespace Chained
