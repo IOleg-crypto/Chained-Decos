@@ -12,7 +12,7 @@ class ModelAsset;
 /// non-trivial types (shared_ptr) that break reflection field-index alignment.
 struct PrimitiveRuntimeState
 {
-    bool Dirty = true;           ///< Geometry needs full rebuild (mesh + material apply)
+    bool Dirty = true;            ///< Geometry needs full rebuild (mesh + material apply)
     bool TexturesPending = false; ///< Asset exists but textures are still loading
     std::shared_ptr<ModelAsset> Asset;
 };

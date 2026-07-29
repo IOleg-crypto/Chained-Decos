@@ -58,8 +58,8 @@ private:
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
     Renderer* m_Renderer = nullptr;
     AssetManager* m_AssetManager = nullptr;
-private:
 
+private:
     std::string m_ProjectPath;
     float m_BoostUploadsTimer = 0.0f;
     bool m_IsBoostingUploads = false;

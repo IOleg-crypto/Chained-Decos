@@ -22,10 +22,19 @@ public:
         return AssetType::Material;
     }
 
-    Material& GetMaterial() { return m_Material; }
-    const Material& GetMaterial() const { return m_Material; }
+    Material& GetMaterial()
+    {
+        return m_Material;
+    }
+    const Material& GetMaterial() const
+    {
+        return m_Material;
+    }
 
-    void SetMaterial(const Material& mat) { m_Material = mat; }
+    void SetMaterial(const Material& mat)
+    {
+        m_Material = mat;
+    }
 
     void SaveToFile(const std::string& path) const;
     bool LoadFromFile(const std::string& path, std::string* outError = nullptr);

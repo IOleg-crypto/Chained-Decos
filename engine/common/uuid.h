@@ -33,7 +33,8 @@ namespace std
 {
 template <> struct hash<Chained::UUID>
 {
-    std::size_t operator()(const Chained::UUID& uuid) const noexcept {
+    std::size_t operator()(const Chained::UUID& uuid) const noexcept
+    {
         return std::hash<uint64_t>()((uint64_t)uuid);
     }
 };

@@ -16,7 +16,7 @@ public:
     GlfwWindow(const WindowProperties& properties);
     virtual ~GlfwWindow();
 
-        GlfwWindow(const GlfwWindow&) = delete;
+    GlfwWindow(const GlfwWindow&) = delete;
     GlfwWindow& operator=(const GlfwWindow&) = delete;
 
     virtual void BeginFrame() override;
@@ -24,7 +24,6 @@ public:
 
     virtual bool ShouldClose() const override;
 
-    
     virtual int GetWidth() const override
     {
         return m_Width;
@@ -34,7 +33,6 @@ public:
         return m_Height;
     }
 
-    \
     int GetFramebufferWidth() const
     {
         return m_FramebufferWidth;
@@ -79,11 +77,9 @@ private:
 private:
     GLFWwindow* m_WindowHandle = nullptr;
 
-   
     int m_Width = 0;
     int m_Height = 0;
 
-   
     int m_FramebufferWidth = 0;
     int m_FramebufferHeight = 0;
 

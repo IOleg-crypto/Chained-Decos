@@ -9,21 +9,26 @@
 
 #include <cereal/cereal.hpp>
 
-
-
 // GLM serialization helpers for Cereal
-namespace glm {
-    template<class Archive>
-    void serialize(Archive& archive, vec3& v) { archive(v.x, v.y, v.z); }
-    template<class Archive>
-    void serialize(Archive& archive, vec4& v) { archive(v.x, v.y, v.z, v.w); }
-    template<class Archive>
-    void serialize(Archive& archive, quat& q) { archive(q.x, q.y, q.z, q.w); }
-    template<class Archive>
-    void serialize(Archive& archive, mat4& m) {
-        archive(m[0], m[1], m[2], m[3]);
-    }
+namespace glm
+{
+template <class Archive> void serialize(Archive& archive, vec3& v)
+{
+    archive(v.x, v.y, v.z);
 }
+template <class Archive> void serialize(Archive& archive, vec4& v)
+{
+    archive(v.x, v.y, v.z, v.w);
+}
+template <class Archive> void serialize(Archive& archive, quat& q)
+{
+    archive(q.x, q.y, q.z, q.w);
+}
+template <class Archive> void serialize(Archive& archive, mat4& m)
+{
+    archive(m[0], m[1], m[2], m[3]);
+}
+} // namespace glm
 
 namespace Chained
 {
@@ -38,8 +43,8 @@ struct TransformData
     glm::quat rotation;
     glm::vec3 scale;
 
-    template<class Archive>
-    void serialize(Archive& archive) {
+    template <class Archive> void serialize(Archive& archive)
+    {
         archive(translation, rotation, scale);
     }
 };
@@ -59,12 +64,13 @@ struct RawMesh
 
     int materialIndex = -1;
 
-    glm::vec3 MinBounds = { 0, 0, 0 };
-    glm::vec3 MaxBounds = { 0, 0, 0 };
+    glm::vec3 MinBounds = {0, 0, 0};
+    glm::vec3 MaxBounds = {0, 0, 0};
 
-    template<class Archive>
-    void serialize(Archive& archive) {
-        archive(vertices, texcoords, normals, tangents, colors, indices, joints, weights, materialIndex, MinBounds, MaxBounds);
+    template <class Archive> void serialize(Archive& archive)
+    {
+        archive(vertices, texcoords, normals, tangents, colors, indices, joints, weights, materialIndex, MinBounds,
+                MaxBounds);
     }
 };
 
@@ -72,10 +78,10 @@ struct RawMaterial
 {
     std::string name;
     std::string albedoPath;
-    glm::vec4 albedoColor = { 1.0f, 1.0f, 1.0f, 1.0f };
+    glm::vec4 albedoColor = {1.0f, 1.0f, 1.0f, 1.0f};
 
     std::string emissivePath;
-    glm::vec4 emissiveColor = { 0.0f, 0.0f, 0.0f, 1.0f };
+    glm::vec4 emissiveColor = {0.0f, 0.0f, 0.0f, 1.0f};
     float emissiveIntensity = 0.0f;
 
     std::string normalPath;
@@ -87,9 +93,10 @@ struct RawMaterial
 
     bool transparent = false;
 
-    template<class Archive>
-    void serialize(Archive& archive) {
-        archive(name, albedoPath, albedoColor, emissivePath, emissiveColor, emissiveIntensity, normalPath, metallicRoughnessPath, occlusionPath, metalness, roughness, transparent);
+    template <class Archive> void serialize(Archive& archive)
+    {
+        archive(name, albedoPath, albedoColor, emissivePath, emissiveColor, emissiveIntensity, normalPath,
+                metallicRoughnessPath, occlusionPath, metalness, roughness, transparent);
     }
 };
 
@@ -101,8 +108,8 @@ struct EmbeddedTextureData
     int channels = 0;
     bool isHDR = false;
 
-    template<class Archive>
-    void serialize(Archive& archive) {
+    template <class Archive> void serialize(Archive& archive)
+    {
         archive(data, width, height, channels, isHDR);
     }
 };
@@ -120,11 +127,11 @@ struct RawAnimation
     std::string name;
     int frameCount;
     int boneCount;
-    float frameRate = 30.0f; // FPS of the animation source asset
+    float frameRate = 30.0f;               // FPS of the animation source asset
     std::vector<TransformData> framePoses; // flattened [frameCount * boneCount]
 
-    template<class Archive>
-    void serialize(Archive& archive) {
+    template <class Archive> void serialize(Archive& archive)
+    {
         archive(name, frameCount, boneCount, frameRate, framePoses);
     }
 };
@@ -134,8 +141,8 @@ struct MeshInstance
     int meshIndex;
     glm::mat4 localTransform;
 
-    template<class Archive>
-    void serialize(Archive& archive) {
+    template <class Archive> void serialize(Archive& archive)
+    {
         archive(meshIndex, localTransform);
     }
 };
@@ -145,12 +152,11 @@ struct BoneInfoData
     std::string name;
     int parent;
 
-    template<class Archive>
-    void serialize(Archive& archive) {
+    template <class Archive> void serialize(Archive& archive)
+    {
         archive(name, parent);
     }
 };
-
 
 // CPU-side data for async loading (loaded in worker thread)
 struct PendingModelData
@@ -159,29 +165,30 @@ struct PendingModelData
     std::vector<RawMesh> meshes;
     std::vector<RawMaterial> materials;
     std::unordered_map<std::string, EmbeddedTextureData> embeddedTextures;
-    
+
     // Skeletal / Hierarchy data (Original data for animations only)
     std::vector<BoneInfoData> bones;
     std::vector<TransformData> bindPose;
-    
+
     // Flattened render data
     std::vector<MeshInstance> instances;
-    
+
     // Support for hierarchy (only for animation system/skeleton mapping)
     std::vector<std::string> nodeNames;
     int nodeCount = 0; // Added for convenience
     std::vector<int> nodeParents;
     std::vector<glm::mat4> nodeLocalTransforms;
-    std::vector<glm::mat4> globalBindPoses; 
-    std::vector<glm::mat4> offsetMatrices;  
-    
+    std::vector<glm::mat4> globalBindPoses;
+    std::vector<glm::mat4> offsetMatrices;
+
     std::vector<RawAnimation> animations;
     int FinalizationProgress = 0; // Index of the next mesh to be finalized
     bool isValid = false;
-    
-    template<class Archive>
-    void serialize(Archive& archive) {
-        archive(fullPath, meshes, materials, embeddedTextures, bones, bindPose, instances, nodeNames, nodeCount, nodeParents, nodeLocalTransforms, globalBindPoses, offsetMatrices, animations, isValid);
+
+    template <class Archive> void serialize(Archive& archive)
+    {
+        archive(fullPath, meshes, materials, embeddedTextures, bones, bindPose, instances, nodeNames, nodeCount,
+                nodeParents, nodeLocalTransforms, globalBindPoses, offsetMatrices, animations, isValid);
     }
 };
 } // namespace Chained

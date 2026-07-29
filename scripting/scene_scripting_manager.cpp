@@ -17,7 +17,9 @@ namespace Chained
 namespace
 {
 // No-op deleter: the shared_ptr is just a non-null marker for "this script is instantiated".
-void NoOpDeleter(void*) {}
+void NoOpDeleter(void*)
+{
+}
 } // namespace
 
 static std::vector<SceneScriptingManager*> s_Managers;
@@ -78,7 +80,9 @@ SceneScriptingManager::~SceneScriptingManager()
     if (m_Scene && ServiceLocator::IsAvailable())
     {
         if (auto* physics = ServiceLocator::TryGet<Physics>())
+        {
             physics->SetCollisionCallback(m_Scene, nullptr);
+        }
 
         if (m_Scene->IsSimulationRunning())
         {
@@ -86,7 +90,9 @@ SceneScriptingManager::~SceneScriptingManager()
             if (ctx.engine && ctx.scriptEngineType)
             {
                 if (ManagedCallbacks_::ClearAll)
+                {
                     ManagedCallbacks_::ClearAll();
+                }
             }
         }
     }
@@ -116,43 +122,49 @@ void SceneScriptingManager::OnRuntimeStart()
     if (auto* physics = ServiceLocator::TryGet<Physics>())
     {
         physics->SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
-        if (!registryPtr)
-        {
-            return;
-        }
+            if (!registryPtr)
+            {
+                return;
+            }
 
-        auto engine = ServiceLocator::TryGet<ScriptEngine>();
-        if (!engine || !engine->GetHost().IsInitialized())
-        {
-            return;
-        }
+            auto engine = ServiceLocator::TryGet<ScriptEngine>();
+            if (!engine || !engine->GetHost().IsInitialized())
+            {
+                return;
+            }
 
-        auto* coreAssembly = engine->GetHost().GetCoreAssembly();
-        if (!coreAssembly)
-        {
-            return;
-        }
+            auto* coreAssembly = engine->GetHost().GetCoreAssembly();
+            if (!coreAssembly)
+            {
+                return;
+            }
 
-        Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
-        if (scriptEngineType)
-        {
-            if (ManagedCallbacks_::OnCollisionEnter)
-                ManagedCallbacks_::OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
-        }
-    });
+            Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
+            if (scriptEngineType)
+            {
+                if (ManagedCallbacks_::OnCollisionEnter)
+                {
+                    ManagedCallbacks_::OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
+                }
+            }
+        });
     }
 }
 
 void SceneScriptingManager::OnRuntimeStop()
 {
     if (auto* physics = ServiceLocator::TryGet<Physics>())
+    {
         physics->SetCollisionCallback(m_Scene, nullptr);
+    }
 
     auto ctx = AcquireScriptEngine();
     if (ctx.engine && ctx.scriptEngineType && !m_ReloadInProgress)
     {
         if (ManagedCallbacks_::ClearAll)
+        {
             ManagedCallbacks_::ClearAll();
+        }
     }
 
     auto& registry = m_Scene->GetRegistry();
@@ -199,7 +211,9 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
                     CH_CORE_INFO("C++ calling InstantiateScript for {}", script.ClassName);
                     std::u16string classNameStr = ch_utf8_to_u16(script.ClassName);
                     if (ManagedCallbacks_::InstantiateScript)
+                    {
                         ManagedCallbacks_::InstantiateScript((uint64_t)(uint32_t)entity, classNameStr.c_str());
+                    }
                     CH_CORE_INFO("C++ calling InstantiateScript SUCCESS");
 
                     for (const auto& [fieldName, field] : script.Fields)
@@ -209,24 +223,24 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
                         Coral::String cNameStr = Coral::String::New(script.ClassName);
                         if (field.Type == ScriptFieldType::Float)
                         {
-                            ctx.scriptEngineType.InvokeStaticMethod("SetFieldFloat", (uint64_t)(uint32_t)entity, cNameStr,
-                                                                fNameStr, std::get<float>(field.Value));
+                            ctx.scriptEngineType.InvokeStaticMethod("SetFieldFloat", (uint64_t)(uint32_t)entity,
+                                                                    cNameStr, fNameStr, std::get<float>(field.Value));
                         }
                         else if (field.Type == ScriptFieldType::Int)
                         {
                             ctx.scriptEngineType.InvokeStaticMethod("SetFieldInt", (uint64_t)(uint32_t)entity, cNameStr,
-                                                                fNameStr, std::get<int>(field.Value));
+                                                                    fNameStr, std::get<int>(field.Value));
                         }
                         else if (field.Type == ScriptFieldType::Bool)
                         {
-                            ctx.scriptEngineType.InvokeStaticMethod("SetFieldBool", (uint64_t)(uint32_t)entity, cNameStr,
-                                                                fNameStr, std::get<bool>(field.Value));
+                            ctx.scriptEngineType.InvokeStaticMethod("SetFieldBool", (uint64_t)(uint32_t)entity,
+                                                                    cNameStr, fNameStr, std::get<bool>(field.Value));
                         }
                         else if (field.Type == ScriptFieldType::String)
                         {
                             Coral::String vStr = Coral::String::New(std::get<std::string>(field.Value));
-                            ctx.scriptEngineType.InvokeStaticMethod("SetFieldString", (uint64_t)(uint32_t)entity, cNameStr,
-                                                                fNameStr, vStr);
+                            ctx.scriptEngineType.InvokeStaticMethod("SetFieldString", (uint64_t)(uint32_t)entity,
+                                                                    cNameStr, fNameStr, vStr);
                             Coral::String::Free(vStr);
                         }
                         Coral::String::Free(cNameStr);
@@ -251,7 +265,9 @@ void SceneScriptingManager::OnUpdate(Timestep deltaTime)
     try
     {
         if (ManagedCallbacks_::OnUpdate)
+        {
             ManagedCallbacks_::OnUpdate((float)deltaTime);
+        }
     } catch (const std::exception& e)
     {
         CH_CORE_ERROR("ScriptEngine: Exception in OnUpdate Loop: {}", e.what());
@@ -276,7 +292,9 @@ void SceneScriptingManager::OnEvent(Event& e)
     if (ctx.scriptEngineType)
     {
         if (ManagedCallbacks_::OnEvent)
+        {
             ManagedCallbacks_::OnEvent((int)e.GetEventType());
+        }
     }
 
     ctx.engine->SetContextScene(nullptr);
@@ -300,7 +318,9 @@ void SceneScriptingManager::OnRenderUI()
     if (ctx.scriptEngineType)
     {
         if (ManagedCallbacks_::OnRenderUI)
+        {
             ManagedCallbacks_::OnRenderUI();
+        }
     }
 
     ctx.engine->SetContextScene(nullptr);

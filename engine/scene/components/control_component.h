@@ -6,7 +6,6 @@
 #include "engine/graphics/ui/ui_style.h"
 #include "engine/reflection/reflection_rfl.h"
 
-
 namespace Chained
 {
 struct RectTransform
@@ -78,7 +77,7 @@ struct UIControlComponent
     // Runtime state flags
     bool IsHovered = false;
     bool IsDown = false;
-    bool PrevIsDown = false;       // used for self-tracked edge detection
+    bool PrevIsDown = false; // used for self-tracked edge detection
     bool PressedThisFrame = false;
     bool ValueChanged = false;
 
@@ -115,6 +114,5 @@ struct UIControlComponent
 CH_MARK_RFL(UIControlComponent);
 
 } // namespace Chained
-
 
 #endif // CH_CONTROL_COMPONENT_H

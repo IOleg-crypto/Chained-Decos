@@ -3,14 +3,19 @@
 
 #include "engine/graphics/pipeline/render_pass.h"
 
-namespace Chained {
+namespace Chained
+{
 
-    class SkyboxPass : public IRenderPass
+class SkyboxPass : public IRenderPass
+{
+public:
+    void Execute(const RenderContext& ctx) override;
+    const std::string& GetName() const override
     {
-    public:
-        void Execute(const RenderContext& ctx) override;
-        const std::string& GetName() const override { static std::string name = "SkyboxPass"; return name; }
-    };
+        static std::string name = "SkyboxPass";
+        return name;
+    }
+};
 
-}
+} // namespace Chained
 #endif

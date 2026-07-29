@@ -47,14 +47,15 @@ struct PrimitiveComponent
 
     PrimitiveComponent() = default;
 
-    static const char* GetStaticName() { return "PrimitiveComponent"; }
-
-    template <typename T_Archive>
-    void Reflect(Properties<T_Archive>& props)
+    static const char* GetStaticName()
     {
-        static const char* primitiveTypeNames[] = {
-            "None", "Cube", "Sphere", "Plane", "Cylinder", "Cone", "Torus", "Knot", "Hemisphere"
-        };
+        return "PrimitiveComponent";
+    }
+
+    template <typename T_Archive> void Reflect(Properties<T_Archive>& props)
+    {
+        static const char* primitiveTypeNames[] = {"None", "Cube",  "Sphere", "Plane",     "Cylinder",
+                                                   "Cone", "Torus", "Knot",   "Hemisphere"};
 
         props.Enum("Type", Type, primitiveTypeNames, 9);
         props.Property("Radius", Radius);

@@ -13,9 +13,11 @@ struct HierarchyComponent
     ::entt::entity Parent = ::entt::null;
     std::vector<::entt::entity> Children;
 
-    static const char* GetStaticName() { return "HierarchyComponent"; }
+    static const char* GetStaticName()
+    {
+        return "HierarchyComponent";
+    }
 
-    
     struct UI
     {
         UIMeta Parent = {.Tooltip = "ID of the parent entity (entt::entity)"};
@@ -29,9 +31,11 @@ struct NameComponent
 {
     std::string Name;
 
-    static const char* GetStaticName() { return "NameComponent"; }
+    static const char* GetStaticName()
+    {
+        return "NameComponent";
+    }
 
-    
     struct UI
     {
         UIMeta Name = {.Tooltip = "Name of the entity in the hierarchy"};

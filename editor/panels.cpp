@@ -40,8 +40,8 @@ void EditorPanels::OnUpdate(Timestep ts)
     }
 
     m_Panels.erase(std::remove_if(m_Panels.begin(), m_Panels.end(),
-        [](const std::shared_ptr<Panel>& panel) { return panel->IsPendingKill(); }),
-        m_Panels.end());
+                                  [](const std::shared_ptr<Panel>& panel) { return panel->IsPendingKill(); }),
+                   m_Panels.end());
 }
 
 void EditorPanels::OnImGuiRender(bool readOnly)
@@ -60,7 +60,9 @@ void EditorPanels::OnEvent(Event& e)
     for (auto& panel : m_Panels)
     {
         if (e.Handled)
+        {
             break;
+        }
         if (!panel->IsPendingKill())
         {
             panel->OnEvent(e);

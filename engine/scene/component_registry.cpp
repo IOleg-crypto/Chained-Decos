@@ -25,7 +25,7 @@ void ComponentRegistry::RegisterEngineComponents()
     RegisterPhysicsComponents();
     RegisterGameplayComponents();
     RegisterScriptingComponents();
-    
+
     // UI
     RegisterUIComponents();
     RegisterUIControlComponent();

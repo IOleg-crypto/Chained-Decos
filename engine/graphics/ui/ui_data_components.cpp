@@ -16,9 +16,18 @@ void ButtonData::Serialize(YAML::Emitter& out) const
 ButtonData ButtonData::Deserialize(YAML::Node widgetNode)
 {
     ButtonData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Interactable"]) data.IsInteractable = widgetNode["Interactable"].as<bool>();
-    if (widgetNode["Auto Size"]) data.AutoSize = widgetNode["Auto Size"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Interactable"])
+    {
+        data.IsInteractable = widgetNode["Interactable"].as<bool>();
+    }
+    if (widgetNode["Auto Size"])
+    {
+        data.AutoSize = widgetNode["Auto Size"].as<bool>();
+    }
     return data;
 }
 
@@ -32,8 +41,14 @@ void PanelData::Serialize(YAML::Emitter& out) const
 PanelData PanelData::Deserialize(YAML::Node widgetNode)
 {
     PanelData data;
-    if (widgetNode["Texture Path"]) data.TexturePath = widgetNode["Texture Path"].as<std::string>();
-    if (widgetNode["Full Screen"]) data.FullScreen = widgetNode["Full Screen"].as<bool>();
+    if (widgetNode["Texture Path"])
+    {
+        data.TexturePath = widgetNode["Texture Path"].as<std::string>();
+    }
+    if (widgetNode["Full Screen"])
+    {
+        data.FullScreen = widgetNode["Full Screen"].as<bool>();
+    }
     return data;
 }
 
@@ -47,8 +62,14 @@ void LabelData::Serialize(YAML::Emitter& out) const
 LabelData LabelData::Deserialize(YAML::Node widgetNode)
 {
     LabelData data;
-    if (widgetNode["Text"]) data.Text = widgetNode["Text"].as<std::string>();
-    if (widgetNode["Auto Size"]) data.AutoSize = widgetNode["Auto Size"].as<bool>();
+    if (widgetNode["Text"])
+    {
+        data.Text = widgetNode["Text"].as<std::string>();
+    }
+    if (widgetNode["Auto Size"])
+    {
+        data.AutoSize = widgetNode["Auto Size"].as<bool>();
+    }
     return data;
 }
 
@@ -64,10 +85,22 @@ void SliderData::Serialize(YAML::Emitter& out) const
 SliderData SliderData::Deserialize(YAML::Node widgetNode)
 {
     SliderData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Value"]) data.Value = widgetNode["Value"].as<float>();
-    if (widgetNode["Min"]) data.Min = widgetNode["Min"].as<float>();
-    if (widgetNode["Max"]) data.Max = widgetNode["Max"].as<float>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Value"])
+    {
+        data.Value = widgetNode["Value"].as<float>();
+    }
+    if (widgetNode["Min"])
+    {
+        data.Min = widgetNode["Min"].as<float>();
+    }
+    if (widgetNode["Max"])
+    {
+        data.Max = widgetNode["Max"].as<float>();
+    }
     return data;
 }
 
@@ -81,8 +114,14 @@ void CheckboxData::Serialize(YAML::Emitter& out) const
 CheckboxData CheckboxData::Deserialize(YAML::Node widgetNode)
 {
     CheckboxData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Checked"]) data.Checked = widgetNode["Checked"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Checked"])
+    {
+        data.Checked = widgetNode["Checked"].as<bool>();
+    }
     return data;
 }
 
@@ -101,13 +140,34 @@ void InputTextData::Serialize(YAML::Emitter& out) const
 InputTextData InputTextData::Deserialize(YAML::Node widgetNode)
 {
     InputTextData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Text"]) data.Text = widgetNode["Text"].as<std::string>();
-    if (widgetNode["Placeholder"]) data.Placeholder = widgetNode["Placeholder"].as<std::string>();
-    if (widgetNode["Max Length"]) data.MaxLength = widgetNode["Max Length"].as<int>();
-    if (widgetNode["Multiline"]) data.Multiline = widgetNode["Multiline"].as<bool>();
-    if (widgetNode["Read Only"]) data.ReadOnly = widgetNode["Read Only"].as<bool>();
-    if (widgetNode["Password"]) data.Password = widgetNode["Password"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Text"])
+    {
+        data.Text = widgetNode["Text"].as<std::string>();
+    }
+    if (widgetNode["Placeholder"])
+    {
+        data.Placeholder = widgetNode["Placeholder"].as<std::string>();
+    }
+    if (widgetNode["Max Length"])
+    {
+        data.MaxLength = widgetNode["Max Length"].as<int>();
+    }
+    if (widgetNode["Multiline"])
+    {
+        data.Multiline = widgetNode["Multiline"].as<bool>();
+    }
+    if (widgetNode["Read Only"])
+    {
+        data.ReadOnly = widgetNode["Read Only"].as<bool>();
+    }
+    if (widgetNode["Password"])
+    {
+        data.Password = widgetNode["Password"].as<bool>();
+    }
     return data;
 }
 
@@ -116,7 +176,10 @@ void ComboBoxData::Serialize(YAML::Emitter& out) const
     out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_ComboBox;
     out << YAML::Key << "Label" << YAML::Value << Label;
     out << YAML::Key << "Items" << YAML::Value << YAML::BeginSeq;
-    for (auto& item : Items) out << item;
+    for (auto& item : Items)
+    {
+        out << item;
+    }
     out << YAML::EndSeq;
     out << YAML::Key << "Selected Index" << YAML::Value << SelectedIndex;
 }
@@ -124,9 +187,21 @@ void ComboBoxData::Serialize(YAML::Emitter& out) const
 ComboBoxData ComboBoxData::Deserialize(YAML::Node widgetNode)
 {
     ComboBoxData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Items"]) for (auto item : widgetNode["Items"]) data.Items.push_back(item.as<std::string>());
-    if (widgetNode["Selected Index"]) data.SelectedIndex = widgetNode["Selected Index"].as<int>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Items"])
+    {
+        for (auto item : widgetNode["Items"])
+        {
+            data.Items.push_back(item.as<std::string>());
+        }
+    }
+    if (widgetNode["Selected Index"])
+    {
+        data.SelectedIndex = widgetNode["Selected Index"].as<int>();
+    }
     return data;
 }
 
@@ -141,9 +216,18 @@ void ProgressBarData::Serialize(YAML::Emitter& out) const
 ProgressBarData ProgressBarData::Deserialize(YAML::Node widgetNode)
 {
     ProgressBarData data;
-    if (widgetNode["Progress"]) data.Progress = widgetNode["Progress"].as<float>();
-    if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
-    if (widgetNode["Show Percentage"]) data.ShowPercentage = widgetNode["Show Percentage"].as<bool>();
+    if (widgetNode["Progress"])
+    {
+        data.Progress = widgetNode["Progress"].as<float>();
+    }
+    if (widgetNode["Overlay Text"])
+    {
+        data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
+    }
+    if (widgetNode["Show Percentage"])
+    {
+        data.ShowPercentage = widgetNode["Show Percentage"].as<bool>();
+    }
     return data;
 }
 
@@ -158,9 +242,18 @@ void ImageData::Serialize(YAML::Emitter& out) const
 ImageData ImageData::Deserialize(YAML::Node widgetNode)
 {
     ImageData data;
-    if (widgetNode["Texture Path"]) data.TexturePath = widgetNode["Texture Path"].as<std::string>();
-    if (widgetNode["Tint Color"]) data.TintColor = widgetNode["Tint Color"].as<Color>();
-    if (widgetNode["Border Color"]) data.BorderColor = widgetNode["Border Color"].as<Color>();
+    if (widgetNode["Texture Path"])
+    {
+        data.TexturePath = widgetNode["Texture Path"].as<std::string>();
+    }
+    if (widgetNode["Tint Color"])
+    {
+        data.TintColor = widgetNode["Tint Color"].as<Color>();
+    }
+    if (widgetNode["Border Color"])
+    {
+        data.BorderColor = widgetNode["Border Color"].as<Color>();
+    }
     return data;
 }
 
@@ -177,11 +270,26 @@ void ImageButtonData::Serialize(YAML::Emitter& out) const
 ImageButtonData ImageButtonData::Deserialize(YAML::Node widgetNode)
 {
     ImageButtonData data;
-    if (widgetNode["Texture Path"]) data.TexturePath = widgetNode["Texture Path"].as<std::string>();
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Tint Color"]) data.TintColor = widgetNode["Tint Color"].as<Color>();
-    if (widgetNode["Background Color"]) data.BackgroundColor = widgetNode["Background Color"].as<Color>();
-    if (widgetNode["Frame Padding"]) data.FramePadding = widgetNode["Frame Padding"].as<int>();
+    if (widgetNode["Texture Path"])
+    {
+        data.TexturePath = widgetNode["Texture Path"].as<std::string>();
+    }
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Tint Color"])
+    {
+        data.TintColor = widgetNode["Tint Color"].as<Color>();
+    }
+    if (widgetNode["Background Color"])
+    {
+        data.BackgroundColor = widgetNode["Background Color"].as<Color>();
+    }
+    if (widgetNode["Frame Padding"])
+    {
+        data.FramePadding = widgetNode["Frame Padding"].as<int>();
+    }
     return data;
 }
 
@@ -195,8 +303,14 @@ void SeparatorData::Serialize(YAML::Emitter& out) const
 SeparatorData SeparatorData::Deserialize(YAML::Node widgetNode)
 {
     SeparatorData data;
-    if (widgetNode["Thickness"]) data.Thickness = widgetNode["Thickness"].as<float>();
-    if (widgetNode["Line Color"]) data.LineColor = widgetNode["Line Color"].as<Color>();
+    if (widgetNode["Thickness"])
+    {
+        data.Thickness = widgetNode["Thickness"].as<float>();
+    }
+    if (widgetNode["Line Color"])
+    {
+        data.LineColor = widgetNode["Line Color"].as<Color>();
+    }
     return data;
 }
 
@@ -205,7 +319,10 @@ void RadioButtonData::Serialize(YAML::Emitter& out) const
     out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_RadioButton;
     out << YAML::Key << "Label" << YAML::Value << Label;
     out << YAML::Key << "Options" << YAML::Value << YAML::BeginSeq;
-    for (auto& option : Options) out << option;
+    for (auto& option : Options)
+    {
+        out << option;
+    }
     out << YAML::EndSeq;
     out << YAML::Key << "Selected Index" << YAML::Value << SelectedIndex;
     out << YAML::Key << "Horizontal" << YAML::Value << Horizontal;
@@ -214,10 +331,25 @@ void RadioButtonData::Serialize(YAML::Emitter& out) const
 RadioButtonData RadioButtonData::Deserialize(YAML::Node widgetNode)
 {
     RadioButtonData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Options"]) for (auto option : widgetNode["Options"]) data.Options.push_back(option.as<std::string>());
-    if (widgetNode["Selected Index"]) data.SelectedIndex = widgetNode["Selected Index"].as<int>();
-    if (widgetNode["Horizontal"]) data.Horizontal = widgetNode["Horizontal"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Options"])
+    {
+        for (auto option : widgetNode["Options"])
+        {
+            data.Options.push_back(option.as<std::string>());
+        }
+    }
+    if (widgetNode["Selected Index"])
+    {
+        data.SelectedIndex = widgetNode["Selected Index"].as<int>();
+    }
+    if (widgetNode["Horizontal"])
+    {
+        data.Horizontal = widgetNode["Horizontal"].as<bool>();
+    }
     return data;
 }
 
@@ -233,10 +365,22 @@ void ColorPickerData::Serialize(YAML::Emitter& out) const
 ColorPickerData ColorPickerData::Deserialize(YAML::Node widgetNode)
 {
     ColorPickerData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Selected Color"]) data.SelectedColor = widgetNode["Selected Color"].as<Color>();
-    if (widgetNode["Show Alpha"]) data.ShowAlpha = widgetNode["Show Alpha"].as<bool>();
-    if (widgetNode["Show Picker"]) data.ShowPicker = widgetNode["Show Picker"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Selected Color"])
+    {
+        data.SelectedColor = widgetNode["Selected Color"].as<Color>();
+    }
+    if (widgetNode["Show Alpha"])
+    {
+        data.ShowAlpha = widgetNode["Show Alpha"].as<bool>();
+    }
+    if (widgetNode["Show Picker"])
+    {
+        data.ShowPicker = widgetNode["Show Picker"].as<bool>();
+    }
     return data;
 }
 
@@ -254,12 +398,30 @@ void DragFloatData::Serialize(YAML::Emitter& out) const
 DragFloatData DragFloatData::Deserialize(YAML::Node widgetNode)
 {
     DragFloatData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Value"]) data.Value = widgetNode["Value"].as<float>();
-    if (widgetNode["Speed"]) data.Speed = widgetNode["Speed"].as<float>();
-    if (widgetNode["Min"]) data.Min = widgetNode["Min"].as<float>();
-    if (widgetNode["Max"]) data.Max = widgetNode["Max"].as<float>();
-    if (widgetNode["Format"]) data.Format = widgetNode["Format"].as<std::string>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Value"])
+    {
+        data.Value = widgetNode["Value"].as<float>();
+    }
+    if (widgetNode["Speed"])
+    {
+        data.Speed = widgetNode["Speed"].as<float>();
+    }
+    if (widgetNode["Min"])
+    {
+        data.Min = widgetNode["Min"].as<float>();
+    }
+    if (widgetNode["Max"])
+    {
+        data.Max = widgetNode["Max"].as<float>();
+    }
+    if (widgetNode["Format"])
+    {
+        data.Format = widgetNode["Format"].as<std::string>();
+    }
     return data;
 }
 
@@ -277,12 +439,30 @@ void DragIntData::Serialize(YAML::Emitter& out) const
 DragIntData DragIntData::Deserialize(YAML::Node widgetNode)
 {
     DragIntData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Value"]) data.Value = widgetNode["Value"].as<int>();
-    if (widgetNode["Speed"]) data.Speed = widgetNode["Speed"].as<float>();
-    if (widgetNode["Min"]) data.Min = widgetNode["Min"].as<int>();
-    if (widgetNode["Max"]) data.Max = widgetNode["Max"].as<int>();
-    if (widgetNode["Format"]) data.Format = widgetNode["Format"].as<std::string>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Value"])
+    {
+        data.Value = widgetNode["Value"].as<int>();
+    }
+    if (widgetNode["Speed"])
+    {
+        data.Speed = widgetNode["Speed"].as<float>();
+    }
+    if (widgetNode["Min"])
+    {
+        data.Min = widgetNode["Min"].as<int>();
+    }
+    if (widgetNode["Max"])
+    {
+        data.Max = widgetNode["Max"].as<int>();
+    }
+    if (widgetNode["Format"])
+    {
+        data.Format = widgetNode["Format"].as<std::string>();
+    }
     return data;
 }
 
@@ -298,10 +478,22 @@ void TreeNodeData::Serialize(YAML::Emitter& out) const
 TreeNodeData TreeNodeData::Deserialize(YAML::Node widgetNode)
 {
     TreeNodeData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Is Open"]) data.IsOpen = widgetNode["Is Open"].as<bool>();
-    if (widgetNode["Default Open"]) data.DefaultOpen = widgetNode["Default Open"].as<bool>();
-    if (widgetNode["Is Leaf"]) data.IsLeaf = widgetNode["Is Leaf"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Is Open"])
+    {
+        data.IsOpen = widgetNode["Is Open"].as<bool>();
+    }
+    if (widgetNode["Default Open"])
+    {
+        data.DefaultOpen = widgetNode["Default Open"].as<bool>();
+    }
+    if (widgetNode["Is Leaf"])
+    {
+        data.IsLeaf = widgetNode["Is Leaf"].as<bool>();
+    }
     return data;
 }
 
@@ -316,9 +508,18 @@ void TabBarData::Serialize(YAML::Emitter& out) const
 TabBarData TabBarData::Deserialize(YAML::Node widgetNode)
 {
     TabBarData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Reorderable"]) data.Reorderable = widgetNode["Reorderable"].as<bool>();
-    if (widgetNode["Auto Select New Tabs"]) data.AutoSelectNewTabs = widgetNode["Auto Select New Tabs"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Reorderable"])
+    {
+        data.Reorderable = widgetNode["Reorderable"].as<bool>();
+    }
+    if (widgetNode["Auto Select New Tabs"])
+    {
+        data.AutoSelectNewTabs = widgetNode["Auto Select New Tabs"].as<bool>();
+    }
     return data;
 }
 
@@ -333,9 +534,18 @@ void TabItemData::Serialize(YAML::Emitter& out) const
 TabItemData TabItemData::Deserialize(YAML::Node widgetNode)
 {
     TabItemData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Is Open"]) data.IsOpen = widgetNode["Is Open"].as<bool>();
-    if (widgetNode["Selected"]) data.Selected = widgetNode["Selected"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Is Open"])
+    {
+        data.IsOpen = widgetNode["Is Open"].as<bool>();
+    }
+    if (widgetNode["Selected"])
+    {
+        data.Selected = widgetNode["Selected"].as<bool>();
+    }
     return data;
 }
 
@@ -350,21 +560,37 @@ void CollapsingHeaderData::Serialize(YAML::Emitter& out) const
 CollapsingHeaderData CollapsingHeaderData::Deserialize(YAML::Node widgetNode)
 {
     CollapsingHeaderData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Is Open"]) data.IsOpen = widgetNode["Is Open"].as<bool>();
-    if (widgetNode["Default Open"]) data.DefaultOpen = widgetNode["Default Open"].as<bool>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Is Open"])
+    {
+        data.IsOpen = widgetNode["Is Open"].as<bool>();
+    }
+    if (widgetNode["Default Open"])
+    {
+        data.DefaultOpen = widgetNode["Default Open"].as<bool>();
+    }
     return data;
 }
 
 void PlotData::Serialize(YAML::Emitter& out) const
 {
     if (Mode == PlotMode::Lines)
+    {
         out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotLines;
+    }
     else
+    {
         out << YAML::Key << "Widget Type" << YAML::Value << WidgetType_PlotHistogram;
+    }
     out << YAML::Key << "Label" << YAML::Value << Label;
     out << YAML::Key << "Values" << YAML::Value << YAML::BeginSeq;
-    for (auto value : Values) out << value;
+    for (auto value : Values)
+    {
+        out << value;
+    }
     out << YAML::EndSeq;
     out << YAML::Key << "Overlay Text" << YAML::Value << OverlayText;
     out << YAML::Key << "Scale Min" << YAML::Value << ScaleMin;
@@ -374,11 +600,29 @@ void PlotData::Serialize(YAML::Emitter& out) const
 PlotData PlotData::Deserialize(YAML::Node widgetNode)
 {
     PlotData data;
-    if (widgetNode["Label"]) data.Label = widgetNode["Label"].as<std::string>();
-    if (widgetNode["Values"]) for (auto value : widgetNode["Values"]) data.Values.push_back(value.as<float>());
-    if (widgetNode["Overlay Text"]) data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
-    if (widgetNode["Scale Min"]) data.ScaleMin = widgetNode["Scale Min"].as<float>();
-    if (widgetNode["Scale Max"]) data.ScaleMax = widgetNode["Scale Max"].as<float>();
+    if (widgetNode["Label"])
+    {
+        data.Label = widgetNode["Label"].as<std::string>();
+    }
+    if (widgetNode["Values"])
+    {
+        for (auto value : widgetNode["Values"])
+        {
+            data.Values.push_back(value.as<float>());
+        }
+    }
+    if (widgetNode["Overlay Text"])
+    {
+        data.OverlayText = widgetNode["Overlay Text"].as<std::string>();
+    }
+    if (widgetNode["Scale Min"])
+    {
+        data.ScaleMin = widgetNode["Scale Min"].as<float>();
+    }
+    if (widgetNode["Scale Max"])
+    {
+        data.ScaleMax = widgetNode["Scale Max"].as<float>();
+    }
     return data;
 }
 
@@ -392,8 +636,14 @@ void VerticalLayoutGroupData::Serialize(YAML::Emitter& out) const
 VerticalLayoutGroupData VerticalLayoutGroupData::Deserialize(YAML::Node widgetNode)
 {
     VerticalLayoutGroupData data;
-    if (widgetNode["Spacing"]) data.Spacing = widgetNode["Spacing"].as<float>();
-    if (widgetNode["Padding"]) data.Padding = widgetNode["Padding"].as<glm::vec2>();
+    if (widgetNode["Spacing"])
+    {
+        data.Spacing = widgetNode["Spacing"].as<float>();
+    }
+    if (widgetNode["Padding"])
+    {
+        data.Padding = widgetNode["Padding"].as<glm::vec2>();
+    }
     return data;
 }
 
@@ -401,39 +651,58 @@ ControlData DeserializeControlData(int widgetType, YAML::Node widgetNode)
 {
     switch (widgetType)
     {
-        case WidgetType_Button:              return ButtonData::Deserialize(widgetNode);
-        case WidgetType_Label:               return LabelData::Deserialize(widgetNode);
-        case WidgetType_Slider:              return SliderData::Deserialize(widgetNode);
-        case WidgetType_Checkbox:            return CheckboxData::Deserialize(widgetNode);
-        case WidgetType_ProgressBar:         return ProgressBarData::Deserialize(widgetNode);
-        case WidgetType_Panel:               return PanelData::Deserialize(widgetNode);
-        case WidgetType_Image:               return ImageData::Deserialize(widgetNode);
-        case WidgetType_ComboBox:            return ComboBoxData::Deserialize(widgetNode);
-        case WidgetType_ImageButton:         return ImageButtonData::Deserialize(widgetNode);
-        case WidgetType_InputText:           return InputTextData::Deserialize(widgetNode);
-        case WidgetType_Separator:           return SeparatorData::Deserialize(widgetNode);
-        case WidgetType_RadioButton:         return RadioButtonData::Deserialize(widgetNode);
-        case WidgetType_ColorPicker:         return ColorPickerData::Deserialize(widgetNode);
-        case WidgetType_DragFloat:           return DragFloatData::Deserialize(widgetNode);
-        case WidgetType_DragInt:             return DragIntData::Deserialize(widgetNode);
-        case WidgetType_TreeNode:            return TreeNodeData::Deserialize(widgetNode);
-        case WidgetType_TabBar:              return TabBarData::Deserialize(widgetNode);
-        case WidgetType_TabItem:             return TabItemData::Deserialize(widgetNode);
-        case WidgetType_CollapsingHeader:    return CollapsingHeaderData::Deserialize(widgetNode);
-        case WidgetType_PlotLines:
-        {
-            auto data = PlotData::Deserialize(widgetNode);
-            data.Mode = PlotMode::Lines;
-            return data;
-        }
-        case WidgetType_PlotHistogram:
-        {
-            auto data = PlotData::Deserialize(widgetNode);
-            data.Mode = PlotMode::Histogram;
-            return data;
-        }
-        case WidgetType_VerticalLayoutGroup: return VerticalLayoutGroupData::Deserialize(widgetNode);
-        default:                             return std::monostate{};
+    case WidgetType_Button:
+        return ButtonData::Deserialize(widgetNode);
+    case WidgetType_Label:
+        return LabelData::Deserialize(widgetNode);
+    case WidgetType_Slider:
+        return SliderData::Deserialize(widgetNode);
+    case WidgetType_Checkbox:
+        return CheckboxData::Deserialize(widgetNode);
+    case WidgetType_ProgressBar:
+        return ProgressBarData::Deserialize(widgetNode);
+    case WidgetType_Panel:
+        return PanelData::Deserialize(widgetNode);
+    case WidgetType_Image:
+        return ImageData::Deserialize(widgetNode);
+    case WidgetType_ComboBox:
+        return ComboBoxData::Deserialize(widgetNode);
+    case WidgetType_ImageButton:
+        return ImageButtonData::Deserialize(widgetNode);
+    case WidgetType_InputText:
+        return InputTextData::Deserialize(widgetNode);
+    case WidgetType_Separator:
+        return SeparatorData::Deserialize(widgetNode);
+    case WidgetType_RadioButton:
+        return RadioButtonData::Deserialize(widgetNode);
+    case WidgetType_ColorPicker:
+        return ColorPickerData::Deserialize(widgetNode);
+    case WidgetType_DragFloat:
+        return DragFloatData::Deserialize(widgetNode);
+    case WidgetType_DragInt:
+        return DragIntData::Deserialize(widgetNode);
+    case WidgetType_TreeNode:
+        return TreeNodeData::Deserialize(widgetNode);
+    case WidgetType_TabBar:
+        return TabBarData::Deserialize(widgetNode);
+    case WidgetType_TabItem:
+        return TabItemData::Deserialize(widgetNode);
+    case WidgetType_CollapsingHeader:
+        return CollapsingHeaderData::Deserialize(widgetNode);
+    case WidgetType_PlotLines: {
+        auto data = PlotData::Deserialize(widgetNode);
+        data.Mode = PlotMode::Lines;
+        return data;
+    }
+    case WidgetType_PlotHistogram: {
+        auto data = PlotData::Deserialize(widgetNode);
+        data.Mode = PlotMode::Histogram;
+        return data;
+    }
+    case WidgetType_VerticalLayoutGroup:
+        return VerticalLayoutGroupData::Deserialize(widgetNode);
+    default:
+        return std::monostate{};
     }
 }
 

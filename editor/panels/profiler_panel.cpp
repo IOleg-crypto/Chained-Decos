@@ -4,7 +4,6 @@
 #include <format>
 #include <glad/gl.h>
 
-
 namespace Chained
 {
 ProfilerPanel::ProfilerPanel()

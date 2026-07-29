@@ -4,8 +4,11 @@
 #include "engine/scene/yaml.h"
 #include "engine/scene/hierarchy_serializer.h"
 #include "engine/scene/scene.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 
 #include <fstream>
+#include <sstream>
 #include <yaml-cpp/yaml.h>
 
 namespace Chained
@@ -33,16 +36,19 @@ static void SerializeEntityRecursive(YAML::Emitter& out, Entity entity)
 
 bool PrefabSerializer::Serialize(Entity entity, const std::string& filepath)
 {
-    if (!entity) return false;
+    if (!entity)
+    {
+        return false;
+    }
 
     YAML::Emitter out;
     out << YAML::BeginMap;
     out << YAML::Key << "Prefab" << YAML::Value << entity.GetComponent<TagComponent>().Tag;
     out << YAML::Key << "RootEntity" << YAML::Value << (uint64_t)entity.GetUUID();
     out << YAML::Key << "Entities" << YAML::Value << YAML::BeginSeq;
-    
+
     SerializeEntityRecursive(out, entity);
-    
+
     out << YAML::EndSeq;
     out << YAML::EndMap;
 
@@ -70,9 +76,40 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     }
 
     YAML::Node data;
-    try {
-        data = YAML::LoadFile(filepath);
-    } catch (...) {
+    try
+    {
+        std::string content;
+
+        // Try reading from pack first
+        if (auto* am = ServiceLocator::TryGet<AssetManager>())
+        {
+            if (am->IsPacked())
+            {
+                auto packData = am->ReadAssetData(filepath);
+                if (!packData.empty())
+                {
+                    content.assign(packData.begin(), packData.end());
+                }
+            }
+        }
+
+        // Fallback to disk
+        if (content.empty())
+        {
+            std::ifstream stream(filepath);
+            if (!stream.is_open())
+            {
+                CH_CORE_ERROR("PrefabSerializer: Failed to load prefab file '{}'", filepath);
+                return {};
+            }
+            std::stringstream ss;
+            ss << stream.rdbuf();
+            content = ss.str();
+        }
+
+        data = YAML::Load(content);
+    } catch (...)
+    {
         CH_CORE_ERROR("PrefabSerializer: Failed to load prefab file '{}'", filepath);
         return {};
     }
@@ -92,12 +129,17 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     // Step 1: Create all entities first
     for (auto entityNode : entitiesNode)
     {
-        if (!entityNode["Entity"]) continue;
-        
+        if (!entityNode["Entity"])
+        {
+            continue;
+        }
+
         uint64_t oldUUID = entityNode["Entity"].as<uint64_t>();
         std::string tag = "Entity";
         if (entityNode["TagComponent"] && entityNode["TagComponent"]["Tag"])
+        {
             tag = entityNode["TagComponent"]["Tag"].as<std::string>();
+        }
 
         Entity newEntity = scene->CreateEntity(tag);
         remapTable[oldUUID] = newEntity;
@@ -108,11 +150,14 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     int idx = 0;
     for (auto entityNode : entitiesNode)
     {
-        if (idx >= createdEntities.size()) break;
-        
+        if (idx >= createdEntities.size())
+        {
+            break;
+        }
+
         Entity entity = createdEntities[idx++];
         ComponentSerializer::DeserializeAll(entity, entityNode);
-        
+
         if (entity.HasComponent<TransformComponent>())
         {
             auto& tc = entity.GetComponent<TransformComponent>();
@@ -135,7 +180,7 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     {
         Entity entity = task.entity;
         auto& hc = entity.AddOrReplaceComponent<HierarchyComponent>();
-        
+
         // Fix Parent
         if (task.parent != 0 && remapTable.count(task.parent))
         {
@@ -165,7 +210,9 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     }
     uint64_t rootOldUUID = data["RootEntity"].as<uint64_t>();
     if (remapTable.count(rootOldUUID))
+    {
         return remapTable[rootOldUUID];
+    }
 
     return createdEntities.empty() ? Entity{} : createdEntities[0];
 }

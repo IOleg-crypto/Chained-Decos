@@ -59,9 +59,8 @@ void GLFramebuffer::Invalidate()
     // need a single-sample sampler2D/sampler2DShadow.
     GLint maxSamples = 1;
     glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
-    uint32_t samples = m_Specification.DepthOnly
-                            ? 1
-                            : std::min<uint32_t>(m_Specification.Samples, (uint32_t)maxSamples);
+    uint32_t samples =
+        m_Specification.DepthOnly ? 1 : std::min<uint32_t>(m_Specification.Samples, (uint32_t)maxSamples);
     bool multisampled = samples > 1;
 
     glGenFramebuffers(1, &m_RendererID);
@@ -81,9 +80,8 @@ void GLFramebuffer::Invalidate()
         // No color attachment; depth is written to a sampable 2D texture.
         glGenTextures(1, &m_DepthAttachment);
         glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F,
-                     m_Specification.Width, m_Specification.Height,
-                     0, GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_Specification.Width, m_Specification.Height, 0,
+                     GL_DEPTH_COMPONENT, GL_FLOAT, nullptr);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
         // Clamp-to-border with depth=1 so fragments outside the light frustum are NOT in shadow.
@@ -107,12 +105,14 @@ void GLFramebuffer::Invalidate()
 
             glGenTextures(1, &m_ColorAttachment);
             glBindTexture(target, m_ColorAttachment);
-            glTexImage2DMultisample(target, samples, internalFormat, m_Specification.Width, m_Specification.Height, GL_TRUE);
+            glTexImage2DMultisample(target, samples, internalFormat, m_Specification.Width, m_Specification.Height,
+                                    GL_TRUE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, m_ColorAttachment, 0);
 
             glGenTextures(1, &m_DepthAttachment);
             glBindTexture(target, m_DepthAttachment);
-            glTexImage2DMultisample(target, samples, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, GL_TRUE);
+            glTexImage2DMultisample(target, samples, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height,
+                                    GL_TRUE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, target, m_DepthAttachment, 0);
         }
         else
@@ -130,7 +130,8 @@ void GLFramebuffer::Invalidate()
             // Depth Attachment
             glGenTextures(1, &m_DepthAttachment);
             glBindTexture(GL_TEXTURE_2D, m_DepthAttachment);
-            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0,
+                         GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_DepthAttachment, 0);
         }
     }
@@ -138,7 +139,8 @@ void GLFramebuffer::Invalidate()
     GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
     if (status != GL_FRAMEBUFFER_COMPLETE)
     {
-        CH_CORE_ERROR("Framebuffer is incomplete! Status: 0x{0:X}, Width: {1}, Height: {2}", status, m_Specification.Width, m_Specification.Height);
+        CH_CORE_ERROR("Framebuffer is incomplete! Status: 0x{0:X}, Width: {1}, Height: {2}", status,
+                      m_Specification.Width, m_Specification.Height);
         // Do NOT assert here — a non-complete FBO should degrade gracefully, not crash the editor.
     }
     else
@@ -163,7 +165,8 @@ void GLFramebuffer::Invalidate()
 
         glGenTextures(1, &m_ResolveDepthAttachment);
         glBindTexture(GL_TEXTURE_2D, m_ResolveDepthAttachment);
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0, GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height, 0,
+                     GL_DEPTH_STENCIL, GL_UNSIGNED_INT_24_8, nullptr);
         glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, GL_TEXTURE_2D, m_ResolveDepthAttachment, 0);
 
         GLenum resolveStatus = glCheckFramebufferStatus(GL_FRAMEBUFFER);
@@ -175,10 +178,12 @@ void GLFramebuffer::Invalidate()
 
     if (m_IsComplete)
     {
-        m_ColorTexture = Texture::WrapNative(m_Specification.Samples > 1 ? m_ResolveColorAttachment : m_ColorAttachment, m_Specification.Width, m_Specification.Height);
-        m_DepthTexture = Texture::WrapNative(m_Specification.Samples > 1 ? m_ResolveDepthAttachment : m_DepthAttachment, m_Specification.Width, m_Specification.Height);
+        m_ColorTexture = Texture::WrapNative(m_Specification.Samples > 1 ? m_ResolveColorAttachment : m_ColorAttachment,
+                                             m_Specification.Width, m_Specification.Height);
+        m_DepthTexture = Texture::WrapNative(m_Specification.Samples > 1 ? m_ResolveDepthAttachment : m_DepthAttachment,
+                                             m_Specification.Width, m_Specification.Height);
     }
-    
+
     glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
 }
 
@@ -196,16 +201,18 @@ void GLFramebuffer::Unbind()
 void GLFramebuffer::Resolve()
 {
     if (m_Specification.Samples <= 1 || !m_ResolveFBO || !m_IsComplete)
+    {
         return;
+    }
 
     GLint previousFBO = 0;
     glGetIntegerv(GL_FRAMEBUFFER_BINDING, &previousFBO);
 
     glBindFramebuffer(GL_READ_FRAMEBUFFER, m_RendererID);
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_ResolveFBO);
-    glBlitFramebuffer(0, 0, m_Specification.Width, m_Specification.Height,
-                       0, 0, m_Specification.Width, m_Specification.Height,
-                       GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT, GL_NEAREST);
+    glBlitFramebuffer(0, 0, m_Specification.Width, m_Specification.Height, 0, 0, m_Specification.Width,
+                      m_Specification.Height, GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT,
+                      GL_NEAREST);
 
     glBindFramebuffer(GL_FRAMEBUFFER, previousFBO);
 }
@@ -221,4 +228,4 @@ void GLFramebuffer::Resize(uint32_t width, uint32_t height)
     Invalidate();
 }
 
-}
+} // namespace Chained

@@ -14,10 +14,8 @@
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
-
 namespace Chained
 {
-
 
 static bool RayAABBInternal(const glm::vec3& origin, const glm::vec3& dir, const glm::vec3& min, const glm::vec3& max,
                             float& t)
@@ -56,10 +54,11 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         return finalResult;
     }
 
-    
     RaycastResult physicsResult;
     if (auto* physics = ServiceLocator::TryGet<Physics>())
+    {
         physicsResult = physics->Raycast(scene, ray);
+    }
     if (physicsResult.Hit)
     {
         finalResult.Hit = true;
@@ -69,10 +68,8 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         finalResult.Normal = physicsResult.Normal;
     }
 
-    
     auto modelView = scene->GetRegistry().view<TransformComponent, ModelComponent>();
     modelView.each([&](entt::entity entityID, TransformComponent& tc, ModelComponent& modelComp) {
-        
         if (finalResult.Hit && (entt::entity)finalResult.HitEntity == entityID)
         {
             return;
@@ -84,7 +81,10 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         }
 
         AssetManager* assetManager = ServiceLocator::TryGet<AssetManager>();
-        if (!assetManager) return;
+        if (!assetManager)
+        {
+            return;
+        }
         auto modelAsset = assetManager->Get<ModelAsset>(modelComp.ModelPath);
         if (!modelAsset || !modelAsset->IsReady())
         {
@@ -94,24 +94,20 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         glm::mat4 modelTransform = ComponentUtils::GetTransform(tc);
         glm::mat4 invTransform = glm::inverse(modelTransform);
 
-        
         Ray localRay;
         localRay.position = glm::vec3(invTransform * glm::vec4(ray.position, 1.0f));
         glm::vec3 localTarget = glm::vec3(invTransform * glm::vec4(ray.position + ray.direction, 1.0f));
         localRay.direction = glm::normalize(localTarget - localRay.position);
 
-        
-        
         float aabbT = 0.0f;
         glm::vec3 modelMin = modelAsset->GetBoundingBox().Min;
         glm::vec3 modelMax = modelAsset->GetBoundingBox().Max;
 
-        
         if (modelMin != modelMax)
         {
             if (!RayAABBInternal(localRay.position, localRay.direction, modelMin, modelMax, aabbT))
             {
-                return; 
+                return;
             }
         }
 
@@ -122,7 +118,6 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         const auto& instances = modelAsset->GetInstances();
         const auto& rawMeshes = modelAsset->GetRawMeshes();
 
-        
         for (const auto& inst : instances)
         {
             if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size())
@@ -136,7 +131,6 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                 continue;
             }
 
-            
             glm::mat4 invLocalInst = glm::inverse(inst.localTransform);
             glm::vec3 meshSpaceOrigin = glm::vec3(invLocalInst * glm::vec4(localRay.position, 1.0f));
             glm::vec3 meshSpaceDir = glm::normalize(glm::vec3(invLocalInst * glm::vec4(localRay.direction, 0.0f)));
@@ -161,7 +155,6 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                 glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
                 glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
 
-                
                 glm::vec3 e1 = v1 - v0, e2 = v2 - v0;
                 glm::vec3 h = glm::cross(meshSpaceDir, e2);
                 float a = glm::dot(e1, h);
@@ -186,11 +179,10 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                 float triT = f * glm::dot(e2, q);
                 if (triT > 0.0f)
                 {
-                    
+
                     glm::vec3 hitMeshSpace = meshSpaceOrigin + meshSpaceDir * triT;
                     glm::vec3 hitLocalSpace = glm::vec3(inst.localTransform * glm::vec4(hitMeshSpace, 1.0f));
 
-                    
                     float currentLocalT = glm::distance(localRay.position, hitLocalSpace);
 
                     if (currentLocalT < t_local)
@@ -198,7 +190,6 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                         t_local = currentLocalT;
                         hit = true;
 
-                        
                         glm::vec3 meshNormal = glm::normalize(glm::cross(e1, e2));
                         localNormal =
                             glm::normalize(glm::vec3(glm::transpose(invLocalInst) * glm::vec4(meshNormal, 0.0f)));

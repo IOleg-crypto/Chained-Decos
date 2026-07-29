@@ -9,38 +9,44 @@
 
 #include <algorithm>
 
-namespace Chained {
+namespace Chained
+{
 
-    void SkyboxPass::Execute(const RenderContext& ctx)
+void SkyboxPass::Execute(const RenderContext& ctx)
+{
+    auto environment = ctx.Settings.Environment;
+    if (!environment)
     {
-        auto environment = ctx.Settings.Environment;
-        if (!environment)
-        {
-            environment = ctx.Options.EnvironmentOverride;
-        }
+        environment = ctx.Options.EnvironmentOverride;
+    }
 
-        if (environment)
+    if (environment)
+    {
+        const auto& envSettings = environment->GetSettings();
+        const auto& skySettings = envSettings.Skybox;
+        if (!skySettings.TexturePath.empty())
         {
-            const auto& envSettings = environment->GetSettings();
-            const auto& skySettings = envSettings.Skybox;
-            if (!skySettings.TexturePath.empty())
+            auto* am = ServiceLocator::TryGet<AssetManager>();
+            if (!am)
             {
-                auto* am = ServiceLocator::TryGet<AssetManager>();
-                if (!am) return;
-                auto handle = am->LoadAsset(skySettings.TexturePath, TextureAsset::GetStaticType());
-                auto textureAsset = am->Get<TextureAsset>(skySettings.TexturePath);
-                if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
-                {
-                    int skyboxMode = std::clamp(skySettings.Mode, 0, 2);
-                    uint32_t texId = textureAsset->GetTexture()->GetNativeHandle();
+                return;
+            }
+            auto handle = am->LoadAsset(skySettings.TexturePath, TextureAsset::GetStaticType());
+            auto textureAsset = am->Get<TextureAsset>(skySettings.TexturePath);
+            if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
+            {
+                int skyboxMode = std::clamp(skySettings.Mode, 0, 2);
+                uint32_t texId = textureAsset->GetTexture()->GetNativeHandle();
 
-                    // Logic mapped directly from old SceneRenderer implementation
-                    if (auto* r = ServiceLocator::TryGet<Renderer>())
-                        r->DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), skySettings.Exposure,
-                                      skySettings.Brightness, skySettings.Contrast, ctx.Camera, true);
+                // Logic mapped directly from old SceneRenderer implementation
+                if (auto* r = ServiceLocator::TryGet<Renderer>())
+                {
+                    r->DrawSkybox(texId, skyboxMode, textureAsset->IsHDR(), skySettings.Exposure,
+                                  skySettings.Brightness, skySettings.Contrast, ctx.Camera, true);
                 }
             }
         }
     }
-
 }
+
+} // namespace Chained

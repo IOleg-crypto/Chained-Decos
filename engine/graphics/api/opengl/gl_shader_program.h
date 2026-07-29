@@ -4,7 +4,8 @@
 #include "engine/graphics/api/shader.h"
 #include <unordered_map>
 
-namespace Chained {
+namespace Chained
+{
 
 class GLShaderProgram : public Shader
 {
@@ -15,7 +16,10 @@ public:
     virtual void Bind() const override;
     virtual void Unbind() const override;
 
-    virtual uint32_t GetNativeHandle() const override { return m_RendererID; }
+    virtual uint32_t GetNativeHandle() const override
+    {
+        return m_RendererID;
+    }
 
     virtual void SetFloat(const std::string& name, float value) override;
     virtual void SetInt(const std::string& name, int value) override;

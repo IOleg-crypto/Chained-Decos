@@ -117,7 +117,8 @@ JoltPhysicsWorld::JoltPhysicsWorld()
     m_TempAllocator = std::make_unique<JPH::TempAllocatorImpl>(32 * 1024 * 1024);
     unsigned int hwThreads = std::thread::hardware_concurrency();
     int numThreads = std::max(1, (int)hwThreads - 1);
-    m_JobSystem = std::make_unique<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, numThreads);
+    m_JobSystem =
+        std::make_unique<JPH::JobSystemThreadPool>(JPH::cMaxPhysicsJobs, JPH::cMaxPhysicsBarriers, numThreads);
 
     m_PhysicsSystem.Init(65536, 0, 65536, 65536, s_BPLayerInterface, s_ObjVsBPFilter, s_ObjVsObjFilter);
 
@@ -151,8 +152,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         {
             CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
             shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            if (!shape)
+            {
+                CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            }
         }
         break;
     }
@@ -163,8 +166,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         {
             CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
             shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            if (!shape)
+            {
+                CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            }
         }
         break;
     }
@@ -175,8 +180,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         {
             CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
             shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            if (!shape)
+            {
+                CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            }
         }
         break;
     }
@@ -185,8 +192,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         {
             CH_CORE_WARN("Physics: MeshShape requested but no triangles provided — falling back to unit box.");
             shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            if (!shape)
+            {
+                CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+            }
             break;
         }
 
@@ -207,7 +216,9 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
                             shape, JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
                         auto scaledResult = scaledSettings.Create();
                         if (!scaledResult.HasError())
+                        {
                             shape = scaledResult.Get();
+                        }
                     }
                     CH_CORE_TRACE("Physics: Reused cached convex hull [key='{}']", convexKey);
                     break;
@@ -218,8 +229,7 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
             std::unordered_set<uint64_t> seen;
             JPH::Array<JPH::Vec3> points;
 
-            auto tryAdd = [&](const glm::vec3& p)
-            {
+            auto tryAdd = [&](const glm::vec3& p) {
                 auto quant = [](float v) { return (int64_t)std::floor(v / kGridCell); };
                 uint64_t key = (uint64_t)(quant(p.x) & 0x1FFFFF) | ((uint64_t)(quant(p.y) & 0x1FFFFF) << 21) |
                                ((uint64_t)(quant(p.z) & 0x1FFFFF) << 42);
@@ -267,8 +277,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
                 CH_CORE_ERROR("Physics: ConvexHull build for dynamic mesh failed: {} — falling back to unit box.",
                               hullResult.GetError().c_str());
                 shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+                if (!shape)
+                {
+                    CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+                }
                 break;
             }
 
@@ -340,8 +352,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
             {
                 CH_CORE_WARN("Physics: All mesh triangles degenerate — falling back to unit box.");
                 shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+                if (!shape)
+                {
+                    CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+                }
                 break;
             }
 
@@ -354,8 +368,10 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
                 CH_CORE_ERROR("Physics: MeshShape build failed: {} — falling back to unit box.",
                               result.GetError().c_str());
                 shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-        if (!shape)
-            CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+                if (!shape)
+                {
+                    CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+                }
                 break;
             }
 
@@ -367,8 +383,7 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
             }
 
             const auto buildEnd = std::chrono::steady_clock::now();
-            const double buildMs =
-                std::chrono::duration<double, std::milli>(buildEnd - buildStart).count();
+            const double buildMs = std::chrono::duration<double, std::milli>(buildEnd - buildStart).count();
             CH_CORE_INFO("Physics: Built mesh BVH ({} tris) in {:.2f} ms{} [key='{}']", joltTris.size(), buildMs,
                          desc.CacheKey.empty() ? " (uncached)" : " (freshly built, cached for reuse)", desc.CacheKey);
         }
@@ -376,8 +391,8 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         shape = baseShape;
         if (desc.MeshScale != glm::vec3(1.0f))
         {
-            JPH::ScaledShapeSettings scaledSettings(
-                baseShape, JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
+            JPH::ScaledShapeSettings scaledSettings(baseShape,
+                                                    JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
             auto scaledResult = scaledSettings.Create();
             if (!scaledResult.HasError())
             {
@@ -395,7 +410,9 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         CH_CORE_WARN("Physics: Unknown ColliderType — falling back to unit box.");
         shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
         if (!shape)
+        {
             CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+        }
         break;
     }
     }
@@ -527,7 +544,9 @@ PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)
 std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<PhysicsBodyDesc>& descs)
 {
     if (descs.empty())
+    {
         return {};
+    }
 
     const auto buildStart = std::chrono::steady_clock::now();
 
@@ -539,7 +558,9 @@ std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<
         for (const auto& desc : descs)
         {
             if (desc.Shape == ColliderType::Mesh && !desc.Triangles.empty())
+            {
                 ++meshCount;
+            }
         }
 
         if (meshCount >= 2)
@@ -553,12 +574,16 @@ std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<
                 futures.push_back(std::async(std::launch::async, [this, &descs, &prebuiltShapes, i]() {
                     auto shape = BuildShape(descs[i]);
                     if (!shape)
+                    {
                         shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+                    }
                     prebuiltShapes[i] = std::move(shape);
                 }));
             }
             for (auto& f : futures)
+            {
                 f.get();
+            }
         }
         else
         {
@@ -567,7 +592,9 @@ std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<
             {
                 auto shape = BuildShape(descs[i]);
                 if (!shape)
+                {
                     shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+                }
                 prebuiltShapes[i] = std::move(shape);
             }
         }
@@ -605,7 +632,9 @@ std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<
     for (auto& id : bodyIds)
     {
         if (!id.IsInvalid())
+        {
             validIds.push_back(id);
+        }
     }
 
     if (!validIds.empty())
@@ -620,9 +649,13 @@ std::vector<PhysicsBodyHandle> JoltPhysicsWorld::CreateBodies(const std::vector<
     for (auto& id : bodyIds)
     {
         if (id.IsInvalid())
+        {
             handles.push_back(kInvalidPhysicsBody);
+        }
         else
+        {
             handles.push_back((PhysicsBodyHandle)id.GetIndexAndSequenceNumber());
+        }
     }
 
     return handles;
@@ -705,7 +738,9 @@ void JoltPhysicsWorld::SetGravity(float gravity)
 bool JoltPhysicsWorld::IsBodyGrounded(PhysicsBodyHandle handle) const
 {
     if (handle == 0)
+    {
         return false;
+    }
     std::lock_guard lock(m_GroundedMutex);
     return m_GroundedBodies.count(static_cast<uint32_t>(handle)) > 0;
 }
@@ -713,7 +748,9 @@ bool JoltPhysicsWorld::IsBodyGrounded(PhysicsBodyHandle handle) const
 bool JoltPhysicsWorld::IsBodyActive(PhysicsBodyHandle handle) const
 {
     if (handle == 0)
+    {
         return false;
+    }
     return m_PhysicsSystem.GetBodyInterface().IsActive(JPH::BodyID(static_cast<uint32_t>(handle)));
 }
 
@@ -735,15 +772,15 @@ void JoltPhysicsWorld::ClearGroundedState()
 // ─────────────────────────────────────────────────────────────────────────────
 // ContactListenerImpl
 // ─────────────────────────────────────────────────────────────────────────────
-JPH::ValidateResult JoltPhysicsWorld::ContactListenerImpl::OnContactValidate(
-    const JPH::Body&, const JPH::Body&, JPH::RVec3Arg, const JPH::CollideShapeResult&)
+JPH::ValidateResult JoltPhysicsWorld::ContactListenerImpl::OnContactValidate(const JPH::Body&, const JPH::Body&,
+                                                                             JPH::RVec3Arg,
+                                                                             const JPH::CollideShapeResult&)
 {
     return JPH::ValidateResult::AcceptAllContactsForThisBodyPair;
 }
 
-static void RegisterGroundContact(std::mutex& mutex, std::unordered_set<uint32_t>& tracker,
-                                   const JPH::Body& body1, const JPH::Body& body2,
-                                   const JPH::ContactManifold& manifold)
+static void RegisterGroundContact(std::mutex& mutex, std::unordered_set<uint32_t>& tracker, const JPH::Body& body1,
+                                  const JPH::Body& body2, const JPH::ContactManifold& manifold)
 {
     JPH::Vec3 normal = manifold.mWorldSpaceNormal;
     uint32_t id1 = body1.GetID().GetIndexAndSequenceNumber();
@@ -752,25 +789,26 @@ static void RegisterGroundContact(std::mutex& mutex, std::unordered_set<uint32_t
     std::lock_guard lock(mutex);
     // In Jolt, mWorldSpaceNormal points from body1 to body2.
     // If normal Y > 0.5, body2 is ABOVE body1. Thus body2 is grounded on body1.
-    if (normal.GetY() > 0.5f) {
+    if (normal.GetY() > 0.5f)
+    {
         tracker.insert(id2);
     }
     // If normal Y < -0.5, body1 is ABOVE body2. Thus body1 is grounded on body2.
-    else if (normal.GetY() < -0.5f) {
+    else if (normal.GetY() < -0.5f)
+    {
         tracker.insert(id1);
     }
 }
 
-void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(
-    const JPH::Body& body1, const JPH::Body& body2,
-    const JPH::ContactManifold& manifold, JPH::ContactSettings&)
+void JoltPhysicsWorld::ContactListenerImpl::OnContactAdded(const JPH::Body& body1, const JPH::Body& body2,
+                                                           const JPH::ContactManifold& manifold, JPH::ContactSettings&)
 {
     RegisterGroundContact(*m_Mutex, *m_Tracker, body1, body2, manifold);
 }
 
-void JoltPhysicsWorld::ContactListenerImpl::OnContactPersisted(
-    const JPH::Body& body1, const JPH::Body& body2,
-    const JPH::ContactManifold& manifold, JPH::ContactSettings&)
+void JoltPhysicsWorld::ContactListenerImpl::OnContactPersisted(const JPH::Body& body1, const JPH::Body& body2,
+                                                               const JPH::ContactManifold& manifold,
+                                                               JPH::ContactSettings&)
 {
     RegisterGroundContact(*m_Mutex, *m_Tracker, body1, body2, manifold);
 }

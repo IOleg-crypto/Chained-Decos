@@ -104,7 +104,10 @@ bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc
         }
 
         auto* assets = ServiceLocator::TryGet<AssetManager>();
-        if (!assets) return false;
+        if (!assets)
+        {
+            return false;
+        }
 
         auto modelAsset = assets->Get<ModelAsset>(modelPath);
         if (!modelAsset || !modelAsset->IsReady())
@@ -264,14 +267,17 @@ void BatchInitializeBodies(entt::registry& reg, IPhysicsWorld* world)
             }));
         }
         for (auto& f : futures)
+        {
             f.get();
+        }
 
         if (buildFailed.load())
         {
-            pending.erase(
-                std::remove_if(pending.begin(), pending.end(),
-                               [](const PendingBody& pb) { return pb.desc.Triangles.empty() && pb.desc.Shape == ColliderType::Mesh; }),
-                pending.end());
+            pending.erase(std::remove_if(pending.begin(), pending.end(),
+                                         [](const PendingBody& pb) {
+                                             return pb.desc.Triangles.empty() && pb.desc.Shape == ColliderType::Mesh;
+                                         }),
+                          pending.end());
         }
     }
     else

@@ -57,7 +57,6 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::Key << "Width" << YAML::Value << config.Window.Width;
         out << YAML::Key << "Height" << YAML::Value << config.Window.Height;
         out << YAML::Key << "VSync" << YAML::Value << config.Window.VSync;
-        out << YAML::Key << "Resizable" << YAML::Value << config.Window.Resizable;
         out << YAML::EndMap;
 
         out << YAML::Key << "Audio" << YAML::Value << YAML::BeginMap;
@@ -185,7 +184,6 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
         DeserializeProperty(window, "Width", config.Window.Width);
         DeserializeProperty(window, "Height", config.Window.Height);
         DeserializeProperty(window, "VSync", config.Window.VSync);
-        DeserializeProperty(window, "Resizable", config.Window.Resizable);
     }
 
     if (auto audio = projectNode["Audio"])

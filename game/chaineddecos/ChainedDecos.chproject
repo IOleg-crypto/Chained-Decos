@@ -33,7 +33,6 @@ Project:
     Width: 1920
     Height: 1080
     VSync: false
-    Resizable: true
   Audio:
     MasterVolume: 1
     MusicVolume: 1
@@ -48,7 +47,7 @@ Project:
     ModuleDirectory: assets/bin
     AutoLoad: true
   Export:
+    Mode: 1
     ZipThreshold: 0.300000012
-    PreferSpeed: false
     DataVersion: 0
   BuildConfig: 0

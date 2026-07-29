@@ -7,13 +7,11 @@
 #include "imgui.h"
 #include "imgui_internal.h"
 
-
 #include <algorithm>
 #include <cstring>
 #include <functional>
 #include <string_view>
 #include <vector>
-
 
 namespace Chained
 {
@@ -25,7 +23,7 @@ public:
 
     virtual ReflectionMode GetReflectionMode() const override
     {
-        return ReflectionMode::UI;  
+        return ReflectionMode::UI;
     }
     virtual bool HasChanged() const override
     {
@@ -76,7 +74,7 @@ public:
     }
 
     virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options,
-                      const PropertyMeta& meta = {}) override
+                            const PropertyMeta& meta = {}) override
     {
         return StringEnumInternal(name, value, options, meta);
     }
@@ -353,7 +351,8 @@ private:
     }
 
     bool EnumPropertyInternal(const char* name, int& value, const char** names, int count, const PropertyMeta& meta);
-    bool StringEnumInternal(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta);
+    bool StringEnumInternal(const char* name, std::string& value, const std::vector<std::string>& options,
+                            const PropertyMeta& meta);
     bool HandleInternal(const char* name, uint64_t& value);
     bool FileInternal(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta);
     bool ActionInternal(const char* label, std::function<void()> func);

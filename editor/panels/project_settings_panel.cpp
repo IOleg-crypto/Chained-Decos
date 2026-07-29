@@ -179,7 +179,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             ImGui::DragInt("Width", &config.Window.Width, 1, 800, 3840);
             ImGui::DragInt("Height", &config.Window.Height, 1, 600, 2160);
             ImGui::Checkbox("VSync", &config.Window.VSync);
-            ImGui::Checkbox("Resizable", &config.Window.Resizable);
             break;
         }
         case 4: // Rendering

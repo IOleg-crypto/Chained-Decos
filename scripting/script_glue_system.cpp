@@ -5,7 +5,8 @@
 #include <set>
 #include <sstream>
 
-namespace Chained {
+namespace Chained
+{
 void Log_Info(const Coral::UCChar* message)
 {
     CH_CORE_INFO("[C#] {}", ch_u16_to_string(message));
@@ -50,7 +51,9 @@ void Window_SetAntialiasing(bool enabled)
 void Window_SetAntiAliasingSamples(int samples)
 {
     if (auto project = Project::GetActive())
+    {
         project->GetConfig().Render.AntiAliasingSamples = samples;
+    }
 }
 
 const Coral::UCChar* Window_GetSupportedResolution()
@@ -68,7 +71,10 @@ const Coral::UCChar* Window_GetSupportedResolution()
     }
 
     GLFWmonitor* monitor = glfwGetWindowMonitor(window);
-    if (!monitor) monitor = glfwGetPrimaryMonitor();
+    if (!monitor)
+    {
+        monitor = glfwGetPrimaryMonitor();
+    }
     if (!monitor)
     {
         s_ResolutionBuffer = ToWide("");
@@ -85,7 +91,10 @@ const Coral::UCChar* Window_GetSupportedResolution()
         auto key = std::make_pair(modes[i].width, modes[i].height);
         if (seen.insert(key).second)
         {
-            if (!oss.str().empty()) oss << ";";
+            if (!oss.str().empty())
+            {
+                oss << ";";
+            }
             oss << modes[i].width << "x" << modes[i].height;
         }
     }
@@ -97,7 +106,9 @@ const Coral::UCChar* Window_GetSupportedResolution()
 float Physics_GetGravity()
 {
     if (auto project = Project::GetActive())
+    {
         return project->GetConfig().Physics.Gravity;
+    }
     return 20.0f;
 }
 

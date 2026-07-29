@@ -11,7 +11,7 @@ namespace YAML
 {
 class Node;
 class Emitter;
-}
+} // namespace YAML
 
 namespace Chained
 {
@@ -28,21 +28,21 @@ struct AssetMetadata
 
 namespace MetaUtils
 {
-    std::filesystem::path GetMetaPath(const std::filesystem::path& assetPath);
+std::filesystem::path GetMetaPath(const std::filesystem::path& assetPath);
 
-    bool HasMeta(const std::filesystem::path& assetPath);
+bool HasMeta(const std::filesystem::path& assetPath);
 
-    uint64_t ComputeFileHash(const std::filesystem::path& path);
+uint64_t ComputeFileHash(const std::filesystem::path& path);
 
-    AssetMetadata ReadMeta(const std::filesystem::path& metaPath);
+AssetMetadata ReadMeta(const std::filesystem::path& metaPath);
 
-    bool WriteMeta(const std::filesystem::path& metaPath, const AssetMetadata& meta);
+bool WriteMeta(const std::filesystem::path& metaPath, const AssetMetadata& meta);
 
-    AssetMetadata LoadOrCreateMeta(const std::filesystem::path& assetPath, AssetType type);
+AssetMetadata LoadOrCreateMeta(const std::filesystem::path& assetPath, AssetType type);
 
-    const char* AssetTypeToString(AssetType type);
-    AssetType StringToAssetType(const std::string& str);
-}
-}
+const char* AssetTypeToString(AssetType type);
+AssetType StringToAssetType(const std::string& str);
+} // namespace MetaUtils
+} // namespace Chained
 
 #endif

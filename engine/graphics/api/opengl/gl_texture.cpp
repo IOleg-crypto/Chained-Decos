@@ -106,7 +106,10 @@ GLTexture::GLTexture(uint32_t handle, uint32_t width, uint32_t height)
 
 GLTexture::~GLTexture()
 {
-    if (m_OwnsResource) { glDeleteTextures(1, &m_RendererID); }
+    if (m_OwnsResource)
+    {
+        glDeleteTextures(1, &m_RendererID);
+    }
 }
 
 void GLTexture::SetData(void* data, uint32_t size)
@@ -142,4 +145,3 @@ void GLTexture::Bind(uint32_t slot) const
 }
 
 } // namespace Chained
-

@@ -8,13 +8,19 @@ namespace Chained
 
 uint32_t TextureAsset::GetWidth() const
 {
-    if (m_Texture) return m_Texture->GetWidth();
+    if (m_Texture)
+    {
+        return m_Texture->GetWidth();
+    }
     return m_PendingImage.width;
 }
 
 uint32_t TextureAsset::GetHeight() const
 {
-    if (m_Texture) return m_Texture->GetHeight();
+    if (m_Texture)
+    {
+        return m_Texture->GetHeight();
+    }
     return m_PendingImage.height;
 }
 
@@ -27,7 +33,7 @@ void TextureAsset::OnLoaded()
         return;
     }
 
-        if (m_HasPendingImage && m_PendingImage.data != nullptr)
+    if (m_HasPendingImage && m_PendingImage.data != nullptr)
     {
         TextureFormat format = TextureFormat::RGBA8;
         if (m_IsHDR)
@@ -48,7 +54,7 @@ void TextureAsset::OnLoaded()
             m_Texture = Texture::Create(m_PendingImage.width, m_PendingImage.height, format);
             if (m_Texture)
             {
-                m_Texture->SetData(m_PendingImage.data, 0); 
+                m_Texture->SetData(m_PendingImage.data, 0);
             }
         }
 

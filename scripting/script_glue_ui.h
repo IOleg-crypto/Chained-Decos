@@ -35,10 +35,10 @@ CH_SCRIPT_FUNC void ProgressBarControl_SetOverlayText(uint64_t entityID, const C
 CH_SCRIPT_FUNC bool ProgressBarControl_GetShowPercentage(uint64_t entityID);
 CH_SCRIPT_FUNC void ProgressBarControl_SetShowPercentage(uint64_t entityID, bool show);
 
-CH_SCRIPT_FUNC bool   WidgetControl_GetActive(uint64_t entityID);
-CH_SCRIPT_FUNC void   WidgetControl_SetActive(uint64_t entityID, bool active);
+CH_SCRIPT_FUNC bool WidgetControl_GetActive(uint64_t entityID);
+CH_SCRIPT_FUNC void WidgetControl_SetActive(uint64_t entityID, bool active);
 CH_SCRIPT_FUNC const Coral::UCChar* WidgetControl_GetTextColor(uint64_t entityID);
-CH_SCRIPT_FUNC void   WidgetControl_SetTextColorRGBA(uint64_t entityID, int r, int g, int b, int a);
+CH_SCRIPT_FUNC void WidgetControl_SetTextColorRGBA(uint64_t entityID, int r, int g, int b, int a);
 
 CH_SCRIPT_FUNC int ComboBoxControl_GetSelectedIndex(uint64_t entityID);
 

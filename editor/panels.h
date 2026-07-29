@@ -16,7 +16,9 @@ class EditorPanels
 {
 public:
     EditorPanels(EditorLayer& editorLayer)
-        : m_EditorLayer(editorLayer) {}
+        : m_EditorLayer(editorLayer)
+    {
+    }
     ~EditorPanels() = default;
 
     void Init();
@@ -33,7 +35,9 @@ public:
         for (auto& panel : m_Panels)
         {
             if (auto cast = std::dynamic_pointer_cast<T>(panel))
+            {
                 return cast;
+            }
         }
         return nullptr;
     }
@@ -43,7 +47,9 @@ public:
         for (auto& panel : m_Panels)
         {
             if (panel->GetName() == name)
+            {
                 return panel;
+            }
         }
         return nullptr;
     }
@@ -61,9 +67,15 @@ public:
     void OnEvent(Event& e);
     void SetContext(const std::shared_ptr<Scene>& context);
 
-    EditorLayer& GetEditorLayer() { return m_EditorLayer; }
+    EditorLayer& GetEditorLayer()
+    {
+        return m_EditorLayer;
+    }
 
-    std::vector<std::shared_ptr<Panel>>& GetPanels() { return m_Panels; }
+    std::vector<std::shared_ptr<Panel>>& GetPanels()
+    {
+        return m_Panels;
+    }
 
 private:
     EditorLayer& m_EditorLayer;

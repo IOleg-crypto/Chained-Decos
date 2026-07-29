@@ -7,19 +7,19 @@
 
 // DLL Export/Import Macros
 #if CH_PLATFORM_WINDOWS
-    #if CH_DYNAMIC_LINK
-        #ifdef CH_ENGINE_BUILD
-            #define CH_API __declspec(dllexport)
-        #else
-            #define CH_API __declspec(dllimport)
-        #endif
-    #else
-        #define CH_API
-    #endif
-#elif CH_PLATFORM_LINUX
-    #define CH_API __attribute__((visibility("default")))
+#if CH_DYNAMIC_LINK
+#ifdef CH_ENGINE_BUILD
+#define CH_API __declspec(dllexport)
 #else
-    #define CH_API
+#define CH_API __declspec(dllimport)
+#endif
+#else
+#define CH_API
+#endif
+#elif CH_PLATFORM_LINUX
+#define CH_API __attribute__((visibility("default")))
+#else
+#define CH_API
 #endif
 
 // Debug/Release detection
@@ -58,7 +58,5 @@
 // Bind event function helper
 #define CH_BIND_EVENT_FN(fn)                                                                                           \
     [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
-
-
 
 #endif // CH_BASE_H

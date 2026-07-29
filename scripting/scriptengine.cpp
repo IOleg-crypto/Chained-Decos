@@ -164,7 +164,10 @@ std::filesystem::path ScriptEngine::ResolveAssemblyPath(const ScriptingSettings&
         std::error_code ec;
         for (auto& entry : std::filesystem::directory_iterator(scriptsRoot, ec))
         {
-            if (!entry.is_directory()) continue;
+            if (!entry.is_directory())
+            {
+                continue;
+            }
             std::filesystem::path candidate = entry.path() / dllName;
             if (std::filesystem::exists(candidate))
             {
@@ -191,8 +194,8 @@ bool ScriptEngine::TryAutoLoad(const ProjectConfig& config)
     auto dllPath = ResolveAssemblyPath(config.Scripting, config.ProjectDirectory);
     if (dllPath.empty())
     {
-        CH_CORE_WARN("ScriptEngine: Script assembly not found for '{}' (module: '{}', dir: '{}').",
-            config.Name, config.Scripting.ModuleName, config.Scripting.ModuleDirectory.string());
+        CH_CORE_WARN("ScriptEngine: Script assembly not found for '{}' (module: '{}', dir: '{}').", config.Name,
+                     config.Scripting.ModuleName, config.Scripting.ModuleDirectory.string());
         return false;
     }
 
