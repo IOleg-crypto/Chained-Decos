@@ -71,10 +71,17 @@ enum class Configuration
     Release = 1
 };
 
+enum class PackMode : uint8_t
+{
+    Fast = 0,     // LZ4 HC — fast compression, larger file
+    Balanced = 1, // ZSTD max — slower compression, smaller file
+    Raw = 2       // No compression — stored as-is
+};
+
 struct ExportSettings
 {
+    PackMode Mode = PackMode::Balanced;
     float ZipThreshold = 0.05f;
-    bool PreferSpeed = false;
     uint32_t DataVersion = 0;
 };
 
@@ -144,11 +151,26 @@ public:
         m_Config.Scripting.AutoLoad = autoLoad;
     }
 
-    const std::string& GetName() const { return m_Config.Name; }
-    const std::filesystem::path& GetActiveScenePath() const { return m_Config.ActiveScenePath; }
-    void SetActiveScenePath(const std::filesystem::path& path) { m_Config.ActiveScenePath = path; }
-    const std::string& GetStartScene() const { return m_Config.StartScene; }
-    Configuration GetBuildConfig() const { return m_Config.BuildConfig; }
+    const std::string& GetName() const
+    {
+        return m_Config.Name;
+    }
+    const std::filesystem::path& GetActiveScenePath() const
+    {
+        return m_Config.ActiveScenePath;
+    }
+    void SetActiveScenePath(const std::filesystem::path& path)
+    {
+        m_Config.ActiveScenePath = path;
+    }
+    const std::string& GetStartScene() const
+    {
+        return m_Config.StartScene;
+    }
+    Configuration GetBuildConfig() const
+    {
+        return m_Config.BuildConfig;
+    }
 
     // Path helpers (now non-static, relative to this project)
     std::filesystem::path GetAssetDirectoryForProject() const

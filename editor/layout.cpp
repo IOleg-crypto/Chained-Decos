@@ -24,7 +24,7 @@ void EditorLayout::ResetLayout()
     {
         LoadPreset("imgui.ini");
     }
-    
+
     // Always trigger a dock rebuild to ensure clean fallback layout
     m_NeedsRebuild = true;
 }
@@ -102,7 +102,7 @@ void EditorLayout::OnImGuiRender()
     if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
     {
         m_DockSpaceID = ImGui::GetID("MyDockSpace");
-        
+
         if (m_NeedsRebuild)
         {
             m_NeedsRebuild = false;
@@ -112,31 +112,33 @@ void EditorLayout::OnImGuiRender()
             ImGui::DockBuilderSetNodeSize(m_DockSpaceID, viewport->WorkSize);
 
             ImGuiID dock_main_id = m_DockSpaceID;
-            
+
             // Layout:
             // dock_left: Scene Hierarchy, World Settings below it
             // dock_right: Inspector, Material Editor
             // dock_bottom: Content Browser, Console
             // Center: Viewport
-            
+
             // Build the layout splits
             ImGuiID dock_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, nullptr, &dock_main_id);
-            ImGuiID dock_right = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
-            ImGuiID dock_bottom = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.25f, nullptr, &dock_main_id);
+            ImGuiID dock_right =
+                ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+            ImGuiID dock_bottom =
+                ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.25f, nullptr, &dock_main_id);
             ImGuiID dock_left_bottom = ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Down, 0.5f, nullptr, &dock_left);
 
             // Assign windows to locations
             ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_left);
             ImGui::DockBuilderDockWindow("World Settings", dock_left_bottom);
-            
+
             ImGui::DockBuilderDockWindow("Inspector", dock_right);
             ImGui::DockBuilderDockWindow("Material Editor", dock_right); // grouped with Inspector
-            
+
             ImGui::DockBuilderDockWindow("Content Browser", dock_bottom);
             ImGui::DockBuilderDockWindow("Console", dock_bottom); // grouped with Content Browser
 
             ImGui::DockBuilderDockWindow("Viewport", dock_main_id); // remainder
-            
+
             ImGui::DockBuilderFinish(m_DockSpaceID);
         }
 
@@ -150,6 +152,7 @@ void EditorLayout::OnImGuiRender()
     m_Panels.OnImGuiRender(readOnly);
 
     menu.DrawEditorSettings();
+    menu.DrawExportDialog();
     menu.DrawExportProgressOverlay();
 
     ImGui::End();
