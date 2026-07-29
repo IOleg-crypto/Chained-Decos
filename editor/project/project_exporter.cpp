@@ -55,9 +55,9 @@ void ProjectExporter::CollectFiles(const fs::path& dir, std::vector<fs::path>& o
         const std::string ext = entry.path().extension().string();
 
         // Skip .Up2Date marker files, .pdb, .ilk, .obj, .tlog, .log build intermediates
-        if (ext == ".pdb" || ext == ".ilk" || ext == ".obj" || ext == ".tlog" || ext == ".log" ||
-            ext == ".Up2Date" || ext == ".FileListAbsolute.txt" || ext == ".lastbuildstate" ||
-            ext == ".cache" || ext == ".nupkg" || ext == ".nuget.g.props" || ext == ".nuget.g.targets")
+        if (ext == ".pdb" || ext == ".ilk" || ext == ".obj" || ext == ".tlog" || ext == ".log" || ext == ".Up2Date" ||
+            ext == ".FileListAbsolute.txt" || ext == ".lastbuildstate" || ext == ".cache" || ext == ".nupkg" ||
+            ext == ".nuget.g.props" || ext == ".nuget.g.targets")
         {
             continue;
         }
@@ -386,8 +386,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
             }
         };
 
-        pack::Writer::pack(packPath, fileCount, rawPaths.data(), exp.DataVersion, threshold, preferSpeed,
-                           false, cCallback, &ctx);
+        pack::Writer::pack(packPath, fileCount, rawPaths.data(), exp.DataVersion, threshold, preferSpeed, false,
+                           cCallback, &ctx);
 
         packSuccess = true;
     } catch (const ExportCancelledException&)

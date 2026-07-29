@@ -180,8 +180,8 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
             }
         } catch (const std::bad_alloc& e)
         {
-            CH_CORE_ERROR("Out of memory deserializing .chasset ({}), falling back to Assimp: {}",
-                          chassetPath.string(), e.what());
+            CH_CORE_ERROR("Out of memory deserializing .chasset ({}), falling back to Assimp: {}", chassetPath.string(),
+                          e.what());
         } catch (const std::exception& e)
         {
             CH_CORE_WARN("Failed to deserialize .chasset ({}), falling back to Assimp: {}", chassetPath.string(),

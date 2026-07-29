@@ -122,8 +122,7 @@ void ShaderStorage::LoadConfig(const std::string& configPath)
                 return;
             } catch (const YAML::Exception& e)
             {
-                CH_CORE_ERROR("ShaderStorage: Failed to parse shader config from pack '{}': {}", packRelPath,
-                              e.what());
+                CH_CORE_ERROR("ShaderStorage: Failed to parse shader config from pack '{}': {}", packRelPath, e.what());
             }
         }
     }
