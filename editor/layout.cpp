@@ -19,14 +19,18 @@ EditorLayout::EditorLayout(EditorPanels& panels)
 
 void EditorLayout::ResetLayout()
 {
-    // Try to load any existing preset
     if (std::filesystem::exists("imgui.ini"))
     {
+        // Restore saved panel arrangement — do NOT rebuild via DockBuilder,
+        // that would wipe the positions that LoadIniSettingsFromMemory just restored.
         LoadPreset("imgui.ini");
+        m_NeedsRebuild = false;
     }
-
-    // Always trigger a dock rebuild to ensure clean fallback layout
-    m_NeedsRebuild = true;
+    else
+    {
+        // First launch: no saved layout — build the default arrangement.
+        m_NeedsRebuild = true;
+    }
 }
 
 void EditorLayout::SaveDefaultLayout()

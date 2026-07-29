@@ -383,6 +383,15 @@ void EditorLayer::OnDetach()
             scene->OnRuntimeStop();
         }
     }
+    // Explicitly save the ImGui panel layout before shutdown.
+    // ImGui's built-in autosave runs on a timer (io.IniSavingRate, default 5s) and
+    // may not fire before the process exits — especially if OnDetach is called after
+    // the GLFW window is already destroyed. Saving here guarantees the preset is
+    // always written regardless of shutdown timing.
+    if (m_Layout)
+    {
+        m_Layout->SaveDefaultLayout();
+    }
     SaveConfig();
 }
 
