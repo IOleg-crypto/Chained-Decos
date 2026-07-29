@@ -36,7 +36,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
     {
         auto& config = project->GetConfig();
 
-        static int selectedCategory = 0;
         const char* categories[] = {ICON_FA_GEARS " General",
                                     ICON_FA_CODE " Scripting",
                                     ICON_FA_CUBES " Physics",
@@ -50,20 +49,19 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
         // Two-column layout: sidebar left, content right
         ImGui::Columns(2, "ProjectSettingsColumns", true);
 
-        static bool widthSet = false;
-        if (!widthSet)
+        if (!m_WidthSet)
         {
             ImGui::SetColumnWidth(0, 200.0f);
-            widthSet = true;
+            m_WidthSet = true;
         }
 
         // --- Left sidebar ---
         ImGui::BeginChild("SettingsSidebar", ImVec2(0, 0), ImGuiChildFlags_NavFlattened);
         for (int i = 0; i < IM_ARRAYSIZE(categories); i++)
         {
-            if (ImGui::Selectable(categories[i], selectedCategory == i, ImGuiSelectableFlags_DontClosePopups))
+            if (ImGui::Selectable(categories[i], m_SelectedCategory == i, ImGuiSelectableFlags_DontClosePopups))
             {
-                selectedCategory = i;
+                m_SelectedCategory = i;
             }
         }
         ImGui::EndChild();
@@ -75,7 +73,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                           ImGuiChildFlags_NavFlattened);
         ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, 4));
 
-        switch (selectedCategory)
+        switch (m_SelectedCategory)
         {
         case 0: // General
         {
