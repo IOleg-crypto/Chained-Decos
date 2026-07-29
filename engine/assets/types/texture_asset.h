@@ -36,16 +36,35 @@ public:
 
     void OnLoaded() override;
 
-    std::shared_ptr<Texture> GetTexture() const { return m_Texture; }
+    std::shared_ptr<Texture> GetTexture() const
+    {
+        return m_Texture;
+    }
     uint32_t GetWidth() const;
     uint32_t GetHeight() const;
 
-    bool IsCubemap() const { return m_IsCubemap; }
-    bool IsHDR() const { return m_IsHDR; }
+    bool IsCubemap() const
+    {
+        return m_IsCubemap;
+    }
+    bool IsHDR() const
+    {
+        return m_IsHDR;
+    }
 
-    void SetPendingImage(const RawImage& image) { m_PendingImage = image; m_HasPendingImage = true; }
-    void SetIsCubemap(bool isCubemap) { m_IsCubemap = isCubemap; }
-    void SetIsHDR(bool isHDR) { m_IsHDR = isHDR; }
+    void SetPendingImage(const RawImage& image)
+    {
+        m_PendingImage = image;
+        m_HasPendingImage = true;
+    }
+    void SetIsCubemap(bool isCubemap)
+    {
+        m_IsCubemap = isCubemap;
+    }
+    void SetIsHDR(bool isHDR)
+    {
+        m_IsHDR = isHDR;
+    }
 
     void Unload();
 

@@ -10,9 +10,11 @@ struct IDComponent
 {
     UUID ID;
 
-    static const char* GetStaticName() { return "IDComponent"; }
+    static const char* GetStaticName()
+    {
+        return "IDComponent";
+    }
 
-    
     struct UI
     {
         UIMeta ID = {.Tooltip = "Unique entity identifier (UUID)"};

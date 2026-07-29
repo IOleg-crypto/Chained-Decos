@@ -8,7 +8,6 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "gtest/gtest.h"
 
-
 using namespace Chained;
 
 class RendererTest : public ::testing::Test
@@ -17,7 +16,9 @@ protected:
     void SetUp() override
     {
         if (!ServiceLocator::Has<Renderer>())
+        {
             GTEST_SKIP() << "Renderer not available in headless mode";
+        }
     }
 
     Renderer* GetRenderer()

@@ -11,7 +11,6 @@
 #include <variant>
 #include <vector>
 
-
 namespace Chained
 {
 

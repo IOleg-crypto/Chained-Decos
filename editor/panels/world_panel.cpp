@@ -47,8 +47,7 @@ static void SaveProjectConfig()
 {
     if (auto project = Project::GetActive())
     {
-        std::filesystem::path path =
-            project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
+        std::filesystem::path path = project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
         EditorProjectSerializer::Serialize(project, path);
     }
 }
@@ -94,7 +93,10 @@ void WorldPanel::DrawSceneGeneral(bool readOnly)
     }
 
     ImGui::Indent(10.0f);
-    if (readOnly) ImGui::BeginDisabled();
+    if (readOnly)
+    {
+        ImGui::BeginDisabled();
+    }
 
     auto& settings = m_Context->GetSettings();
     const char* typeModes[] = {"Default (3D)", "UI"};
@@ -109,7 +111,10 @@ void WorldPanel::DrawSceneGeneral(bool readOnly)
         settings.Type = (SceneType)currentType;
     }
 
-    if (readOnly) ImGui::EndDisabled();
+    if (readOnly)
+    {
+        ImGui::EndDisabled();
+    }
     ImGui::Unindent(10.0f);
 }
 
@@ -121,7 +126,10 @@ void WorldPanel::DrawSceneBackground(bool readOnly)
     }
 
     ImGui::Indent(10.0f);
-    if (readOnly) ImGui::BeginDisabled();
+    if (readOnly)
+    {
+        ImGui::BeginDisabled();
+    }
 
     auto& settings = m_Context->GetSettings();
     const char* bgModes[] = {"Solid Color", "Texture", "3D Environment"};
@@ -184,7 +192,10 @@ void WorldPanel::DrawSceneBackground(bool readOnly)
         }
     }
 
-    if (readOnly) ImGui::EndDisabled();
+    if (readOnly)
+    {
+        ImGui::EndDisabled();
+    }
     ImGui::Unindent(10.0f);
 }
 
@@ -196,7 +207,10 @@ void WorldPanel::DrawPhysicsSettings(bool readOnly)
     }
 
     ImGui::Indent(10.0f);
-    if (readOnly) ImGui::BeginDisabled();
+    if (readOnly)
+    {
+        ImGui::BeginDisabled();
+    }
 
     if (auto project = Project::GetActive())
     {
@@ -244,7 +258,10 @@ void WorldPanel::DrawPhysicsSettings(bool readOnly)
         ImGui::TextDisabled("No active project.");
     }
 
-    if (readOnly) ImGui::EndDisabled();
+    if (readOnly)
+    {
+        ImGui::EndDisabled();
+    }
     ImGui::Unindent(10.0f);
 
     ImGui::Spacing();
@@ -269,8 +286,7 @@ void WorldPanel::DrawEnvironmentSection(bool readOnly)
                     if (auto* am = ServiceLocator::TryGet<AssetManager>())
                     {
                         auto handle = am->ResolveToHandle(result->string());
-                        m_Context->GetSettings().Environment =
-                            am->Get<EnvironmentAsset>(result->string());
+                        m_Context->GetSettings().Environment = am->Get<EnvironmentAsset>(result->string());
                     }
                 }
             }
@@ -371,7 +387,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
     {
         ImGui::PushID("GlobalLighting");
         ImGui::Indent(10.0f);
-        if (readOnly) ImGui::BeginDisabled();
+        if (readOnly)
+        {
+            ImGui::BeginDisabled();
+        }
 
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Direction");
@@ -394,7 +413,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         DrawDragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
         DrawDragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
 
-        if (readOnly) ImGui::EndDisabled();
+        if (readOnly)
+        {
+            ImGui::EndDisabled();
+        }
         ImGui::Unindent(10.0f);
         ImGui::PopID();
     }
@@ -403,7 +425,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
     {
         ImGui::PushID("Skybox");
         ImGui::Indent(10.0f);
-        if (readOnly) ImGui::BeginDisabled();
+        if (readOnly)
+        {
+            ImGui::BeginDisabled();
+        }
 
         char buffer[256];
         snprintf(buffer, sizeof(buffer), "%s", settings.Skybox.TexturePath.c_str());
@@ -451,7 +476,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         DrawDragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
         DrawDragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
 
-        if (readOnly) ImGui::EndDisabled();
+        if (readOnly)
+        {
+            ImGui::EndDisabled();
+        }
         ImGui::Unindent(10.0f);
         ImGui::PopID();
     }
@@ -460,7 +488,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
     {
         ImGui::PushID("FogVisibility");
         ImGui::Indent(10.0f);
-        if (readOnly) ImGui::BeginDisabled();
+        if (readOnly)
+        {
+            ImGui::BeginDisabled();
+        }
 
         auto& fog = settings.Fog;
         ImGui::AlignTextToFramePadding();
@@ -491,7 +522,10 @@ void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, 
         DrawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
         DrawDragFloat("Height Falloff", &fog.HeightFalloff, 0.01f, 0.0f, 1.0f, "%.2f");
 
-        if (readOnly) ImGui::EndDisabled();
+        if (readOnly)
+        {
+            ImGui::EndDisabled();
+        }
         ImGui::Unindent(10.0f);
         ImGui::PopID();
     }

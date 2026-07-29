@@ -86,15 +86,42 @@ public:
                 // can aggregate-reflect PrimitiveComponent without a shared_ptr field).
                 m_Entity.AddOrReplaceComponent<PrimitiveRuntimeState>().Dirty = true;
 
-                if      (m_ModelPath == ":cube:")       prim.Type = PrimitiveType::Cube;
-                else if (m_ModelPath == ":sphere:")     prim.Type = PrimitiveType::Sphere;
-                else if (m_ModelPath == ":plane:")      prim.Type = PrimitiveType::Plane;
-                else if (m_ModelPath == ":cylinder:")   prim.Type = PrimitiveType::Cylinder;
-                else if (m_ModelPath == ":cone:")       prim.Type = PrimitiveType::Cone;
-                else if (m_ModelPath == ":torus:")      prim.Type = PrimitiveType::Torus;
-                else if (m_ModelPath == ":knot:")       prim.Type = PrimitiveType::Knot;
-                else if (m_ModelPath == ":hemisphere:") prim.Type = PrimitiveType::Hemisphere;
-                else                                    prim.Type = PrimitiveType::Sphere; // fallback
+                if (m_ModelPath == ":cube:")
+                {
+                    prim.Type = PrimitiveType::Cube;
+                }
+                else if (m_ModelPath == ":sphere:")
+                {
+                    prim.Type = PrimitiveType::Sphere;
+                }
+                else if (m_ModelPath == ":plane:")
+                {
+                    prim.Type = PrimitiveType::Plane;
+                }
+                else if (m_ModelPath == ":cylinder:")
+                {
+                    prim.Type = PrimitiveType::Cylinder;
+                }
+                else if (m_ModelPath == ":cone:")
+                {
+                    prim.Type = PrimitiveType::Cone;
+                }
+                else if (m_ModelPath == ":torus:")
+                {
+                    prim.Type = PrimitiveType::Torus;
+                }
+                else if (m_ModelPath == ":knot:")
+                {
+                    prim.Type = PrimitiveType::Knot;
+                }
+                else if (m_ModelPath == ":hemisphere:")
+                {
+                    prim.Type = PrimitiveType::Hemisphere;
+                }
+                else
+                {
+                    prim.Type = PrimitiveType::Sphere; // fallback
+                }
             }
             else
             {

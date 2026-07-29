@@ -44,9 +44,7 @@ TEST(ThreadPoolTest, TasksRunConcurrently)
 
     for (int i = 0; i < 20; ++i)
     {
-        futures.push_back(pool.Enqueue([&counter]() {
-            counter.fetch_add(1, std::memory_order_relaxed);
-        }));
+        futures.push_back(pool.Enqueue([&counter]() { counter.fetch_add(1, std::memory_order_relaxed); }));
     }
 
     for (auto& f : futures)

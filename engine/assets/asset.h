@@ -67,13 +67,13 @@ public:
         if (state != oldState)
         {
             CH_CORE_INFO("[ASSET] '{}' state change: {} -> {}", m_Path, (int)oldState, (int)state);
-            
+
             if (state == AssetState::Failed)
             {
                 if (!m_Error.empty())
                 {
-                    CH_CORE_WARN("Asset: FAILED for '{}' (Type: {}, ID: {}) - {}", m_Path, (int)m_Type,
-                                 (uint64_t)m_ID, m_Error);
+                    CH_CORE_WARN("Asset: FAILED for '{}' (Type: {}, ID: {}) - {}", m_Path, (int)m_Type, (uint64_t)m_ID,
+                                 m_Error);
                 }
                 else
                 {
@@ -138,7 +138,10 @@ public:
     }
 
     // Called on the main thread after loading completes; useful for GPU uploads.
-    virtual void OnLoaded() {}
+    virtual void OnLoaded()
+    {
+    }
+
 protected:
     std::string m_Path;
     std::string m_Error;

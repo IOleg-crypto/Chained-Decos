@@ -181,8 +181,8 @@ namespace
 class DependencyProbeModule : public EngineModule
 {
 public:
-    bool* sawLiveDependency = nullptr;   // TestModuleA must still be reachable
-    bool* sawDeadDependency = nullptr;   // TestModuleB must already be unavailable
+    bool* sawLiveDependency = nullptr; // TestModuleA must still be reachable
+    bool* sawDeadDependency = nullptr; // TestModuleB must already be unavailable
 
     void Initialize() override
     {

@@ -38,7 +38,7 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
 
         // --- 1. Control Panel ---
         ImGui::BeginDisabled(readOnly);
-        
+
         if (ImGui::Button("Clear"))
         {
             Clear();
@@ -90,14 +90,15 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
             // --- 3. Optimized Rebuild of Visible Indices ---
             // We only rebuild when new logs arrive OR UI filter parameters change.
             m_VisibleIndices.clear();
-            
+
             std::string filterStr = m_FilterBuffer;
             std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(),
                            [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 
             for (int i = 0; i < static_cast<int>(m_Messages.size()); ++i)
             {
-                if (m_LogLevel != static_cast<int>(LogLevel::LogNone) && static_cast<int>(m_Messages[i].level) < m_LogLevel)
+                if (m_LogLevel != static_cast<int>(LogLevel::LogNone) &&
+                    static_cast<int>(m_Messages[i].level) < m_LogLevel)
                 {
                     continue;
                 }
@@ -105,9 +106,8 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
                 if (!filterStr.empty())
                 {
                     // Case-insensitive substring match without heavy allocation
-                    auto it = std::search(m_Messages[i].message.begin(), m_Messages[i].message.end(),
-                                          filterStr.begin(), filterStr.end(),
-                                          [](unsigned char ch1, unsigned char ch2) {
+                    auto it = std::search(m_Messages[i].message.begin(), m_Messages[i].message.end(), filterStr.begin(),
+                                          filterStr.end(), [](unsigned char ch1, unsigned char ch2) {
                                               return std::tolower(ch1) == ch2; // filterStr is already lower
                                           });
 
@@ -140,19 +140,31 @@ void ConsolePanel::OnImGuiRender(bool readOnly)
                     ImVec4 color;
                     switch (msg.level)
                     {
-                        case LogLevel::LogTrace:   color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f); break;
-                        case LogLevel::LogInfo:    color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); break;
-                        case LogLevel::LogWarning: color = ImVec4(1.0f, 0.8f, 0.0f, 1.0f); break;
-                        case LogLevel::LogError:   color = ImVec4(1.0f, 0.2f, 0.2f, 1.0f); break;
-                        case LogLevel::LogFatal:   color = ImVec4(1.0f, 0.0f, 1.0f, 1.0f); break;
-                        default:                   color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f); break;
+                    case LogLevel::LogTrace:
+                        color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+                        break;
+                    case LogLevel::LogInfo:
+                        color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+                        break;
+                    case LogLevel::LogWarning:
+                        color = ImVec4(1.0f, 0.8f, 0.0f, 1.0f);
+                        break;
+                    case LogLevel::LogError:
+                        color = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+                        break;
+                    case LogLevel::LogFatal:
+                        color = ImVec4(1.0f, 0.0f, 1.0f, 1.0f);
+                        break;
+                    default:
+                        color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+                        break;
                     }
 
                     // Render Timestamp (Gray color)
                     ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
                     ImGui::TextUnformatted(msg.timestamp.c_str());
                     ImGui::PopStyleColor();
-                    
+
                     ImGui::SameLine();
 
                     // Render Log Message

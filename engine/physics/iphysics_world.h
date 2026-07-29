@@ -23,15 +23,17 @@ struct PhysicsBodyDesc
     glm::quat Rotation = {1.0f, 0.0f, 0.0f, 0.0f};
     glm::vec3 InitialVelocity = {0.0f, 0.0f, 0.0f};
     glm::vec3 Offset = {0.0f, 0.0f, 0.0f};
-    uint64_t UserData = 0; 
+    uint64_t UserData = 0;
 
     // Shape
     ColliderType Shape = ColliderType::Box;
     glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f}; // Box: half-extents. Sphere: x=radius. Capsule: x=radius, y=half-height.
     std::vector<PhysicsTriangle> Triangles;    // Only used when Shape == ColliderType::Mesh.
-    glm::vec3 MeshScale = {1.0f, 1.0f, 1.0f};  // Mesh only: scale applied via ScaledShape so the cached BVH stays scale-independent.
-                                               // Triangles must therefore be supplied in unscaled model-local space.
-    std::string CacheKey;                       // Optional: enables mesh shape caching. With MeshScale decoupled this can be just the model path.
+    glm::vec3 MeshScale = {1.0f, 1.0f,
+                           1.0f}; // Mesh only: scale applied via ScaledShape so the cached BVH stays scale-independent.
+                                  // Triangles must therefore be supplied in unscaled model-local space.
+    std::string
+        CacheKey; // Optional: enables mesh shape caching. With MeshScale decoupled this can be just the model path.
 
     // Body properties
     float Mass = 1.0f;

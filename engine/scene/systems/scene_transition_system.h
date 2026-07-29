@@ -10,9 +10,9 @@ class Event;
 
 namespace SceneTransitionSystem
 {
-    using EventCallbackFn = std::function<void(Event&)>;
-    void Update(entt::registry& reg, const EventCallbackFn& callback);
-}
+using EventCallbackFn = std::function<void(Event&)>;
+void Update(entt::registry& reg, const EventCallbackFn& callback);
+} // namespace SceneTransitionSystem
 } // namespace Chained
 
 #endif // CH_SCENE_TRANSITION_SYSTEM_H

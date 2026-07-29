@@ -27,7 +27,9 @@ public:
         return AssetType::None;
     }
 
-    void OnLoaded() override {}
+    void OnLoaded() override
+    {
+    }
 };
 
 std::string RegressionPath(const char* suffix)
@@ -54,7 +56,10 @@ protected:
         loader.Create = []() { return std::make_shared<RegressionAsset>(); };
         loader.Load = [](std::shared_ptr<Asset> asset, const std::string& path, std::string*) {
             auto dummy = std::dynamic_pointer_cast<RegressionAsset>(asset);
-            if (!dummy) return false;
+            if (!dummy)
+            {
+                return false;
+            }
             dummy->SetPath(path);
             return true;
         };

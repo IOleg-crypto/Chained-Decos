@@ -48,7 +48,6 @@ struct CH_API Color
     }
 };
 
-
 } // namespace Chained
 
 #endif // CH_STRUCTURES_H

@@ -30,27 +30,57 @@ public:
     void SetSceneState(SceneState state);
     SceneState GetSceneState() const;
     std::shared_ptr<Scene> GetActiveScene() const;
-    std::shared_ptr<Scene> GetRuntimeScene() const { return m_RuntimeScene; }
-    std::shared_ptr<Scene> GetEditorScene() const { return m_EditorScene; }
+    std::shared_ptr<Scene> GetRuntimeScene() const
+    {
+        return m_RuntimeScene;
+    }
+    std::shared_ptr<Scene> GetEditorScene() const
+    {
+        return m_EditorScene;
+    }
 
-    bool IsSceneDirty() const { return m_SceneDirty; }
-    void MarkSceneDirty() { m_SceneDirty = true; }
-    void ClearSceneDirty() { m_SceneDirty = false; }
+    bool IsSceneDirty() const
+    {
+        return m_SceneDirty;
+    }
+    void MarkSceneDirty()
+    {
+        m_SceneDirty = true;
+    }
+    void ClearSceneDirty()
+    {
+        m_SceneDirty = false;
+    }
 
-    bool IsConfirmPending() const { return m_PendingNewScene || m_PendingOpenScene; }
+    bool IsConfirmPending() const
+    {
+        return m_PendingNewScene || m_PendingOpenScene;
+    }
     void ConfirmPendingAction();
     void CancelPendingAction();
 
     void OnUpdate(Timestep ts);
     void OnViewportResize(uint32_t width, uint32_t height);
 
-    bool IsLoading() const { return m_Transition.state != TransitionState::None; }
-    const std::string& GetLoadingStatus() const { return m_LoadingStatus; }
+    bool IsLoading() const
+    {
+        return m_Transition.state != TransitionState::None;
+    }
+    const std::string& GetLoadingStatus() const
+    {
+        return m_LoadingStatus;
+    }
 
     bool OnSceneOpened(SceneOpenedEvent& e);
 
 private:
-    enum class TransitionState { None, PlayStarting, SceneLoading, Finalizing };
+    enum class TransitionState
+    {
+        None,
+        PlayStarting,
+        SceneLoading,
+        Finalizing
+    };
 
     struct SceneLoadResult
     {

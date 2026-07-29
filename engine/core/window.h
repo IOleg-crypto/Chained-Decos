@@ -14,27 +14,20 @@ enum class CursorMode
     Locked = 2
 };
 
-// Window creation parameters and UI/runtime integration flags.
+// Window creation parameters.
 struct WindowProperties
 {
     std::string Title = "Chained Engine";
     int Width = 1280;
     int Height = 720;
     bool VSync = true;
-    bool Resizable = true;
     bool Fullscreen = false;
-    int TargetFramesPerSecond = 60; // 60hz is default for all monitors
+    int TargetFramesPerSecond = 60;
     std::string IconPath;
-
-    // MSAA sample count requested for the default framebuffer (0 = disabled, typical values 2/4/8).
-    // Must be set before window creation - GL/GLFW cannot change a framebuffer's sample count on an
-    // already-created window/context, only recreate it.
+    // MSAA sample count (0 = disabled, typical values 2/4/8).
+    // Must be set before window creation — GLFW cannot change a framebuffer's
+    // sample count on an already-created window, only recreate it.
     int Samples = 0;
-
-    // UI / Docking
-    bool EnableViewports = true;
-    bool EnableDocking = true;
-    std::string ImGuiConfigurationPath = "imgui.ini";
 };
 
 // Abstract native window interface used by the application and renderer.

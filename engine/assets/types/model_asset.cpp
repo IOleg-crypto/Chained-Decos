@@ -9,7 +9,6 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 
-
 namespace Chained
 {
 std::string ModelAsset::GetAnimationName(int index) const
@@ -78,7 +77,6 @@ void ModelAsset::OnLoaded()
     Model newModel;
     newModel.Materials.resize(m_PendingData.materials.empty() ? 1 : m_PendingData.materials.size());
 
-
     m_EmbeddedTextures.clear();
     if (!m_PendingData.embeddedTextures.empty())
     {
@@ -122,7 +120,7 @@ void ModelAsset::OnLoaded()
                 if (texture)
                 {
                     texture->SetData((void*)embedded.data.data(), 0);
-                    m_EmbeddedTextures[idx] = texture; 
+                    m_EmbeddedTextures[idx] = texture;
                 }
             } catch (...)
             {
@@ -139,7 +137,6 @@ void ModelAsset::OnLoaded()
             return;
         }
 
-        
         if (path.front() == '*')
         {
             try
@@ -174,14 +171,16 @@ void ModelAsset::OnLoaded()
             return;
         }
 
-        
         if (!project)
         {
             return;
         }
 
         auto* am = ServiceLocator::TryGet<AssetManager>();
-        if (!am) return;
+        if (!am)
+        {
+            return;
+        }
 
         auto tex = am->Get<TextureAsset>(path);
         if (!tex)
@@ -215,7 +214,6 @@ void ModelAsset::OnLoaded()
         }
     };
 
-    
     for (int materialIndex = 0; materialIndex < (int)newModel.Materials.size(); ++materialIndex)
     {
         if (!m_PendingData.materials.empty())
@@ -232,27 +230,36 @@ void ModelAsset::OnLoaded()
 
             loadTex(materialIndex, rawMaterial.albedoPath, 0);
             if (!rawMaterial.albedoPath.empty() && rawMaterial.albedoPath.front() != '*')
+            {
                 newModel.Materials[materialIndex].AlbedoPath = rawMaterial.albedoPath;
+            }
 
             loadTex(materialIndex, rawMaterial.normalPath, 2);
             if (!rawMaterial.normalPath.empty() && rawMaterial.normalPath.front() != '*')
+            {
                 newModel.Materials[materialIndex].NormalPath = rawMaterial.normalPath;
+            }
 
             loadTex(materialIndex, rawMaterial.occlusionPath, 5);
             if (!rawMaterial.occlusionPath.empty() && rawMaterial.occlusionPath.front() != '*')
+            {
                 newModel.Materials[materialIndex].OcclusionPath = rawMaterial.occlusionPath;
+            }
 
             loadTex(materialIndex, rawMaterial.emissivePath, 4);
             if (!rawMaterial.emissivePath.empty() && rawMaterial.emissivePath.front() != '*')
+            {
                 newModel.Materials[materialIndex].EmissivePath = rawMaterial.emissivePath;
+            }
 
             loadTex(materialIndex, rawMaterial.metallicRoughnessPath, 3);
             if (!rawMaterial.metallicRoughnessPath.empty() && rawMaterial.metallicRoughnessPath.front() != '*')
+            {
                 newModel.Materials[materialIndex].MetallicRoughnessPath = rawMaterial.metallicRoughnessPath;
+            }
         }
     }
 
-    
     for (int meshIndex = 0; meshIndex < (int)m_PendingData.meshes.size(); ++meshIndex)
     {
         const auto& rawMesh = m_PendingData.meshes[meshIndex];
@@ -332,7 +339,6 @@ void ModelAsset::OnLoaded()
         newModel.Meshes.push_back(mesh);
     }
 
-    
     BoundingBox totalBox = {{FLT_MAX, FLT_MAX, FLT_MAX}, {-FLT_MAX, -FLT_MAX, -FLT_MAX}};
     bool anyMesh = false;
     for (const auto& inst : m_PendingData.instances)

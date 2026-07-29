@@ -8,17 +8,28 @@ static uint32_t VertexAttributeTypeToOpenGLBaseType(VertexAttributeType type)
 {
     switch (type)
     {
-        case VertexAttributeType::Float:    return GL_FLOAT;
-        case VertexAttributeType::Float2:   return GL_FLOAT;
-        case VertexAttributeType::Float3:   return GL_FLOAT;
-        case VertexAttributeType::Float4:   return GL_FLOAT;
-        case VertexAttributeType::Mat3:     return GL_FLOAT;
-        case VertexAttributeType::Mat4:     return GL_FLOAT;
-        case VertexAttributeType::Int:      return GL_INT;
-        case VertexAttributeType::Int2:     return GL_INT;
-        case VertexAttributeType::Int3:     return GL_INT;
-        case VertexAttributeType::Int4:     return GL_INT;
-        case VertexAttributeType::Bool:     return GL_UNSIGNED_BYTE;
+    case VertexAttributeType::Float:
+        return GL_FLOAT;
+    case VertexAttributeType::Float2:
+        return GL_FLOAT;
+    case VertexAttributeType::Float3:
+        return GL_FLOAT;
+    case VertexAttributeType::Float4:
+        return GL_FLOAT;
+    case VertexAttributeType::Mat3:
+        return GL_FLOAT;
+    case VertexAttributeType::Mat4:
+        return GL_FLOAT;
+    case VertexAttributeType::Int:
+        return GL_INT;
+    case VertexAttributeType::Int2:
+        return GL_INT;
+    case VertexAttributeType::Int3:
+        return GL_INT;
+    case VertexAttributeType::Int4:
+        return GL_INT;
+    case VertexAttributeType::Bool:
+        return GL_UNSIGNED_BYTE;
     }
 
     CH_CORE_ASSERT(false, "Unknown VertexAttributeType!");
@@ -57,19 +68,16 @@ void GLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexB
     {
         uint32_t count = element.GetComponentCount();
         VertexAttributeType type = element.Type;
-        
+
         if (type == VertexAttributeType::Mat4)
         {
             for (uint32_t i = 0; i < 4; i++)
             {
                 uint32_t index = m_AttributeIndex++;
                 glEnableVertexAttribArray(index);
-                glVertexAttribPointer(index,
-                    4,
-                    VertexAttributeTypeToOpenGLBaseType(type),
-                    element.Normalized ? GL_TRUE : GL_FALSE,
-                    layout.GetStride(),
-                    (const void*)(element.Offset + sizeof(glm::vec4) * i));
+                glVertexAttribPointer(index, 4, VertexAttributeTypeToOpenGLBaseType(type),
+                                      element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(),
+                                      (const void*)(element.Offset + sizeof(glm::vec4) * i));
 
                 if (element.Instanced)
                 {
@@ -83,12 +91,9 @@ void GLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexB
             {
                 uint32_t index = m_AttributeIndex++;
                 glEnableVertexAttribArray(index);
-                glVertexAttribPointer(index,
-                    3,
-                    VertexAttributeTypeToOpenGLBaseType(type),
-                    element.Normalized ? GL_TRUE : GL_FALSE,
-                    layout.GetStride(),
-                    (const void*)(element.Offset + sizeof(glm::vec3) * i));
+                glVertexAttribPointer(index, 3, VertexAttributeTypeToOpenGLBaseType(type),
+                                      element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(),
+                                      (const void*)(element.Offset + sizeof(glm::vec3) * i));
 
                 if (element.Instanced)
                 {
@@ -96,16 +101,14 @@ void GLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexB
                 }
             }
         }
-        else if (type == VertexAttributeType::Int || type == VertexAttributeType::Int2 || type == VertexAttributeType::Int3 ||
-                 type == VertexAttributeType::Int4 || type == VertexAttributeType::Bool)
+        else if (type == VertexAttributeType::Int || type == VertexAttributeType::Int2 ||
+                 type == VertexAttributeType::Int3 || type == VertexAttributeType::Int4 ||
+                 type == VertexAttributeType::Bool)
         {
             uint32_t index = m_AttributeIndex++;
             glEnableVertexAttribArray(index);
-            glVertexAttribIPointer(index,
-                count,
-                VertexAttributeTypeToOpenGLBaseType(type),
-                layout.GetStride(),
-                (const void*)element.Offset);
+            glVertexAttribIPointer(index, count, VertexAttributeTypeToOpenGLBaseType(type), layout.GetStride(),
+                                   (const void*)element.Offset);
 
             if (element.Instanced)
             {
@@ -116,13 +119,10 @@ void GLVertexArray::AddVertexBuffer(const std::shared_ptr<VertexBuffer>& vertexB
         {
             uint32_t index = m_AttributeIndex++;
             glEnableVertexAttribArray(index);
-            glVertexAttribPointer(index,
-                count,
-                VertexAttributeTypeToOpenGLBaseType(type),
-                element.Normalized ? GL_TRUE : GL_FALSE,
-                layout.GetStride(),
-                (const void*)element.Offset);
-            
+            glVertexAttribPointer(index, count, VertexAttributeTypeToOpenGLBaseType(type),
+                                  element.Normalized ? GL_TRUE : GL_FALSE, layout.GetStride(),
+                                  (const void*)element.Offset);
+
             if (element.Instanced)
             {
                 glVertexAttribDivisor(index, 1);

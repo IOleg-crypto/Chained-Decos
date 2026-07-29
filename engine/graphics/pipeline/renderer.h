@@ -68,18 +68,40 @@ public:
     void SetDiagnosticMode(float mode);
     void UpdateTime(Timestep time);
 
-    ShaderStorage& GetShaderLibrary() { return *m_Data->Shaders; }
-    RendererData&  GetData()         { return *m_Data; }
+    ShaderStorage& GetShaderLibrary()
+    {
+        return *m_Data->Shaders;
+    }
+    RendererData& GetData()
+    {
+        return *m_Data;
+    }
 
-    void     SetHeadless(bool headless)                       { m_Headless = headless; }
-    void     SetViewportSize(uint32_t width, uint32_t height) { m_ViewportWidth = width; m_ViewportHeight = height; }
-    uint32_t GetViewportWidth()  const { return m_ViewportWidth; }
-    uint32_t GetViewportHeight() const { return m_ViewportHeight; }
-    bool     IsHeadless()        const { return m_Headless; }
+    void SetHeadless(bool headless)
+    {
+        m_Headless = headless;
+    }
+    void SetViewportSize(uint32_t width, uint32_t height)
+    {
+        m_ViewportWidth = width;
+        m_ViewportHeight = height;
+    }
+    uint32_t GetViewportWidth() const
+    {
+        return m_ViewportWidth;
+    }
+    uint32_t GetViewportHeight() const
+    {
+        return m_ViewportHeight;
+    }
+    bool IsHeadless() const
+    {
+        return m_Headless;
+    }
 
 protected:
     virtual void Initialize() override;
-    virtual void Shutdown()   override;
+    virtual void Shutdown() override;
     void Update(Timestep ts);
 
 private:
@@ -89,8 +111,9 @@ private:
 
 private:
     std::unique_ptr<RendererData> m_Data;
-    bool     m_Headless       = false;
-    uint32_t m_ViewportWidth  = 1280;
+    bool m_Headless = false;
+    bool m_ResourcesLoaded = false;
+    uint32_t m_ViewportWidth = 1280;
     uint32_t m_ViewportHeight = 720;
 };
 

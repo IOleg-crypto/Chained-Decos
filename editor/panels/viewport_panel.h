@@ -42,30 +42,39 @@ public:
     void OnUpdate(Timestep ts) override;
     void OnEvent(Event& e) override;
 
-    bool IsFocused() const { return m_Focused; }
-    bool IsHovered() const { return m_Hovered; }
-    glm::vec2 GetSize() const { return m_ViewportSize; }
-    GizmoType& GetCurrentTool() { return m_CurrentTool; }
+    bool IsFocused() const
+    {
+        return m_Focused;
+    }
+    bool IsHovered() const
+    {
+        return m_Hovered;
+    }
+    glm::vec2 GetSize() const
+    {
+        return m_ViewportSize;
+    }
+    GizmoType& GetCurrentTool()
+    {
+        return m_CurrentTool;
+    }
 
     void DrawGizmoButtons();
     void DrawCameraSelector(Scene* scene);
     Ray GetMouseRay(const glm::vec2& mousePosition);
 
 private:
-    
     glm::vec2 m_ViewportSize = {0, 0};
     bool m_Focused = false;
     bool m_Hovered = false;
     bool m_CursorLocked = false;
     GizmoType m_CurrentTool = GizmoType::TRANSLATE;
 
-    
     std::unique_ptr<EditorCameraController> m_CameraController;
     EditorGizmo m_Gizmo;
     EditorUIManipulator m_UIManipulator;
     EditorIcons m_EditorIcons;
 
-    
     std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
     uint32_t m_HDRFramebufferSamples = 1; // MSAA sample count m_HDRFramebuffer was last (re)created with
@@ -92,7 +101,8 @@ private:
 
     // Icon rendering helpers
     void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
-    void RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax, float iconScale);
+    void RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax,
+                          float iconScale);
     void ClearSceneBackground(Scene* scene);
 
     Camera3D GetActiveOrEditorCamera(Scene* scene) const;

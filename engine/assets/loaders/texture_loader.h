@@ -11,8 +11,8 @@ namespace Chained
 {
 namespace TextureLoader
 {
-    std::shared_ptr<Asset> Create();
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
+std::shared_ptr<Asset> Create();
+bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
 } // namespace TextureLoader
 } // namespace Chained
 

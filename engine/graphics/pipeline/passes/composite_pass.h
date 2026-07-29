@@ -14,7 +14,7 @@ namespace Chained
 class CompositePass : public IRenderPass
 {
 public:
-    void Init()     override;
+    void Init() override;
     void Execute(const RenderContext& ctx) override;
     void Shutdown() override;
 
@@ -26,7 +26,10 @@ public:
 
     // Provide an HDR intermediate target produced by earlier passes.
     // If null, the pass operates in a passthrough mode.
-    void SetHDRTarget(std::shared_ptr<Framebuffer> target) { m_HDRTarget = target; }
+    void SetHDRTarget(std::shared_ptr<Framebuffer> target)
+    {
+        m_HDRTarget = target;
+    }
 
 private:
     std::shared_ptr<Framebuffer> m_HDRTarget;

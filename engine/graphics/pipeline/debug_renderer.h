@@ -25,9 +25,9 @@ struct LineVertex
 struct LineState
 {
     std::shared_ptr<class VertexBuffer> VBO;
-    std::shared_ptr<VertexArray>        VAO;
-    std::vector<LineVertex>             Vertices;
-    uint32_t                            VBOSize = 0;
+    std::shared_ptr<VertexArray> VAO;
+    std::vector<LineVertex> Vertices;
+    uint32_t VBOSize = 0;
 };
 
 struct StaticResources
@@ -46,10 +46,14 @@ public:
 
     void DrawLine(const glm::vec3& start, const glm::vec3& end, const glm::vec4& color);
     void Flush(Renderer& renderer);
-    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, Renderer& renderer, bool useWireframe = true);
-    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, Renderer& renderer, bool useWireframe = true);
-    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, Renderer& renderer, bool useWireframe = true);
-    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, Renderer& renderer, bool useWireframe = true);
+    void DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, Renderer& renderer,
+                      bool useWireframe = true);
+    void DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, Renderer& renderer,
+                       bool useWireframe = true);
+    void DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color,
+                          Renderer& renderer, bool useWireframe = true);
+    void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, Renderer& renderer,
+                         bool useWireframe = true);
     void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color, Renderer& renderer);
 
 protected:
@@ -57,8 +61,8 @@ protected:
     virtual void Shutdown() override;
 
 private:
-    LineState        m_Lines;
-    StaticResources  m_Resources;
+    LineState m_Lines;
+    StaticResources m_Resources;
     std::shared_ptr<VertexArray> m_GridPlaneVAO;
 };
 

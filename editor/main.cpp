@@ -11,11 +11,11 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     spec.CommandLineArgs = args;
 
     // Default editor window settings
-    spec.WindowWidth = 0;
-    spec.WindowHeight = 0;
+    spec.Window.Width = 0;
+    spec.Window.Height = 0;
+    spec.Window.Fullscreen = false;
     spec.Headless = false;
     spec.EnableScripting = true;
-    spec.Fullscreen = false;
 
     // Set engine root to the executable directory so AssetManager can find
     // resources/shaders, resources/icons, resources/font etc.

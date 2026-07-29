@@ -60,7 +60,9 @@ TEST(HierarchyTest, ClearParent)
     chc.Parent = entt::null;
     auto it = std::find(phc.Children.begin(), phc.Children.end(), (entt::entity)child);
     if (it != phc.Children.end())
+    {
         phc.Children.erase(it);
+    }
 
     EXPECT_TRUE(chc.Parent == entt::null);
     EXPECT_EQ(phc.Children.size(), 0);
@@ -69,7 +71,7 @@ TEST(HierarchyTest, ClearParent)
 TEST(HierarchyTest, DeepHierarchyDestruction)
 {
     Scene scene;
-    Entity root   = scene.CreateEntity("Root");
+    Entity root = scene.CreateEntity("Root");
     Entity child1 = scene.CreateEntity("Child 1");
     Entity child2 = scene.CreateEntity("Child 2");
 
@@ -98,13 +100,13 @@ TEST(HierarchyDestructiveTest, DestroyChildBeforeParent)
 {
     Scene scene;
     Entity parent = scene.CreateEntity("Parent");
-    Entity child  = scene.CreateEntity("Child");
+    Entity child = scene.CreateEntity("Child");
 
     parent.AddComponent<HierarchyComponent>().Children.push_back((entt::entity)child);
     child.AddComponent<HierarchyComponent>().Parent = (entt::entity)parent;
 
     entt::entity parentHandle = (entt::entity)parent;
-    entt::entity childHandle  = (entt::entity)child;
+    entt::entity childHandle = (entt::entity)child;
 
     EXPECT_NO_THROW(scene.DestroyEntity(child));
     EXPECT_FALSE(scene.GetRegistry().valid(childHandle));
@@ -141,8 +143,8 @@ TEST(HierarchyDestructiveTest, WideHierarchyMassDestruction)
 TEST(HierarchyDestructiveTest, RapidReparenting)
 {
     Scene scene;
-    Entity p1    = scene.CreateEntity("Parent1");
-    Entity p2    = scene.CreateEntity("Parent2");
+    Entity p1 = scene.CreateEntity("Parent1");
+    Entity p2 = scene.CreateEntity("Parent2");
     Entity child = scene.CreateEntity("Child");
 
     p1.AddComponent<HierarchyComponent>();

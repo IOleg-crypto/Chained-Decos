@@ -1,7 +1,10 @@
 #include "engine/assets/loaders/audio_loader.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
+#include "engine/core/service_locator.h"
 #include <miniaudio.h>
 #include <filesystem>
+#include <vector>
 
 namespace Chained
 {
@@ -15,18 +18,48 @@ bool AudioLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
 {
     auto audioAsset = std::static_pointer_cast<AudioAsset>(asset);
 
-    if (!std::filesystem::exists(resolvedPath))
-    {
-        if (outError) *outError = "AudioLoader: File not found: " + resolvedPath;
-        return false;
-    }
-
     ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
     ma_decoder decoder;
-    ma_result result = ma_decoder_init_file(resolvedPath.c_str(), &config, &decoder);
+    ma_result result;
+
+    // Try reading from pack first
+    bool usePack = false;
+    std::vector<uint8_t> packData;
+    if (auto* am = ServiceLocator::TryGet<AssetManager>())
+    {
+        if (am->IsPacked())
+        {
+            packData = am->ReadAssetData(resolvedPath);
+            if (!packData.empty())
+            {
+                usePack = true;
+            }
+        }
+    }
+
+    if (usePack)
+    {
+        result = ma_decoder_init_memory(packData.data(), packData.size(), &config, &decoder);
+    }
+    else
+    {
+        if (!std::filesystem::exists(resolvedPath))
+        {
+            if (outError)
+            {
+                *outError = "AudioLoader: File not found: " + resolvedPath;
+            }
+            return false;
+        }
+        result = ma_decoder_init_file(resolvedPath.c_str(), &config, &decoder);
+    }
+
     if (result != MA_SUCCESS)
     {
-        if (outError) *outError = "AudioLoader: Failed to decode " + resolvedPath;
+        if (outError)
+        {
+            *outError = "AudioLoader: Failed to decode " + resolvedPath;
+        }
         return false;
     }
 
@@ -40,7 +73,10 @@ bool AudioLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
     if (result != MA_SUCCESS)
     {
         ma_decoder_uninit(&decoder);
-        if (outError) *outError = "AudioLoader: Failed to get data format for " + resolvedPath;
+        if (outError)
+        {
+            *outError = "AudioLoader: Failed to get data format for " + resolvedPath;
+        }
         return false;
     }
 
@@ -58,8 +94,7 @@ bool AudioLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolved
     ma_decoder_uninit(&decoder);
 
     CH_CORE_INFO("AudioLoader: Loaded '{}' — {} ch, {} Hz, {:.2f}s",
-                 std::filesystem::path(resolvedPath).filename().string(),
-                 channels, sampleRate, duration);
+                 std::filesystem::path(resolvedPath).filename().string(), channels, sampleRate, duration);
     return true;
 }
 

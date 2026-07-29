@@ -10,8 +10,8 @@ namespace Chained
 {
 namespace AudioLoader
 {
-    std::shared_ptr<Asset> Create();
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
+std::shared_ptr<Asset> Create();
+bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
 } // namespace AudioLoader
 } // namespace Chained
 

@@ -272,8 +272,7 @@ void EditorLayer::OnAttach()
     auto* assetManager = ServiceLocator::TryGet<AssetManager>();
     if (assetManager)
     {
-        std::string iconPath =
-            (assetManager->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
+        std::string iconPath = (assetManager->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
         if (std::filesystem::exists(iconPath))
         {
             app.GetWindow().SetWindowIcon(iconPath);

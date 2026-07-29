@@ -72,7 +72,9 @@ void EditorGUI::EndPropertyGrid()
 void EditorGUI::BeginProperty(const char* label)
 {
     if (!label)
+    {
         return;
+    }
     DrawPropertyLabel(label);
     ImGui::PushID(label);
     ImGui::PushItemWidth(-1);
@@ -89,7 +91,9 @@ void EditorGUI::EndProperty()
 template <typename F> bool EditorGUI::PropertyWidget(const char* label, F&& widgetFn)
 {
     if (!label)
+    {
         return false;
+    }
     DrawPropertyLabel(label);
     ImGui::PushID(label);
     bool changed = widgetFn();
@@ -120,7 +124,9 @@ bool EditorGUI::Property(const char* label, uint64_t& value)
 bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
 {
     if (!label)
+    {
         return false;
+    }
     DrawPropertyLabel(label);
     ImGui::PushID(label);
     char buffer[1024];
@@ -192,10 +198,14 @@ bool EditorGUI::PropertyColor(const char* label, glm::vec4& value, bool hdr)
 bool EditorGUI::Property(const char* label, int& value, const char** items, int itemCount)
 {
     if (!label)
+    {
         return false;
+    }
     return PropertyWidget(label, [&]() {
         if (!items || itemCount <= 0)
+        {
             return false;
+        }
         return ImGui::Combo("##prop", &value, items, itemCount);
     });
 }
@@ -204,7 +214,9 @@ bool EditorGUI::FilePropertyImpl(const char* label, std::string& value, const ch
                                  std::function<void()> thumbnailFn)
 {
     if (!label)
+    {
         return false;
+    }
     DrawPropertyLabel(label);
     ImGui::PushID(label);
 
@@ -309,7 +321,9 @@ static void DrawPropertyControl(const char* id, float& val, ImVec4 color, const 
                                 float width, bool& changed)
 {
     if (!label || !id)
+    {
         return;
+    }
     ImGui::PushID(label);
 
     float lineHeight = GetButtonSize();
@@ -351,7 +365,9 @@ bool EditorGUI::DrawVecImpl(const char* label, float* values, float resetValue, 
                             const char* componentLabels[N])
 {
     if (!label)
+    {
         return false;
+    }
     DrawPropertyLabel(label);
     ImGui::PushID(label);
 

@@ -17,7 +17,7 @@ bool RenderPanel(PanelData& panel, UIControlComponent& wc, const ImVec2& pos, co
         if (auto tex = textureAsset->GetTexture())
         {
             ImTextureID texId = (ImTextureID)(uintptr_t)tex->GetNativeHandle();
-            dl->AddImageRounded(texId, pos, pMax, {0,0}, {1,1}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
+            dl->AddImageRounded(texId, pos, pMax, {0, 0}, {1, 1}, IM_COL32_WHITE, wc.BoxStyle.Rounding);
         }
     }
     else
@@ -32,7 +32,8 @@ bool RenderPanel(PanelData& panel, UIControlComponent& wc, const ImVec2& pos, co
     return false;
 }
 
-bool RenderButton(const ButtonData& button, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+bool RenderButton(const ButtonData& button, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+                  const TextStyle& textStyle)
 {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     ImVec2 pMax = {pos.x + size.x, pos.y + size.y};
@@ -50,19 +51,21 @@ bool RenderButton(const ButtonData& button, UIControlComponent& wc, const ImVec2
     return wc.PressedThisFrame;
 }
 
-bool RenderLabel(const LabelData& label, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+bool RenderLabel(const LabelData& label, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+                 const TextStyle& textStyle)
 {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     RenderAlignedTextureText(dl, font, textStyle.FontSize, label.Text, pos, size, textStyle);
     return false;
 }
 
-bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+                    const TextStyle& textStyle)
 {
     ImDrawList* dl = ImGui::GetWindowDrawList();
 
     float boxSize = size.y > 0.0f ? size.y : 18.0f;
-    ImVec2 boxMax = { pos.x + boxSize, pos.y + boxSize };
+    ImVec2 boxMax = {pos.x + boxSize, pos.y + boxSize};
 
     ImU32 boxColor = GetControlColor(wc.BoxStyle, wc);
     dl->AddRectFilled(pos, boxMax, boxColor, wc.BoxStyle.Rounding);
@@ -71,11 +74,12 @@ bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos,
     if (cb.Checked)
     {
         float pad = boxSize * 0.25f;
-        dl->AddRectFilled({pos.x + pad, pos.y + pad}, {boxMax.x - pad, boxMax.y - pad}, ToImU32(textStyle.TextColor), wc.BoxStyle.Rounding);
+        dl->AddRectFilled({pos.x + pad, pos.y + pad}, {boxMax.x - pad, boxMax.y - pad}, ToImU32(textStyle.TextColor),
+                          wc.BoxStyle.Rounding);
     }
 
-    ImVec2 textPos = { pos.x + boxSize + 8.0f, pos.y };
-    ImVec2 textSize = { size.x - boxSize - 8.0f, size.y };
+    ImVec2 textPos = {pos.x + boxSize + 8.0f, pos.y};
+    ImVec2 textSize = {size.x - boxSize - 8.0f, size.y};
     RenderAlignedTextureText(dl, font, textStyle.FontSize, cb.Label, textPos, textSize, textStyle);
 
     if (wc.PressedThisFrame)
@@ -97,7 +101,7 @@ bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const 
     float currentProgressWidth = size.x * std::clamp(pb.Progress, 0.0f, 1.0f);
     if (currentProgressWidth > 0.0f)
     {
-        ImVec2 progressMax = { pos.x + currentProgressWidth, pos.y + size.y };
+        ImVec2 progressMax = {pos.x + currentProgressWidth, pos.y + size.y};
         dl->AddRectFilled(pos, progressMax, ToImU32(wc.BoxStyle.HoverColor), wc.BoxStyle.Rounding);
     }
 
@@ -117,7 +121,8 @@ bool RenderSeparator(const SeparatorData& sep, UIControlComponent& wc, const ImV
     return false;
 }
 
-bool RenderRadioButton(RadioButtonData& radio, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+bool RenderRadioButton(RadioButtonData& radio, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+                       ImFont* font, const TextStyle& textStyle)
 {
     ImDrawList* dl = ImGui::GetWindowDrawList();
     bool changed = false;
@@ -130,10 +135,13 @@ bool RenderRadioButton(RadioButtonData& radio, UIControlComponent& wc, const ImV
             ImVec2 itemPos = {pos.x + itemW * i, pos.y};
             float radius = std::min(size.y * 0.35f, 8.0f);
             ImVec2 circleCenter = {itemPos.x + radius + 4.0f, pos.y + size.y * 0.5f};
-            ImU32 circleColor = (i == radio.SelectedIndex) ? ToImU32(textStyle.TextColor) : ToImU32(wc.BoxStyle.BorderColor);
+            ImU32 circleColor =
+                (i == radio.SelectedIndex) ? ToImU32(textStyle.TextColor) : ToImU32(wc.BoxStyle.BorderColor);
             dl->AddCircle(circleCenter, radius, circleColor, 12, 1.5f);
             if (i == radio.SelectedIndex)
+            {
                 dl->AddCircleFilled(circleCenter, radius * 0.5f, ToImU32(textStyle.TextColor));
+            }
             ImVec2 labelPos = {circleCenter.x + radius + 4.0f, pos.y};
             ImVec2 labelSize = {itemW - radius * 2.0f - 12.0f, size.y};
             RenderAlignedTextureText(dl, font, textStyle.FontSize, radio.Options[i], labelPos, labelSize, textStyle);
@@ -155,10 +163,13 @@ bool RenderRadioButton(RadioButtonData& radio, UIControlComponent& wc, const ImV
             ImVec2 itemPos = {pos.x, pos.y + itemH * i};
             float radius = std::min(itemH * 0.35f, 8.0f);
             ImVec2 circleCenter = {itemPos.x + radius + 4.0f, itemPos.y + itemH * 0.5f};
-            ImU32 circleColor = (i == radio.SelectedIndex) ? ToImU32(textStyle.TextColor) : ToImU32(wc.BoxStyle.BorderColor);
+            ImU32 circleColor =
+                (i == radio.SelectedIndex) ? ToImU32(textStyle.TextColor) : ToImU32(wc.BoxStyle.BorderColor);
             dl->AddCircle(circleCenter, radius, circleColor, 12, 1.5f);
             if (i == radio.SelectedIndex)
+            {
                 dl->AddCircleFilled(circleCenter, radius * 0.5f, ToImU32(textStyle.TextColor));
+            }
             ImVec2 labelPos = {circleCenter.x + radius + 4.0f, itemPos.y};
             ImVec2 labelSize = {size.x - radius * 2.0f - 12.0f, itemH};
             RenderAlignedTextureText(dl, font, textStyle.FontSize, radio.Options[i], labelPos, labelSize, textStyle);

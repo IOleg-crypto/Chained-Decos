@@ -1,6 +1,8 @@
 #include "ui_font_registry.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/common/asset_path.h"
 #include "engine/common/base.h"
+#include "engine/core/service_locator.h"
 #include "engine/project/project.h"
 #include "thirdparty/imgui/imstb_truetype.h" // Або шлях, де у вас лежить stb_truetype.h
 #include "engine/platform/dialogs/dialogs.h"
@@ -121,6 +123,38 @@ std::string UIFontRegistry::NormalizeFontName(std::string name)
     return NormalizeAssetPath(name);
 }
 
+ImFont* UIFontRegistry::CommitFont(const std::string& normalizedName, ImFont* font)
+{
+    m_Fonts[normalizedName] = font;
+    if (!m_DefaultFont)
+    {
+        m_DefaultFont = font;
+    }
+    if (ImGui::GetFrameCount() > 0)
+    {
+        m_NeedsRebuild = true;
+    }
+    CH_CORE_INFO("UIFontRegistry: Loaded '{}'", normalizedName);
+    return font;
+}
+
+void UIFontRegistry::RegisterKnownFont(const std::string& relKey, const std::string& path, int& discovered)
+{
+    if (m_KnownPaths.emplace(relKey, path).second)
+    {
+        ++discovered;
+    }
+    // Compatibility alias between legacy "font/" and "fonts/" prefixes.
+    if (relKey.rfind("font/", 0) == 0)
+    {
+        m_KnownPaths.emplace("fonts/" + relKey.substr(5), path);
+    }
+    else if (relKey.rfind("fonts/", 0) == 0)
+    {
+        m_KnownPaths.emplace("font/" + relKey.substr(6), path);
+    }
+}
+
 void UIFontRegistry::LoadProjectFonts()
 {
     m_KnownPaths.clear();
@@ -203,35 +237,72 @@ void UIFontRegistry::LoadProjectFonts()
 
             if (!IsSupportedFontFormat(entry.path()))
             {
-                CH_CORE_WARN("UIFontRegistry: Skipping font '{}' (unsupported format or CFF/Variable outlines).", entry.path().string());
+                CH_CORE_WARN("UIFontRegistry: Skipping font '{}' (unsupported format or CFF/Variable outlines).",
+                             entry.path().string());
                 continue;
             }
 
             std::string relKey = NormalizeFontName(relativePath.generic_string());
-            std::string absPath = entry.path().string();
+            const std::string absPath = entry.path().string();
 
-            if (m_KnownPaths.emplace(relKey, absPath).second)
+            if (m_KnownPaths.find(relKey) == m_KnownPaths.end())
             {
                 CH_CORE_INFO("UIFontRegistry: Discovered font '{}'", relKey);
-                discovered++;
+            }
+            RegisterKnownFont(relKey, absPath, discovered);
+        }
+    }
+
+    // ── Also discover fonts from pack archive ─────────────────────────────────
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (am && am->IsPacked())
+    {
+        const std::array<std::string, 2> validExts = {".ttf", ".otf"};
+        am->EnumeratePackedPaths([&](std::string_view packPath) {
+            std::filesystem::path p(packPath);
+            auto ext = p.extension().string();
+            std::transform(ext.begin(), ext.end(), ext.begin(),
+                           [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+
+            bool validExt = false;
+            for (const auto& ve : validExts)
+            {
+                if (ext == ve)
+                {
+                    validExt = true;
+                    break;
+                }
+            }
+            if (!validExt)
+            {
+                return;
             }
 
-            // Compatibility alias between legacy "font/" and "fonts/" prefixes.
-            if (relKey.rfind("font/", 0) == 0)
+            // Only fonts under assets/fonts/ or assets/font/
+            std::string ps(packPath);
+            const bool underFonts = ps.find("assets/fonts/") == 0;
+            const bool underFont = ps.find("assets/font/") == 0;
+            if (!underFonts && !underFont)
             {
-                m_KnownPaths.emplace("fonts/" + relKey.substr(5), absPath);
+                return;
             }
-            else if (relKey.rfind("fonts/", 0) == 0)
+
+            // Relative key: strip "assets/" prefix → "fonts/..." or "font/..."
+            const std::string relKey = NormalizeFontName(ps.substr(7));
+            const std::string packVirtualPath = "PACK:" + ps;
+
+            if (m_KnownPaths.find(relKey) == m_KnownPaths.end())
             {
-                m_KnownPaths.emplace("font/" + relKey.substr(6), absPath);
+                CH_CORE_INFO("UIFontRegistry: Discovered pack font '{}'", relKey);
             }
-        }
+            RegisterKnownFont(relKey, packVirtualPath, discovered);
+        });
     }
 
     if (discovered == 0)
     {
-        CH_CORE_INFO("UIFontRegistry: No project fonts found in '{}' or '{}'.", (assetDir / "font").string(),
-                     (assetDir / "fonts").string());
+        CH_CORE_INFO("UIFontRegistry: No project fonts found in '{}' or '{}' (disk or pack).",
+                     (assetDir / "font").string(), (assetDir / "fonts").string());
         return;
     }
 
@@ -414,6 +485,42 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
         }
     }
 
+    // ── Pack font: load raw bytes via AssetManager, use AddFontFromMemoryTTF ──
+    // absolutePath starts with "PACK:" when the font was discovered inside the
+    // pack archive (set by LoadProjectFonts). IsSupportedFontFormat is skipped
+    // because it needs a real file path; ImGui returns nullptr on unsupported data.
+    static constexpr std::string_view kPackPrefix = "PACK:";
+    if (absolutePath.size() > kPackPrefix.size() &&
+        absolutePath.compare(0, kPackPrefix.size(), kPackPrefix) == 0)
+    {
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (am)
+        {
+            const std::string packKey = absolutePath.substr(kPackPrefix.size());
+            auto data = am->ReadAssetData(packKey);
+            if (!data.empty())
+            {
+                // Keep the buffer alive — ImGui does NOT own it (FontDataOwnedByAtlas=false)
+                auto& buf = m_PackFontData[normalizedName];
+                buf = std::move(data);
+
+                ImFontConfig cfg;
+                cfg.FontDataOwnedByAtlas = false;
+                const float defaultSize = (pixelSize > 0.0f) ? pixelSize : 16.0f;
+                ImGuiIO& io = ImGui::GetIO();
+                ImFont* font =
+                    io.Fonts->AddFontFromMemoryTTF(buf.data(), static_cast<int>(buf.size()), defaultSize, &cfg);
+                if (font)
+                {
+                    return CommitFont(normalizedName, font);
+                }
+            }
+        }
+        CH_CORE_WARN("UIFontRegistry: Failed to load pack font '{}'", absolutePath);
+        m_Fonts[normalizedName] = nullptr;
+        return nullptr;
+    }
+
     if (!IsSupportedFontFormat(std::filesystem::path(absolutePath)))
     {
         CH_CORE_WARN("UIFontRegistry: Skipped font '{}' (unsupported format or CFF/Variable outlines).", absolutePath);
@@ -434,28 +541,14 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
         return nullptr;
     }
 
-    m_Fonts[normalizedName] = font;
-
-    if (!m_DefaultFont)
-    {
-        m_DefaultFont = font;
-    }
-
-    // If the atlas was already built (frame > 0), signal that the GPU texture
-    // must be refreshed before the new font can render on screen.
-    if (ImGui::GetFrameCount() > 0)
-    {
-        m_NeedsRebuild = true;
-    }
-
-    CH_CORE_INFO("UIFontRegistry: Loaded '{}'", normalizedName);
-    return font;
+    return CommitFont(normalizedName, font);
 }
 
 void UIFontRegistry::Clear()
 {
     m_Fonts.clear();
     m_KnownPaths.clear();
+    m_PackFontData.clear();
     m_DefaultFont = nullptr;
 }
 
