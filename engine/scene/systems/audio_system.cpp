@@ -13,6 +13,7 @@ void Update(entt::registry& reg, Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
+    // 1. Sync listener with primary camera
     auto cameraView = reg.view<CameraComponent, TransformComponent>();
     for (auto entity : cameraView)
     {
@@ -26,18 +27,26 @@ void Update(entt::registry& reg, Timestep ts)
             glm::vec3 up = rot * glm::vec3(0, 1, 0);
 
             if (auto* audioSvc = ServiceLocator::TryGet<Audio>())
+            {
                 audioSvc->SetListenerPosition(pos, forward, up);
+            }
             break;
         }
     }
 
+    // 2. Manage audio components
     auto audioView = reg.view<AudioComponent, TransformComponent>();
     auto* audioSvc = ServiceLocator::TryGet<Audio>();
-    if (!audioSvc) return;
+    if (!audioSvc)
+    {
+        return;
+    }
+
     for (auto entity : audioView)
     {
         auto& audio = audioView.get<AudioComponent>(entity);
 
+        // Load sound if path is set but handle is invalid
         if (!audio.SoundPath.empty())
         {
             if (audio.SoundHandle == AudioHandle{} || !audioSvc->IsSoundLoaded(audio.SoundHandle))
@@ -47,35 +56,37 @@ void Update(entt::registry& reg, Timestep ts)
             }
         }
 
-        if (audio.SoundHandle != AudioHandle{})
+        if (audio.SoundHandle == AudioHandle{})
         {
-            const bool actuallyPlaying = audioSvc->IsPlaying(audio.SoundHandle);
+            continue;
+        }
 
-            // Sync IsPlaying back when a non-looping sound finishes naturally.
-            if (audio.IsPlaying && !audio.Loop && !actuallyPlaying)
-            {
-                audio.IsPlaying = false;
-            }
-            // IsPlaying=true but sound isn't running — start it.
-            else if (audio.IsPlaying && !actuallyPlaying)
-            {
-                auto& transform = audioView.get<TransformComponent>(entity);
-                glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-                audioSvc->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop,
-                               audio.Spatialized, worldPos);
-            }
-            // IsPlaying=false but sound is still running — stop it.
-            else if (!audio.IsPlaying && actuallyPlaying)
-            {
-                audioSvc->Stop(audio.SoundHandle);
-            }
-            // Both agree it's playing and source is spatial — keep position in sync.
-            else if (audio.IsPlaying && actuallyPlaying && audio.Spatialized)
-            {
-                auto& transform = audioView.get<TransformComponent>(entity);
-                glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
-                audioSvc->SetInstancePosition(audio.SoundHandle, worldPos);
-            }
+        // Sync IsPlaying back when a non-looping sound finishes naturally
+        const bool actuallyPlaying = audioSvc->IsPlaying(audio.SoundHandle);
+        if (audio.IsPlaying && !audio.Loop && !actuallyPlaying)
+        {
+            audio.IsPlaying = false;
+            continue;
+        }
+
+        // IsPlaying=true but sound isn't running — start it
+        if (audio.IsPlaying && !actuallyPlaying)
+        {
+            auto& transform = audioView.get<TransformComponent>(entity);
+            glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+            audioSvc->Play(audio.SoundHandle, audio.Volume, audio.Pitch, audio.Loop, audio.Spatialized, worldPos);
+        }
+        // IsPlaying=false but sound is still running — stop it
+        else if (!audio.IsPlaying && actuallyPlaying)
+        {
+            audioSvc->Stop(audio.SoundHandle);
+        }
+        // IsPlaying=true and sound is running and spatialized — keep position in sync
+        else if (audio.IsPlaying && actuallyPlaying && audio.Spatialized)
+        {
+            auto& transform = audioView.get<TransformComponent>(entity);
+            glm::vec3 worldPos = glm::vec3(transform.WorldTransform[3]);
+            audioSvc->SetInstancePosition(audio.SoundHandle, worldPos);
         }
     }
 }
@@ -84,8 +95,6 @@ void OnRuntimeStart(entt::registry& reg)
 {
     CH_PROFILE_FUNCTION();
 
-    // PlayOnStart sets the initial value of IsPlaying.
-    // Update is the sole place that actually starts/stops sounds — it reads IsPlaying.
     auto view = reg.view<AudioComponent>();
     for (auto entity : view)
     {
