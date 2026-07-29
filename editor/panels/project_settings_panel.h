@@ -12,6 +12,10 @@ public:
 
 public:
     virtual void OnImGuiRender(bool readOnly = false) override;
+
+private:
+    int m_SelectedCategory = 0;
+    bool m_WidthSet = false;
 };
 } // namespace Chained
 
