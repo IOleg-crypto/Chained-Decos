@@ -490,8 +490,7 @@ ImFont* UIFontRegistry::RegisterFont(const std::string& relativeName, const std:
     // pack archive (set by LoadProjectFonts). IsSupportedFontFormat is skipped
     // because it needs a real file path; ImGui returns nullptr on unsupported data.
     static constexpr std::string_view kPackPrefix = "PACK:";
-    if (absolutePath.size() > kPackPrefix.size() &&
-        absolutePath.compare(0, kPackPrefix.size(), kPackPrefix) == 0)
+    if (absolutePath.size() > kPackPrefix.size() && absolutePath.compare(0, kPackPrefix.size(), kPackPrefix) == 0)
     {
         auto* am = ServiceLocator::TryGet<AssetManager>();
         if (am)
