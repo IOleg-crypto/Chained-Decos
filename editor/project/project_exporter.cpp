@@ -5,7 +5,9 @@
 #include "engine/project/project.h"
 
 #include <atomic>
+#include <future>
 #include <filesystem>
+#include <stdexcept>
 #include <string>
 #include <system_error>
 #include <vector>
@@ -15,6 +17,14 @@ namespace fs = std::filesystem;
 
 namespace Chained
 {
+
+struct ExportCancelledException : public std::exception
+{
+    const char* what() const noexcept override
+    {
+        return "Export cancelled by user.";
+    }
+};
 
 void ProjectExporter::CollectFiles(const fs::path& dir, std::vector<fs::path>& out)
 {
@@ -64,6 +74,14 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
     ExportResult result;
     result.OutDir = outputDir;
 
+    auto CleanupAndCancel = [&](const std::string& phaseLog) -> ExportResult {
+        std::error_code cleanEc;
+        fs::remove_all(outputDir, cleanEc);
+        result.Cancelled = true;
+        CH_CORE_INFO("ProjectExporter: Cancelled {}. Cleaned output directory.", phaseLog);
+        return result;
+    };
+
     auto project = Project::GetActive();
     if (!project)
     {
@@ -105,16 +123,11 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
     }
 
     // ── 2. Collect files to pack ─────────────────────────────────────────────
-    //    Pack structure: project.chproject, assets/*, resources/*
     std::vector<std::string> fileItemPaths;
 
     // .chproject → "project.chproject"
-    {
-        std::string file = chprojectFile.generic_string();
-        std::string item = "project.chproject";
-        fileItemPaths.push_back(file);
-        fileItemPaths.push_back(item);
-    }
+    fileItemPaths.push_back(chprojectFile.generic_string());
+    fileItemPaths.push_back("project.chproject");
 
     // assets/ → "assets/..."
     if (fs::exists(assetDir))
@@ -123,10 +136,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
         CollectFiles(assetDir, assetFiles);
         for (const auto& rel : assetFiles)
         {
-            std::string file = (assetDir / rel).generic_string();
-            std::string item = (fs::path("assets") / rel).generic_string();
-            fileItemPaths.push_back(file);
-            fileItemPaths.push_back(item);
+            fileItemPaths.push_back((assetDir / rel).generic_string());
+            fileItemPaths.push_back((fs::path("assets") / rel).generic_string());
         }
     }
 
@@ -138,10 +149,8 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
         CollectFiles(resourcesDir, resFiles);
         for (const auto& rel : resFiles)
         {
-            std::string file = (resourcesDir / rel).generic_string();
-            std::string item = (fs::path("resources") / rel).generic_string();
-            fileItemPaths.push_back(file);
-            fileItemPaths.push_back(item);
+            fileItemPaths.push_back((resourcesDir / rel).generic_string());
+            fileItemPaths.push_back((fs::path("resources") / rel).generic_string());
         }
     }
     else
@@ -157,86 +166,15 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
         return result;
     }
 
-    // ── Cancel check — before the heavy pack phase ────────────────────────────
     if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
     {
-        result.Cancelled = true;
-        CH_CORE_INFO("ProjectExporter: Cancelled before packing.");
-        return result;
+        return CleanupAndCancel("before start");
     }
 
     uint64_t fileCount = fileItemPaths.size() / 2;
     result.PackedFileCount = fileCount;
 
-    // ── 3. Pack into resources.pack ──────────────────────────────────────────
-    {
-        const fs::path packPath = outputDir / "resources.pack";
-        std::vector<const char*> rawPaths;
-        rawPaths.reserve(fileItemPaths.size());
-        for (const auto& s : fileItemPaths)
-        {
-            rawPaths.push_back(s.c_str());
-        }
-        try
-        {
-            const auto& exp = project->GetConfig().Export;
-
-            // Build a context struct so the C-callback can call onProgress.
-            struct PackCtx
-            {
-                const std::vector<std::string>& fileItemPaths;
-                uint64_t total;
-                ExportProgressCallback& cb;
-                const std::atomic<bool>* cancelFlag;
-            };
-            PackCtx ctx{fileItemPaths, fileCount, onProgress, cancelFlag};
-
-            OnPackFile cCallback = nullptr;
-            if (onProgress)
-            {
-                cCallback = [](uint64_t itemIndex, void* arg) {
-                    auto* ctx = static_cast<PackCtx*>(arg);
-                    if (!ctx->cb)
-                        return;
-                    // itemIndex is 0-based inside the library; make it 1-based for the UI.
-                    uint64_t packed = itemIndex + 1;
-                    // Each file occupies two entries (file path, item path); item path is at index*2+1.
-                    const std::string& itemPath = ctx->fileItemPaths[itemIndex * 2 + 1];
-                    ctx->cb(packed, ctx->total, itemPath);
-                };
-            }
-
-            pack::Writer::pack(packPath, fileCount, rawPaths.data(), exp.DataVersion, exp.ZipThreshold, exp.PreferSpeed,
-                               false, cCallback, onProgress ? &ctx : nullptr);
-            CH_CORE_INFO("ProjectExporter: Packed {} files to '{}'", fileCount, packPath.string());
-        } catch (const pack::Error& err)
-        {
-            result.Error = "Pack failed: " + std::string(err.what());
-            CH_CORE_ERROR("ProjectExporter: {}", result.Error);
-            return result;
-        }
-
-        std::error_code sizeEc;
-        result.PackFileSize = static_cast<uint64_t>(fs::file_size(packPath, sizeEc));
-        if (sizeEc)
-        {
-            result.PackFileSize = 0;
-        }
-
-        CH_CORE_INFO("ProjectExporter: packed {} files → '{}' ({} bytes)", fileCount, packPath.string(),
-                     result.PackFileSize);
-
-        // ── Cancel check — after pack, before copying binaries ────────────────
-        if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
-        {
-            fs::remove(packPath, ec);
-            result.Cancelled = true;
-            CH_CORE_INFO("ProjectExporter: Cancelled after packing.");
-            return result;
-        }
-    }
-
-    // ── 4. Calculate total uncompressed size ─────────────────────────────────
+    // ── 3. Calculate uncompressed size ───────────────────────────────────────
     result.TotalUncompressedSize = 0;
     for (size_t i = 0; i < fileItemPaths.size(); i += 2)
     {
@@ -248,15 +186,24 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
         }
     }
 
-    // ── 5. Copy executable ───────────────────────────────────────────────────
-    {
+    // ── 4. PARALLEL EXECUTION: Task A (Packing) & Task B (Copying Binaries) ─
+
+    // --- TASK B: Копіювання EXE, DLL та додаткових папок у фоновому потоці ---
+    auto copyBinariesTask = std::async(std::launch::async, [&]() -> bool {
+        // 1. Copy Executable
         std::vector<fs::path> exeCandidates;
-        for (const auto& f : fs::directory_iterator(exeDir, ec))
+        std::error_code dirEc;
+        for (const auto& f : fs::directory_iterator(exeDir, dirEc))
         {
+            if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
+            {
+                return false;
+            }
             if (!f.is_regular_file())
             {
                 continue;
             }
+
             std::string fname = f.path().filename().string();
             if (fname.find("Editor") != std::string::npos || fname.find("editor") != std::string::npos ||
                 fname.find("test") != std::string::npos)
@@ -277,46 +224,131 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
             std::string copyErr;
             if (!CopyFile(srcExe, dstExe, copyErr))
             {
-                result.Error = "Failed to copy executable: " + copyErr;
-                CH_CORE_ERROR("ProjectExporter: {}", result.Error);
-                return result;
+                CH_CORE_ERROR("ProjectExporter: Failed to copy executable: {}", copyErr);
+                return false;
             }
-            CH_CORE_INFO("ProjectExporter: copied exe '{}' → '{}'", srcExe.string(), dstExe.string());
         }
-        else
-        {
-            CH_CORE_WARN("ProjectExporter: game executable not found in '{}' — skipping exe copy.", exeDir.string());
-        }
-    }
 
-    // ── 6. Copy DLLs and shared libraries ────────────────────────────────────
-    for (const auto& f : fs::directory_iterator(exeDir, ec))
-    {
-        if (!f.is_regular_file())
+        // 2. Copy DLLs
+        for (const auto& f : fs::directory_iterator(exeDir, dirEc))
         {
-            continue;
-        }
-        const std::string ext = f.path().extension().string();
-        if (ext == ".dll" || ext == ".so" || ext == ".dylib")
-        {
-            std::string copyErr;
-            if (!CopyFile(f.path(), outputDir / f.path().filename(), copyErr))
+            if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
             {
-                CH_CORE_WARN("ProjectExporter: Failed to copy '{}': {}", f.path().filename().string(), copyErr);
+                return false;
+            }
+            if (!f.is_regular_file())
+            {
+                continue;
+            }
+
+            const std::string ext = f.path().extension().string();
+            if (ext == ".dll" || ext == ".so" || ext == ".dylib")
+            {
+                std::string copyErr;
+                CopyFile(f.path(), outputDir / f.path().filename(), copyErr);
             }
         }
+
+        // 3. Copy Subdirectories
+        for (const std::string& subDirName : {"nethost", "dotnet", "scripts"})
+        {
+            if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
+            {
+                return false;
+            }
+
+            fs::path subSrc = exeDir / subDirName;
+            if (fs::exists(subSrc))
+            {
+                fs::path subDst = outputDir / subDirName;
+                std::error_code subEc;
+                fs::copy(subSrc, subDst, fs::copy_options::overwrite_existing | fs::copy_options::recursive, subEc);
+            }
+        }
+
+        return true;
+    });
+
+    // --- TASK A: Пакування ресурсів у головному потоці ---
+    const fs::path packPath = outputDir / "resources.pack";
+    bool packSuccess = false;
+
+    try
+    {
+        std::vector<const char*> rawPaths;
+        rawPaths.reserve(fileItemPaths.size());
+        for (const auto& s : fileItemPaths)
+        {
+            rawPaths.push_back(s.c_str());
+        }
+
+        const auto& exp = project->GetConfig().Export;
+
+        bool preferSpeed = (exp.Mode == PackMode::Fast);
+        float threshold = (exp.Mode == PackMode::Raw) ? 0.99f : exp.ZipThreshold;
+
+        struct PackCtx
+        {
+            const std::vector<std::string>& fileItemPaths;
+            uint64_t total;
+            ExportProgressCallback& cb;
+            const std::atomic<bool>* cancelFlag;
+        };
+        PackCtx ctx{fileItemPaths, fileCount, onProgress, cancelFlag};
+
+        OnPackFile cCallback = [](uint64_t itemIndex, void* arg) {
+            auto* ctx = static_cast<PackCtx*>(arg);
+
+            if (ctx->cancelFlag && ctx->cancelFlag->load(std::memory_order_relaxed))
+            {
+                throw ExportCancelledException();
+            }
+
+            if (ctx->cb)
+            {
+                uint64_t packed = itemIndex + 1;
+                const std::string& itemPath = ctx->fileItemPaths[itemIndex * 2 + 1];
+                ctx->cb(packed, ctx->total, itemPath);
+            }
+        };
+
+        pack::Writer::pack(packPath, fileCount, rawPaths.data(), exp.DataVersion, threshold, preferSpeed,
+                           false, cCallback, &ctx);
+
+        packSuccess = true;
+    } catch (const ExportCancelledException&)
+    {
+        copyBinariesTask.wait(); // Чекаємо фоновий потік перед очищенням
+        return CleanupAndCancel("during packing process");
+    } catch (const pack::Error& err)
+    {
+        copyBinariesTask.wait();
+        CleanupAndCancel("due to pack error");
+        result.Error = "Pack failed: " + std::string(err.what());
+        CH_CORE_ERROR("ProjectExporter: {}", result.Error);
+        return result;
     }
 
-    // ── 7. Copy subdirectories (nethost, dotnet, scripts) ────────────────────
-    for (const std::string& subDirName : {"nethost", "dotnet", "scripts"})
+    // Чекаємо завершення копіювання файлів
+    bool copySuccess = copyBinariesTask.get();
+
+    // Перевірка на скасування після обох завдань
+    if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
     {
-        fs::path subSrc = exeDir / subDirName;
-        if (fs::exists(subSrc))
-        {
-            fs::path subDst = outputDir / subDirName;
-            std::error_code subEc;
-            fs::copy(subSrc, subDst, fs::copy_options::overwrite_existing | fs::copy_options::recursive, subEc);
-        }
+        return CleanupAndCancel("after execution tasks");
+    }
+
+    if (!copySuccess || !packSuccess)
+    {
+        return CleanupAndCancel("due to task failure");
+    }
+
+    // ── 5. Get Pack File Size ────────────────────────────────────────────────
+    std::error_code sizeEc;
+    result.PackFileSize = static_cast<uint64_t>(fs::file_size(packPath, sizeEc));
+    if (sizeEc)
+    {
+        result.PackFileSize = 0;
     }
 
     result.Success = true;
