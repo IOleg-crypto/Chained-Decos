@@ -64,6 +64,11 @@ private:
     ExportState m_ExportState;
     ExportDialogState m_ExportDialog;
     bool m_ShowEditorSettings = false;
+
+    // Export result popup state
+    bool m_ExportResultSuccess = false;
+    std::string m_ExportResultMessage;
+    std::string m_ExportResultOutDir;
 };
 
 } // namespace Chained

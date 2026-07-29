@@ -245,17 +245,14 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
     // NOTE: ImGui::OpenPopup must NOT be called while holding m_ExportState.Mutex:
     // ImGui is not thread-safe and doing so could deadlock if a background thread
     // also tries to acquire the mutex while ImGui is in the middle of state mutation.
-    static bool s_ExportSuccess = false;
-    static std::string s_ExportMessage;
-    static std::string s_ExportOutDir;
     bool shouldOpenExportPopup = false;
     {
         std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
         if (m_ExportState.Open)
         {
-            s_ExportSuccess = m_ExportState.Success;
-            s_ExportMessage = m_ExportState.Message;
-            s_ExportOutDir = m_ExportState.OutDir;
+            m_ExportResultSuccess = m_ExportState.Success;
+            m_ExportResultMessage = m_ExportState.Message;
+            m_ExportResultOutDir = m_ExportState.OutDir;
             m_ExportState.Open = false;
             shouldOpenExportPopup = true;
         }
@@ -266,7 +263,7 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
     }
     if (ImGui::BeginPopupModal("Export Result", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
-        if (s_ExportSuccess)
+        if (m_ExportResultSuccess)
         {
             ImGui::TextColored(ImVec4(0.3f, 0.9f, 0.3f, 1.0f), ICON_FA_CIRCLE_INFO " Success");
         }
@@ -275,13 +272,13 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
             ImGui::TextColored(ImVec4(0.9f, 0.3f, 0.3f, 1.0f), ICON_FA_CIRCLE_EXCLAMATION " Failed");
         }
         ImGui::Spacing();
-        ImGui::TextWrapped("%s", s_ExportMessage.c_str());
-        if (!s_ExportOutDir.empty())
+        ImGui::TextWrapped("%s", m_ExportResultMessage.c_str());
+        if (!m_ExportResultOutDir.empty())
         {
             ImGui::Spacing();
             ImGui::Text("Output: ");
             ImGui::SameLine();
-            ImGui::TextDisabled("%s", s_ExportOutDir.c_str());
+            ImGui::TextDisabled("%s", m_ExportResultOutDir.c_str());
         }
         ImGui::Spacing();
         ImGui::Separator();

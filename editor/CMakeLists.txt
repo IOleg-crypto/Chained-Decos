@@ -9,6 +9,8 @@ add_library(editor_core STATIC
     editor_menu.cpp
     gui.h
     gui.cpp
+    font_choice_gui.h
+    font_choice_gui.cpp
     icons.h
     layer.h
     layer.cpp
