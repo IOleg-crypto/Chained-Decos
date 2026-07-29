@@ -19,11 +19,11 @@
 #include "engine/core/profiler.h"
 
 #if CH_PLATFORM_WINDOWS
-    #ifndef WIN32_LEAN_AND_MEAN
-        #define WIN32_LEAN_AND_MEAN
-    #endif
-    #include <windows.h>
-    #include <shellapi.h>
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <shellapi.h>
 #endif
 
 namespace Chained
@@ -46,8 +46,8 @@ static std::filesystem::path FindProjectRoot()
 
 static const std::vector<std::string>& GetSearchSubdirs()
 {
-    static const std::vector<std::string> subdirs = {
-        "build/bin", "bin", "out/bin", "cmake-build-debug/bin", "cmake-build-release/bin"};
+    static const std::vector<std::string> subdirs = {"build/bin", "bin", "out/bin", "cmake-build-debug/bin",
+                                                     "cmake-build-release/bin"};
     return subdirs;
 }
 
@@ -74,7 +74,9 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
     auto searchFor = [&](const std::string& targetName) -> std::filesystem::path {
         std::filesystem::path currentBin = std::filesystem::current_path() / targetName;
         if (std::filesystem::exists(currentBin))
+        {
             return currentBin;
+        }
 
         auto searchSubdirs = GetSearchSubdirs();
 
@@ -85,7 +87,9 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
                 if (entry.is_directory())
                 {
                     if (std::filesystem::exists(entry.path() / "bin" / targetName))
+                    {
                         searchSubdirs.push_back("build/" + entry.path().filename().string() + "/bin");
+                    }
                 }
             }
         }
@@ -103,10 +107,16 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
     };
 
     auto result = searchFor(perGameName);
-    if (!result.empty()) return result;
+    if (!result.empty())
+    {
+        return result;
+    }
 
     result = searchFor(fallbackName);
-    if (!result.empty()) return result;
+    if (!result.empty())
+    {
+        return result;
+    }
 
     CH_CORE_INFO("FindRuntimeExecutable: Fast path failed, starting scoped recursive search...");
     try
@@ -144,12 +154,14 @@ static std::filesystem::path FindRuntimeExecutable(const std::string& projectNam
 static std::string ResolveLaunchVariables(std::string str, std::shared_ptr<Project> project)
 {
     CH_PROFILE_FUNCTION();
-    if (!project) return str;
+    if (!project)
+    {
+        return str;
+    }
 
     std::filesystem::path root = FindProjectRoot();
 
-    std::filesystem::path projectFile =
-        project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
+    std::filesystem::path projectFile = project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject");
     std::string projectPathStr = std::filesystem::absolute(projectFile).string();
 
     auto replaceAll = [&](const std::string& from, const std::string& to) {
@@ -213,31 +225,36 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
         auto managedCsproj = engineRoot / "scripting" / "managed" / "Chained.Managed.csproj";
         auto relativeManaged = std::filesystem::relative(managedCsproj, scriptsDir);
 
-        std::string csprojContent =
-            "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
-            "\n"
-            "  <PropertyGroup>\n"
-            "    <TargetFramework>net9.0</TargetFramework>\n"
-            "    <AssemblyName>" + name + ".Scripts</AssemblyName>\n"
-            "    <RootNamespace>" + name + ".Scripts</RootNamespace>\n"
-            "    <ImplicitUsings>disable</ImplicitUsings>\n"
-            "    <Nullable>enable</Nullable>\n"
-            "    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n"
-            "    <OutputPath>../bin</OutputPath>\n"
-            "    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>\n"
-            "    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>\n"
-            "    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n"
-            "  </PropertyGroup>\n"
-            "\n"
-            "  <ItemGroup>\n"
-            "    <Compile Include=\"src/**/*.cs\" />\n"
-            "  </ItemGroup>\n"
-            "\n"
-            "  <ItemGroup>\n"
-            "    <ProjectReference Include=\"" + relativeManaged.string() + "\" />\n"
-            "  </ItemGroup>\n"
-            "\n"
-            "</Project>\n";
+        std::string csprojContent = "<Project Sdk=\"Microsoft.NET.Sdk\">\n"
+                                    "\n"
+                                    "  <PropertyGroup>\n"
+                                    "    <TargetFramework>net9.0</TargetFramework>\n"
+                                    "    <AssemblyName>" +
+                                    name +
+                                    ".Scripts</AssemblyName>\n"
+                                    "    <RootNamespace>" +
+                                    name +
+                                    ".Scripts</RootNamespace>\n"
+                                    "    <ImplicitUsings>disable</ImplicitUsings>\n"
+                                    "    <Nullable>enable</Nullable>\n"
+                                    "    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>\n"
+                                    "    <OutputPath>../bin</OutputPath>\n"
+                                    "    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>\n"
+                                    "    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>\n"
+                                    "    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>\n"
+                                    "  </PropertyGroup>\n"
+                                    "\n"
+                                    "  <ItemGroup>\n"
+                                    "    <Compile Include=\"src/**/*.cs\" />\n"
+                                    "  </ItemGroup>\n"
+                                    "\n"
+                                    "  <ItemGroup>\n"
+                                    "    <ProjectReference Include=\"" +
+                                    relativeManaged.string() +
+                                    "\" />\n"
+                                    "  </ItemGroup>\n"
+                                    "\n"
+                                    "</Project>\n";
 
         std::ofstream csprojOut(scriptsDir / (name + ".Scripts.csproj"));
         if (csprojOut.is_open())
@@ -246,28 +263,30 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
         }
         else
         {
-            CH_CORE_ERROR("NewProject: Failed to create .csproj file '{}'", (scriptsDir / (name + ".Scripts.csproj")).string());
+            CH_CORE_ERROR("NewProject: Failed to create .csproj file '{}'",
+                          (scriptsDir / (name + ".Scripts.csproj")).string());
         }
     }
 
     // Generate starter script
     {
-        std::string scriptContent =
-            "using Chained;\n"
-            "\n"
-            "namespace " + name + ".Scripts\n"
-            "{\n"
-            "    public class Starter : Script\n"
-            "    {\n"
-            "        public override void OnCreate()\n"
-            "        {\n"
-            "        }\n"
-            "\n"
-            "        public override void OnUpdate(float dt)\n"
-            "        {\n"
-            "        }\n"
-            "    }\n"
-            "}\n";
+        std::string scriptContent = "using Chained;\n"
+                                    "\n"
+                                    "namespace " +
+                                    name +
+                                    ".Scripts\n"
+                                    "{\n"
+                                    "    public class Starter : Script\n"
+                                    "    {\n"
+                                    "        public override void OnCreate()\n"
+                                    "        {\n"
+                                    "        }\n"
+                                    "\n"
+                                    "        public override void OnUpdate(float dt)\n"
+                                    "        {\n"
+                                    "        }\n"
+                                    "    }\n"
+                                    "}\n";
 
         std::ofstream scriptOut(scriptsDir / "src" / "Starter.cs");
         if (scriptOut.is_open())
@@ -276,7 +295,8 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
         }
         else
         {
-            CH_CORE_ERROR("NewProject: Failed to create Starter.cs file '{}'", (scriptsDir / "src" / "Starter.cs").string());
+            CH_CORE_ERROR("NewProject: Failed to create Starter.cs file '{}'",
+                          (scriptsDir / "src" / "Starter.cs").string());
         }
     }
 
@@ -286,7 +306,7 @@ void EditorProjectManager::NewProject(const std::string& name, const std::string
     EditorProjectSerializer::Serialize(project, (std::filesystem::path(path) / (name + ".chproject")));
 
     Project::SetActive(project);
-    
+
     ProjectOpenedEvent e((std::filesystem::path(path) / (name + ".chproject")).string());
     Application::Get().OnEvent(e);
 }
@@ -309,8 +329,7 @@ void EditorProjectManager::OpenProject(const std::filesystem::path& path)
         m_LastProjectPath = path.string();
         Project::SetActive(project);
 
-
-         ProjectOpenedEvent e(path.string());
+        ProjectOpenedEvent e(path.string());
         Application::Get().OnEvent(e);
     }
 }
@@ -318,11 +337,14 @@ void EditorProjectManager::OpenProject(const std::filesystem::path& path)
 void EditorProjectManager::SaveProject()
 {
     auto project = Project::GetActive();
-    if (!project) return;
-    
-    EditorProjectSerializer::Serialize(project, (project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject")));
-}
+    if (!project)
+    {
+        return;
+    }
 
+    EditorProjectSerializer::Serialize(
+        project, (project->GetProjectDirectoryForProject() / (project->GetName() + ".chproject")));
+}
 
 bool EditorProjectManager::OnProjectOpened(ProjectOpenedEvent& e)
 {
@@ -351,7 +373,8 @@ void EditorProjectManager::ProcessPendingProjectOpen()
     if (project)
     {
         std::filesystem::path resolvedPath = openedPath;
-        std::filesystem::path projDir = resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
+        std::filesystem::path projDir =
+            resolvedPath.extension() == ".chproject" ? resolvedPath.parent_path() : resolvedPath;
 
         auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
         auto* renderer = ServiceLocator::TryGet<Renderer>();
@@ -397,7 +420,9 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         recents.erase(std::remove(recents.begin(), recents.end(), m_LastProjectPath), recents.end());
         recents.insert(recents.begin(), m_LastProjectPath);
         if (recents.size() > 10)
+        {
             recents.resize(10);
+        }
 
         EditorLayer::Get().SaveConfig();
 
@@ -421,8 +446,7 @@ void EditorProjectManager::ProcessPendingProjectOpen()
         {
             if (!project->GetStartScene().empty())
             {
-                sceneToLoad = project->GetAssetDirectoryForProject() /
-                               project->GetStartScene();
+                sceneToLoad = project->GetAssetDirectoryForProject() / project->GetStartScene();
             }
         }
 
@@ -449,7 +473,6 @@ std::string EditorProjectManager::ConsumePendingProjectPath()
 {
     return std::exchange(m_PendingOpenedProjectPath, {});
 }
-
 
 void EditorProjectManager::LaunchStandalone(std::shared_ptr<Scene> editorScene)
 {
@@ -513,7 +536,9 @@ void EditorProjectManager::LaunchStandalone(std::shared_ptr<Scene> editorScene)
 
         if (runtimePath.empty() || !std::filesystem::exists(runtimePath))
         {
-            CH_CORE_ERROR("LaunchStandalone: Runtime executable not found! Searched for '{}.exe' and 'ChainedRuntime.exe'.", config.Name);
+            CH_CORE_ERROR(
+                "LaunchStandalone: Runtime executable not found! Searched for '{}.exe' and 'ChainedRuntime.exe'.",
+                config.Name);
             return;
         }
     }

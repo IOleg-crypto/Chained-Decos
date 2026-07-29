@@ -6,7 +6,8 @@
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 
-namespace Chained{
+namespace Chained
+{
 
 struct FontChoice
 {
@@ -66,7 +67,9 @@ inline const std::vector<FontChoice>& GetEditorFontChoices()
     }
 
     for (std::filesystem::recursive_directory_iterator
-             it(fontDir, std::filesystem::directory_options::skip_permission_denied, ec),end;  it != end && !ec; it.increment(ec))
+             it(fontDir, std::filesystem::directory_options::skip_permission_denied, ec),
+         end;
+         it != end && !ec; it.increment(ec))
     {
         if (!it->is_regular_file(ec))
         {
@@ -104,6 +107,6 @@ inline const std::vector<FontChoice>& GetEditorFontChoices()
     CH_CORE_INFO("EditorGUI: Discovered {} editor font(s) in '{}'.", s_Choices.size(), fontDir.string());
     return s_Choices;
 }
-}; // namespace
+}; // namespace Chained
 
 #endif /* CH_FONT_CHOICE_H */

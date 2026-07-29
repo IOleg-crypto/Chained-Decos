@@ -8,7 +8,7 @@ namespace Chained
 {
 namespace AnimationSystem
 {
-    void Update(entt::registry& reg, Timestep ts);
+void Update(entt::registry& reg, Timestep ts);
 }
 } // namespace Chained
 

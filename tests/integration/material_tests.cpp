@@ -13,7 +13,7 @@ using namespace Chained;
 TEST(MaterialTest, DefaultInitialization)
 {
     MaterialInstance material;
-    
+
     EXPECT_EQ(material.AlbedoColor.r, 255);
     EXPECT_EQ(material.AlbedoColor.g, 255);
     EXPECT_EQ(material.AlbedoColor.b, 255);
@@ -30,10 +30,10 @@ TEST(MaterialTest, DefaultInitialization)
 TEST(MaterialTest, StateModification)
 {
     MaterialInstance material;
-    
+
     AssetHandle testHandle(12345);
     material.AlbedoHandle = testHandle;
-    
+
     material.Metalness = 0.8f;
     material.Roughness = 0.2f;
     material.Transparent = true;
@@ -52,8 +52,3 @@ TEST(MaterialTest, LoadMaterial)
     MaterialLoader::Load(material, "resources/materials/default.mat");
     EXPECT_EQ(material->GetType(), AssetType::Material);
 }
-
-
-
-
-

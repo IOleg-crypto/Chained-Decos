@@ -16,9 +16,6 @@
 namespace Chained
 {
 
-
-
-
 struct UIMeta
 {
     PropertyMeta::WidgetHint Hint = PropertyMeta::WidgetHint::Default;
@@ -28,11 +25,8 @@ struct UIMeta
     bool ReadOnly = false;
     bool Transient = false;
     const char* Tooltip = nullptr;
-    const char* Extensions = nullptr; 
+    const char* Extensions = nullptr;
 };
-
-
-
 
 struct AssetPath
 {
@@ -47,18 +41,11 @@ struct AssetPath
     }
 };
 
-
-
-
 struct ExtractedFieldMeta
 {
     PropertyMeta Meta;
     const char* Extensions = nullptr;
 };
-
-
-
-
 
 template <typename T_Component> ExtractedFieldMeta GetMetaForField(std::string_view field_name)
 {
@@ -80,14 +67,13 @@ template <typename T_Component> ExtractedFieldMeta GetMetaForField(std::string_v
                 result.Meta.Speed = src.Speed;
                 result.Meta.ReadOnly = src.ReadOnly;
                 result.Meta.Transient = src.Transient;
-                result.Extensions = src.Extensions; 
+                result.Extensions = src.Extensions;
 
                 if (src.Tooltip)
                 {
                     result.Meta.Tooltip = src.Tooltip;
                 }
 
-                
                 if (src.Min != src.Max && src.Hint == PropertyMeta::WidgetHint::Default)
                 {
                     result.Meta.Hint = PropertyMeta::WidgetHint::Slider;
@@ -98,9 +84,6 @@ template <typename T_Component> ExtractedFieldMeta GetMetaForField(std::string_v
     return result;
 }
 
-
-
-
 template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chained::Properties<T_Archive>& props)
 {
     auto view = rfl::to_view(component);
@@ -109,13 +92,9 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
         using FieldType = std::decay_t<decltype(*field.get())>;
         std::string_view name = field.name();
 
-
-
-        
         ExtractedFieldMeta field_meta = GetMetaForField<T>(name);
         PropertyMeta& meta = field_meta.Meta;
 
-        
         if (meta.Transient && props.GetMode() != ReflectionMode::UI)
         {
             return;
@@ -123,22 +102,21 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
 
         const char* name_cstr = field.name().data();
 
-        
         if constexpr (is_vector_v<FieldType>)
         {
             props.Sequence(name_cstr, *field.get());
         }
-        
+
         else if constexpr (std::is_same_v<FieldType, Chained::AssetPath>)
         {
             props.GetArchive().File(name_cstr, field.get()->Path, field.get()->Extensions, meta);
         }
-        
+
         else if constexpr (std::is_same_v<FieldType, std::string>)
         {
             if (meta.Hint == PropertyMeta::WidgetHint::FilePicker)
             {
-                
+
                 props.GetArchive().File(name_cstr, *field.get(), field_meta.Extensions, meta);
             }
             else
@@ -146,7 +124,7 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
                 props.Property(name_cstr, *field.get(), meta);
             }
         }
-        
+
         else if constexpr (std::is_enum_v<FieldType>)
         {
             if (props.GetMode() == ReflectionMode::UI && meta.Hint == PropertyMeta::WidgetHint::Enum)
@@ -156,10 +134,14 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
                 std::vector<const char*> names_cstr;
                 names_str.reserve(enumerators.size());
                 for (const auto& p : enumerators)
+                {
                     names_str.emplace_back(p.first);
+                }
                 names_cstr.reserve(names_str.size());
                 for (const auto& s : names_str)
+                {
                     names_cstr.push_back(s.c_str());
+                }
                 props.Enum(name_cstr, *field.get(), names_cstr.data(), (int)names_cstr.size(), meta);
             }
             else
@@ -171,12 +153,11 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
                            std::is_same_v<FieldType, bool> || std::is_same_v<FieldType, glm::vec2> ||
                            std::is_same_v<FieldType, glm::vec3> || std::is_same_v<FieldType, glm::vec4> ||
                            std::is_same_v<FieldType, Chained::Color> || std::is_same_v<FieldType, uint64_t> ||
-                           is_variant_v<FieldType> ||
-                           (std::is_integral_v<FieldType> && std::is_unsigned_v<FieldType>))
+                           is_variant_v<FieldType> || (std::is_integral_v<FieldType> && std::is_unsigned_v<FieldType>))
         {
             props.Property(name_cstr, *field.get(), meta);
         }
-        
+
         else if constexpr (is_rfl_component<FieldType>::value)
         {
             props.GetArchive().Nested(name_cstr, [&](IPropertyArchiveBase& archive) {
@@ -184,7 +165,7 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
                 ReflectFromRfl(*field.get(), nested);
             });
         }
-        
+
         else if constexpr (requires(FieldType& value, Chained::Properties<T_Archive>& p) { value.Reflect(p); })
         {
             props.Nested(name_cstr, *field.get());
@@ -198,7 +179,6 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
     };
 
 #define PROPERTY(Type, Name) rfl::field<#Name, Type> Name
-
 
 struct Vec3Proxy
 {
@@ -253,7 +233,6 @@ struct ColorProxy
 };
 } // namespace Chained
 
-
 namespace rfl::parsing
 {
 template <class R, class W, class ProcessorsType>
@@ -279,7 +258,6 @@ struct Parser<R, W, Chained::Color, ProcessorsType>
     : public CustomParser<R, W, ProcessorsType, Chained::Color, Chained::ColorProxy>
 {
 };
-
 
 struct AssetPathProxy
 {

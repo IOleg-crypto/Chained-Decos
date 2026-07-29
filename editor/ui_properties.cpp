@@ -5,7 +5,8 @@
 namespace Chained
 {
 
-bool UIProperties::EnumPropertyInternal(const char* name, int& value, const char** names, int count, const PropertyMeta& meta)
+bool UIProperties::EnumPropertyInternal(const char* name, int& value, const char** names, int count,
+                                        const PropertyMeta& meta)
 {
     ImGui::BeginDisabled(meta.ReadOnly);
     bool changed = EditorGUI::Property(name, value, names, count);
@@ -18,7 +19,8 @@ bool UIProperties::EnumPropertyInternal(const char* name, int& value, const char
     return changed;
 }
 
-bool UIProperties::StringEnumInternal(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta)
+bool UIProperties::StringEnumInternal(const char* name, std::string& value, const std::vector<std::string>& options,
+                                      const PropertyMeta& meta)
 {
     int currentIndex = 0;
     for (size_t i = 0; i < options.size(); ++i)
@@ -55,7 +57,7 @@ bool UIProperties::StringEnumInternal(const char* name, std::string& value, cons
     }
     ImGui::EndDisabled();
     ImGui::PopID();
-    
+
     if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
     {
         ImGui::SetTooltip("%s", meta.Tooltip.c_str());
@@ -126,8 +128,8 @@ bool UIProperties::BeginGroupInternal(const char* label, bool defaultOpen)
         ImGui::AlignTextToFramePadding();
     }
     ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap |
-                                ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth |
-                                ImGuiTreeNodeFlags_SpanAllColumns;
+                               ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth |
+                               ImGuiTreeNodeFlags_SpanAllColumns;
     if (defaultOpen)
     {
         flags |= ImGuiTreeNodeFlags_DefaultOpen;

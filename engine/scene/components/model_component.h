@@ -21,7 +21,6 @@ struct ModelComponent
         return "ModelComponent";
     }
 
-    
     struct UI
     {
         UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glb,.gltf,.obj"};

@@ -22,28 +22,28 @@ struct ProceduralParameters
 
 struct ChainedAssetHeader
 {
-    uint32_t magic = 0x43484153; 
-    uint32_t version = 2; 
+    uint32_t magic = 0x43484153;
+    uint32_t version = 2;
     uint32_t dataStructSize = sizeof(PendingModelData);
     uint64_t sourceHash = 0;
     bool compressed = false;
     uint64_t compressedSize = 0;
     uint64_t uncompressedSize = 0;
 
-    template<class Archive>
-    void serialize(Archive& archive) {
+    template <class Archive> void serialize(Archive& archive)
+    {
         archive(magic, version, dataStructSize, sourceHash, compressed, compressedSize, uncompressedSize);
     }
 };
 
 namespace ModelLoader
 {
-    std::shared_ptr<Asset> Create();
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
+std::shared_ptr<Asset> Create();
+bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
 
-    Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
+Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
 
-    PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
+PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
 } // namespace ModelLoader
 } // namespace Chained
 

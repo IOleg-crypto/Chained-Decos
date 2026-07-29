@@ -8,9 +8,12 @@ std::shared_ptr<Framebuffer> Framebuffer::Create(const FramebufferSpecification&
 {
     switch (GraphicsDevice::GetAPI())
     {
-        case GraphicsDevice::API::None:    return nullptr;
-        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLFramebuffer>(spec);
-        default : return nullptr;
+    case GraphicsDevice::API::None:
+        return nullptr;
+    case GraphicsDevice::API::OpenGL:
+        return std::make_shared<GLFramebuffer>(spec);
+    default:
+        return nullptr;
     }
 }
 

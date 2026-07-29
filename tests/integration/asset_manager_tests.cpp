@@ -3,7 +3,6 @@
 #include "engine/assets/asset_manager.h"
 #include "thirdparty/googletest/googletest/include/gtest/gtest.h"
 
-
 #include <atomic>
 #include <chrono>
 #include <filesystem>
@@ -77,20 +76,25 @@ protected:
     {
         auto data = std::make_shared<CountingLoaderData>();
         m_LoaderData.push_back(data);
-        
+
         AssetLoader loader;
         loader.IsAsync = asyncLoad;
         loader.Create = []() { return std::make_shared<DummyAsset>(); };
-        loader.Load = [data, shouldSucceed](std::shared_ptr<Asset> asset, const std::string& path, std::string* outError) {
+        loader.Load = [data, shouldSucceed](std::shared_ptr<Asset> asset, const std::string& path,
+                                            std::string* outError) {
             auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset);
             if (!dummy)
+            {
                 return false;
+            }
 
             ++data->LoadCalls;
             if (!shouldSucceed)
             {
                 if (outError)
+                {
                     *outError = "CountingLoader: forced failure for test path '" + path + "'";
+                }
                 return false;
             }
 
@@ -251,9 +255,8 @@ TEST_F(AssetManagerTest, ConcurrentGetSamePathReturnsSameAsset)
 
     for (int i = 0; i < 4; ++i)
     {
-        futures.push_back(std::async(std::launch::async, [this, &path]() {
-            return m_AssetManager->Get<DummyAsset>(path);
-        }));
+        futures.push_back(
+            std::async(std::launch::async, [this, &path]() { return m_AssetManager->Get<DummyAsset>(path); }));
     }
 
     for (auto& f : futures)

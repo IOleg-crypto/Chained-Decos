@@ -14,7 +14,7 @@ namespace Chained
 /**
  * @class ConsolePanel
  * @brief A developer tool panel that displays system log messages in real-time using ImGui.
- * 
+ *
  * This panel supports live filtering by log severity levels (LogLevel) and text substrings,
  * handles automatic scrolling, and ensures thread-safe access to underlying log entries.
  */
@@ -43,23 +43,26 @@ public:
     void Clear();
 
 private:
-    /// @brief Thread-safe double-ended queue storing raw log entries. Deque enables efficient pop_front when exceeding limits.
+    /// @brief Thread-safe double-ended queue storing raw log entries. Deque enables efficient pop_front when exceeding
+    /// limits.
     std::deque<BufferedLogEntry> m_Messages;
-    
-    /// @brief Cached indices of messages from m_Messages that successfully passed active filters. Optimizes render passes.
-    std::vector<int> m_VisibleIndices; 
-    
-    /// @brief Mutex to guarantee thread-safe operations when background threads submit logs while the main thread renders them.
+
+    /// @brief Cached indices of messages from m_Messages that successfully passed active filters. Optimizes render
+    /// passes.
+    std::vector<int> m_VisibleIndices;
+
+    /// @brief Mutex to guarantee thread-safe operations when background threads submit logs while the main thread
+    /// renders them.
     std::mutex m_LogMutex;
 
     // --- UI State ---
-    
+
     /// @brief Currently selected minimum severity level cutoff for rendering messages.
     int m_LogLevel = (int)LogLevel::LogInfo;
-    
+
     /// @brief Flag to trigger the ImGui container window to scroll down to the latest message.
     bool m_ScrollToBottom = false;
-    
+
     /// @brief Character buffer containing the text substring query for filtering.
     char m_FilterBuffer[128] = {0};
 

@@ -12,7 +12,6 @@
 #include <type_traits>
 #include <variant>
 
-
 namespace Chained
 {
 // Helper to detect std::variant
@@ -320,16 +319,18 @@ public:
     {
         if constexpr (is_variant_v<T>)
         {
-            return std::visit([&](auto&& v) {
-                if constexpr (requires { m_Archive.Property(name, v, meta); })
-                {
-                    return m_Archive.Property(name, v, meta);
-                }
-                else
-                {
-                    return false;
-                }
-            }, value);
+            return std::visit(
+                [&](auto&& v) {
+                    if constexpr (requires { m_Archive.Property(name, v, meta); })
+                    {
+                        return m_Archive.Property(name, v, meta);
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                },
+                value);
         }
         else if constexpr (std::is_enum_v<T>)
         {

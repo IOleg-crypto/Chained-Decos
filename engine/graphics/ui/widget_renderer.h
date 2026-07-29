@@ -53,16 +53,21 @@ public:
     // Computes the screen-space bounds for a UI entity.
     UIRect GetEntityRect(Scene* scene, Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos);
 
-    UIFontRegistry&       GetFontRegistry()       { return m_FontRegistry; }
-    const UIFontRegistry& GetFontRegistry() const  { return m_FontRegistry; }
-
+    UIFontRegistry& GetFontRegistry()
+    {
+        return m_FontRegistry;
+    }
+    const UIFontRegistry& GetFontRegistry() const
+    {
+        return m_FontRegistry;
+    }
 
 private:
     bool RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode);
     std::vector<entt::entity> SortUIEntities(entt::registry& registry);
 
-    UIFontRegistry    m_FontRegistry;
-    UILayoutSystem    m_LayoutSystem;
+    UIFontRegistry m_FontRegistry;
+    UILayoutSystem m_LayoutSystem;
     UIAnimationSystem m_AnimationSystem;
 
     bool m_Initialized = false;
@@ -70,9 +75,9 @@ private:
     // Canvas geometry captured by the last DrawCanvas, reused by ProcessInput on
     // the next frame so input hit-testing does not depend on the render phase
     // actually running this frame.
-    ImVec2 m_CanvasPos  = {0.0f, 0.0f};
+    ImVec2 m_CanvasPos = {0.0f, 0.0f};
     ImVec2 m_CanvasSize = {0.0f, 0.0f};
-    bool   m_HasCanvasRect = false;
+    bool m_HasCanvasRect = false;
 };
 
 } // namespace Chained

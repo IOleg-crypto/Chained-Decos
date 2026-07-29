@@ -1,6 +1,7 @@
 #ifndef CH_PROJECT_H
 #define CH_PROJECT_H
 
+#include "engine/core/window.h"
 #include <filesystem>
 #include <memory>
 #include <optional>
@@ -33,14 +34,6 @@ struct MeshSettings
     bool ImportMaterials = true;
     bool CalculateTangents = true;
     bool FlipUVs = true;
-};
-
-struct WindowSettings
-{
-    int Width = 1280;
-    int Height = 720;
-    bool VSync = true;
-    bool Resizable = true;
 };
 
 struct RuntimeSettings
@@ -101,7 +94,7 @@ struct ProjectConfig
     AnimationSettings Animation;
     RenderSettings Render;
     MeshSettings Mesh;
-    WindowSettings Window;
+    WindowProperties Window;
     AudioSettings Audio;
     RuntimeSettings Runtime;
     ScriptingSettings Scripting;

@@ -35,27 +35,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 6858418684424321876
-    TransformComponent:
-      Translation: [-135.637207, 137.265976, 0]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: ambient_sound
-    IDComponent:
-      {}
-    AudioComponent:
-      SoundPath: audio/storegraphic-soft-wind-477404.mp3
-      Volume: 2
-      Pitch: 3
-      Loop: false
-      PlayOnStart: false
-      Spatialized: false
-      Position: [0, 0, 0]
-      MinDistance: 1
-      MaxDistance: 1000
-      IsPlaying: false
-  - Entity: 8597859749667410986
+  - Entity: 9536084726076262379
     ModelComponent:
       ModelPath: models/new_model/a109082005619/scene.gltf
       MaterialPaths:
@@ -83,7 +63,7 @@ Entities:
       Tag: Island
     IDComponent:
       {}
-  - Entity: 6233112185099259871
+  - Entity: 1640485772044501674
     ModelComponent:
       ModelPath: models/toy_train/wooden_train.glb
       MaterialPaths:
@@ -102,7 +82,7 @@ Entities:
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: false
-  - Entity: 10493632547511126841
+  - Entity: 9460996739099185842
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.spawnzone
@@ -133,7 +113,7 @@ Entities:
       ZoneSize: [1, 1, 1]
       RenderSpawnZoneInScene: true
       SpawnPoint: [0, 0, 0]
-  - Entity: 8122404633476084070
+  - Entity: 4778789298773233597
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -161,7 +141,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 15213519351090273991
+  - Entity: 11126984930915530263
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -198,7 +178,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 13647509897566276444
+  - Entity: 11213051912543104493
     ModelComponent:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       MaterialPaths:
@@ -235,7 +215,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 1225889767680969503
+  - Entity: 13440731477335120845
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -272,7 +252,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 4606870803938447670
+  - Entity: 10247248576802853363
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -309,7 +289,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 14405816178714511961
+  - Entity: 6521399713941188909
     ModelComponent:
       ModelPath: models/bridge.glb
       MaterialPaths:
@@ -346,7 +326,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 4576291335827054289
+  - Entity: 9732375131142024372
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -355,7 +335,7 @@ Entities:
       Tag: train_vagons
     IDComponent:
       {}
-  - Entity: 2288600441525859885
+  - Entity: 13094547691225791268
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -383,7 +363,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: models/toy_train/train_vagon.glb
       IsColliding: false
-  - Entity: 5010971894008866744
+  - Entity: 16029290503234204286
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       MaterialPaths:
@@ -396,11 +376,22 @@ Entities:
       Tag: Helicopter
     IDComponent:
       {}
+    AudioComponent:
+      SoundPath: audio/freesound_community-helicopter-1-60738.mp3
+      Volume: 1
+      Pitch: 1
+      Loop: false
+      PlayOnStart: false
+      Spatialized: false
+      Position: [0, 0, 0]
+      MinDistance: 1
+      MaxDistance: 100
+      IsPlaying: false
     AnimationComponent:
       BlendDuration: 0
       IsLooping: true
       PlayOnStart: true
-  - Entity: 14899791195437876337
+  - Entity: 16340965209653525119
     ModelComponent:
       ModelPath: models/container_ship/scene.gltf
       MaterialPaths:
@@ -439,7 +430,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 5370840836599139430
+  - Entity: 13093325952115314959
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.cameracontroller
@@ -457,8 +448,8 @@ Entities:
       verticalFov: 60
       orthographicSize: 10
     TransformComponent:
-      Translation: [-18.5967941, 146.825439, 212.176117]
-      Rotation: [0.138000205, 6.99300432, 0]
+      Translation: [0, 0, 10]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
       Tag: Camera
@@ -472,7 +463,7 @@ Entities:
         - Name: color
           Value: 0
       Enabled: true
-  - Entity: 5576865868179640965
+  - Entity: 14537422297122042850
     ModelComponent:
       ModelPath: models/stone_floor.glb
       MaterialPaths:
@@ -511,7 +502,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 5043825472299465876
+  - Entity: 2250125707730791880
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -554,7 +545,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 2895529628596634702
+  - Entity: 14556641653297674038
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.gamehud
@@ -615,7 +606,7 @@ Entities:
       BlendDuration: 1.70000005
       IsLooping: true
       PlayOnStart: true
-  - Entity: 12594730450664506117
+  - Entity: 6277533744521107582
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       MaterialPaths:
@@ -632,7 +623,7 @@ Entities:
       BlendDuration: 0
       IsLooping: true
       PlayOnStart: true
-  - Entity: 898090899947901630
+  - Entity: 10414656468662302729
     ModelComponent:
       ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
       MaterialPaths:
@@ -663,7 +654,7 @@ Entities:
       BlendDuration: 0
       IsLooping: true
       PlayOnStart: true
-  - Entity: 3587599917145405716
+  - Entity: 4869522029784331374
     ModelComponent:
       ModelPath: models/arena.glb
       MaterialPaths:
@@ -706,7 +697,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 11793717768311941084
+  - Entity: 326100391902960597
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -734,7 +725,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 7722938943308494954
+  - Entity: 3888102243739195450
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -762,7 +753,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 4516516894329016606
+  - Entity: 15836731039300608243
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -790,7 +781,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 6205064826853870552
+  - Entity: 15108337454245787901
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -818,7 +809,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 10607188486718945505
+  - Entity: 11452185014421237180
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -846,7 +837,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 11166106515738586287
+  - Entity: 5971230338104136923
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -874,7 +865,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 10776558731940805143
+  - Entity: 11342626955523131540
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -902,7 +893,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: ""
       IsColliding: false
-  - Entity: 13485380205870266342
+  - Entity: 10802839049207883463
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       MaterialPaths:
@@ -930,7 +921,7 @@ Entities:
       UseFastBuildQuality: true
       ModelPath: models/toy_train/train_vagon.glb
       IsColliding: false
-  - Entity: 1044308194771331822
+  - Entity: 14060861460480355739
     ModelComponent:
       ModelPath: models/stairs.glb
       MaterialPaths:
@@ -967,7 +958,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 1815997782324758951
+  - Entity: 8944321138653180678
     ModelComponent:
       ModelPath: models_backup/building/scene.gltf
       MaterialPaths:
@@ -1009,7 +1000,7 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 17185067683815882824
+  - Entity: 9418828993492393771
     ModelComponent:
       ModelPath: models/minigames/hub_for_minigames_server.glb
       MaterialPaths:
@@ -1049,78 +1040,27 @@ Entities:
       Handle: 0
       Velocity: [0, 0, 0]
       IsGrounded: false
-  - Entity: 15804461437006072258
-    ModelComponent:
-      ModelPath: models/tavern/the_thankful_glory_-_fantasy_tavern/scene.gltf
-      MaterialPaths:
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_0.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_1.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_2.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_3.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_4.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_5.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_6.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_7.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_8.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_9.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_10.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_11.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_12.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_13.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_14.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_15.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_16.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_17.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_18.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_19.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_20.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_21.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_22.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_23.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_24.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_25.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_26.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_27.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_28.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_29.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_30.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_31.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_32.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_33.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_34.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_35.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_36.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_37.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_38.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_39.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_40.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_41.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_42.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_43.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_44.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_45.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_46.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_47.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_48.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_49.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_50.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_51.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_52.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_53.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_54.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_55.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_56.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_57.chmat
-        - models/tavern/the_thankful_glory_-_fantasy_tavern/scene_material_58.chmat
+  - Entity: 14045213368679777613
     TransformComponent:
-      Translation: [-4424.86621, 20.0999374, -674.094482]
-      Rotation: [0, 0.918334186, 0]
-      Scale: [0.999996781, 1, 0.999996781]
+      Translation: [-135.637207, 137.265976, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
     TagComponent:
-      Tag: Island_copy
+      Tag: ambient_sound
     IDComponent:
       {}
-  - Entity: 15046991351406422823
+    AudioComponent:
+      SoundPath: audio/storegraphic-soft-wind-477404.mp3
+      Volume: 2
+      Pitch: 3
+      Loop: false
+      PlayOnStart: false
+      Spatialized: false
+      Position: [0, 0, 0]
+      MinDistance: 1
+      MaxDistance: 1000
+      IsPlaying: false
+  - Entity: 9034885937142755026
     TransformComponent:
       Translation: [-51.6971283, 137.265976, 0]
       Rotation: [0, -0, 0]

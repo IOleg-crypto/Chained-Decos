@@ -1,4 +1,5 @@
 #include "editor_menu.h"
+#include "editor/editor_colors.h"
 #include "editor/layer.h"
 #include "editor/panels.h"
 #include "editor/project/project_exporter.h"
@@ -116,11 +117,6 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
                 p->IsOpen() = true;
             }
         }
-        if (ImGui::MenuItem(ICON_FA_ROCKET " Build & Run"))
-        {
-            AppLaunchRuntimeEvent e;
-            Application::Get().OnEvent(e);
-        }
         bool isExporting = false;
         {
             std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
@@ -190,6 +186,56 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
             m_ShowEditorSettings = true;
         }
         ImGui::EndMenu();
+    }
+
+    // ── Main Menu Bar Playback Controls (Play / Simulate) ────────────────────
+    float barWidth = ImGui::GetWindowWidth();
+    float centerPos = (barWidth - 160.0f) * 0.5f;
+    if (centerPos > ImGui::GetCursorPosX())
+    {
+        ImGui::SameLine(centerPos);
+    }
+
+    SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
+    bool isPlaying = (sceneState == SceneState::Play);
+    bool isSimulating = (sceneState == SceneState::Simulate);
+
+    // Play / Stop Button
+    if (isPlaying)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
+    }
+    if (ImGui::Button(isPlaying ? (ICON_FA_STOP " Stop") : (ICON_FA_PLAY " Play"), ImVec2(65, 20)))
+    {
+        EditorLayer::Get().GetSceneManager().SetSceneState(isPlaying ? SceneState::Edit : SceneState::Play);
+    }
+    if (isPlaying)
+    {
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip(isPlaying ? "Stop Game" : "Play Game (Run Physics & Scripts)");
+    }
+
+    ImGui::SameLine(0, 5);
+
+    // Simulate / Stop Button
+    if (isSimulating)
+    {
+        ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange);
+    }
+    if (ImGui::Button(isSimulating ? (ICON_FA_STOP " Stop") : (ICON_FA_GEARS " Simulate"), ImVec2(80, 20)))
+    {
+        EditorLayer::Get().GetSceneManager().SetSceneState(isSimulating ? SceneState::Edit : SceneState::Simulate);
+    }
+    if (isSimulating)
+    {
+        ImGui::PopStyleColor();
+    }
+    if (ImGui::IsItemHovered())
+    {
+        ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Physics Only)");
     }
 
     // ── Export progress: snapshot state here, rendering happens in DrawExportProgressOverlay() ──

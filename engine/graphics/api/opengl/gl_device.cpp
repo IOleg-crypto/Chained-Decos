@@ -40,10 +40,22 @@ void GLDevice::GetViewport(int* x, int* y, int* width, int* height) const
     // GetFramebufferBinding() reads the live GL state.
     GLint vp[4] = {0, 0, 0, 0};
     glGetIntegerv(GL_VIEWPORT, vp);
-    if (x) *x = vp[0];
-    if (y) *y = vp[1];
-    if (width) *width = vp[2];
-    if (height) *height = vp[3];
+    if (x)
+    {
+        *x = vp[0];
+    }
+    if (y)
+    {
+        *y = vp[1];
+    }
+    if (width)
+    {
+        *width = vp[2];
+    }
+    if (height)
+    {
+        *height = vp[3];
+    }
 }
 
 void GLDevice::SetClearColor(const Color& color)
@@ -62,19 +74,38 @@ void GLDevice::Clear()
 
 void GLDevice::SetDepthFunc(DepthFunc func)
 {
-    if (m_StateCache.DepthFunction == func) return;
+    if (m_StateCache.DepthFunction == func)
+    {
+        return;
+    }
 
     GLenum glFunc = GL_LESS;
     switch (func)
     {
-    case DepthFunc::Never:    glFunc = GL_NEVER; break;
-    case DepthFunc::Less:     glFunc = GL_LESS; break;
-    case DepthFunc::Equal:    glFunc = GL_EQUAL; break;
-    case DepthFunc::LEqual:   glFunc = GL_LEQUAL; break;
-    case DepthFunc::Greater:  glFunc = GL_GREATER; break;
-    case DepthFunc::NotEqual: glFunc = GL_NOTEQUAL; break;
-    case DepthFunc::GEqual:   glFunc = GL_GEQUAL; break;
-    case DepthFunc::Always:   glFunc = GL_ALWAYS; break;
+    case DepthFunc::Never:
+        glFunc = GL_NEVER;
+        break;
+    case DepthFunc::Less:
+        glFunc = GL_LESS;
+        break;
+    case DepthFunc::Equal:
+        glFunc = GL_EQUAL;
+        break;
+    case DepthFunc::LEqual:
+        glFunc = GL_LEQUAL;
+        break;
+    case DepthFunc::Greater:
+        glFunc = GL_GREATER;
+        break;
+    case DepthFunc::NotEqual:
+        glFunc = GL_NOTEQUAL;
+        break;
+    case DepthFunc::GEqual:
+        glFunc = GL_GEQUAL;
+        break;
+    case DepthFunc::Always:
+        glFunc = GL_ALWAYS;
+        break;
     }
     glDepthFunc(glFunc);
     m_StateCache.DepthFunction = func;
@@ -82,17 +113,29 @@ void GLDevice::SetDepthFunc(DepthFunc func)
 
 void GLDevice::SetDepthTest(bool enabled)
 {
-    if (m_StateCache.DepthTest == enabled) return;
+    if (m_StateCache.DepthTest == enabled)
+    {
+        return;
+    }
 
-    if (enabled) glEnable(GL_DEPTH_TEST);
-    else glDisable(GL_DEPTH_TEST);
-    
+    if (enabled)
+    {
+        glEnable(GL_DEPTH_TEST);
+    }
+    else
+    {
+        glDisable(GL_DEPTH_TEST);
+    }
+
     m_StateCache.DepthTest = enabled;
 }
 
 void GLDevice::SetDepthMask(bool enabled)
 {
-    if (m_StateCache.DepthMask == enabled) return;
+    if (m_StateCache.DepthMask == enabled)
+    {
+        return;
+    }
 
     glDepthMask(enabled ? GL_TRUE : GL_FALSE);
     m_StateCache.DepthMask = enabled;
@@ -100,7 +143,10 @@ void GLDevice::SetDepthMask(bool enabled)
 
 void GLDevice::SetCullMode(CullMode mode)
 {
-    if (m_StateCache.Cull == mode) return;
+    if (m_StateCache.Cull == mode)
+    {
+        return;
+    }
 
     if (mode == CullMode::None)
     {
@@ -111,9 +157,15 @@ void GLDevice::SetCullMode(CullMode mode)
         glEnable(GL_CULL_FACE);
         switch (mode)
         {
-        case CullMode::Front:          glCullFace(GL_FRONT); break;
-        case CullMode::Back:           glCullFace(GL_BACK); break;
-        case CullMode::FrontAndBack:   glCullFace(GL_FRONT_AND_BACK); break;
+        case CullMode::Front:
+            glCullFace(GL_FRONT);
+            break;
+        case CullMode::Back:
+            glCullFace(GL_BACK);
+            break;
+        case CullMode::FrontAndBack:
+            glCullFace(GL_FRONT_AND_BACK);
+            break;
         }
     }
     m_StateCache.Cull = mode;
@@ -121,31 +173,53 @@ void GLDevice::SetCullMode(CullMode mode)
 
 void GLDevice::SetBlendEnabled(bool enabled)
 {
-    if (m_StateCache.Blend == enabled) return;
+    if (m_StateCache.Blend == enabled)
+    {
+        return;
+    }
 
-    if (enabled) glEnable(GL_BLEND);
-    else glDisable(GL_BLEND);
-    
+    if (enabled)
+    {
+        glEnable(GL_BLEND);
+    }
+    else
+    {
+        glDisable(GL_BLEND);
+    }
+
     m_StateCache.Blend = enabled;
 }
 
 void GLDevice::SetBlendFunc(BlendFactor src, BlendFactor dst)
 {
-    if (m_StateCache.SrcBlend == src && m_StateCache.DstBlend == dst) return;
+    if (m_StateCache.SrcBlend == src && m_StateCache.DstBlend == dst)
+    {
+        return;
+    }
 
     auto toGL = [](BlendFactor factor) -> GLenum {
         switch (factor)
         {
-        case BlendFactor::Zero:                return GL_ZERO;
-        case BlendFactor::One:                 return GL_ONE;
-        case BlendFactor::SrcColor:            return GL_SRC_COLOR;
-        case BlendFactor::OneMinusSrcColor:    return GL_ONE_MINUS_SRC_COLOR;
-        case BlendFactor::DstColor:            return GL_DST_COLOR;
-        case BlendFactor::OneMinusDstColor:    return GL_ONE_MINUS_DST_COLOR;
-        case BlendFactor::SrcAlpha:            return GL_SRC_ALPHA;
-        case BlendFactor::OneMinusSrcAlpha:    return GL_ONE_MINUS_SRC_ALPHA;
-        case BlendFactor::DstAlpha:            return GL_DST_ALPHA;
-        case BlendFactor::OneMinusDstAlpha:    return GL_ONE_MINUS_DST_ALPHA;
+        case BlendFactor::Zero:
+            return GL_ZERO;
+        case BlendFactor::One:
+            return GL_ONE;
+        case BlendFactor::SrcColor:
+            return GL_SRC_COLOR;
+        case BlendFactor::OneMinusSrcColor:
+            return GL_ONE_MINUS_SRC_COLOR;
+        case BlendFactor::DstColor:
+            return GL_DST_COLOR;
+        case BlendFactor::OneMinusDstColor:
+            return GL_ONE_MINUS_DST_COLOR;
+        case BlendFactor::SrcAlpha:
+            return GL_SRC_ALPHA;
+        case BlendFactor::OneMinusSrcAlpha:
+            return GL_ONE_MINUS_SRC_ALPHA;
+        case BlendFactor::DstAlpha:
+            return GL_DST_ALPHA;
+        case BlendFactor::OneMinusDstAlpha:
+            return GL_ONE_MINUS_DST_ALPHA;
         }
         return GL_ONE;
     };
@@ -156,7 +230,10 @@ void GLDevice::SetBlendFunc(BlendFactor src, BlendFactor dst)
 
 void GLDevice::SetLineWidth(float width)
 {
-    if (width < 1.0f) width = 1.0f;
+    if (width < 1.0f)
+    {
+        width = 1.0f;
+    }
     glLineWidth(width);
 }
 
@@ -165,7 +242,9 @@ void GLDevice::DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint
     vertexArray->Bind();
     auto ib = vertexArray->GetIndexBuffer();
     if (!ib)
+    {
         return;
+    }
     uint32_t count = indexCount ? indexCount : ib->GetCount();
     glDrawElements(GL_TRIANGLES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 }
@@ -175,7 +254,9 @@ void GLDevice::DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray,
     vertexArray->Bind();
     auto ib = vertexArray->GetIndexBuffer();
     if (!ib)
+    {
         return;
+    }
     uint32_t count = indexCount ? indexCount : ib->GetCount();
     glDrawElements(GL_LINES, (GLsizei)count, GL_UNSIGNED_INT, nullptr);
 }
@@ -188,7 +269,10 @@ void GLDevice::DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32
 
 void GLDevice::SetPolygonMode(PolygonMode mode)
 {
-    if (m_StateCache.PolyMode == mode) return;
+    if (m_StateCache.PolyMode == mode)
+    {
+        return;
+    }
 
     GLenum glMode = GL_FILL;
     switch (mode)
@@ -230,12 +314,14 @@ void GLDevice::DrawArrays(uint32_t vertexCount)
 }
 
 void GLDevice::DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount,
-                                             uint32_t indexCount)
+                                    uint32_t indexCount)
 {
     vertexArray->Bind();
     auto ib = vertexArray->GetIndexBuffer();
     if (!ib)
+    {
         return;
+    }
     uint32_t count = indexCount ? indexCount : ib->GetCount();
     glDrawElementsInstanced(GL_TRIANGLES, (GLsizei)count, GL_UNSIGNED_INT, nullptr, (GLsizei)instanceCount);
 }
@@ -249,7 +335,9 @@ void GLDevice::SetTexture(uint32_t slot, uint32_t textureId, bool isCubemap)
 {
     auto it = m_StateCache.BoundTextures.find(slot);
     if (it != m_StateCache.BoundTextures.end() && it->second == textureId)
+    {
         return;
+    }
 
     glActiveTexture(GL_TEXTURE0 + slot);
     glBindTexture(isCubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, textureId);

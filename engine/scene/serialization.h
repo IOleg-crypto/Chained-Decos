@@ -8,7 +8,6 @@
 #include <algorithm>
 #include <filesystem>
 
-
 namespace Chained::Serialization
 {
 // --- YAML Serialization Helpers ---
@@ -164,7 +163,8 @@ public:
         return PropertyInternal(name, value);
     }
 
-    virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options, const PropertyMeta& meta = {}) override
+    virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options,
+                            const PropertyMeta& meta = {}) override
     {
         return PropertyInternal(name, value);
     }

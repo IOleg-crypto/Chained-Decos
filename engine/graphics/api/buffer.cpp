@@ -10,8 +10,10 @@ std::shared_ptr<VertexBuffer> VertexBuffer::Create(uint32_t size)
 {
     switch (GraphicsDevice::GetAPI())
     {
-        case GraphicsDevice::API::None:    return nullptr;
-        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLVertexBuffer>(size);
+    case GraphicsDevice::API::None:
+        return nullptr;
+    case GraphicsDevice::API::OpenGL:
+        return std::make_shared<GLVertexBuffer>(size);
     }
     return nullptr;
 }
@@ -20,8 +22,10 @@ std::shared_ptr<VertexBuffer> VertexBuffer::Create(const float* vertices, uint32
 {
     switch (GraphicsDevice::GetAPI())
     {
-        case GraphicsDevice::API::None:    return nullptr;
-        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLVertexBuffer>(vertices, size);
+    case GraphicsDevice::API::None:
+        return nullptr;
+    case GraphicsDevice::API::OpenGL:
+        return std::make_shared<GLVertexBuffer>(vertices, size);
     }
     return nullptr;
 }
@@ -30,8 +34,10 @@ std::shared_ptr<IndexBuffer> IndexBuffer::Create(const uint32_t* indices, uint32
 {
     switch (GraphicsDevice::GetAPI())
     {
-        case GraphicsDevice::API::None:    return nullptr;
-        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLIndexBuffer>(indices, count);
+    case GraphicsDevice::API::None:
+        return nullptr;
+    case GraphicsDevice::API::OpenGL:
+        return std::make_shared<GLIndexBuffer>(indices, count);
     }
     return nullptr;
 }
@@ -40,8 +46,10 @@ std::shared_ptr<UniformBuffer> UniformBuffer::Create(uint32_t size, uint32_t bin
 {
     switch (GraphicsDevice::GetAPI())
     {
-        case GraphicsDevice::API::None:    return nullptr;
-        case GraphicsDevice::API::OpenGL:  return std::make_shared<GLUniformBuffer>(size, binding);
+    case GraphicsDevice::API::None:
+        return nullptr;
+    case GraphicsDevice::API::OpenGL:
+        return std::make_shared<GLUniformBuffer>(size, binding);
     }
     return nullptr;
 }

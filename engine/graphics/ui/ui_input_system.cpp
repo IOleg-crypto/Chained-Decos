@@ -34,7 +34,9 @@ void UpdateUIInput(entt::registry& registry, const UILayoutSystem& layout, bool 
     for (auto entityID : view)
     {
         if (view.get<ControlComponent>(entityID).IsActive)
+        {
             sorted.push_back(entityID);
+        }
     }
 
     // Sort by Z-order: highest (topmost) first.
@@ -50,8 +52,8 @@ void UpdateUIInput(entt::registry& registry, const UILayoutSystem& layout, bool 
         auto& widget = view.get<UIControlComponent>(entityID);
         UIRect rect = layout.GetEntityRect(entityID);
 
-        bool isOver = mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width &&
-                      mousePos.y >= rect.y && mousePos.y <= rect.y + rect.height;
+        bool isOver = mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
+                      mousePos.y <= rect.y + rect.height;
 
         bool wasDown = widget.PrevIsDown;
 
@@ -71,9 +73,9 @@ void UpdateUIInput(entt::registry& registry, const UILayoutSystem& layout, bool 
                 widget.PressedThisFrame = true;
             }
         }
-        
+
         // Suppress inputs globally at the end (e.g. crossing Edit->Play boundary).
-        // This ensures PrevIsDown is still properly updated so human hold-overs 
+        // This ensures PrevIsDown is still properly updated so human hold-overs
         // don't trigger false edges on the frame AFTER suppression ends.
         if (suppress)
         {

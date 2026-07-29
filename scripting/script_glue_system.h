@@ -39,4 +39,3 @@ CH_SCRIPT_FUNC float Physics_GetGravity();
 
 } // namespace Chained
 #endif
-

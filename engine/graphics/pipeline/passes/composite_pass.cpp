@@ -13,20 +13,35 @@ void CompositePass::Init()
 
 void CompositePass::Execute(const RenderContext& ctx)
 {
-    if (!m_Initialized) return;
+    if (!m_Initialized)
+    {
+        return;
+    }
 
     const auto& env = ctx.Renderer->GetEnvironment();
 
     // Delegate fog uniform upload to LightingManager to avoid duplication.
     auto* renderer = ServiceLocator::TryGet<Renderer>();
-    if (!renderer) return;
-    if (!renderer->GetShaderLibrary().Exists("Lighting")) return;
+    if (!renderer)
+    {
+        return;
+    }
+    if (!renderer->GetShaderLibrary().Exists("Lighting"))
+    {
+        return;
+    }
 
     auto lightingAsset = renderer->GetShaderLibrary().Get("Lighting");
-    if (!lightingAsset) return;
+    if (!lightingAsset)
+    {
+        return;
+    }
 
     auto shader = lightingAsset->GetShader();
-    if (!shader) return;
+    if (!shader)
+    {
+        return;
+    }
 
     shader->Bind();
     renderer->ApplyFogUniforms(shader.get());

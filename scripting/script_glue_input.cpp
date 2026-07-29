@@ -6,8 +6,14 @@ namespace Chained
 void Input_GetMouseDelta(float* outX, float* outY)
 {
     glm::vec2 delta = Core::Input::GetMouseDelta();
-    if (outX) *outX = delta.x;
-    if (outY) *outY = delta.y;
+    if (outX)
+    {
+        *outX = delta.x;
+    }
+    if (outY)
+    {
+        *outY = delta.y;
+    }
 }
 float Input_GetMouseWheelMove()
 {

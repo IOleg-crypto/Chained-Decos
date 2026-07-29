@@ -31,7 +31,7 @@ struct BufferedLogEntry
     std::string timestamp;
 };
 
-using LogCallbackFn = void(*)(const char*, int);
+using LogCallbackFn = void (*)(const char*, int);
 
 class Log
 {
@@ -53,21 +53,24 @@ public:
             const long long secs =
                 std::chrono::duration_cast<std::chrono::seconds>(msg.time.time_since_epoch()).count();
             char ts[32];
-            std::snprintf(ts, sizeof(ts), "[%02lld:%02lld:%02lld] ",
-                (secs / 3600) % 24, (secs / 60) % 60, secs % 60);
+            std::snprintf(ts, sizeof(ts), "[%02lld:%02lld:%02lld] ", (secs / 3600) % 24, (secs / 60) % 60, secs % 60);
             std::string timestamp = ts;
 
             std::lock_guard<std::mutex> lock(s_BufferMutex);
-            s_Buffer.push_back({ static_cast<LogLevel>(msg.level), message, timestamp });
+            s_Buffer.push_back({static_cast<LogLevel>(msg.level), message, timestamp});
             if (s_Buffer.size() > MAX_BUFFERED_MESSAGES)
+            {
                 s_Buffer.pop_front();
+            }
 
             if (s_LogCallback)
+            {
                 s_LogCallback(message.c_str(), static_cast<int>(msg.level));
+            }
         });
 
-        std::vector<spdlog::sink_ptr> sinks { console_sink, callback_sink };
-        
+        std::vector<spdlog::sink_ptr> sinks{console_sink, callback_sink};
+
         s_CoreLogger = std::make_shared<spdlog::logger>("CORE", sinks.begin(), sinks.end());
         s_CoreLogger->set_level(spdlog::level::trace);
         // Flush only on warnings+ — flushing the console sink on every trace/info
@@ -101,13 +104,20 @@ public:
     static std::vector<BufferedLogEntry> ConsumeBufferedMessages()
     {
         std::lock_guard<std::mutex> lock(s_BufferMutex);
-        std::vector<BufferedLogEntry> messages(std::make_move_iterator(s_Buffer.begin()), std::make_move_iterator(s_Buffer.end()));
+        std::vector<BufferedLogEntry> messages(std::make_move_iterator(s_Buffer.begin()),
+                                               std::make_move_iterator(s_Buffer.end()));
         s_Buffer.clear();
         return messages;
     }
 
-    inline static std::shared_ptr<spdlog::logger>& GetCoreLogger() { return s_CoreLogger; }
-    inline static std::shared_ptr<spdlog::logger>& GetClientLogger() { return s_ClientLogger; }
+    inline static std::shared_ptr<spdlog::logger>& GetCoreLogger()
+    {
+        return s_CoreLogger;
+    }
+    inline static std::shared_ptr<spdlog::logger>& GetClientLogger()
+    {
+        return s_ClientLogger;
+    }
 
 private:
     inline static std::shared_ptr<spdlog::logger> s_CoreLogger;
@@ -121,18 +131,18 @@ private:
 
 // Core logging macros
 #ifdef CH_ENABLE_LOGGING
-#define CH_CORE_TRACE(...)  ::Chained::Log::GetCoreLogger()->trace(__VA_ARGS__)
-#define CH_CORE_INFO(...)   ::Chained::Log::GetCoreLogger()->info(__VA_ARGS__)
-#define CH_CORE_WARN(...)   ::Chained::Log::GetCoreLogger()->warn(__VA_ARGS__)
-#define CH_CORE_ERROR(...)  ::Chained::Log::GetCoreLogger()->error(__VA_ARGS__)
-#define CH_CORE_FATAL(...)  ::Chained::Log::GetCoreLogger()->critical(__VA_ARGS__)
+#define CH_CORE_TRACE(...) ::Chained::Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define CH_CORE_INFO(...) ::Chained::Log::GetCoreLogger()->info(__VA_ARGS__)
+#define CH_CORE_WARN(...) ::Chained::Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define CH_CORE_ERROR(...) ::Chained::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define CH_CORE_FATAL(...) ::Chained::Log::GetCoreLogger()->critical(__VA_ARGS__)
 
 // Client logging macros
-#define CH_TRACE(...)  ::Chained::Log::GetClientLogger()->trace(__VA_ARGS__)
-#define CH_INFO(...)   ::Chained::Log::GetClientLogger()->info(__VA_ARGS__)
-#define CH_WARN(...)   ::Chained::Log::GetClientLogger()->warn(__VA_ARGS__)
-#define CH_ERROR(...)  ::Chained::Log::GetClientLogger()->error(__VA_ARGS__)
-#define CH_FATAL(...)  ::Chained::Log::GetClientLogger()->critical(__VA_ARGS__)
+#define CH_TRACE(...) ::Chained::Log::GetClientLogger()->trace(__VA_ARGS__)
+#define CH_INFO(...) ::Chained::Log::GetClientLogger()->info(__VA_ARGS__)
+#define CH_WARN(...) ::Chained::Log::GetClientLogger()->warn(__VA_ARGS__)
+#define CH_ERROR(...) ::Chained::Log::GetClientLogger()->error(__VA_ARGS__)
+#define CH_FATAL(...) ::Chained::Log::GetClientLogger()->critical(__VA_ARGS__)
 #else
 // Core logging macros
 #define CH_CORE_TRACE(...)
@@ -150,4 +160,3 @@ private:
 #endif
 
 #endif // CH_LOG_H
-

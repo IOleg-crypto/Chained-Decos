@@ -64,21 +64,42 @@ public:
     virtual ~GraphicsDevice() = default;
 
     virtual void Init() = 0;
-    virtual void Initialize() { Init(); }
-    virtual void Shutdown() {}
+    virtual void Initialize()
+    {
+        Init();
+    }
+    virtual void Shutdown()
+    {
+    }
     virtual void SetViewport(int x, int y, int width, int height) = 0;
     virtual void GetViewport(int* x, int* y, int* width, int* height) const = 0;
     virtual void SetClearColor(const Color& color) = 0;
     virtual void Clear() = 0;
-    virtual void Clear(const Color& color) { SetClearColor(color); Clear(); }
+    virtual void Clear(const Color& color)
+    {
+        SetClearColor(color);
+        Clear();
+    }
 
     virtual void SetDepthFunc(DepthFunc func) = 0;
     virtual void SetDepthTest(bool enabled) = 0;
     virtual void SetDepthMask(bool enabled) = 0;
-    virtual void EnableDepthTest() { SetDepthTest(true); }
-    virtual void DisableDepthTest() { SetDepthTest(false); }
-    virtual void EnableDepthMask() { SetDepthMask(true); }
-    virtual void DisableDepthMask() { SetDepthMask(false); }
+    virtual void EnableDepthTest()
+    {
+        SetDepthTest(true);
+    }
+    virtual void DisableDepthTest()
+    {
+        SetDepthTest(false);
+    }
+    virtual void EnableDepthMask()
+    {
+        SetDepthMask(true);
+    }
+    virtual void DisableDepthMask()
+    {
+        SetDepthMask(false);
+    }
 
     virtual void SetCullMode(CullMode mode) = 0;
     virtual void SetBlendFunc(BlendFactor src, BlendFactor dst) = 0;
@@ -135,10 +156,10 @@ class PipelineStateGuard
 {
 public:
     PipelineStateGuard()
-        : m_DepthTest(GraphicsDevice::Get().IsDepthTestEnabled())
-        , m_Blend(GraphicsDevice::Get().IsBlendEnabled())
-        , m_Cull(GraphicsDevice::Get().IsCullFaceEnabled())
-        , m_PolyMode(GraphicsDevice::Get().GetPolygonMode())
+        : m_DepthTest(GraphicsDevice::Get().IsDepthTestEnabled()),
+          m_Blend(GraphicsDevice::Get().IsBlendEnabled()),
+          m_Cull(GraphicsDevice::Get().IsCullFaceEnabled()),
+          m_PolyMode(GraphicsDevice::Get().GetPolygonMode())
     {
     }
 
@@ -167,7 +188,8 @@ public:
     PipelineStateGuard& WithBlend()
     {
         GraphicsDevice::Get().SetBlendEnabled(true);
-        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha,
+                                           GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
         return *this;
     }
     PipelineStateGuard& WithCullNone()

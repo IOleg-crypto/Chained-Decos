@@ -1,7 +1,6 @@
 #ifndef CH_AUDIO_H
 #define CH_AUDIO_H
 
-
 #include "engine/common/timestep.h"
 #include "engine/common/uuid.h"
 #include <glm/glm.hpp>
@@ -13,7 +12,6 @@
 #include <vector>
 #include "engine/core/engine_module.h"
 
-
 namespace Chained
 {
 using AudioHandle = UUID;
@@ -21,6 +19,9 @@ using AudioHandle = UUID;
 struct SoundInstance
 {
     ma_sound Sound;
+    ma_decoder Decoder;
+    std::vector<uint8_t> SoundData;
+    bool HasDecoder = false;
     AudioHandle Handle;
 };
 
@@ -47,6 +48,7 @@ public:
 public:
     Audio();
     virtual ~Audio() override;
+
 public:
     void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
 
@@ -68,10 +70,11 @@ public:
 
 public:
     ma_engine* GetEngine() const;
+
 private:
     std::unique_ptr<ma_engine, MiniaudioEngineDeleter> m_engine;
-private:
 
+private:
     mutable std::mutex m_DataMutex;
     std::vector<std::unique_ptr<SoundInstance>> m_ActiveSounds;
     std::unordered_map<std::string, AudioHandle> m_PathToHandle;

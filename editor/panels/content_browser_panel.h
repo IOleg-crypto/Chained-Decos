@@ -16,6 +16,7 @@ public:
 
     void OnImGuiRender(bool readOnly = false) override;
     void OnEvent(Event& e) override;
+
 private:
     void RenderToolbar();
     void RenderGridView();
@@ -25,9 +26,18 @@ private:
     void Scan();
     EditorAssetType DetermineAssetType(const std::filesystem::path& path);
 
-    const std::vector<AssetEntry>& GetAssets() const { return m_CurrentAssets; }
-    const std::filesystem::path& GetCurrentDirectory() const { return m_CurrentDirectory; }
-    const std::filesystem::path& GetRootDirectory() const { return m_RootDirectory; }
+    const std::vector<AssetEntry>& GetAssets() const
+    {
+        return m_CurrentAssets;
+    }
+    const std::filesystem::path& GetCurrentDirectory() const
+    {
+        return m_CurrentDirectory;
+    }
+    const std::filesystem::path& GetRootDirectory() const
+    {
+        return m_RootDirectory;
+    }
 
     void SetRoot(const std::filesystem::path& path);
     void SetFilter(const std::string& query, int typeFilter);

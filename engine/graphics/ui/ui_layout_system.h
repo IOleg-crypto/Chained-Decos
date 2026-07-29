@@ -17,10 +17,16 @@ public:
     UILayoutSystem() = default;
 
     void Update(Scene* scene, const ImVec2& viewportSize, const ImVec2& viewportPos);
-    
+
     UIRect GetEntityRect(entt::entity entity) const;
-    float  GetScaleFactor() const { return m_ScaleFactor; }
-    const UIRect& GetVirtualCanvas() const { return m_VirtualCanvas; }
+    float GetScaleFactor() const
+    {
+        return m_ScaleFactor;
+    }
+    const UIRect& GetVirtualCanvas() const
+    {
+        return m_VirtualCanvas;
+    }
 
 private:
     UIRect CalculateRecursive(Entity entity, const UIRect& canvasRect);

@@ -8,10 +8,10 @@ namespace Chained
 {
 namespace AudioSystem
 {
-    void Update(entt::registry& reg, Timestep ts);
-    void OnRuntimeStart(entt::registry& reg);
-    void OnRuntimeStop(entt::registry& reg);
-}
+void Update(entt::registry& reg, Timestep ts);
+void OnRuntimeStart(entt::registry& reg);
+void OnRuntimeStop(entt::registry& reg);
+} // namespace AudioSystem
 } // namespace Chained
 
 #endif // CH_AUDIO_SYSTEM_H
