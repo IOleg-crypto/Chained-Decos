@@ -53,16 +53,11 @@ Application::Application(const ApplicationSpecification& spec)
     // --- 1. Create Window ---
     if (!m_Specification.Headless)
     {
-        WindowProperties props{m_Specification.Name, m_Specification.WindowWidth, m_Specification.WindowHeight};
-        props.VSync = m_Specification.VSync;
-        props.Fullscreen = m_Specification.Fullscreen;
-        props.Resizable = m_Specification.Resizable;
-        props.IconPath = m_Specification.AppIcon;
-
-        m_Window = std::unique_ptr<Window>(Window::Create(props));
+        m_Window = Window::Create(m_Specification.Window);
         m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
     }
 
+    ServiceLocator::Provide(std::make_unique<Core::Input>());
     ServiceLocator::Provide(std::make_unique<ThreadPool>(workerCount));
     ServiceLocator::Provide(std::make_unique<AssetManager>());
 
@@ -70,7 +65,9 @@ Application::Application(const ApplicationSpecification& spec)
     if (!m_Specification.EngineRoot.empty())
     {
         if (auto* am = ServiceLocator::TryGet<AssetManager>())
+        {
             am->SetEngineRoot(m_Specification.EngineRoot);
+        }
         CH_CORE_INFO("AssetManager: Engine root set to '{}'", m_Specification.EngineRoot.string());
     }
 
@@ -93,7 +90,9 @@ Application::Application(const ApplicationSpecification& spec)
     if (m_Window)
     {
         if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+        {
             renderer->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
+        }
     }
 
     m_LayerStack = std::make_unique<LayerStack>();
@@ -120,7 +119,7 @@ Application::~Application()
 
     ServiceLocator::Shutdown();
     Dialogs::Shutdown();
-    Core::Input::Shutdown();
+    // NOTE: Input is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
     // Log::Shutdown() MUST come after m_Window.reset(): ~GlfwWindow::Shutdown() emits
@@ -150,9 +149,13 @@ void Application::Run()
         {
             // 1. Systems Update
             if (auto* audio = ServiceLocator::TryGet<Audio>())
+            {
                 audio->Update(m_Timer.DeltaTime);
+            }
             if (auto* am = ServiceLocator::TryGet<AssetManager>())
+            {
                 am->Update(m_Timer.DeltaTime);
+            }
 
             // 2. Fixed Update
             m_Timer.Accumulator += (float)m_Timer.DeltaTime;
@@ -203,7 +206,9 @@ void Application::OnEvent(Event& e)
     {
         auto& re = static_cast<WindowResizeEvent&>(e);
         if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+        {
             renderer->SetViewportSize(re.GetWidth(), re.GetHeight());
+        }
     }
 
     for (auto it = m_LayerStack->rbegin(); it != m_LayerStack->rend(); ++it)

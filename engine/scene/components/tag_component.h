@@ -8,9 +8,11 @@ namespace Chained
 struct TagComponent
 {
     std::string Tag;
-    static const char* GetStaticName() { return "TagComponent"; }
+    static const char* GetStaticName()
+    {
+        return "TagComponent";
+    }
 
-    
     struct UI
     {
         UIMeta Tag = {.Tooltip = "Custom tag for entity lookup and filtering"};

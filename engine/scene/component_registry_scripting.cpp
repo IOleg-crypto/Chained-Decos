@@ -37,26 +37,25 @@ void SerializeManagedScript(YAML::Emitter& out, Entity entity)
                 std::visit(
                     [&out](auto&& fieldValue) {
                         using T = std::decay_t<decltype(fieldValue)>;
-                        if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int> ||
-                                      std::is_same_v<T, bool> || std::is_same_v<T, std::string> ||
-                                      std::is_same_v<T, uint64_t>)
+                        if constexpr (std::is_same_v<T, float> || std::is_same_v<T, int> || std::is_same_v<T, bool> ||
+                                      std::is_same_v<T, std::string> || std::is_same_v<T, uint64_t>)
                         {
                             out << YAML::Key << "Value" << YAML::Value << fieldValue;
                         }
                         else if constexpr (std::is_same_v<T, glm::vec2>)
                         {
-                            out << YAML::Key << "Value" << YAML::Value << YAML::Flow << YAML::BeginSeq
-                                << fieldValue.x << fieldValue.y << YAML::EndSeq;
+                            out << YAML::Key << "Value" << YAML::Value << YAML::Flow << YAML::BeginSeq << fieldValue.x
+                                << fieldValue.y << YAML::EndSeq;
                         }
                         else if constexpr (std::is_same_v<T, glm::vec3>)
                         {
-                            out << YAML::Key << "Value" << YAML::Value << YAML::Flow << YAML::BeginSeq
-                                << fieldValue.x << fieldValue.y << fieldValue.z << YAML::EndSeq;
+                            out << YAML::Key << "Value" << YAML::Value << YAML::Flow << YAML::BeginSeq << fieldValue.x
+                                << fieldValue.y << fieldValue.z << YAML::EndSeq;
                         }
                         else if constexpr (std::is_same_v<T, glm::vec4>)
                         {
-                            out << YAML::Key << "Value" << YAML::Value << YAML::Flow << YAML::BeginSeq
-                                << fieldValue.x << fieldValue.y << fieldValue.z << fieldValue.w << YAML::EndSeq;
+                            out << YAML::Key << "Value" << YAML::Value << YAML::Flow << YAML::BeginSeq << fieldValue.x
+                                << fieldValue.y << fieldValue.z << fieldValue.w << YAML::EndSeq;
                         }
                         else if constexpr (std::is_same_v<T, Chained::Color>)
                         {

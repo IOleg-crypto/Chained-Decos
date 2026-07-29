@@ -17,13 +17,15 @@ bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos,
     return changed;
 }
 
-bool RenderComboBox(ComboBoxData& combo, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font, const TextStyle& textStyle)
+bool RenderComboBox(ComboBoxData& combo, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+                    const TextStyle& textStyle)
 {
     ImGui::SetCursorScreenPos(pos);
     ImGui::SetNextItemWidth(size.x);
 
     const char* preview = (combo.SelectedIndex >= 0 && combo.SelectedIndex < (int)combo.Items.size())
-        ? combo.Items[combo.SelectedIndex].c_str() : "Select...";
+                              ? combo.Items[combo.SelectedIndex].c_str()
+                              : "Select...";
 
     bool changed = false;
     if (ImGui::BeginCombo("##combo", preview))
@@ -36,7 +38,10 @@ bool RenderComboBox(ComboBoxData& combo, UIControlComponent& wc, const ImVec2& p
                 combo.SelectedIndex = i;
                 changed = true;
             }
-            if (isSelected) ImGui::SetItemDefaultFocus();
+            if (isSelected)
+            {
+                ImGui::SetItemDefaultFocus();
+            }
         }
         ImGui::EndCombo();
     }
@@ -57,23 +62,30 @@ bool RenderInputText(InputTextData& input, UIControlComponent& wc, const ImVec2&
     ImGui::SetNextItemWidth(size.x);
 
     ImGuiInputTextFlags flags = 0;
-    if (input.ReadOnly)   flags |= ImGuiInputTextFlags_ReadOnly;
-    if (input.Password)   flags |= ImGuiInputTextFlags_Password;
+    if (input.ReadOnly)
+    {
+        flags |= ImGuiInputTextFlags_ReadOnly;
+    }
+    if (input.Password)
+    {
+        flags |= ImGuiInputTextFlags_Password;
+    }
 
     bool changed = false;
     if (input.Multiline)
     {
-        changed = ImGui::InputTextMultiline("##inputtext", input.InputBuffer.data(),
-                                            input.InputBuffer.size(), size, flags);
+        changed =
+            ImGui::InputTextMultiline("##inputtext", input.InputBuffer.data(), input.InputBuffer.size(), size, flags);
     }
     else
     {
-        changed = ImGui::InputText("##inputtext", input.InputBuffer.data(),
-                                   input.InputBuffer.size(), flags);
+        changed = ImGui::InputText("##inputtext", input.InputBuffer.data(), input.InputBuffer.size(), flags);
     }
 
     if (changed)
+    {
         input.Text = input.InputBuffer.data();
+    }
 
     return changed;
 }
@@ -103,8 +115,14 @@ bool RenderColorPicker(ColorPickerData& picker, UIControlComponent& wc, const Im
     };
 
     ImGuiColorEditFlags flags = ImGuiColorEditFlags_NoLabel;
-    if (!picker.ShowAlpha)  flags |= ImGuiColorEditFlags_NoAlpha;
-    if (!picker.ShowPicker) flags |= ImGuiColorEditFlags_NoPicker;
+    if (!picker.ShowAlpha)
+    {
+        flags |= ImGuiColorEditFlags_NoAlpha;
+    }
+    if (!picker.ShowPicker)
+    {
+        flags |= ImGuiColorEditFlags_NoPicker;
+    }
 
     bool changed = false;
     if (picker.ShowPicker)

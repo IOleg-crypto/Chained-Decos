@@ -99,4 +99,3 @@ TEST(SerializationTest, PropertyArchiveNested)
 
     out << YAML::EndMap;
 }
-

@@ -17,23 +17,23 @@ namespace Chained
 
 namespace
 {
-    void SafeCopy(char* dst, size_t dstSize, const char* src)
-    {
-        strncpy(dst, src, dstSize - 1);
-        dst[dstSize - 1] = '\0';
-    }
+void SafeCopy(char* dst, size_t dstSize, const char* src)
+{
+    strncpy(dst, src, dstSize - 1);
+    dst[dstSize - 1] = '\0';
+}
 
-    constexpr float kSidebarWidth = 320.0f;
-    constexpr float kCardWidth = 300.0f;
-    constexpr float kCardHeight = 300.0f;
-    constexpr float kCardGap = 40.0f;
-    constexpr float kCardTextWrap = 280.0f;
-    constexpr float kPopupWidth = 480.0f;
-    constexpr float kInputWidth = 432.0f;
-    constexpr float kBtnWidth = 110.0f;
-    constexpr float kBtnHeight = 28.0f;
-    constexpr size_t kNameBufSize = 128;
-    constexpr size_t kLocationBufSize = 256;
+constexpr float kSidebarWidth = 320.0f;
+constexpr float kCardWidth = 300.0f;
+constexpr float kCardHeight = 300.0f;
+constexpr float kCardGap = 40.0f;
+constexpr float kCardTextWrap = 280.0f;
+constexpr float kPopupWidth = 480.0f;
+constexpr float kInputWidth = 432.0f;
+constexpr float kBtnWidth = 110.0f;
+constexpr float kBtnHeight = 28.0f;
+constexpr size_t kNameBufSize = 128;
+constexpr size_t kLocationBufSize = 256;
 } // namespace
 
 ProjectSelectorUI::ProjectSelectorUI(EditorProjectManager& projectManager)
@@ -222,7 +222,8 @@ void ProjectSelectorUI::OnImGuiRender()
         ImGui::SetNextWindowSize(ImVec2(kPopupWidth, 0), ImGuiCond_Appearing);
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(24, 20));
-        if (ImGui::BeginPopupModal("Create New Project", &m_ShowCreateDialog, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
+        if (ImGui::BeginPopupModal("Create New Project", &m_ShowCreateDialog,
+                                   ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoTitleBar))
         {
             // --- Header ---
             ImGui::SetWindowFontScale(1.2f);
@@ -241,7 +242,7 @@ void ProjectSelectorUI::OnImGuiRender()
             if (nameEmpty)
             {
                 ImGui::TextColored(ImVec4(1.0f, 0.45f, 0.45f, 1.0f),
-                    ICON_FA_CIRCLE_EXCLAMATION "  Name cannot be empty");
+                                   ICON_FA_CIRCLE_EXCLAMATION "  Name cannot be empty");
             }
             else
             {
@@ -255,9 +256,9 @@ void ProjectSelectorUI::OnImGuiRender()
             ImGui::SetNextItemWidth(360);
             ImGui::InputText("##ProjectLocation", m_ProjectLocationBuffer, kLocationBufSize);
             ImGui::SameLine(0, 8);
-            ImGui::PushStyleColor(ImGuiCol_Button,        EditorColors::ProjectCardBorder);
+            ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::ProjectCardBorder);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::ProjectCardBorderHover);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::ProjectCardBorderActive);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, EditorColors::ProjectCardBorderActive);
             if (ImGui::Button(ICON_FA_FOLDER_OPEN "  Browse", ImVec2(64, 0)))
             {
                 auto picked = Dialogs::PickFolder();
@@ -270,8 +271,7 @@ void ProjectSelectorUI::OnImGuiRender()
 
             // --- Path preview box ---
             ImGui::Dummy(ImVec2(0, 10));
-            std::filesystem::path previewPath =
-                std::filesystem::path(m_ProjectLocationBuffer) / m_ProjectNameBuffer;
+            std::filesystem::path previewPath = std::filesystem::path(m_ProjectLocationBuffer) / m_ProjectNameBuffer;
 
             ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorColors::SubCardBg);
             ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 4.0f);
@@ -291,9 +291,9 @@ void ProjectSelectorUI::OnImGuiRender()
 
             ImGui::SetCursorPosX(kInputWidth + 24 - kBtnWidth * 2 - 8);
 
-            ImGui::PushStyleColor(ImGuiCol_Button,        EditorColors::SubCardBorder);
+            ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::SubCardBorder);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::SubCardBorderHover);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::SubCardBorderActive);
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, EditorColors::SubCardBorderActive);
             if (ImGui::Button("Cancel", ImVec2(kBtnWidth, kBtnHeight)))
             {
                 m_ShowCreateDialog = false;
@@ -304,10 +304,10 @@ void ProjectSelectorUI::OnImGuiRender()
             ImGui::SameLine(0, 8);
 
             ImGui::BeginDisabled(nameEmpty);
-            ImGui::PushStyleColor(ImGuiCol_Button,        EditorColors::PrimaryButton);
+            ImGui::PushStyleColor(ImGuiCol_Button, EditorColors::PrimaryButton);
             ImGui::PushStyleColor(ImGuiCol_ButtonHovered, EditorColors::PrimaryButtonHover);
-            ImGui::PushStyleColor(ImGuiCol_ButtonActive,  EditorColors::PrimaryButtonActive);
-            ImGui::PushStyleColor(ImGuiCol_Text,          ImVec4(1.0f,  1.0f,  1.0f,  1.0f));
+            ImGui::PushStyleColor(ImGuiCol_ButtonActive, EditorColors::PrimaryButtonActive);
+            ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(1.0f, 1.0f, 1.0f, 1.0f));
             if (ImGui::Button(ICON_FA_FOLDER "  Create", ImVec2(kBtnWidth, kBtnHeight)))
             {
                 m_ProjectManager.NewProject(m_ProjectNameBuffer, previewPath.string());

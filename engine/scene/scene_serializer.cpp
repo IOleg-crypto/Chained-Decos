@@ -405,6 +405,19 @@ bool SceneSerializer::Deserialize(const std::string& filepath)
 {
     m_LastError.clear();
 
+    // ── 1. Try reading from pack archive ────────────────────────────────────
+    // ReadProjectAsset converts the absolute path to a project-relative pack key internally.
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (am && am->IsPacked())
+    {
+        auto data = am->ReadProjectAsset(filepath);
+        if (!data.empty())
+        {
+            return DeserializeFromString({data.begin(), data.end()});
+        }
+    }
+
+    // ── 2. Fallback: direct disk read ────────────────────────────────────────
     std::ifstream stream(filepath);
     if (!stream.is_open())
     {

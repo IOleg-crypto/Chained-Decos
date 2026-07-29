@@ -2,13 +2,14 @@
 #include "engine/core/log.h"
 #include "engine/scene/components.h"
 
-
 namespace Chained
 {
 void Camera_GetForward(uint64_t entityID, glm::vec3* outForward)
 {
     if (!outForward)
+    {
         return;
+    }
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<TransformComponent>())
     {
@@ -25,7 +26,9 @@ void Camera_GetForward(uint64_t entityID, glm::vec3* outForward)
 void Camera_GetRight(uint64_t entityID, glm::vec3* outRight)
 {
     if (!outRight)
+    {
         return;
+    }
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<TransformComponent>())
     {
@@ -40,7 +43,7 @@ void Camera_GetRight(uint64_t entityID, glm::vec3* outRight)
 }
 void Camera_SetOrbit(uint64_t entityID, float yaw, float pitch, float distance)
 {
-    //CH_CORE_INFO("[Diag Camera] SetOrbit entity={} yaw={} pitch={} dist={}", entityID, yaw, pitch, distance);
+    // CH_CORE_INFO("[Diag Camera] SetOrbit entity={} yaw={} pitch={} dist={}", entityID, yaw, pitch, distance);
     Entity entity = GetEntity(entityID);
     Scene* scene = GetActiveScene();
     if (entity && entity.HasComponent<CameraComponent>() && entity.HasComponent<TransformComponent>() && scene)
@@ -82,9 +85,18 @@ void Camera_GetOrbit(uint64_t entityID, float* yaw, float* pitch, float* distanc
     if (entity && entity.HasComponent<CameraComponent>())
     {
         auto& camera = entity.GetComponent<CameraComponent>();
-        if (yaw) *yaw = camera.OrbitYaw;
-        if (pitch) *pitch = camera.OrbitPitch;
-        if (distance) *distance = camera.OrbitDistance;
+        if (yaw)
+        {
+            *yaw = camera.OrbitYaw;
+        }
+        if (pitch)
+        {
+            *pitch = camera.OrbitPitch;
+        }
+        if (distance)
+        {
+            *distance = camera.OrbitDistance;
+        }
     }
 }
 bool Camera_GetPrimary(uint64_t entityID)

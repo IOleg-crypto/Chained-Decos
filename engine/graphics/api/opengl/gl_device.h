@@ -20,7 +20,7 @@ public:
     virtual void SetDepthFunc(DepthFunc func) override;
     virtual void SetDepthTest(bool enabled) override;
     virtual void SetDepthMask(bool enabled) override;
-    
+
     virtual void SetCullMode(CullMode mode) override;
     virtual void SetBlendFunc(BlendFactor src, BlendFactor dst) override;
     virtual void SetBlendEnabled(bool enabled) override;
@@ -41,7 +41,8 @@ public:
     virtual void ClearDepth() override;
 
     virtual void DrawIndexed(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
-    virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount, uint32_t indexCount = 0) override;
+    virtual void DrawIndexedInstanced(const std::shared_ptr<VertexArray>& vertexArray, uint32_t instanceCount,
+                                      uint32_t indexCount = 0) override;
     virtual void DrawIndexedLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t indexCount = 0) override;
     virtual void DrawLines(const std::shared_ptr<VertexArray>& vertexArray, uint32_t vertexCount) override;
     virtual void DrawArrays(uint32_t vertexCount) override;
@@ -50,13 +51,13 @@ public:
     virtual void SetTexture(uint32_t slot, uint32_t textureId, bool isCubemap = false) override;
 
 private:
-    float m_ClearColor[4] = { 0.1f, 0.1f, 0.1f, 1.0f };
+    float m_ClearColor[4] = {0.1f, 0.1f, 0.1f, 1.0f};
 
     struct RendererStateCache
     {
         uint32_t ActiveShader = 0;
         std::unordered_map<uint32_t, uint32_t> BoundTextures; // Slot -> TextureID
-        
+
         bool DepthTest = false;
         bool DepthMask = true;
         bool Blend = false;

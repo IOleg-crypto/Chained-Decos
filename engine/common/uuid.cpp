@@ -27,7 +27,6 @@ UUID::UUID(const std::string& uuidStr)
     }
 }
 
-
 std::string UUID::ToString() const
 {
     return std::to_string(m_UUID);

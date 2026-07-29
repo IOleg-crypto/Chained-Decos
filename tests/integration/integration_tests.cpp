@@ -93,8 +93,6 @@ TEST_F(SceneIntegrationTest, ReloadSceneLifecycle)
     EXPECT_TRUE(reloadedScene->FindEntityByTag("Player"));
 }
 
-
-
 // --- Event System Integration ---
 
 class EventIntegrationTest : public ::testing::Test

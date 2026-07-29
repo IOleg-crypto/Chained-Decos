@@ -40,16 +40,19 @@ struct TextStyle
 {
     std::string FontName = "Default";
     float FontSize = 18.0f;
-    Color TextColor = { 255, 255, 255, 255 };
+    Color TextColor = {255, 255, 255, 255};
     bool Shadow = false;
     float ShadowOffset = 2.0f;
-    Color ShadowColor = { 0, 0, 0, 255 };
-    float LetterSpacing = { 1.0f };
+    Color ShadowColor = {0, 0, 0, 255};
+    float LetterSpacing = {1.0f};
     float LineHeight = 1.2f;
     HorizontalAlignment Horizontal = HorizontalAlignment::Center;
     VerticalAlignment Vertical = VerticalAlignment::Center;
 
-    static const char* GetStaticName() { return "TextStyle"; }
+    static const char* GetStaticName()
+    {
+        return "TextStyle";
+    }
 };
 
 struct UIStyle
@@ -60,7 +63,7 @@ struct UIStyle
 
     float Rounding = 4.0f;
     float BorderSize = 0.0f;
-    Color BorderColor = { 255, 255, 255, 255 };
+    Color BorderColor = {255, 255, 255, 255};
 
     bool UseGradient = false;
     Color GradientColor = {20, 20, 20, 255};
@@ -72,7 +75,8 @@ struct UIStyle
     float TransitionSpeed = 0.1f;
 
     // Runtime state (not serialized)
-    struct RuntimeState {
+    struct RuntimeState
+    {
         float AnimationAlpha = 0.0f; // 0 = idle, 1 = hover/pressed
         float CurrentScale = 1.0f;
         Color CurrentColor = {255, 255, 255, 255};

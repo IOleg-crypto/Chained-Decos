@@ -4,7 +4,6 @@
 #include "engine/core/mouse_codes.h"
 #include "engine/core/events/events.h"
 
-
 // --- Keyboard Events ---
 namespace Chained
 {

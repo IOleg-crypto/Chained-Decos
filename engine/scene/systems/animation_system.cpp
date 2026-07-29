@@ -25,7 +25,10 @@ void Update(entt::registry& reg, Timestep ts)
         auto& model = animView.get<ModelComponent>(entity);
 
         auto* assets = ServiceLocator::TryGet<AssetManager>();
-        if (!assets) continue;
+        if (!assets)
+        {
+            continue;
+        }
 
         auto handle = assets->LoadAsset(model.ModelPath, ModelAsset::GetStaticType());
         auto modelAsset = assets->Get<ModelAsset>(model.ModelPath);

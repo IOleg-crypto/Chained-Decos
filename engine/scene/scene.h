@@ -66,7 +66,10 @@ public:
     const SceneSettings& GetSettings() const;
     bool IsSimulationRunning() const;
     const std::vector<entt::entity>& GetRootEntities() const;
-    bool IsStartingUp() const { return m_IsStartingUp; }
+    bool IsStartingUp() const
+    {
+        return m_IsStartingUp;
+    }
 
 public: // Systems & Tools
     entt::registry& GetRegistry();

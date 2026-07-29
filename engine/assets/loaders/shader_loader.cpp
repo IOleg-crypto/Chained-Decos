@@ -116,7 +116,7 @@ std::shared_ptr<Shader> ShaderLoader::LoadShaderFromPaths(const std::string& vsP
 
 std::string ShaderLoader::ProcessShaderSource(const std::string& path, std::vector<std::string>& includedFiles)
 {
-    std::filesystem::path fullPath = std::filesystem::absolute(path);
+    std::filesystem::path fullPath = std::filesystem::weakly_canonical(path);
 
     for (const auto& included : includedFiles)
     {
@@ -135,7 +135,7 @@ std::string ShaderLoader::ProcessShaderSource(const std::string& path, std::vect
     bool exists = false;
     if (usePack)
     {
-        auto data = assetManager->ReadAssetData(path);
+        auto data = assetManager->ReadAssetData(fullPath.string());
         exists = !data.empty();
     }
     else
@@ -153,7 +153,7 @@ std::string ShaderLoader::ProcessShaderSource(const std::string& path, std::vect
     std::string fileContent;
     if (usePack)
     {
-        auto data = assetManager->ReadAssetData(path);
+        auto data = assetManager->ReadAssetData(fullPath.string());
         fileContent.assign(data.begin(), data.end());
     }
     else

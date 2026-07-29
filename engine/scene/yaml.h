@@ -337,16 +337,14 @@ template <> struct convert<Chained::ShaderUniform>
 
     static bool decode(const Node& node, Chained::ShaderUniform& rhs)
     {
-        
+
         if (!node.IsMap() || !node["Value"] || !node["Type"])
         {
             return false;
         }
 
-        
         DecodeField(node, "Name", rhs.Name);
 
-        
         int typeInt = node["Type"].as<int>();
 
         switch (typeInt)
@@ -367,7 +365,7 @@ template <> struct convert<Chained::ShaderUniform>
             rhs.Value = node["Value"].as<Chained::Color>();
             break;
         default:
-            return false; 
+            return false;
         }
 
         return true;
@@ -451,7 +449,6 @@ inline Emitter& operator<<(Emitter& out, const Chained::AssetHandle& handle)
 {
     return out << static_cast<uint64_t>(handle);
 }
-
 
 inline Emitter& operator<<(Emitter& out, const Chained::ShaderUniform& u)
 {

@@ -1,6 +1,7 @@
 #include "script_glue_ui.h"
 
-namespace Chained {
+namespace Chained
+{
 bool ButtonControl_IsClicked(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
@@ -45,7 +46,9 @@ void ButtonControl_SetLabel(uint64_t entityID, const Coral::UCChar* label)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ButtonData>(widget.Data))
+        {
             std::get<ButtonData>(widget.Data).Label = ch_u16_to_string(label);
+        }
     }
 }
 
@@ -56,7 +59,9 @@ void CheckboxControl_SetChecked(uint64_t entityID, bool checked)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<CheckboxData>(widget.Data))
+        {
             std::get<CheckboxData>(widget.Data).Checked = checked;
+        }
     }
 }
 
@@ -82,7 +87,9 @@ void LabelControl_SetText(uint64_t entityID, const Coral::UCChar* text)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<LabelData>(widget.Data))
+        {
             std::get<LabelData>(widget.Data).Text = ch_u16_to_string(text);
+        }
     }
 }
 
@@ -108,7 +115,9 @@ void SliderControl_SetLabel(uint64_t entityID, const Coral::UCChar* label)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             std::get<SliderData>(widget.Data).Label = ch_u16_to_string(label);
+        }
     }
 }
 float SliderControl_GetValue(uint64_t entityID)
@@ -118,7 +127,9 @@ float SliderControl_GetValue(uint64_t entityID)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             return std::get<SliderData>(widget.Data).Value;
+        }
     }
     return 0.0f;
 }
@@ -129,7 +140,9 @@ void SliderControl_SetValue(uint64_t entityID, float value)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             std::get<SliderData>(widget.Data).Value = value;
+        }
     }
 }
 float SliderControl_GetMin(uint64_t entityID)
@@ -139,7 +152,9 @@ float SliderControl_GetMin(uint64_t entityID)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             return std::get<SliderData>(widget.Data).Min;
+        }
     }
     return 0.0f;
 }
@@ -150,7 +165,9 @@ void SliderControl_SetMin(uint64_t entityID, float minVal)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             std::get<SliderData>(widget.Data).Min = minVal;
+        }
     }
 }
 float SliderControl_GetMax(uint64_t entityID)
@@ -160,7 +177,9 @@ float SliderControl_GetMax(uint64_t entityID)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             return std::get<SliderData>(widget.Data).Max;
+        }
     }
     return 0.0f;
 }
@@ -171,7 +190,9 @@ void SliderControl_SetMax(uint64_t entityID, float maxVal)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<SliderData>(widget.Data))
+        {
             std::get<SliderData>(widget.Data).Max = maxVal;
+        }
     }
 }
 
@@ -182,7 +203,9 @@ float ProgressBarControl_GetProgress(uint64_t entityID)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ProgressBarData>(widget.Data))
+        {
             return std::get<ProgressBarData>(widget.Data).Progress;
+        }
     }
     return 0.0f;
 }
@@ -193,7 +216,9 @@ void ProgressBarControl_SetProgress(uint64_t entityID, float progress)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ProgressBarData>(widget.Data))
+        {
             std::get<ProgressBarData>(widget.Data).Progress = progress;
+        }
     }
 }
 static thread_local Coral::UCString s_ProgressBarOverlayBuf;
@@ -218,7 +243,9 @@ void ProgressBarControl_SetOverlayText(uint64_t entityID, const Coral::UCChar* t
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ProgressBarData>(widget.Data))
+        {
             std::get<ProgressBarData>(widget.Data).OverlayText = ch_u16_to_string(text);
+        }
     }
 }
 bool ProgressBarControl_GetShowPercentage(uint64_t entityID)
@@ -228,7 +255,9 @@ bool ProgressBarControl_GetShowPercentage(uint64_t entityID)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ProgressBarData>(widget.Data))
+        {
             return std::get<ProgressBarData>(widget.Data).ShowPercentage;
+        }
     }
     return false;
 }
@@ -239,22 +268,24 @@ void ProgressBarControl_SetShowPercentage(uint64_t entityID, bool show)
     {
         auto& widget = entity.GetComponent<UIControlComponent>();
         if (std::holds_alternative<ProgressBarData>(widget.Data))
+        {
             std::get<ProgressBarData>(widget.Data).ShowPercentage = show;
+        }
     }
 }
 
 bool WidgetControl_GetActive(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    return entity && entity.HasComponent<ControlComponent>()
-        ? entity.GetComponent<ControlComponent>().IsActive
-        : false;
+    return entity && entity.HasComponent<ControlComponent>() ? entity.GetComponent<ControlComponent>().IsActive : false;
 }
 void WidgetControl_SetActive(uint64_t entityID, bool active)
 {
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<ControlComponent>())
+    {
         entity.GetComponent<ControlComponent>().IsActive = active;
+    }
 }
 
 static thread_local Coral::UCString s_TextColorBuf;
@@ -265,7 +296,8 @@ const Coral::UCChar* WidgetControl_GetTextColor(uint64_t entityID)
     if (entity && entity.HasComponent<UIControlComponent>())
     {
         auto& c = entity.GetComponent<UIControlComponent>().TextStyle.TextColor;
-        std::string s = std::to_string(c.r) + " " + std::to_string(c.g) + " " + std::to_string(c.b) + " " + std::to_string(c.a);
+        std::string s =
+            std::to_string(c.r) + " " + std::to_string(c.g) + " " + std::to_string(c.b) + " " + std::to_string(c.a);
         s_TextColorBuf = ToWide(s);
         return s_TextColorBuf.c_str();
     }
@@ -283,7 +315,6 @@ void WidgetControl_SetTextColorRGBA(uint64_t entityID, int r, int g, int b, int 
         col.a = (uint8_t)std::clamp(a, 0, 255);
     }
 }
-
 
 bool CheckboxControl_GetChecked(uint64_t entityID)
 {

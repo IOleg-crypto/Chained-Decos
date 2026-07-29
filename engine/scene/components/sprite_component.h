@@ -5,7 +5,6 @@
 #include "engine/reflection/reflection.h"
 #include "engine/reflection/reflection_rfl.h"
 
-
 namespace Chained
 {
 struct SpriteComponent
@@ -22,7 +21,6 @@ struct SpriteComponent
         return "SpriteComponent";
     }
 
-    
     struct UI
     {
         UIMeta TexturePath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".png,.jpg,.jpeg,.tga,.bmp"};

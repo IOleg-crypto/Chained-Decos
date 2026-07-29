@@ -27,9 +27,15 @@ static uint32_t GetTextureID(const std::shared_ptr<Texture>& tex, const std::str
     {
         return tex->GetNativeHandle();
     }
-    if (path.empty()) return 0;
+    if (path.empty())
+    {
+        return 0;
+    }
     auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
-    if (!assetMgr) return 0;
+    if (!assetMgr)
+    {
+        return 0;
+    }
     auto texAsset = assetMgr->Get<TextureAsset>(path);
     if (texAsset && texAsset->GetTexture())
     {
@@ -46,7 +52,10 @@ static void UpdateTextureFromPath(std::shared_ptr<Texture>& tex, const std::stri
         return;
     }
     auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
-    if (!assetMgr) return;
+    if (!assetMgr)
+    {
+        return;
+    }
     auto texAsset = assetMgr->Get<TextureAsset>(path);
     if (texAsset && texAsset->IsReady())
     {
@@ -71,7 +80,8 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
         ImGui::Indent();
         EditorGUI::BeginPropertyGrid();
         EditorGUI::PropertyColor("Color", mat.AlbedoColor);
-        if (EditorGUI::FileProperty("Texture", mat.AlbedoPath, GetTextureID(mat.AlbedoMap, mat.AlbedoPath), "png,jpg,tga"))
+        if (EditorGUI::FileProperty("Texture", mat.AlbedoPath, GetTextureID(mat.AlbedoMap, mat.AlbedoPath),
+                                    "png,jpg,tga"))
         {
             UpdateTextureFromPath(mat.AlbedoMap, mat.AlbedoPath);
         }
@@ -83,7 +93,8 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
     {
         ImGui::Indent();
         EditorGUI::BeginPropertyGrid();
-        if (EditorGUI::FileProperty("Normal Map", mat.NormalPath, GetTextureID(mat.NormalMap, mat.NormalPath), "png,jpg,tga"))
+        if (EditorGUI::FileProperty("Normal Map", mat.NormalPath, GetTextureID(mat.NormalMap, mat.NormalPath),
+                                    "png,jpg,tga"))
         {
             UpdateTextureFromPath(mat.NormalMap, mat.NormalPath);
         }
@@ -97,7 +108,8 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
         EditorGUI::BeginPropertyGrid();
         EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
         EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
-        if (EditorGUI::FileProperty("PBR Map", mat.MetallicRoughnessPath, GetTextureID(mat.MetallicRoughnessMap, mat.MetallicRoughnessPath), "png,jpg,tga"))
+        if (EditorGUI::FileProperty("PBR Map", mat.MetallicRoughnessPath,
+                                    GetTextureID(mat.MetallicRoughnessMap, mat.MetallicRoughnessPath), "png,jpg,tga"))
         {
             UpdateTextureFromPath(mat.MetallicRoughnessMap, mat.MetallicRoughnessPath);
         }
@@ -112,7 +124,8 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
         EditorGUI::BeginPropertyGrid();
         EditorGUI::PropertyColor("Color", mat.EmissiveColor, /*hdr*/ true);
         EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.05f, 0.0f, 1000.0f);
-        if (EditorGUI::FileProperty("Emissive Map", mat.EmissivePath, GetTextureID(mat.EmissiveMap, mat.EmissivePath), "png,jpg,tga"))
+        if (EditorGUI::FileProperty("Emissive Map", mat.EmissivePath, GetTextureID(mat.EmissiveMap, mat.EmissivePath),
+                                    "png,jpg,tga"))
         {
             UpdateTextureFromPath(mat.EmissiveMap, mat.EmissivePath);
         }
@@ -135,11 +148,15 @@ void MaterialPanel::DrawMaterialSlot(Material& mat)
 
 void MaterialPanel::OnImGuiRender(bool readOnly)
 {
-    if (!m_IsOpen) return;
+    if (!m_IsOpen)
+    {
+        return;
+    }
 
     ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    if (m_SelectedEntity && (!m_SelectedEntity.IsValid() || m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get()))
+    if (m_SelectedEntity &&
+        (!m_SelectedEntity.IsValid() || m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get()))
     {
         m_SelectedEntity = {};
     }
@@ -190,9 +207,10 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
             // Material Selection Sidebar / List
             ImGui::BeginChild("MaterialList", ImVec2(180, 0), true);
             ImGui::SetNextItemWidth(-1.0f);
-            ImGui::InputTextWithHint("##MatFilter", ICON_FA_MAGNIFYING_GLASS " Search...", m_FilterBuffer, sizeof(m_FilterBuffer));
+            ImGui::InputTextWithHint("##MatFilter", ICON_FA_MAGNIFYING_GLASS " Search...", m_FilterBuffer,
+                                     sizeof(m_FilterBuffer));
             ImGui::Separator();
-            
+
             std::string filterStr = m_FilterBuffer;
             std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), ::tolower);
 
@@ -201,7 +219,9 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
                 const Material& m = (*materials)[i];
                 std::string label = m.Name;
                 if (label.empty())
+                {
                     label = "Material " + std::to_string(i);
+                }
 
                 if (!filterStr.empty())
                 {
@@ -223,12 +243,15 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
                 {
                     ImVec4 swatch = {m.AlbedoColor.r, m.AlbedoColor.g, m.AlbedoColor.b, 1.0f};
                     ImGui::ColorButton("##swatch", swatch,
-                        ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker | ImGuiColorEditFlags_NoBorder,
-                        {14, 14});
+                                       ImGuiColorEditFlags_NoTooltip | ImGuiColorEditFlags_NoPicker |
+                                           ImGuiColorEditFlags_NoBorder,
+                                       {14, 14});
                 }
                 ImGui::SameLine();
                 if (ImGui::Selectable(label.c_str(), m_SelectedMaterialIndex == i))
+                {
                     m_SelectedMaterialIndex = i;
+                }
                 ImGui::PopID();
             }
             ImGui::EndChild();
@@ -242,7 +265,8 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
             if (m_SelectedMaterialIndex < (int)materials->size())
             {
                 Material& selected = (*materials)[m_SelectedMaterialIndex];
-                std::string title = selected.Name.empty() ? ("Material " + std::to_string(m_SelectedMaterialIndex)) : selected.Name;
+                std::string title =
+                    selected.Name.empty() ? ("Material " + std::to_string(m_SelectedMaterialIndex)) : selected.Name;
                 ImGui::TextColored({0.2f, 0.8f, 1.0f, 1.0f}, ICON_FA_PALETTE " Editing: %s", title.c_str());
                 ImGui::Separator();
                 ImGui::Spacing();
@@ -292,7 +316,9 @@ void MaterialPanel::OnImGuiRender(bool readOnly)
 void MaterialPanel::SaveMaterials()
 {
     if (!m_SelectedEntity || !m_SelectedEntity.IsValid())
+    {
         return;
+    }
 
     if (m_SelectedEntity.HasComponent<PrimitiveComponent>())
     {
@@ -309,9 +335,13 @@ void MaterialPanel::SaveMaterials()
     }
 
     if (!m_SelectedEntity.HasComponent<ModelComponent>())
+    {
         return;
+    }
     if (m_Materials.empty())
+    {
         return;
+    }
 
     auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
     std::filesystem::path modelPath(mc.ModelPath);
@@ -319,7 +349,10 @@ void MaterialPanel::SaveMaterials()
     std::filesystem::path modelDir = modelPath.parent_path();
 
     auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets) return;
+    if (!assets)
+    {
+        return;
+    }
 
     for (int i = 0; i < (int)m_Materials.size(); i++)
     {

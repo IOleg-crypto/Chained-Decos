@@ -28,8 +28,8 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     auto* sceneCtx = selectedEntity.GetRegistry().ctx().find<Scene*>();
     Scene* scene = (sceneCtx && *sceneCtx) ? *sceneCtx : nullptr;
     auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>();
-    UIRect rect = (scene && uiRenderer) ? uiRenderer->GetEntityRect(scene, selectedEntity, viewportSize, viewportPos)
-                                        : UIRect{};
+    UIRect rect =
+        (scene && uiRenderer) ? uiRenderer->GetEntityRect(scene, selectedEntity, viewportSize, viewportPos) : UIRect{};
 
     float scaleFactor = 1.0f;
     if (sceneCtx && *sceneCtx)
@@ -61,7 +61,9 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
     ImVec2 mousePos = ImGui::GetMousePos();
     UIHandleType hoveredHandle = UIHandleType::None;
 
-    bool isHoveredWindow = ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
+    bool isHoveredWindow =
+        ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByActiveItem |
+                               ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 
     auto ProcessHandle = [&](UIHandleType type, ImVec2 pos, UIHandleType& hovered) {
         bool hoveredItem = (isHoveredWindow && mousePos.x >= pos.x - HANDLE_SIZE && mousePos.x <= pos.x + HANDLE_SIZE &&
@@ -93,8 +95,8 @@ bool EditorUIManipulator::OnImGuiRender(Entity selectedEntity, ImVec2 viewportPo
             m_StartOffsetMin = cc.Transform.OffsetMin;
             m_StartOffsetMax = cc.Transform.OffsetMax;
         }
-        else if (isHoveredWindow && mousePos.x >= p1.x && mousePos.x <= p2.x &&
-                 mousePos.y >= p1.y && mousePos.y <= p2.y)
+        else if (isHoveredWindow && mousePos.x >= p1.x && mousePos.x <= p2.x && mousePos.y >= p1.y &&
+                 mousePos.y <= p2.y)
         {
             m_Dragging = true;
             m_StartMousePos = mousePos;

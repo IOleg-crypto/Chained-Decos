@@ -32,7 +32,9 @@ Physics::~Physics() = default;
 void Physics::Initialize()
 {
     if (s_JoltFactory)
+    {
         return;
+    }
     JPH::RegisterDefaultAllocator();
     s_JoltFactory = std::make_unique<JPH::Factory>();
     JPH::Factory::sInstance = s_JoltFactory.get();
@@ -185,7 +187,6 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         ctx.Accumulator = 0.0f;
     }
 
-
     if (stepped)
     {
         UpdateColliders(scene);
@@ -220,14 +221,18 @@ void Physics::UpdateColliders(Scene* scene)
             // Only update IsGrounded for active bodies; sleeping bodies do not move,
             // so their grounded state remains correct from the previous frame.
             if (isActive)
+            {
                 rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
+            }
             continue;
         }
 
         // Dynamic: read position, velocity and grounded state from Jolt
         // For sleeping bodies - position hasn't changed, IsGrounded is kept from previous frame.
         if (!isActive)
+        {
             continue;
+        }
 
         glm::vec3 pos;
         glm::quat rot;
@@ -311,7 +316,10 @@ void Physics::ApplyAutoCalculate(entt::entity entity, entt::registry& registry, 
     }
 
     auto* am = ServiceLocator::TryGet<AssetManager>();
-    if (!am) return;
+    if (!am)
+    {
+        return;
+    }
 
     auto handle = am->ResolveToHandle(modelPath);
     if (handle == AssetHandle(0))

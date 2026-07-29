@@ -25,9 +25,11 @@ struct CameraComponent
     float verticalFov = 60.0f;
     float orthographicSize = 10.0f;
 
-    static const char* GetStaticName() { return "CameraComponent"; }
+    static const char* GetStaticName()
+    {
+        return "CameraComponent";
+    }
 
-    
     struct UI
     {
         UIMeta TargetEntityTag = {.Tooltip = "Tag of the entity to follow (Orbit Camera)"};

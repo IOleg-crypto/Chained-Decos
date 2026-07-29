@@ -6,7 +6,7 @@
 #include "engine/common/base.h"
 #include <memory>
 #include <shared_mutex>
-#include <type_traits> 
+#include <type_traits>
 #include <typeindex>
 #include <unordered_map>
 
@@ -107,18 +107,18 @@ public:
         for (auto& module : modules)
         {
             if (!module->IsEnabled())
+            {
                 continue;
+            }
 
             try
             {
                 module->Initialize();
-            }
-            catch (const std::exception& e)
+            } catch (const std::exception& e)
             {
                 CH_CORE_ERROR("ServiceLocator: Module initialization failed with exception: {}", e.what());
                 module->SetEnabled(false);
-            }
-            catch (...)
+            } catch (...)
             {
                 CH_CORE_ERROR("ServiceLocator: Module initialization failed with an unknown exception.");
                 module->SetEnabled(false);
@@ -188,8 +188,7 @@ public:
                 else
                 {
                     CH_CORE_ASSERT(false, "ServiceLocator: Requested service is disabled (initialization failed?)!");
-                    CH_CORE_ERROR("ServiceLocator: Get<{}> returning nullptr — service is disabled.",
-                                  typeid(T).name());
+                    CH_CORE_ERROR("ServiceLocator: Get<{}> returning nullptr — service is disabled.", typeid(T).name());
                 }
                 return nullptr;
             }
@@ -213,7 +212,9 @@ public:
         {
             T* svc = static_cast<T*>(it->second.get());
             if (svc && svc->IsEnabled())
+            {
                 return svc;
+            }
         }
         return nullptr;
     }
@@ -240,7 +241,6 @@ private:
         static std::vector<std::shared_ptr<EngineModule>> s_Order;
         return s_Order;
     }
-
 
     static std::shared_mutex& GetMutex()
     {

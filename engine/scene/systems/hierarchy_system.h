@@ -17,12 +17,12 @@ struct UpdateTask
 
 namespace Hierarchy
 {
-    /**
-     * @brief Updates the world-space transforms for all entities in the hierarchy.
-     * Uses an iterative DFS approach with dirty-flag propagation.
-     */
-    void UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>& roots);
-}
+/**
+ * @brief Updates the world-space transforms for all entities in the hierarchy.
+ * Uses an iterative DFS approach with dirty-flag propagation.
+ */
+void UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>& roots);
+} // namespace Hierarchy
 
 } // namespace Chained
 

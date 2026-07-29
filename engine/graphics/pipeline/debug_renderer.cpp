@@ -37,7 +37,10 @@ void DebugRenderer::DrawLine(const glm::vec3& start, const glm::vec3& end, const
 
 void DebugRenderer::Flush(Renderer& renderer)
 {
-    if (m_Lines.Vertices.empty()) return;
+    if (m_Lines.Vertices.empty())
+    {
+        return;
+    }
 
     auto& rd = renderer.GetData();
 
@@ -62,7 +65,8 @@ void DebugRenderer::Flush(Renderer& renderer)
     {
         m_Lines.VBOSize = std::max(dataSize, (uint32_t)(1024 * sizeof(LineVertex)));
         m_Lines.VBO = VertexBuffer::Create(m_Lines.VBOSize);
-        m_Lines.VBO->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float4, "vertexColor"}});
+        m_Lines.VBO->SetLayout(
+            {{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float4, "vertexColor"}});
         m_Lines.VAO = VertexArray::Create();
         m_Lines.VAO->AddVertexBuffer(m_Lines.VBO);
     }
@@ -72,11 +76,15 @@ void DebugRenderer::Flush(Renderer& renderer)
     m_Lines.Vertices.clear();
 }
 
-void DebugRenderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform, Renderer& renderer, bool useWireframe)
+void DebugRenderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const glm::mat4& transform,
+                                 Renderer& renderer, bool useWireframe)
 {
     auto& rd = renderer.GetData();
     auto debugShader = rd.Shaders->LoadOrGet("ColliderDebug");
-    if (!debugShader || !debugShader->GetShader()) return;
+    if (!debugShader || !debugShader->GetShader())
+    {
+        return;
+    }
 
     auto shader = debugShader->GetShader();
     shader->Bind();
@@ -86,7 +94,10 @@ void DebugRenderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const
     shader->SetMatrix("u_Transform", transform);
 
     glm::vec4 finalColor = color;
-    if (!useWireframe) finalColor.a *= 0.35f;
+    if (!useWireframe)
+    {
+        finalColor.a *= 0.35f;
+    }
     shader->SetVec4("u_Color", finalColor);
 
     if (mesh.VAO)
@@ -94,45 +105,73 @@ void DebugRenderer::DrawMeshWire(const Mesh& mesh, const glm::vec4& color, const
         auto guard = PipelineStateGuard::Capture();
         guard.WithBlend();
         GraphicsDevice::Get().SetBlendEnabled(true);
-        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+        GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha,
+                                           GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
         if (useWireframe)
+        {
             GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Line);
+        }
         else
+        {
             GraphicsDevice::Get().SetPolygonMode(GraphicsDevice::PolygonMode::Fill);
+        }
 
         if (mesh.TriangleCount > 0)
+        {
             GraphicsDevice::Get().DrawIndexed(mesh.VAO, mesh.TriangleCount * 3);
+        }
         else if (mesh.VAO->GetIndexBuffer() != nullptr)
+        {
             GraphicsDevice::Get().DrawIndexedLines(mesh.VAO, mesh.VAO->GetIndexBuffer()->GetCount());
+        }
         else
+        {
             GraphicsDevice::Get().DrawLines(mesh.VAO, mesh.VertexCount);
+        }
     }
 }
 
-void DebugRenderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color, Renderer& renderer, bool useWireframe)
+void DebugRenderer::DrawCubeWires(const glm::mat4& transform, const glm::vec3& size, const glm::vec4& color,
+                                  Renderer& renderer, bool useWireframe)
 {
     glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), size);
     if (useWireframe && m_Resources.WireCubeModel && !m_Resources.WireCubeModel->Meshes.empty())
+    {
         DrawMeshWire(m_Resources.WireCubeModel->Meshes[0], color, model, renderer, true);
+    }
     else if (m_Resources.UnitCubeModel && !m_Resources.UnitCubeModel->Meshes.empty())
+    {
         DrawMeshWire(m_Resources.UnitCubeModel->Meshes[0], color, model, renderer, useWireframe);
+    }
 }
 
-void DebugRenderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color, Renderer& renderer, bool useWireframe)
+void DebugRenderer::DrawCapsuleWires(const glm::mat4& transform, float radius, float height, const glm::vec4& color,
+                                     Renderer& renderer, bool useWireframe)
 {
-    if (!m_Resources.UnitCapsuleModel) return;
+    if (!m_Resources.UnitCapsuleModel)
+    {
+        return;
+    }
     glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius, height, radius));
     for (auto& mesh : m_Resources.UnitCapsuleModel->Meshes)
+    {
         DrawMeshWire(mesh, color, model, renderer, useWireframe);
+    }
 }
 
-void DebugRenderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, Renderer& renderer, bool useWireframe)
+void DebugRenderer::DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color,
+                                    Renderer& renderer, bool useWireframe)
 {
-    if (!m_Resources.UnitSphereModel) return;
+    if (!m_Resources.UnitSphereModel)
+    {
+        return;
+    }
     glm::mat4 model = transform * glm::scale(glm::mat4(1.0f), glm::vec3(radius));
     for (auto& mesh : m_Resources.UnitSphereModel->Meshes)
+    {
         DrawMeshWire(mesh, color, model, renderer, useWireframe);
+    }
 }
 
 void DebugRenderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color, Renderer& renderer)
@@ -140,13 +179,17 @@ void DebugRenderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, cons
     auto& rd = renderer.GetData();
 
     auto shaderAsset = rd.Shaders->LoadOrGet("Grid");
-    if (!shaderAsset || !shaderAsset->GetShader()) return;
+    if (!shaderAsset || !shaderAsset->GetShader())
+    {
+        return;
+    }
 
     auto guard = PipelineStateGuard::Capture();
     GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
     GraphicsDevice::Get().DisableDepthTest();
     GraphicsDevice::Get().SetBlendEnabled(true);
-    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha,
+                                       GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
     shaderAsset->GetShader()->Bind();
 
@@ -165,10 +208,7 @@ void DebugRenderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, cons
     if (!m_GridPlaneVAO)
     {
         float vertices[] = {
-            -0.5f, 0.0f, -0.5f,
-             0.5f, 0.0f, -0.5f,
-             0.5f, 0.0f,  0.5f,
-            -0.5f, 0.0f,  0.5f,
+            -0.5f, 0.0f, -0.5f, 0.5f, 0.0f, -0.5f, 0.5f, 0.0f, 0.5f, -0.5f, 0.0f, 0.5f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 

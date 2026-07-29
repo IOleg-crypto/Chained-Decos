@@ -36,8 +36,7 @@ public:
     /// @param onProgress Optional callback invoked after each file is packed.
     /// @param cancelFlag If non-null, export is aborted between phases when set to true.
     /// @return ExportResult with success flag and optional error message.
-    static ExportResult ExportTo(const std::filesystem::path& outputDir,
-                                 ExportProgressCallback onProgress = nullptr,
+    static ExportResult ExportTo(const std::filesystem::path& outputDir, ExportProgressCallback onProgress = nullptr,
                                  const std::atomic<bool>* cancelFlag = nullptr);
 
 private:

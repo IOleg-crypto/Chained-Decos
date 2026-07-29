@@ -28,7 +28,10 @@ inline ImU32 GetControlColor(const UIStyle& style, const UIControlComponent& wc)
 inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSize, const std::string& text,
                                      const ImVec2& pos, const ImVec2& size, const TextStyle& textStyle)
 {
-    if (text.empty()) return;
+    if (text.empty())
+    {
+        return;
+    }
 
     // No per-widget font -> fall back to the current (default) font, but still
     // honor the widget's FontSize. ImGui 1.92 renders any font at any size.
@@ -43,18 +46,26 @@ inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
     ImVec2 textPos = pos;
 
     if (textStyle.Horizontal == HorizontalAlignment::Center)
+    {
         textPos.x += (size.x - textSize.x) * 0.5f;
+    }
     else if (textStyle.Horizontal == HorizontalAlignment::Right)
+    {
         textPos.x += (size.x - textSize.x);
+    }
 
     if (textStyle.Vertical == VerticalAlignment::Center)
+    {
         textPos.y += (size.y - textSize.y) * 0.5f;
+    }
     else if (textStyle.Vertical == VerticalAlignment::Bottom)
+    {
         textPos.y += (size.y - textSize.y);
+    }
 
     if (textStyle.Shadow)
     {
-        ImVec2 shadowPos = { textPos.x + textStyle.ShadowOffset, textPos.y + textStyle.ShadowOffset };
+        ImVec2 shadowPos = {textPos.x + textStyle.ShadowOffset, textPos.y + textStyle.ShadowOffset};
         dl->AddText(activeFont, activeSize, shadowPos, ToImU32(textStyle.ShadowColor), text.c_str());
     }
 
@@ -64,18 +75,25 @@ inline void RenderAlignedTextureText(ImDrawList* dl, ImFont* font, float fontSiz
 inline std::shared_ptr<TextureAsset> ResolveTexture(AssetHandle& handle, const std::string& path)
 {
     auto* am = ServiceLocator::TryGet<AssetManager>();
-    if (!am) return nullptr;
+    if (!am)
+    {
+        return nullptr;
+    }
 
     if (!path.empty())
     {
         auto asset = am->Get<TextureAsset>(path);
         if (asset)
+        {
             handle = static_cast<AssetHandle>(asset->GetID());
+        }
         return asset;
     }
 
     if (handle != 0)
+    {
         return am->Get<TextureAsset>(handle);
+    }
 
     return nullptr;
 }

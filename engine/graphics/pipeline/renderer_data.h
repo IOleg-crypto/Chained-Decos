@@ -22,15 +22,15 @@ namespace Chained
 // ---------------------------------------------------------------------------
 struct RenderLight
 {
-    glm::vec4 color     = {1.0f, 1.0f, 1.0f, 1.0f}; // 16 bytes
-    glm::vec3 position  = {0, 0, 0};                 // 12 bytes
-    float     intensity = 1.0f;                       // 4 bytes
-    glm::vec3 direction = {0, -1, 0};                // 12 bytes
-    float     radius    = 10.0f;                      // 4 bytes
-    float innerCutoff   = 15.0f;                      // 4 bytes
-    float outerCutoff   = 20.0f;                      // 4 bytes
-    int  type           = 0;                          // 4 bytes
-    int  enabled        = 0;                          // 4 bytes
+    glm::vec4 color = {1.0f, 1.0f, 1.0f, 1.0f}; // 16 bytes
+    glm::vec3 position = {0, 0, 0};             // 12 bytes
+    float intensity = 1.0f;                     // 4 bytes
+    glm::vec3 direction = {0, -1, 0};           // 12 bytes
+    float radius = 10.0f;                       // 4 bytes
+    float innerCutoff = 15.0f;                  // 4 bytes
+    float outerCutoff = 20.0f;                  // 4 bytes
+    int type = 0;                               // 4 bytes
+    int enabled = 0;                            // 4 bytes
 };
 
 // ---------------------------------------------------------------------------
@@ -54,9 +54,9 @@ struct LightingData
     RenderLight Lights[MaxLights];
     std::shared_ptr<StorageBuffer> LightSSBO;
     bool LightsDirty = true;
-    int  LightCount  = 0;
+    int LightCount = 0;
     LightingSettings CurrentLighting;
-    FogSettings      CurrentFog;
+    FogSettings CurrentFog;
 };
 
 // ---------------------------------------------------------------------------
@@ -71,12 +71,11 @@ struct SkyboxData
     unsigned int SourceTextureId = 0;
 };
 
-
 struct FrameState
 {
     glm::vec3 CameraPosition = {0.0f, 0.0f, 0.0f};
-    Timestep  Time           = 0.0f;
-    float     DiagnosticMode = 0.0f;
+    Timestep Time = 0.0f;
+    float DiagnosticMode = 0.0f;
     unsigned int CurrentShaderId = 0;
     glm::mat4 View = glm::mat4(1.0f);
     glm::mat4 Proj = glm::mat4(1.0f);
@@ -85,10 +84,10 @@ struct FrameState
 // Shadow state — propagated from ShadowPass after Execute
 struct ShadowState
 {
-    bool      Enabled        = false;
-    uint32_t  MapTextureID   = 0;
+    bool Enabled = false;
+    uint32_t MapTextureID = 0;
     glm::mat4 LightSpaceMatrix = glm::mat4(1.0f);
-    float     Bias           = 0.005f;
+    float Bias = 0.005f;
 };
 
 // Shared GPU geometry used for fullscreen quads, sprites, instancing, lines
@@ -101,21 +100,20 @@ struct GpuGeometry
 // GPU instancing cache
 struct InstancingState
 {
-    std::shared_ptr<class VertexBuffer>                          Buffer;
-    uint32_t                                                     Capacity = 0;
+    std::shared_ptr<class VertexBuffer> Buffer;
+    uint32_t Capacity = 0;
     std::unordered_map<VertexArray*, std::shared_ptr<VertexArray>> VAOCache;
 };
-
 
 // RendererData — composes all sub-states; owned by the Renderer singleton
 // ---------------------------------------------------------------------------
 struct RendererData
 {
-    SkyboxData      Skybox;
-    LightingData    Lighting;
-    FrameState      Frame;
-    ShadowState     Shadow;
-    GpuGeometry     Geometry;
+    SkyboxData Skybox;
+    LightingData Lighting;
+    FrameState Frame;
+    ShadowState Shadow;
+    GpuGeometry Geometry;
     InstancingState Instancing;
 
     std::unique_ptr<ShaderStorage> Shaders;
@@ -123,7 +121,6 @@ struct RendererData
 
     EnvironmentSettings CurrentEnv;
 };
-
 
 } // namespace Chained
 

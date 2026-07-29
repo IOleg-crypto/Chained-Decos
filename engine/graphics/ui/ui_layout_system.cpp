@@ -10,7 +10,10 @@ namespace Chained
 void UILayoutSystem::Update(Scene* scene, const ImVec2& viewportSize, const ImVec2& viewportPos)
 {
     m_RectCache.clear();
-    if (!scene) return;
+    if (!scene)
+    {
+        return;
+    }
 
     const CanvasSettings& canvas = scene->GetSettings().Canvas;
     m_ScaleFactor = 1.0f;
@@ -32,13 +35,13 @@ void UILayoutSystem::Update(Scene* scene, const ImVec2& viewportSize, const ImVe
 
     auto& registry = scene->GetRegistry();
     auto view = registry.view<ControlComponent>();
-    
+
     for (auto entityID : view)
     {
         Entity entity(entityID, &registry);
         CalculateRecursive(entity, m_VirtualCanvas);
     }
-    
+
     // Final pass to apply scale and viewport position
     for (auto& [id, rect] : m_RectCache)
     {
@@ -53,7 +56,9 @@ UIRect UILayoutSystem::GetEntityRect(entt::entity entity) const
 {
     auto it = m_RectCache.find(entity);
     if (it != m_RectCache.end())
+    {
         return it->second;
+    }
     return {0, 0, 0, 0};
 }
 
@@ -101,8 +106,8 @@ UIRect UILayoutSystem::CalculateRecursive(Entity entity, const UIRect& canvasRec
     }
 
     UIRect r = ComponentUtils::CalculateRect(control.Transform, {parentRect.width, parentRect.height},
-                                                {parentRect.x, parentRect.y});
-    
+                                             {parentRect.x, parentRect.y});
+
     m_RectCache[id] = r;
     return r;
 }

@@ -171,14 +171,30 @@ void ContentBrowserPanel::RenderGridView()
             {
                 switch (asset.type)
                 {
-                case EditorAssetType::Scene:   icon = ICON_FA_CUBES; break;
-                case EditorAssetType::Script:  icon = ICON_FA_FILE_CODE; break;
-                case EditorAssetType::Model:   icon = ICON_FA_SHAPES; break;
-                case EditorAssetType::Texture: icon = ICON_FA_IMAGE; break;
-                case EditorAssetType::Audio:   icon = ICON_FA_MUSIC; break;
-                case EditorAssetType::Prefab:  icon = ICON_FA_CUBE; break;
-                case EditorAssetType::Shader:  icon = ICON_FA_CODE; break;
-                default:                       icon = ICON_FA_FILE; break;
+                case EditorAssetType::Scene:
+                    icon = ICON_FA_CUBES;
+                    break;
+                case EditorAssetType::Script:
+                    icon = ICON_FA_FILE_CODE;
+                    break;
+                case EditorAssetType::Model:
+                    icon = ICON_FA_SHAPES;
+                    break;
+                case EditorAssetType::Texture:
+                    icon = ICON_FA_IMAGE;
+                    break;
+                case EditorAssetType::Audio:
+                    icon = ICON_FA_MUSIC;
+                    break;
+                case EditorAssetType::Prefab:
+                    icon = ICON_FA_CUBE;
+                    break;
+                case EditorAssetType::Shader:
+                    icon = ICON_FA_CODE;
+                    break;
+                default:
+                    icon = ICON_FA_FILE;
+                    break;
                 }
             }
 
@@ -427,14 +443,9 @@ void ContentBrowserPanel::Scan()
 
         if (!entry.isDirectory && m_ContentFilterType > 0)
         {
-            static constexpr EditorAssetType kFilterTypes[] = {
-                EditorAssetType::Scene,
-                EditorAssetType::Prefab,
-                EditorAssetType::Model,
-                EditorAssetType::Texture,
-                EditorAssetType::Script,
-                EditorAssetType::Audio
-            };
+            static constexpr EditorAssetType kFilterTypes[] = {EditorAssetType::Scene,  EditorAssetType::Prefab,
+                                                               EditorAssetType::Model,  EditorAssetType::Texture,
+                                                               EditorAssetType::Script, EditorAssetType::Audio};
             static constexpr int kFilterTypeCount = sizeof(kFilterTypes) / sizeof(kFilterTypes[0]);
 
             bool match = false;
@@ -469,16 +480,16 @@ EditorAssetType ContentBrowserPanel::DetermineAssetType(const std::filesystem::p
 
     static const std::unordered_map<std::string, EditorAssetType> s_ExtensionMap = {
         {".chscene", EditorAssetType::Scene},   {".chmap", EditorAssetType::Scene},
-        {".chprefab", EditorAssetType::Prefab},         {".h", EditorAssetType::Script},
-        {".cpp", EditorAssetType::Script},
-        {".cs", EditorAssetType::Script},      {".obj", EditorAssetType::Model},
-        {".gltf", EditorAssetType::Model},      {".glb", EditorAssetType::Model},
-        {".png", EditorAssetType::Texture},     {".jpg", EditorAssetType::Texture},
-        {".tga", EditorAssetType::Texture},     {".bmp", EditorAssetType::Texture},
-        {".wav", EditorAssetType::Audio},       {".ogg", EditorAssetType::Audio},
-        {".mp3", EditorAssetType::Audio},       {".glsl", EditorAssetType::Shader},
-        {".vs", EditorAssetType::Shader},       {".fs", EditorAssetType::Shader},
-        {".vert", EditorAssetType::Shader},     {".frag", EditorAssetType::Shader}};
+        {".chprefab", EditorAssetType::Prefab}, {".h", EditorAssetType::Script},
+        {".cpp", EditorAssetType::Script},      {".cs", EditorAssetType::Script},
+        {".obj", EditorAssetType::Model},       {".gltf", EditorAssetType::Model},
+        {".glb", EditorAssetType::Model},       {".png", EditorAssetType::Texture},
+        {".jpg", EditorAssetType::Texture},     {".tga", EditorAssetType::Texture},
+        {".bmp", EditorAssetType::Texture},     {".wav", EditorAssetType::Audio},
+        {".ogg", EditorAssetType::Audio},       {".mp3", EditorAssetType::Audio},
+        {".glsl", EditorAssetType::Shader},     {".vs", EditorAssetType::Shader},
+        {".fs", EditorAssetType::Shader},       {".vert", EditorAssetType::Shader},
+        {".frag", EditorAssetType::Shader}};
 
     std::string ext = path.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);

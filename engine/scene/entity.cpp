@@ -5,7 +5,8 @@ namespace Chained
 {
 
 Entity::Entity(entt::entity handle, entt::registry* registry)
-    : m_EntityHandle(handle), m_Registry(registry)
+    : m_EntityHandle(handle),
+      m_Registry(registry)
 {
     CH_CORE_ASSERT(m_Registry, "Entity initialized with null registry!");
 }
