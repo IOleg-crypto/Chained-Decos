@@ -34,7 +34,6 @@ public:
     void DrawExportDialog();
 
 private:
-
     // State for the Export Project feature
     struct ExportState
     {

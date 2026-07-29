@@ -43,8 +43,15 @@ void SceneScriptingManager::Unregister(SceneScriptingManager* manager)
 
 void SceneScriptingManager::ResetAll()
 {
-    std::lock_guard<std::mutex> lock(s_ManagersMutex);
-    for (auto* manager : s_Managers)
+    // Snapshot under lock, then iterate without holding it.
+    // OnRuntimeStop() may call Unregister() which also takes s_ManagersMutex —
+    // iterating while holding the lock would cause a deadlock.
+    std::vector<SceneScriptingManager*> snapshot;
+    {
+        std::lock_guard<std::mutex> lock(s_ManagersMutex);
+        snapshot = s_Managers;
+    }
+    for (auto* manager : snapshot)
     {
         manager->OnRuntimeStop();
     }

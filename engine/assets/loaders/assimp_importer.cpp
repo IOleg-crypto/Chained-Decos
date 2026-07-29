@@ -30,7 +30,10 @@ class PackIOStream : public Assimp::IOStream
     std::vector<char> m_Data;
     size_t m_Pos = 0;
 
-    PackIOStream(std::vector<char> data) : m_Data(std::move(data)) {}
+    PackIOStream(std::vector<char> data)
+        : m_Data(std::move(data))
+    {
+    }
 
 public:
     ~PackIOStream() override = default;
@@ -81,7 +84,9 @@ public:
         return m_Data.size();
     }
 
-    void Flush() override {}
+    void Flush() override
+    {
+    }
 };
 
 class PackIOSystem : public Assimp::IOSystem
@@ -91,7 +96,8 @@ class PackIOSystem : public Assimp::IOSystem
 
 public:
     PackIOSystem(const std::string& baseDir, bool packed)
-        : m_BaseDir(baseDir), m_Packed(packed)
+        : m_BaseDir(baseDir),
+          m_Packed(packed)
     {
         if (!m_BaseDir.empty() && m_BaseDir.back() != '/')
         {
@@ -101,8 +107,14 @@ public:
 
     ~PackIOSystem() override = default;
 
-    bool ChangeDirectory(const std::string&) override { return true; }
-    const std::string& CurrentDirectory() const override { return m_BaseDir; }
+    bool ChangeDirectory(const std::string&) override
+    {
+        return true;
+    }
+    const std::string& CurrentDirectory() const override
+    {
+        return m_BaseDir;
+    }
 
     bool Exists(const char* pFile) const override
     {
@@ -144,8 +156,7 @@ public:
                 delete fs;
                 return nullptr;
             }
-            std::vector<char> data((std::istreambuf_iterator<char>(*fs)),
-                                   std::istreambuf_iterator<char>());
+            std::vector<char> data((std::istreambuf_iterator<char>(*fs)), std::istreambuf_iterator<char>());
             delete fs;
             auto* stream = new PackIOStream(std::move(data));
             return stream;
@@ -364,9 +375,7 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
                 auto* ioSystem = new PackIOSystem(baseDir, true);
                 importer.SetIOHandler(ioSystem);
 
-                tryLoad("ReadFile(PackIO)", [&]() {
-                    return importer.ReadFile(path.string(), flags);
-                });
+                tryLoad("ReadFile(PackIO)", [&]() { return importer.ReadFile(path.string(), flags); });
 
                 // If still failed, try ReadFileFromMemory as last resort
                 if (!scene || !scene->mRootNode)

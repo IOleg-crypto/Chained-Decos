@@ -67,7 +67,10 @@ public:
     static void OnMouseMove(float x, float y);
     static void OnMouseScroll(float xOffset, float yOffset);
 
-    static Input* GetInstance() { return s_Instance; }
+    static Input* GetInstance()
+    {
+        return s_Instance;
+    }
 
 private:
     static Input* s_Instance;

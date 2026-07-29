@@ -658,9 +658,7 @@ std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
             // Convert absolute path to relative pack key by stripping known base directories
             std::string packKey = assetPath;
 
-            auto NormalizeSlashes = [](std::string& s) {
-                std::replace(s.begin(), s.end(), '\\', '/');
-            };
+            auto NormalizeSlashes = [](std::string& s) { std::replace(s.begin(), s.end(), '\\', '/'); };
 
             auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
                 if (base.empty())
@@ -736,9 +734,7 @@ bool AssetManager::HasAsset(const std::string& path) const
         // Same prefix stripping as ReadAssetData
         std::string packKey = path;
 
-        auto NormalizeSlashes = [](std::string& s) {
-            std::replace(s.begin(), s.end(), '\\', '/');
-        };
+        auto NormalizeSlashes = [](std::string& s) { std::replace(s.begin(), s.end(), '\\', '/'); };
 
         auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
             if (base.empty())

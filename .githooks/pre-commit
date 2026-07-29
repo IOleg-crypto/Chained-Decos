@@ -1,0 +1,13 @@
+#!/bin/sh
+# Git pre-commit hook: Auto-format staged C++ files using clang-format (excluding thirdparty/)
+
+set -e
+
+# Find staged C++ files excluding thirdparty/
+FILES=$(git diff --cached --name-only --diff-filter=ACMR | grep -E '\.(cpp|h|hpp|cc|cxx)$' | grep -v '^thirdparty/' || true)
+
+if [ -n "$FILES" ]; then
+    echo "[pre-commit] Formatting staged C++ files with clang-format..."
+    echo "$FILES" | xargs clang-format -i --style=file
+    echo "$FILES" | xargs git add
+fi
