@@ -22,9 +22,14 @@ public:
     void OnEvent(Event& e);
     void OnRenderUI();
 
-
-    bool IsReloadInProgress() const { return m_ReloadInProgress; }
-    void SetReloadInProgress(bool inProgress) { m_ReloadInProgress = inProgress; }
+    bool IsReloadInProgress() const
+    {
+        return m_ReloadInProgress;
+    }
+    void SetReloadInProgress(bool inProgress)
+    {
+        m_ReloadInProgress = inProgress;
+    }
 
     static void Register(SceneScriptingManager* manager);
     static void Unregister(SceneScriptingManager* manager);

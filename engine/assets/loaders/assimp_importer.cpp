@@ -1,4 +1,5 @@
 #include "engine/assets/loaders/assimp_importer.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/profiler.h"
 #include "engine/common/thread_pool.h"
@@ -6,6 +7,8 @@
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
+#include <assimp/IOSystem.hpp>
+#include <assimp/IOStream.hpp>
 #include "engine/core/service_locator.h"
 #include <cmath>
 #include <cstring>
@@ -18,6 +21,157 @@
 
 namespace Chained
 {
+
+// --- Pack-aware Assimp IOSystem for resolving GLTF external references from pack ---
+class PackIOStream : public Assimp::IOStream
+{
+    friend class PackIOSystem;
+
+    std::vector<char> m_Data;
+    size_t m_Pos = 0;
+
+    PackIOStream(std::vector<char> data) : m_Data(std::move(data)) {}
+
+public:
+    ~PackIOStream() override = default;
+
+    size_t Read(void* pBuffer, size_t pSize, size_t pCount) override
+    {
+        size_t bytesAvail = m_Data.size() - m_Pos;
+        size_t bytesNeeded = pSize * pCount;
+        size_t toRead = std::min(bytesAvail, bytesNeeded);
+        if (toRead == 0)
+        {
+            return 0;
+        }
+        std::memcpy(pBuffer, m_Data.data() + m_Pos, toRead);
+        m_Pos += toRead;
+        return toRead / pSize;
+    }
+
+    size_t Write(const void*, size_t, size_t) override
+    {
+        return 0;
+    }
+
+    aiReturn Seek(size_t pOffset, aiOrigin pOrigin) override
+    {
+        switch (pOrigin)
+        {
+        case aiOrigin_SET:
+            m_Pos = pOffset;
+            break;
+        case aiOrigin_CUR:
+            m_Pos += pOffset;
+            break;
+        case aiOrigin_END:
+            m_Pos = m_Data.size() + pOffset;
+            break;
+        }
+        return (m_Pos <= m_Data.size()) ? aiReturn_SUCCESS : aiReturn_FAILURE;
+    }
+
+    size_t Tell() const override
+    {
+        return m_Pos;
+    }
+
+    size_t FileSize() const override
+    {
+        return m_Data.size();
+    }
+
+    void Flush() override {}
+};
+
+class PackIOSystem : public Assimp::IOSystem
+{
+    std::string m_BaseDir;
+    bool m_Packed;
+
+public:
+    PackIOSystem(const std::string& baseDir, bool packed)
+        : m_BaseDir(baseDir), m_Packed(packed)
+    {
+        if (!m_BaseDir.empty() && m_BaseDir.back() != '/')
+        {
+            m_BaseDir += '/';
+        }
+    }
+
+    ~PackIOSystem() override = default;
+
+    bool ChangeDirectory(const std::string&) override { return true; }
+    const std::string& CurrentDirectory() const override { return m_BaseDir; }
+
+    bool Exists(const char* pFile) const override
+    {
+        if (!m_Packed)
+        {
+            return std::filesystem::exists(pFile);
+        }
+
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (!am || !am->IsPacked())
+        {
+            return std::filesystem::exists(pFile);
+        }
+
+        return am->HasAsset(pFile);
+    }
+
+    char getOsSeparator() const override
+    {
+#ifdef _WIN32
+        return '\\';
+#else
+        return '/';
+#endif
+    }
+
+    Assimp::IOStream* Open(const char* pFile, const char* pMode = "rb") override
+    {
+        if (std::string(pMode).find('w') != std::string::npos)
+        {
+            return nullptr;
+        }
+
+        if (!m_Packed)
+        {
+            auto* fs = new std::ifstream(pFile, std::ios::binary);
+            if (!fs->is_open())
+            {
+                delete fs;
+                return nullptr;
+            }
+            std::vector<char> data((std::istreambuf_iterator<char>(*fs)),
+                                   std::istreambuf_iterator<char>());
+            delete fs;
+            auto* stream = new PackIOStream(std::move(data));
+            return stream;
+        }
+
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (!am || !am->IsPacked())
+        {
+            return nullptr;
+        }
+
+        auto packData = am->ReadAssetData(pFile);
+        if (packData.empty())
+        {
+            return nullptr;
+        }
+
+        std::vector<char> charData(packData.begin(), packData.end());
+        return new PackIOStream(std::move(charData));
+    }
+
+    void Close(Assimp::IOStream* pFile) override
+    {
+        delete pFile;
+    }
+};
 
 static bool DecodeEmbeddedTexture(const aiTexture* texture, EmbeddedTextureData& out)
 {
@@ -95,11 +249,17 @@ static glm::vec4 ToColor(const aiColor4D& c)
 }
 
 template <typename KeyT, typename T, typename ConvertFn, typename InterpolateFn>
-static T InterpolateKeys(double time, const KeyT* keys, unsigned int count, unsigned int& lastKey,
-                         const T& defaultVal, ConvertFn convert, InterpolateFn lerpFn)
+static T InterpolateKeys(double time, const KeyT* keys, unsigned int count, unsigned int& lastKey, const T& defaultVal,
+                         ConvertFn convert, InterpolateFn lerpFn)
 {
-    if (count == 0) return defaultVal;
-    if (count == 1) return convert(keys[0].mValue);
+    if (count == 0)
+    {
+        return defaultVal;
+    }
+    if (count == 1)
+    {
+        return convert(keys[0].mValue);
+    }
 
     unsigned int p1 = lastKey, p2 = lastKey;
     for (unsigned int k = lastKey; k < count - 1; ++k)
@@ -129,28 +289,27 @@ static T InterpolateKeys(double time, const KeyT* keys, unsigned int count, unsi
 static glm::vec3 InterpolatePosition(double time, const aiNodeAnim* channel, unsigned int& lastKey,
                                      const glm::vec3& defaultVal)
 {
-    return InterpolateKeys(time, channel->mPositionKeys, channel->mNumPositionKeys, lastKey, defaultVal,
-        ToVec3, [](const glm::vec3& a, const glm::vec3& b, float f) { return glm::mix(a, b, f); });
+    return InterpolateKeys(time, channel->mPositionKeys, channel->mNumPositionKeys, lastKey, defaultVal, ToVec3,
+                           [](const glm::vec3& a, const glm::vec3& b, float f) { return glm::mix(a, b, f); });
 }
 
 static glm::quat InterpolateRotation(double time, const aiNodeAnim* channel, unsigned int& lastKey,
                                      const glm::quat& defaultVal)
 {
-    return InterpolateKeys(time, channel->mRotationKeys, channel->mNumRotationKeys, lastKey, defaultVal,
-        ToQuat, [](const glm::quat& a, const glm::quat& b, float f) {
-            aiQuaternion result;
-            aiQuaternion::Interpolate(result,
-                aiQuaternion(a.w, a.x, a.y, a.z),
-                aiQuaternion(b.w, b.x, b.y, b.z), f);
-            return ToQuat(result);
-        });
+    return InterpolateKeys(time, channel->mRotationKeys, channel->mNumRotationKeys, lastKey, defaultVal, ToQuat,
+                           [](const glm::quat& a, const glm::quat& b, float f) {
+                               aiQuaternion result;
+                               aiQuaternion::Interpolate(result, aiQuaternion(a.w, a.x, a.y, a.z),
+                                                         aiQuaternion(b.w, b.x, b.y, b.z), f);
+                               return ToQuat(result);
+                           });
 }
 
 static glm::vec3 InterpolateScale(double time, const aiNodeAnim* channel, unsigned int& lastKey,
                                   const glm::vec3& defaultVal)
 {
-    return InterpolateKeys(time, channel->mScalingKeys, channel->mNumScalingKeys, lastKey, defaultVal,
-        ToVec3, [](const glm::vec3& a, const glm::vec3& b, float f) { return glm::mix(a, b, f); });
+    return InterpolateKeys(time, channel->mScalingKeys, channel->mNumScalingKeys, lastKey, defaultVal, ToVec3,
+                           [](const glm::vec3& a, const glm::vec3& b, float f) { return glm::mix(a, b, f); });
 }
 
 PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int samplingFPS)
@@ -160,19 +319,16 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
 
     Assimp::Importer importer;
     importer.SetPropertyInteger(AI_CONFIG_PP_SBP_REMOVE, aiPrimitiveType_POINT | aiPrimitiveType_LINE);
-    //importer.SetPropertyInteger(AI_CONFIG_PP_SLM_VERTEX_LIMIT, 65535);
 
     std::string ext = path.extension().string();
     std::transform(ext.begin(), ext.end(), ext.begin(), [](unsigned char c) { return (char)std::tolower(c); });
 
     unsigned int flags = aiProcessPreset_TargetRealtime_MaxQuality;
 
-    // aiProcess_Triangulate | aiProcess_GenSmoothNormals |
-                         //aiProcess_JoinIdenticalVertices | aiProcess_SortByPType | aiProcess_CalcTangentSpace |
-                         //aiProcess_ImproveCacheLocality | aiProcess_OptimizeMeshes | aiProcess_ForceGenNormals | aiProcess_SplitLargeMeshes | aiProcess_GenSmoothNormals | 
-
     if (ext != ".gltf" && ext != ".glb")
+    {
         flags |= aiProcess_FlipUVs;
+    }
 
     const aiScene* scene = nullptr;
 
@@ -181,45 +337,95 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
         {
             scene = loadFn();
             return scene && scene->mRootNode;
-        }
-        catch (const std::exception& e)
+        } catch (const std::exception& e)
         {
             CH_CORE_WARN("AssimpImporter: {} threw for '{}': {}", desc, path.string(), e.what());
             return false;
-        }
-        catch (...)
+        } catch (...)
         {
             CH_CORE_WARN("AssimpImporter: {} threw for '{}' with unknown exception", desc, path.string());
             return false;
         }
     };
 
+    // Try direct filesystem read first (works for non-packed and disk files)
     tryLoad("ReadFile", [&]() { return importer.ReadFile(path.string(), flags); });
 
+    // If direct read failed and pack is open, use PackIOSystem for pack-aware loading
+    if ((!scene || !scene->mRootNode) && ext == ".gltf")
+    {
+        auto* am = ServiceLocator::TryGet<AssetManager>();
+        if (am && am->IsPacked())
+        {
+            auto packData = am->ReadAssetData(path.string());
+            if (!packData.empty())
+            {
+                std::string baseDir = path.parent_path().string();
+                auto* ioSystem = new PackIOSystem(baseDir, true);
+                importer.SetIOHandler(ioSystem);
+
+                tryLoad("ReadFile(PackIO)", [&]() {
+                    return importer.ReadFile(path.string(), flags);
+                });
+
+                // If still failed, try ReadFileFromMemory as last resort
+                if (!scene || !scene->mRootNode)
+                {
+                    importer.SetIOHandler(nullptr);
+                    tryLoad("ReadFileFromMemory", [&]() {
+                        return importer.ReadFileFromMemory(packData.data(), packData.size(), flags,
+                                                           path.extension().string().c_str());
+                    });
+                }
+            }
+        }
+    }
+
+    // Fallback: read from pack into memory for non-gltf formats
     if (!scene || !scene->mRootNode)
     {
         CH_CORE_WARN("AssimpImporter: ReadFile failed for '{}', trying memory fallback...", path.string());
-        std::ifstream file(path, std::ios::binary | std::ios::ate);
-        if (file.is_open())
+
+        std::vector<char> buffer;
+        if (auto* am = ServiceLocator::TryGet<AssetManager>())
         {
-            std::streamsize size = file.tellg();
-            if (size > 0)
+            if (am->IsPacked())
             {
-                file.seekg(0);
-                std::vector<char> buffer(static_cast<size_t>(size), 0);
-                file.read(buffer.data(), size);
-                tryLoad("ReadFileFromMemory", [&]() {
-                    return importer.ReadFileFromMemory(buffer.data(), static_cast<size_t>(size), flags,
-                                                      path.extension().string().c_str());
-                });
+                auto packData = am->ReadAssetData(path.string());
+                if (!packData.empty())
+                {
+                    buffer.assign(packData.begin(), packData.end());
+                }
             }
+        }
+
+        if (buffer.empty())
+        {
+            std::ifstream file(path, std::ios::binary | std::ios::ate);
+            if (file.is_open())
+            {
+                std::streamsize size = file.tellg();
+                if (size > 0)
+                {
+                    file.seekg(0);
+                    buffer.resize(static_cast<size_t>(size), 0);
+                    file.read(buffer.data(), size);
+                }
+            }
+        }
+
+        if (!buffer.empty())
+        {
+            tryLoad("ReadFileFromMemory", [&]() {
+                return importer.ReadFileFromMemory(buffer.data(), buffer.size(), flags,
+                                                   path.extension().string().c_str());
+            });
         }
     }
 
     if (!scene || !scene->mRootNode)
     {
-        CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: {}", path.filename().string(),
-                      importer.GetErrorString());
+        CH_CORE_ERROR("Assimp Model Load Failed: {} | Error: {}", path.filename().string(), importer.GetErrorString());
         return data;
     }
 
@@ -333,12 +539,10 @@ void AssimpImporter::ProcessSingleMesh(uint32_t m)
         }
         if (am->mColors[0])
         {
-            rm.colors.insert(rm.colors.end(), {
-                (unsigned char)(am->mColors[0][v].r * 255.0f),
-                (unsigned char)(am->mColors[0][v].g * 255.0f),
-                (unsigned char)(am->mColors[0][v].b * 255.0f),
-                (unsigned char)(am->mColors[0][v].a * 255.0f)
-            });
+            rm.colors.insert(rm.colors.end(), {(unsigned char)(am->mColors[0][v].r * 255.0f),
+                                               (unsigned char)(am->mColors[0][v].g * 255.0f),
+                                               (unsigned char)(am->mColors[0][v].b * 255.0f),
+                                               (unsigned char)(am->mColors[0][v].a * 255.0f)});
         }
     }
 
@@ -429,7 +633,9 @@ void AssimpImporter::ProcessMeshes()
         for (uint32_t m = 0; m < m_Scene->mNumMeshes; ++m)
         {
             if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+            {
                 futures.push_back(tp->Enqueue([this, m]() { ProcessSingleMesh(m); }));
+            }
         }
         for (auto& ft : futures)
         {
@@ -598,8 +804,7 @@ void AssimpImporter::ProcessMaterials()
         if (filtered.size() < m_Data.materials.size())
         {
             CH_CORE_INFO("AssimpImporter: Removed {} unreferenced material(s) ({} -> {})",
-                         m_Data.materials.size() - filtered.size(),
-                         m_Data.materials.size(), filtered.size());
+                         m_Data.materials.size() - filtered.size(), m_Data.materials.size(), filtered.size());
 
             m_Data.materials = std::move(filtered);
 
@@ -724,20 +929,24 @@ void AssimpImporter::ProcessAnimations()
             if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
             {
                 animFutures.push_back(tp->Enqueue([&ra, channel, boneIdx, &bindPoses, ticksPerFrame]() {
-                unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
-                for (int f = 0; f < ra.frameCount; ++f)
-                {
-                    double time = (double)f * ticksPerFrame;
-                    glm::vec3 pos = InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation);
-                    glm::quat rot = InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation);
-                    glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
-                    ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
-                }
-            }));
+                    unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
+                    for (int f = 0; f < ra.frameCount; ++f)
+                    {
+                        double time = (double)f * ticksPerFrame;
+                        glm::vec3 pos = InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation);
+                        glm::quat rot = InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation);
+                        glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
+                        ra.framePoses[f * ra.boneCount + boneIdx] = {pos, rot, scale};
+                    }
+                }));
             }
         }
-        for (auto& f : animFutures) f.get();
-        CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps, {} channels)", ra.name, ra.frameCount, ra.frameRate, anim->mNumChannels);
+        for (auto& f : animFutures)
+        {
+            f.get();
+        }
+        CH_CORE_INFO("AssimpImporter: Loaded animation '{}' ({} frames, {} fps, {} channels)", ra.name, ra.frameCount,
+                     ra.frameRate, anim->mNumChannels);
     }
 }
 
@@ -752,11 +961,10 @@ void AssimpImporter::MergeMeshesByMaterial()
     try
     {
         MergeMeshesByMaterialInner();
-    }
-    catch (const std::bad_alloc& e)
+    } catch (const std::bad_alloc& e)
     {
         CH_CORE_ERROR("AssimpImporter: Out of memory during mesh merge for '{}', keeping unmerged meshes: {}",
-                       m_Path.string(), e.what());
+                      m_Path.string(), e.what());
     }
 }
 
@@ -862,8 +1070,8 @@ void AssimpImporter::MergeMeshesByMaterialInner()
             {
                 if (!hasSkins)
                 {
-                    glm::vec3 tan = glm::normalize(normalMatrix *
-                                                   glm::vec3(src.tangents[t], src.tangents[t + 1], src.tangents[t + 2]));
+                    glm::vec3 tan = glm::normalize(
+                        normalMatrix * glm::vec3(src.tangents[t], src.tangents[t + 1], src.tangents[t + 2]));
                     merged.tangents.insert(merged.tangents.end(), {tan.x, tan.y, tan.z});
                 }
                 else
@@ -895,16 +1103,14 @@ void AssimpImporter::MergeMeshesByMaterialInner()
 
             if (!hasSkins)
             {
-                glm::vec3 corners[8] = {
-                    {src.MinBounds.x, src.MinBounds.y, src.MinBounds.z},
-                    {src.MaxBounds.x, src.MinBounds.y, src.MinBounds.z},
-                    {src.MinBounds.x, src.MaxBounds.y, src.MinBounds.z},
-                    {src.MaxBounds.x, src.MaxBounds.y, src.MinBounds.z},
-                    {src.MinBounds.x, src.MinBounds.y, src.MaxBounds.z},
-                    {src.MaxBounds.x, src.MinBounds.y, src.MaxBounds.z},
-                    {src.MinBounds.x, src.MaxBounds.y, src.MaxBounds.z},
-                    {src.MaxBounds.x, src.MaxBounds.y, src.MaxBounds.z}
-                };
+                glm::vec3 corners[8] = {{src.MinBounds.x, src.MinBounds.y, src.MinBounds.z},
+                                        {src.MaxBounds.x, src.MinBounds.y, src.MinBounds.z},
+                                        {src.MinBounds.x, src.MaxBounds.y, src.MinBounds.z},
+                                        {src.MaxBounds.x, src.MaxBounds.y, src.MinBounds.z},
+                                        {src.MinBounds.x, src.MinBounds.y, src.MaxBounds.z},
+                                        {src.MaxBounds.x, src.MinBounds.y, src.MaxBounds.z},
+                                        {src.MinBounds.x, src.MaxBounds.y, src.MaxBounds.z},
+                                        {src.MaxBounds.x, src.MaxBounds.y, src.MaxBounds.z}};
                 for (auto& c : corners)
                 {
                     glm::vec3 tp = glm::vec3(t * glm::vec4(c, 1.0f));

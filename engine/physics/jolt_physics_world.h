@@ -91,15 +91,12 @@ private:
     class ContactListenerImpl : public JPH::ContactListener
     {
     public:
-        JPH::ValidateResult OnContactValidate(const JPH::Body&, const JPH::Body&,
-                                              JPH::RVec3Arg,
+        JPH::ValidateResult OnContactValidate(const JPH::Body&, const JPH::Body&, JPH::RVec3Arg,
                                               const JPH::CollideShapeResult&) override;
-        void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
-                            const JPH::ContactManifold& inManifold,
+        void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold,
                             JPH::ContactSettings& inSettings) override;
         void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
-                                const JPH::ContactManifold& inManifold,
-                                JPH::ContactSettings& inSettings) override;
+                                const JPH::ContactManifold& inManifold, JPH::ContactSettings& inSettings) override;
         void OnContactRemoved(const JPH::SubShapeIDPair& inPair) override;
 
         /// Set the tracker that receives ground-contact updates.

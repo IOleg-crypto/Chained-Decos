@@ -23,24 +23,21 @@ public:
 
     // Custom Drawer Registration
     template <typename T, typename F>
-    static void RegisterCustom(const std::string& name, F&& drawer,
-                               const char* icon = nullptr);
+    static void RegisterCustom(const std::string& name, F&& drawer, const char* icon = nullptr);
 
     static void DrawEntityHeader(Entity entity);
 
 private:
     // Shared registration logic
     template <typename T>
-    static void RegisterComponentImpl(const std::string& name, const char* icon,
-                                      std::function<void(Entity)> drawUI);
+    static void RegisterComponentImpl(const std::string& name, const char* icon, std::function<void(Entity)> drawUI);
 
     // Internal template helpers (Implementations moved to .cpp or a separate _impl.h if needed elsewhere)
     template <typename T> static void DrawComponentReflection(const std::string& name, const char* icon, Entity entity);
     static void DrawGenericReflection(const ComponentMetadata& metadata, Entity entity);
 
     template <typename T, typename F>
-    static void DrawComponentContainer(const std::string& name, const char* icon, Entity entity,
-                                       F&& drawer);
+    static void DrawComponentContainer(const std::string& name, const char* icon, Entity entity, F&& drawer);
 
     // Final non-template drawing core
     static void DrawComponentInternal(::entt::id_type typeId, const std::string& name, const char* icon, Entity entity,

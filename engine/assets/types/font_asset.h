@@ -37,10 +37,18 @@ public:
         return AssetType::Font;
     }
 
-    void OnLoaded() override {}
+    void OnLoaded() override
+    {
+    }
 
-    const NativeFont& GetFont() const { return m_Font; }
-    void SetFont(const NativeFont& font) { m_Font = font; }
+    const NativeFont& GetFont() const
+    {
+        return m_Font;
+    }
+    void SetFont(const NativeFont& font)
+    {
+        m_Font = font;
+    }
 
     // Hazel-style asset loading
     static NativeFont CreateFromFile(const std::string& path);

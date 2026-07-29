@@ -6,9 +6,11 @@
 #include "engine/common/timestep.h"
 #include <filesystem>
 #include <deque>
+#include <functional>
 #include <memory>
 #include <mutex>
 #include <string>
+#include <string_view>
 #include <unordered_map>
 #include <vector>
 
@@ -52,6 +54,13 @@ public:
         return m_PackOpen;
     }
     std::vector<uint8_t> ReadAssetData(const std::string& assetPath);
+    // Returns true if the asset exists in the open pack OR on disk at the given path.
+    [[nodiscard]] bool HasAsset(const std::string& path) const;
+    // Invokes callback once for every item path stored in the open pack archive.
+    void EnumeratePackedPaths(const std::function<void(std::string_view)>& callback) const;
+    // Reads an asset from the pack by converting an absolute path to a project-relative key.
+    // Returns empty vector if the pack is not open, path cannot be relativized, or item not found.
+    [[nodiscard]] std::vector<uint8_t> ReadProjectAsset(const std::filesystem::path& absolutePath);
 
     [[nodiscard]] const std::filesystem::path& GetAssetDirectory() const
     {

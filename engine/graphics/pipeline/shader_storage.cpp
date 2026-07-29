@@ -84,23 +84,58 @@ std::shared_ptr<ShaderAsset> ShaderStorage::LoadOrGet(const std::string& name)
     return nullptr;
 }
 
+static void ApplyShaderConfig(const YAML::Node& config, std::unordered_map<std::string, std::string>& out)
+{
+    if (!config["Shaders"])
+    {
+        return;
+    }
+    for (auto it = config["Shaders"].begin(); it != config["Shaders"].end(); ++it)
+    {
+        out[it->first.as<std::string>()] = it->second.as<std::string>();
+    }
+}
+
 void ShaderStorage::LoadConfig(const std::string& configPath)
 {
     auto* am = ServiceLocator::TryGet<AssetManager>();
+
+    // ── 1. Try reading via AssetManager (covers pack AND disk relative path) ─
+    // Strip optional "engine/" prefix so the path matches pack keys
+    // e.g. "engine/resources/config/shaders.yaml" → "resources/config/shaders.yaml"
+    if (am)
+    {
+        std::string packRelPath = configPath;
+        if (packRelPath.find("engine/") == 0)
+        {
+            packRelPath = packRelPath.substr(7);
+        }
+
+        auto data = am->ReadAssetData(packRelPath);
+        if (!data.empty())
+        {
+            try
+            {
+                YAML::Node config = YAML::Load(std::string(data.begin(), data.end()));
+                ApplyShaderConfig(config, m_ShaderPaths);
+                CH_CORE_INFO("ShaderStorage: Loaded {} shader paths from config.", m_ShaderPaths.size());
+                return;
+            } catch (const YAML::Exception& e)
+            {
+                CH_CORE_ERROR("ShaderStorage: Failed to parse shader config from pack '{}': {}", packRelPath,
+                              e.what());
+            }
+        }
+    }
+
+    // ── 2. Fallback: direct YAML::LoadFile with fully-resolved path (dev / loose files) ─
     std::string resolvedPath = am ? am->ResolvePath(configPath) : configPath;
     try
     {
         YAML::Node config = YAML::LoadFile(resolvedPath);
-        if (config["Shaders"])
-        {
-            for (auto it = config["Shaders"].begin(); it != config["Shaders"].end(); ++it)
-            {
-                m_ShaderPaths[it->first.as<std::string>()] = it->second.as<std::string>();
-            }
-            CH_CORE_INFO("ShaderStorage: Loaded {} shader paths from config.", m_ShaderPaths.size());
-        }
-    }
-    catch (const YAML::Exception& e)
+        ApplyShaderConfig(config, m_ShaderPaths);
+        CH_CORE_INFO("ShaderStorage: Loaded {} shader paths from config.", m_ShaderPaths.size());
+    } catch (const YAML::Exception& e)
     {
         CH_CORE_ERROR("ShaderStorage: Failed to load config file '{}': {}", configPath, e.what());
     }
@@ -165,7 +200,9 @@ void ShaderStorage::ReloadAll()
         {
             CH_CORE_TRACE("ShaderStorage: Reloading shader '{}' from '{}'", name, shader->GetPath());
             if (auto* am = ServiceLocator::TryGet<AssetManager>())
+            {
                 am->Reload<ShaderAsset>(shader->GetPath());
+            }
         }
     }
 
@@ -175,7 +212,9 @@ void ShaderStorage::ReloadAll()
         if (shader && !shader->GetPath().empty())
         {
             if (auto* am = ServiceLocator::TryGet<AssetManager>())
+            {
                 shader = am->Get<ShaderAsset>(shader->GetPath());
+            }
             Insert(name, shader);
         }
     }

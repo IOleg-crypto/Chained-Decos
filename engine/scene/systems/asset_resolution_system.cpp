@@ -22,7 +22,10 @@ static void ResolveSprite(entt::registry& reg, entt::entity e)
     if (!sprite.TexturePath.empty() && sprite.TextureHandle == 0)
     {
         auto* assets = ServiceLocator::TryGet<AssetManager>();
-        if (!assets) return;
+        if (!assets)
+        {
+            return;
+        }
 
         auto handle = assets->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
         auto asset = assets->Get<TextureAsset>(sprite.TexturePath);
@@ -42,7 +45,10 @@ static void ResolveShader(entt::registry& reg, entt::entity e)
     }
 
     auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets) return;
+    if (!assets)
+    {
+        return;
+    }
 
     auto handle = assets->LoadAsset(shader.ShaderPath, ShaderAsset::GetStaticType());
     auto asset = assets->Get<ShaderAsset>(shader.ShaderPath);
@@ -67,19 +73,35 @@ static void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
 static void ResolvePrimitive(entt::registry& reg, entt::entity e)
 {
     auto& prim = reg.get<PrimitiveComponent>(e);
-    auto& rt   = reg.get_or_emplace<PrimitiveRuntimeState>(e);
+    auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(e);
 
     const char* typeMarker = nullptr;
     switch (prim.Type)
     {
-    case PrimitiveType::Cube:      typeMarker = ":cube:"; break;
-    case PrimitiveType::Sphere:    typeMarker = ":sphere:"; break;
-    case PrimitiveType::Plane:     typeMarker = ":plane:"; break;
-    case PrimitiveType::Cylinder:  typeMarker = ":cylinder:"; break;
-    case PrimitiveType::Cone:      typeMarker = ":cone:"; break;
-    case PrimitiveType::Torus:     typeMarker = ":torus:"; break;
-    case PrimitiveType::Knot:      typeMarker = ":knot:"; break;
-    case PrimitiveType::Hemisphere: typeMarker = ":hemisphere:"; break;
+    case PrimitiveType::Cube:
+        typeMarker = ":cube:";
+        break;
+    case PrimitiveType::Sphere:
+        typeMarker = ":sphere:";
+        break;
+    case PrimitiveType::Plane:
+        typeMarker = ":plane:";
+        break;
+    case PrimitiveType::Cylinder:
+        typeMarker = ":cylinder:";
+        break;
+    case PrimitiveType::Cone:
+        typeMarker = ":cone:";
+        break;
+    case PrimitiveType::Torus:
+        typeMarker = ":torus:";
+        break;
+    case PrimitiveType::Knot:
+        typeMarker = ":knot:";
+        break;
+    case PrimitiveType::Hemisphere:
+        typeMarker = ":hemisphere:";
+        break;
     case PrimitiveType::None:
     default:
         rt.Dirty = false;
@@ -115,9 +137,11 @@ static void ResolvePrimitive(entt::registry& reg, entt::entity e)
     rt.Asset->SetPendingData(std::move(data));
     rt.Asset->OnLoaded();
 
-    auto resolveTexture = [](AssetManager* assets, const std::string& path,
-                             std::shared_ptr<Texture>& outTex) -> bool {
-        if (path.empty()) return false;
+    auto resolveTexture = [](AssetManager* assets, const std::string& path, std::shared_ptr<Texture>& outTex) -> bool {
+        if (path.empty())
+        {
+            return false;
+        }
         assets->LoadAsset(path, TextureAsset::GetStaticType());
         auto texAsset = assets->Get<TextureAsset>(path);
         if (texAsset && texAsset->IsReady())
@@ -132,10 +156,10 @@ static void ResolvePrimitive(entt::registry& reg, entt::entity e)
         bool anyPending = false;
         if (auto* assets = ServiceLocator::TryGet<AssetManager>())
         {
-            anyPending |= resolveTexture(assets, mat.AlbedoPath,              mat.AlbedoMap);
-            anyPending |= resolveTexture(assets, mat.NormalPath,               mat.NormalMap);
-            anyPending |= resolveTexture(assets, mat.MetallicRoughnessPath,    mat.MetallicRoughnessMap);
-            anyPending |= resolveTexture(assets, mat.EmissivePath,             mat.EmissiveMap);
+            anyPending |= resolveTexture(assets, mat.AlbedoPath, mat.AlbedoMap);
+            anyPending |= resolveTexture(assets, mat.NormalPath, mat.NormalMap);
+            anyPending |= resolveTexture(assets, mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
+            anyPending |= resolveTexture(assets, mat.EmissivePath, mat.EmissiveMap);
         }
         return anyPending;
     };
@@ -178,21 +202,33 @@ static void ResolvePrimitive(entt::registry& reg, entt::entity e)
 
 static void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e)
 {
-    auto* rt  = reg.try_get<PrimitiveRuntimeState>(e);
+    auto* rt = reg.try_get<PrimitiveRuntimeState>(e);
     auto* prim = reg.try_get<PrimitiveComponent>(e);
-    if (!rt || !rt->Asset || !prim) return;
+    if (!rt || !rt->Asset || !prim)
+    {
+        return;
+    }
 
     auto& mats = rt->Asset->GetMaterials();
-    if (mats.empty()) return;
+    if (mats.empty())
+    {
+        return;
+    }
 
     auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets) return;
+    if (!assets)
+    {
+        return;
+    }
 
     Material mat = mats[0];
     bool anyPending = false;
 
     auto resolveTexture = [&](const std::string& path, std::shared_ptr<Texture>& outTex) -> bool {
-        if (path.empty()) return false;
+        if (path.empty())
+        {
+            return false;
+        }
         assets->LoadAsset(path, TextureAsset::GetStaticType());
         auto texAsset = assets->Get<TextureAsset>(path);
         if (texAsset && texAsset->IsReady())
@@ -203,10 +239,10 @@ static void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e)
         return true;
     };
 
-    anyPending |= resolveTexture(mat.AlbedoPath,           mat.AlbedoMap);
-    anyPending |= resolveTexture(mat.NormalPath,            mat.NormalMap);
+    anyPending |= resolveTexture(mat.AlbedoPath, mat.AlbedoMap);
+    anyPending |= resolveTexture(mat.NormalPath, mat.NormalMap);
     anyPending |= resolveTexture(mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
-    anyPending |= resolveTexture(mat.EmissivePath,          mat.EmissiveMap);
+    anyPending |= resolveTexture(mat.EmissivePath, mat.EmissiveMap);
 
     mats[0] = mat;
     rt->TexturesPending = anyPending;

@@ -10,7 +10,6 @@
 #include <string>
 #include <unordered_map>
 
-
 namespace Chained
 {
 
@@ -23,25 +22,51 @@ public:
     void Initialize() override;
     void Shutdown() override;
 
-
     bool LoadAppAssembly(const std::string& filepath);
     bool ReloadAssembly(const std::string& assemblyPath);
     bool RequestAssemblyReload(const std::string& assemblyPath, const char* requestSource);
 
     Coral::Type* GetScriptClass(const std::string& name);
-    const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const { return m_Registry.GetScriptClasses(); }
+    const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
+    {
+        return m_Registry.GetScriptClasses();
+    }
 
-    ScriptHost& GetHost() { return m_Host; }
-    const ScriptHost& GetHost() const { return m_Host; }
+    ScriptHost& GetHost()
+    {
+        return m_Host;
+    }
+    const ScriptHost& GetHost() const
+    {
+        return m_Host;
+    }
 
-    ScriptRegistry& GetRegistry() { return m_Registry; }
-    const ScriptRegistry& GetRegistry() const { return m_Registry; }
+    ScriptRegistry& GetRegistry()
+    {
+        return m_Registry;
+    }
+    const ScriptRegistry& GetRegistry() const
+    {
+        return m_Registry;
+    }
 
-    bool IsHostInitialized() const { return m_Host.IsInitialized(); }
-    bool IsReloadInProgress() const { return m_Host.IsReloadInProgress(); }
-    bool CanExecuteFrameScripts() const { return m_Host.IsInitialized() && !m_Host.IsReloadInProgress(); }
+    bool IsHostInitialized() const
+    {
+        return m_Host.IsInitialized();
+    }
+    bool IsReloadInProgress() const
+    {
+        return m_Host.IsReloadInProgress();
+    }
+    bool CanExecuteFrameScripts() const
+    {
+        return m_Host.IsInitialized() && !m_Host.IsReloadInProgress();
+    }
 
-    void SetEnabled(bool enable) { m_EnableScripting = enable; }
+    void SetEnabled(bool enable)
+    {
+        m_EnableScripting = enable;
+    }
 
     // Resolves the script assembly DLL path from project config.
     // Checks assets/bin/, exe directory, and MinGW "lib" prefix variants.
@@ -52,13 +77,19 @@ public:
     // Returns true if the assembly was found and loaded.
     bool TryAutoLoad(const ProjectConfig& config);
 
-    Scene* GetContextScene() const { return m_CurrentScene.load(std::memory_order_acquire); }
-    void SetContextScene(Scene* scene) { m_CurrentScene.store(scene, std::memory_order_release); }
+    Scene* GetContextScene() const
+    {
+        return m_CurrentScene.load(std::memory_order_acquire);
+    }
+    void SetContextScene(Scene* scene)
+    {
+        m_CurrentScene.store(scene, std::memory_order_release);
+    }
+
 private:
     ScriptEngine(const ScriptEngine&) = delete;
     ScriptEngine& operator=(const ScriptEngine&) = delete;
 
-    
 private:
     ScriptHost m_Host;
     ScriptRegistry m_Registry;

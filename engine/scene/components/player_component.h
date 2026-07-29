@@ -26,5 +26,5 @@ struct PlayerComponent
     };
 };
 CH_MARK_RFL(PlayerComponent);
-}
+} // namespace Chained
 #endif

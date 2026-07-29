@@ -22,10 +22,18 @@ public:
         return AssetType::Shader;
     }
 
-    void OnLoaded() override {} // Shaders are usually loaded synchronously on GPU
+    void OnLoaded() override
+    {
+    } // Shaders are usually loaded synchronously on GPU
 
-    std::shared_ptr<Shader> GetShader() const { return m_Shader; }
-    void SetShader(const std::shared_ptr<Shader>& shader) { m_Shader = shader; }
+    std::shared_ptr<Shader> GetShader() const
+    {
+        return m_Shader;
+    }
+    void SetShader(const std::shared_ptr<Shader>& shader)
+    {
+        m_Shader = shader;
+    }
 
 private:
     std::shared_ptr<Shader> m_Shader;

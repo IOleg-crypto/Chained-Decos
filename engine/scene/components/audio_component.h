@@ -7,7 +7,6 @@
 #include <glm/glm.hpp>
 #include <string>
 
-
 namespace Chained
 {
 struct AudioComponent
@@ -31,7 +30,6 @@ struct AudioComponent
         return "AudioComponent";
     }
 
-    
     struct UI
     {
         UIMeta SoundPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".wav,.mp3,.ogg"};

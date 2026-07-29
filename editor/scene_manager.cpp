@@ -146,8 +146,8 @@ void EditorSceneManager::SetSceneState(SceneState state)
 
     if (state == SceneState::Play || state == SceneState::Simulate)
     {
-        if (m_Transition.state != TransitionState::None ||
-            current == SceneState::Play || current == SceneState::Simulate)
+        if (m_Transition.state != TransitionState::None || current == SceneState::Play ||
+            current == SceneState::Simulate)
         {
             return;
         }
@@ -184,8 +184,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
             m_Transition.sceneReady = true;
 
             m_LoadingStatus = "Preparing Play Mode...";
-        }
-        catch (const std::exception& e)
+        } catch (const std::exception& e)
         {
             CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
             CancelTransition();
@@ -213,7 +212,7 @@ void EditorSceneManager::SetSceneState(SceneState state)
 
         if (m_EditorScene)
         {
-        m_EditorScene->TransitionToState(SceneState::Edit);
+            m_EditorScene->TransitionToState(SceneState::Edit);
         }
 
         EditorLayer::Get().GetEditorState().SelectedEntity = {};
@@ -289,21 +288,18 @@ void EditorSceneManager::StartSceneLoad(const std::filesystem::path& path, bool 
             CancelTransition();
             return;
         }
-        m_Transition.future = threadPool->Enqueue(
-            [scenePath]() -> SceneLoadResult
+        m_Transition.future = threadPool->Enqueue([scenePath]() -> SceneLoadResult {
+            auto newScene = std::make_shared<Scene>();
+            SceneSerializer serializer(newScene.get());
+            if (!serializer.Deserialize(scenePath.string()))
             {
-                auto newScene = std::make_shared<Scene>();
-                SceneSerializer serializer(newScene.get());
-                if (!serializer.Deserialize(scenePath.string()))
-                {
-                    return SceneLoadResult{nullptr, serializer.GetLastError()};
-                }
-                return SceneLoadResult{newScene, {}};
-            });
+                return SceneLoadResult{nullptr, serializer.GetLastError()};
+            }
+            return SceneLoadResult{newScene, {}};
+        });
 
         CH_CORE_INFO("Editor: Loading scene '{}' on a worker thread.", scenePath.string());
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("Editor: Failed to start scene load: {}", e.what());
         Dialogs::ShowError("Scene loading failed",
@@ -324,30 +320,26 @@ void EditorSceneManager::UpdateSceneLoading()
     try
     {
         loadResult = m_Transition.future.get();
-    }
-    catch (const std::exception& e)
+    } catch (const std::exception& e)
     {
         CH_CORE_ERROR("Editor: Scene load failed with exception: {}", e.what());
         Dialogs::ShowError("Scene loading failed",
                            "Failed to load scene:\n" + m_Transition.targetPath.string() + "\n\n" + e.what());
         CancelTransition();
         return;
-    }
-    catch (...)
+    } catch (...)
     {
         CH_CORE_ERROR("Editor: Scene load failed with unknown exception.");
-        Dialogs::ShowError("Scene loading failed",
-                           "Failed to load scene:\n" + m_Transition.targetPath.string() +
-                               "\n\nAn unknown error occurred.");
+        Dialogs::ShowError("Scene loading failed", "Failed to load scene:\n" + m_Transition.targetPath.string() +
+                                                       "\n\nAn unknown error occurred.");
         CancelTransition();
         return;
     }
 
     if (!loadResult.scene)
     {
-        std::string reason = loadResult.error.empty()
-                                 ? "The scene file is corrupt or is not a valid Chained scene."
-                                 : loadResult.error;
+        std::string reason =
+            loadResult.error.empty() ? "The scene file is corrupt or is not a valid Chained scene." : loadResult.error;
         CH_CORE_ERROR("Editor: Scene load failed for '{}': {}", m_Transition.targetPath.string(), reason);
         Dialogs::ShowError("Scene loading failed",
                            "Failed to load scene:\n" + m_Transition.targetPath.string() + "\n\n" + reason);
@@ -359,8 +351,7 @@ void EditorSceneManager::UpdateSceneLoading()
     {
         if (m_RuntimeScene)
         {
-            CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.",
-                         m_Transition.targetPath.string());
+            CH_CORE_INFO("Editor: Stopping current runtime scene to load '{}'.", m_Transition.targetPath.string());
             m_RuntimeScene->OnRuntimeStop();
         }
         m_RuntimeScene = loadResult.scene;
@@ -386,8 +377,7 @@ void EditorSceneManager::UpdateFinalizing()
             m_AssetWaitLogTimer += 0.016f;
             if (m_AssetWaitLogTimer > 1.0f)
             {
-                CH_CORE_INFO("Editor: Waiting for {} assets...",
-                             assetMgr->GetPendingFinalizeCount());
+                CH_CORE_INFO("Editor: Waiting for {} assets...", assetMgr->GetPendingFinalizeCount());
                 m_AssetWaitLogTimer = 0.0f;
             }
             return;
@@ -417,8 +407,7 @@ void EditorSceneManager::FinalizeTransition()
 
         if (!hasEnvironment)
         {
-            CH_CORE_INFO("Editor: Applying project environment to scene '{}'.",
-                         targetScene->GetSettings().ScenePath);
+            CH_CORE_INFO("Editor: Applying project environment to scene '{}'.", targetScene->GetSettings().ScenePath);
             targetScene->GetSettings().Environment = project->GetEnvironment();
         }
     }
@@ -449,8 +438,7 @@ void EditorSceneManager::FinalizeTransition()
 
 void EditorSceneManager::CancelTransition()
 {
-    if (m_RuntimeScene && m_Transition.forPlayMode &&
-        m_Transition.state != TransitionState::None)
+    if (m_RuntimeScene && m_Transition.forPlayMode && m_Transition.state != TransitionState::None)
     {
         CH_CORE_INFO("Editor: Stopping runtime scene during transition...");
         m_RuntimeScene->OnRuntimeStop();
@@ -468,8 +456,7 @@ bool EditorSceneManager::OnSceneOpened(SceneOpenedEvent& e)
     auto project = Project::GetActive();
     if (project && !e.GetPath().empty())
     {
-        project->SetActiveScenePath(
-            std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject()));
+        project->SetActiveScenePath(std::filesystem::relative(e.GetPath(), project->GetProjectDirectoryForProject()));
 
         auto& layer = EditorLayer::Get();
         layer.GetProjectManager().SaveProject();

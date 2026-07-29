@@ -65,7 +65,8 @@ public:
 
     /// When AutoCalculate=true: reads model bounding box and writes Size/Offset/Radius/Height
     /// back into the collider. Call during body initialization.
-    void ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider, const glm::vec3& scale);
+    void ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider,
+                            const glm::vec3& scale);
 
     // Scene context helpers
     PhysicsContext& GetContext(Scene* scene);

@@ -26,7 +26,7 @@ struct FogSettings
     float Density = 0.001f;
     float Start = 10.0f;
     float End = 5000.0f;
-    float HeightFalloff = 0.2f; 
+    float HeightFalloff = 0.2f;
 };
 
 struct LightingSettings

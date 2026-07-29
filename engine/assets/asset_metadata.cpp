@@ -20,44 +20,91 @@ bool MetaUtils::HasMeta(const std::filesystem::path& assetPath)
 uint64_t MetaUtils::ComputeFileHash(const std::filesystem::path& path)
 {
     std::ifstream file(path, std::ios::binary | std::ios::ate);
-    if (!file.is_open()) return 0;
+    if (!file.is_open())
+    {
+        return 0;
+    }
     auto size = file.tellg();
-    if (size <= 0) return 0;
+    if (size <= 0)
+    {
+        return 0;
+    }
     file.seekg(0, std::ios::beg);
     std::vector<char> buffer(static_cast<size_t>(size));
-    if (!file.read(buffer.data(), size)) return 0;
-    return std::accumulate(buffer.begin(), buffer.end(), UINT64_C(14695981039346656037),
-        [](uint64_t hash, char c) { return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL; });
+    if (!file.read(buffer.data(), size))
+    {
+        return 0;
+    }
+    return std::accumulate(buffer.begin(), buffer.end(), UINT64_C(14695981039346656037), [](uint64_t hash, char c) {
+        return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL;
+    });
 }
 
 const char* MetaUtils::AssetTypeToString(AssetType type)
 {
     switch (type)
     {
-    case AssetType::Texture:     return "Texture";
-    case AssetType::Model:       return "Model";
-    case AssetType::Audio:       return "Audio";
-    case AssetType::Shader:      return "Shader";
-    case AssetType::Material:    return "Material";
-    case AssetType::Environment: return "Environment";
-    case AssetType::Scene:       return "Scene";
-    case AssetType::Script:      return "Script";
-    case AssetType::Font:        return "Font";
-    default:                     return "Unknown";
+    case AssetType::Texture:
+        return "Texture";
+    case AssetType::Model:
+        return "Model";
+    case AssetType::Audio:
+        return "Audio";
+    case AssetType::Shader:
+        return "Shader";
+    case AssetType::Material:
+        return "Material";
+    case AssetType::Environment:
+        return "Environment";
+    case AssetType::Scene:
+        return "Scene";
+    case AssetType::Script:
+        return "Script";
+    case AssetType::Font:
+        return "Font";
+    default:
+        return "Unknown";
     }
 }
 
 AssetType MetaUtils::StringToAssetType(const std::string& str)
 {
-    if (str == "Texture")     return AssetType::Texture;
-    if (str == "Model")       return AssetType::Model;
-    if (str == "Audio")       return AssetType::Audio;
-    if (str == "Shader")      return AssetType::Shader;
-    if (str == "Material")    return AssetType::Material;
-    if (str == "Environment") return AssetType::Environment;
-    if (str == "Scene")       return AssetType::Scene;
-    if (str == "Script")      return AssetType::Script;
-    if (str == "Font")        return AssetType::Font;
+    if (str == "Texture")
+    {
+        return AssetType::Texture;
+    }
+    if (str == "Model")
+    {
+        return AssetType::Model;
+    }
+    if (str == "Audio")
+    {
+        return AssetType::Audio;
+    }
+    if (str == "Shader")
+    {
+        return AssetType::Shader;
+    }
+    if (str == "Material")
+    {
+        return AssetType::Material;
+    }
+    if (str == "Environment")
+    {
+        return AssetType::Environment;
+    }
+    if (str == "Scene")
+    {
+        return AssetType::Scene;
+    }
+    if (str == "Script")
+    {
+        return AssetType::Script;
+    }
+    if (str == "Font")
+    {
+        return AssetType::Font;
+    }
     return AssetType::None;
 }
 
@@ -94,8 +141,7 @@ AssetMetadata MetaUtils::ReadMeta(const std::filesystem::path& metaPath)
                 meta.tags.push_back(tag.as<std::string>());
             }
         }
-    }
-    catch (const YAML::Exception& e)
+    } catch (const YAML::Exception& e)
     {
         CH_CORE_ERROR("Failed to parse meta file {}: {}", metaPath.string(), e.what());
         return {};
@@ -140,8 +186,7 @@ bool MetaUtils::WriteMeta(const std::filesystem::path& metaPath, const AssetMeta
         }
         file << out.c_str();
         return true;
-    }
-    catch (const YAML::Exception& e)
+    } catch (const YAML::Exception& e)
     {
         CH_CORE_ERROR("Failed to write meta file {}: {}", metaPath.string(), e.what());
         return false;

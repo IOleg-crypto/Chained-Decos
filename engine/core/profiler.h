@@ -124,13 +124,23 @@ public:
         s_Stats.MeshCount += stats.MeshCount;
         s_Stats.TextureCount += stats.TextureCount;
         if (stats.EntityCount > 0)
+        {
             s_Stats.EntityCount = stats.EntityCount;
+        }
         if (stats.ColliderCount > 0)
+        {
             s_Stats.ColliderCount = stats.ColliderCount;
+        }
     }
 
-    const ProfilerStats& GetStats() const { return s_Stats; }
-    const std::vector<ProfileResult>& GetLastFrameResults() const { return s_LastFrameResults; }
+    const ProfilerStats& GetStats() const
+    {
+        return s_Stats;
+    }
+    const std::vector<ProfileResult>& GetLastFrameResults() const
+    {
+        return s_LastFrameResults;
+    }
 
     void WriteHeader()
     {

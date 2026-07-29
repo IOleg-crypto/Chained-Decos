@@ -4,6 +4,7 @@
 #include "engine/core/platform.h"
 #include "engine/project/project.h"
 
+#include <algorithm>
 #include <atomic>
 #include <future>
 #include <filesystem>
@@ -41,10 +42,38 @@ void ProjectExporter::CollectFiles(const fs::path& dir, std::vector<fs::path>& o
         {
             continue;
         }
-        std::error_code recEc;
-        auto rel = fs::relative(entry.path(), dir, recEc);
-        if (!recEc)
+
+        // Skip 0-byte files (pack reader rejects dataSize == 0)
+        std::error_code szEc;
+        if (entry.file_size(szEc) == 0)
         {
+            continue;
+        }
+
+        // Skip build artifacts that shouldn't be packed
+        const std::string filename = entry.path().filename().string();
+        const std::string ext = entry.path().extension().string();
+
+        // Skip .Up2Date marker files, .pdb, .ilk, .obj, .tlog, .log build intermediates
+        if (ext == ".pdb" || ext == ".ilk" || ext == ".obj" || ext == ".tlog" || ext == ".log" ||
+            ext == ".Up2Date" || ext == ".FileListAbsolute.txt" || ext == ".lastbuildstate" ||
+            ext == ".cache" || ext == ".nupkg" || ext == ".nuget.g.props" || ext == ".nuget.g.targets")
+        {
+            continue;
+        }
+
+        // Skip obj/ and Debug/ and Release/ build output directories
+        const auto rel = fs::relative(entry.path(), dir, ec);
+        if (!ec)
+        {
+            std::string relStr = rel.string();
+            // Normalize path separators to forward slash for comparison
+            std::replace(relStr.begin(), relStr.end(), '\\', '/');
+            if (relStr.find("/obj/") != std::string::npos || relStr.find("/Debug/") != std::string::npos ||
+                relStr.find("/Release/") != std::string::npos || relStr.find("/x64/") != std::string::npos)
+            {
+                continue;
+            }
             out.push_back(rel);
         }
     }
@@ -263,6 +292,51 @@ ExportResult ProjectExporter::ExportTo(const fs::path& outputDir, ExportProgress
                 fs::path subDst = outputDir / subDirName;
                 std::error_code subEc;
                 fs::copy(subSrc, subDst, fs::copy_options::overwrite_existing | fs::copy_options::recursive, subEc);
+            }
+        }
+
+        // 4. Copy Coral runtime config files to root (needed by ScriptEngine)
+        // Coral files are at exeDir/ (next to the exe), not in scripts/{Name}/
+        fs::path coralManagedDir = exeDir;
+        const char* coralConfigs[] = {"Coral.Managed.runtimeconfig.json", "Coral.Managed.deps.json",
+                                      "Coral.Managed.pdb"};
+        for (const auto& name : coralConfigs)
+        {
+            fs::path src = coralManagedDir / name;
+            if (fs::exists(src))
+            {
+                std::string copyErr;
+                if (!CopyFile(src, outputDir / name, copyErr))
+                {
+                    CH_CORE_ERROR("ProjectExporter: Failed to copy Coral file '{}': {}", name, copyErr);
+                }
+            }
+            else
+            {
+                CH_CORE_WARN("ProjectExporter: Coral file '{}' not found in '{}'", name, coralManagedDir.string());
+            }
+        }
+
+        // 5. Copy .chproject to output directory
+        auto chProjFile = project->GetProjectDirectoryForProject() / (cfg.Name + ".chproject");
+        if (!fs::exists(chProjFile))
+        {
+            // Fallback: find any .chproject in project dir
+            for (const auto& entry : fs::directory_iterator(project->GetProjectDirectoryForProject()))
+            {
+                if (entry.is_regular_file() && entry.path().extension() == ".chproject")
+                {
+                    chProjFile = entry.path();
+                    break;
+                }
+            }
+        }
+        if (fs::exists(chProjFile))
+        {
+            std::string copyErr;
+            if (!CopyFile(chProjFile, outputDir / (cfg.Name + ".chproject"), copyErr))
+            {
+                CH_CORE_ERROR("ProjectExporter: Failed to copy .chproject: {}", copyErr);
             }
         }
 

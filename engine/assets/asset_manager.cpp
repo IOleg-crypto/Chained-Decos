@@ -8,6 +8,7 @@
 #include "engine/assets/loaders/model_loader.h"
 #include "engine/assets/loaders/audio_loader.h"
 #include "engine/assets/loaders/material_loader.h"
+#include <algorithm>
 #include <chrono>
 #include <filesystem>
 #include <fstream>
@@ -119,7 +120,9 @@ void AssetManager::CheckAssetHotReload()
     for (const auto& [handle, type, path] : stale)
     {
         CH_CORE_INFO("AssetManager: Hot-reloading recently modified {} '{}'",
-                     type == AssetType::Model ? "model" : type == AssetType::Texture ? "texture" : "material",
+                     type == AssetType::Model     ? "model"
+                     : type == AssetType::Texture ? "texture"
+                                                  : "material",
                      std::filesystem::path(path).filename().string());
         ReloadAsset(handle, type);
     }
@@ -251,9 +254,7 @@ bool AssetManager::ExecuteLoad(const std::shared_ptr<Asset>& asset, AssetLoader*
         std::string loaderError;
         if (!loader->Load(asset, resolved, &loaderError))
         {
-            asset->Fail(loaderError.empty()
-                            ? ("AssetManager: Load failed for '" + resolved + "'")
-                            : loaderError);
+            asset->Fail(loaderError.empty() ? ("AssetManager: Load failed for '" + resolved + "'") : loaderError);
             return false;
         }
 
@@ -654,12 +655,63 @@ std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
         std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
         if (m_PackOpen && m_PackReader)
         {
+            // Convert absolute path to relative pack key by stripping known base directories
+            std::string packKey = assetPath;
+
+            auto NormalizeSlashes = [](std::string& s) {
+                std::replace(s.begin(), s.end(), '\\', '/');
+            };
+
+            auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
+                if (base.empty())
+                {
+                    return;
+                }
+                std::string basePath = base.generic_string();
+                // Ensure base ends with '/' for proper prefix matching
+                if (!basePath.empty() && basePath.back() != '/')
+                {
+                    basePath += '/';
+                }
+                if (input.size() >= basePath.size() && input.compare(0, basePath.size(), basePath) == 0)
+                {
+                    input = input.substr(basePath.size());
+                }
+            };
+
+            NormalizeSlashes(packKey);
+            StripPrefix(packKey, m_EngineRoot);
+            StripPrefix(packKey, m_ProjectDirectory);
+            // Note: m_AssetDirectory is deliberately not stripped because items are packed under "assets/..."
+
+            // Resolve any remaining ".." segments in the pack key
+            packKey = std::filesystem::path(packKey).lexically_normal().generic_string();
+
             uint64_t idx = 0;
-            if (m_PackReader->getItemIndex(assetPath.c_str(), idx))
+            if (m_PackReader->getItemIndex(packKey.c_str(), idx))
             {
                 std::vector<uint8_t> data;
                 m_PackReader->readItemData(idx, data);
                 return data;
+            }
+
+            // Fallback: Prepend "assets/" or "resources/" if not present
+            if (packKey.rfind("assets/", 0) != 0 && packKey.rfind("resources/", 0) != 0)
+            {
+                std::string altKey = "assets/" + packKey;
+                if (m_PackReader->getItemIndex(altKey.c_str(), idx))
+                {
+                    std::vector<uint8_t> data;
+                    m_PackReader->readItemData(idx, data);
+                    return data;
+                }
+                altKey = "resources/" + packKey;
+                if (m_PackReader->getItemIndex(altKey.c_str(), idx))
+                {
+                    std::vector<uint8_t> data;
+                    m_PackReader->readItemData(idx, data);
+                    return data;
+                }
             }
         }
     }
@@ -675,6 +727,92 @@ std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
     }
 
     return {};
+}
+
+bool AssetManager::HasAsset(const std::string& path) const
+{
+    if (m_PackOpen && m_PackReader)
+    {
+        // Same prefix stripping as ReadAssetData
+        std::string packKey = path;
+
+        auto NormalizeSlashes = [](std::string& s) {
+            std::replace(s.begin(), s.end(), '\\', '/');
+        };
+
+        auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
+            if (base.empty())
+            {
+                return;
+            }
+            std::string basePath = base.generic_string();
+            if (!basePath.empty() && basePath.back() != '/')
+            {
+                basePath += '/';
+            }
+            if (input.size() >= basePath.size() && input.compare(0, basePath.size(), basePath) == 0)
+            {
+                input = input.substr(basePath.size());
+            }
+        };
+
+        NormalizeSlashes(packKey);
+        StripPrefix(packKey, m_EngineRoot);
+        StripPrefix(packKey, m_ProjectDirectory);
+
+        // Resolve any remaining ".." segments in the pack key
+        packKey = std::filesystem::path(packKey).lexically_normal().generic_string();
+
+        uint64_t idx = 0;
+        if (m_PackReader->getItemIndex(packKey.c_str(), idx))
+        {
+            return true;
+        }
+
+        if (packKey.rfind("assets/", 0) != 0 && packKey.rfind("resources/", 0) != 0)
+        {
+            std::string altKey = "assets/" + packKey;
+            if (m_PackReader->getItemIndex(altKey.c_str(), idx))
+            {
+                return true;
+            }
+            altKey = "resources/" + packKey;
+            if (m_PackReader->getItemIndex(altKey.c_str(), idx))
+            {
+                return true;
+            }
+        }
+    }
+    std::error_code ec;
+    return std::filesystem::exists(path, ec);
+}
+
+void AssetManager::EnumeratePackedPaths(const std::function<void(std::string_view)>& callback) const
+{
+    if (!m_PackOpen || !m_PackReader)
+    {
+        return;
+    }
+    const uint64_t count = m_PackReader->getItemCount();
+    for (uint64_t i = 0; i < count; ++i)
+    {
+        callback(m_PackReader->getItemPath(i));
+    }
+}
+
+std::vector<uint8_t> AssetManager::ReadProjectAsset(const std::filesystem::path& absolutePath)
+{
+    if (!m_PackOpen || !m_PackReader || m_ProjectDirectory.empty())
+    {
+        return {};
+    }
+    std::error_code ec;
+    auto rel = std::filesystem::relative(absolutePath, m_ProjectDirectory, ec);
+    if (ec || rel.empty())
+    {
+        return {};
+    }
+    return ReadAssetData(rel.generic_string());
 }
 
 } // namespace Chained

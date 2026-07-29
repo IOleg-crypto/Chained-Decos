@@ -1,7 +1,8 @@
 #include "script_glue_audio.h"
 #include "engine/scene/components.h"
 #include <algorithm>
-namespace Chained {
+namespace Chained
+{
 static thread_local Coral::UCString s_AudioTagBuffer;
 
 void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
@@ -11,7 +12,9 @@ void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
         const std::string soundPath = ch_u16_to_string(path);
         auto* audioService = ServiceLocator::TryGet<Audio>();
         if (!audioService)
+        {
             return;
+        }
 
         AudioHandle handle = audioService->LoadSound(soundPath);
         if (handle != 0)
@@ -42,7 +45,9 @@ void Audio_Stop(const Coral::UCChar* path)
         const std::string soundPath = ch_u16_to_string(path);
         auto* audioService = ServiceLocator::TryGet<Audio>();
         if (!audioService)
+        {
             return;
+        }
         audioService->Stop(soundPath);
 
         if (Scene* scene = GetActiveScene())
@@ -66,7 +71,9 @@ void Audio_StopAll()
     {
         auto* audioService = ServiceLocator::TryGet<Audio>();
         if (!audioService)
+        {
             return;
+        }
         audioService->StopAll();
     }
 }
@@ -81,7 +88,9 @@ void AudioComponent_SetVolume(uint64_t entityID, float volume)
         {
             auto* audioService = ServiceLocator::TryGet<Audio>();
             if (audioService)
+            {
                 audioService->SetVolume(audio.SoundHandle, volume);
+            }
         }
     }
 }
@@ -104,20 +113,24 @@ bool AudioComponent_IsPlaying(uint64_t entityID)
     auto& audio = entity.GetComponent<AudioComponent>();
     auto* audioService = ServiceLocator::TryGet<Audio>();
     if (!audioService)
+    {
         return false;
+    }
     return audio.IsPlaying && audioService->IsPlaying(audio.SoundHandle);
 }
 const Coral::UCChar* AudioComponent_GetSoundPath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    std::string path = entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().SoundPath : "";
+    std::string path =
+        entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().SoundPath : "";
     s_AudioTagBuffer = ToWide(path);
     return s_AudioTagBuffer.c_str();
 }
 const Coral::UCChar* SpriteComponent_GetTexturePath(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
-    std::string path = entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().TexturePath : "";
+    std::string path =
+        entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().TexturePath : "";
     s_AudioTagBuffer = ToWide(path);
     return s_AudioTagBuffer.c_str();
 }
@@ -146,8 +159,8 @@ void SpriteComponent_SetTint(uint64_t entityID, glm::vec4 tint)
     if (entity && entity.HasComponent<SpriteComponent>())
     {
         auto clamped = [](float v) -> uint8_t { return (uint8_t)(std::clamp(v, 0.0f, 1.0f) * 255); };
-        entity.GetComponent<SpriteComponent>().Tint = {clamped(tint.r), clamped(tint.g),
-                                                       clamped(tint.b), clamped(tint.a)};
+        entity.GetComponent<SpriteComponent>().Tint = {clamped(tint.r), clamped(tint.g), clamped(tint.b),
+                                                       clamped(tint.a)};
     }
 }
 bool SpriteComponent_GetFlipX(uint64_t entityID)

@@ -257,9 +257,9 @@ void ViewportPanel::OnImGuiRender(bool readOnly)
         ImDrawList* drawList = ImGui::GetWindowDrawList();
         ImVec2 p0 = ImGui::GetItemRectMin();
         ImVec2 p1 = ImGui::GetItemRectMax();
-        
+
         drawList->AddRectFilled(p0, p1, IM_COL32(0, 0, 0, 180));
-        
+
         const char* text = "Loading Physics...";
         ImVec2 textSize = ImGui::CalcTextSize(text);
         ImVec2 textPos = ImVec2(p0.x + (p1.x - p0.x - textSize.x) * 0.5f, p0.y + (p1.y - p0.y - textSize.y) * 0.5f);
@@ -517,7 +517,8 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
                                  camera.FarClip, options);
 
     // Render proper editor icons (camera, light, spawn) with loaded textures
-    if (EditorLayer::Get().GetSceneManager().GetSceneState() != SceneState::Play && EditorLayer::Get().GetConfig().ShowEditorIcons)
+    if (EditorLayer::Get().GetSceneManager().GetSceneState() != SceneState::Play &&
+        EditorLayer::Get().GetConfig().ShowEditorIcons)
     {
         RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
     }
@@ -538,8 +539,7 @@ void ViewportPanel::RenderViewportScene(Scene* activeScene)
     if (auto* renderer = ServiceLocator::TryGet<Renderer>())
     {
         renderer->ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                       m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera,
-                                       nullptr, {});
+                                      m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera, nullptr, {});
     }
 
     m_ViewportFramebuffer->Unbind();
@@ -599,14 +599,34 @@ void ViewportPanel::RenderOverlays(Scene* activeScene, const ImVec2& viewportSiz
     if (auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>())
     {
         widgetRenderer->DrawCanvas(activeScene, canvasOrigin, viewportSize,
-                                    EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit);
+                                   EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit);
+    }
+
+    // 2b. Script UI Overlay (OnGUI)
+    SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
+    if (activeScene && (sceneState == SceneState::Play || sceneState == SceneState::Simulate))
+    {
+        ImGui::SetNextWindowPos(viewportScreenPos);
+        ImGui::SetNextWindowSize(viewportSize);
+
+        ImGuiWindowFlags scriptUIFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
+                                         ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings |
+                                         ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
+
+        if (ImGui::Begin("##ViewportScriptUIOverlay", nullptr, scriptUIFlags))
+        {
+            activeScene->OnRenderUI();
+        }
+        ImGui::End();
     }
 
     // 3. Selection Highlight
     if (isUISelected && selectedEntity && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Edit)
     {
         auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>();
-        auto rect = widgetRenderer ? widgetRenderer->GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos) : UIRect{0, 0, 0, 0};
+        auto rect = widgetRenderer
+                        ? widgetRenderer->GetEntityRect(activeScene, selectedEntity, viewportSize, viewportScreenPos)
+                        : UIRect{0, 0, 0, 0};
 
         ImVec2 p1 = ImVec2(rect.x, rect.y);
         ImVec2 p2 = ImVec2(p1.x + rect.width, p1.y + rect.height);
@@ -658,7 +678,9 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             }
 
             auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>();
-            auto rect = widgetRenderer ? widgetRenderer->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos) : UIRect{0, 0, 0, 0};
+            auto rect = widgetRenderer
+                            ? widgetRenderer->GetEntityRect(activeScene, entity, viewportSize, viewportScreenPos)
+                            : UIRect{0, 0, 0, 0};
             if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
                 mousePos.y <= rect.y + rect.height)
             {
@@ -670,8 +692,8 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
         if (!bestHit && EditorLayer::Get().GetConfig().ShowEditorIcons)
         {
             const auto& editorCfg = EditorLayer::Get().GetConfig();
-            const float iconMin   = editorCfg.IconSizeMin;
-            const float iconMax   = editorCfg.IconSizeMax;
+            const float iconMin = editorCfg.IconSizeMin;
+            const float iconMax = editorCfg.IconSizeMax;
             const float iconScale = editorCfg.IconSizeScale;
 
             Camera3D cam = m_CameraController->ToCamera3D();
@@ -679,7 +701,9 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             const glm::mat4 view = glm::lookAt(cam.Position, cam.Target, cam.Up);
             glm::mat4 proj;
             if (cam.Projection == ProjectionType::Perspective)
+            {
                 proj = glm::perspective(glm::radians(cam.FovDegrees), aspect, cam.NearClip, cam.FarClip);
+            }
             else
             {
                 const float h = cam.OrthographicSize;
@@ -690,7 +714,10 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
             // Project world point to screen pixels; returns {-1,-1} if behind camera.
             auto worldToScreen = [&](const glm::vec3& wp) -> glm::vec2 {
                 glm::vec4 clip = vp * glm::vec4(wp, 1.0f);
-                if (clip.w <= 0.0f) return {-1.f, -1.f};
+                if (clip.w <= 0.0f)
+                {
+                    return {-1.f, -1.f};
+                }
                 const glm::vec3 ndc = glm::vec3(clip) / clip.w;
                 return {(ndc.x * 0.5f + 0.5f) * viewportSize.x + viewportScreenPos.x,
                         (1.0f - (ndc.y * 0.5f + 0.5f)) * viewportSize.y + viewportScreenPos.y};
@@ -698,13 +725,17 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
 
             // Pixel radius of billboard at given world position (mirrors RenderEditorIcons sizing).
             auto iconPixelRadius = [&](const glm::vec3& wp) -> float {
-                const float dist     = glm::distance(wp, cam.Position);
-                const float worldSz  = std::clamp(dist * iconScale, iconMin, iconMax);
+                const float dist = glm::distance(wp, cam.Position);
+                const float worldSz = std::clamp(dist * iconScale, iconMin, iconMax);
                 float ppu;
                 if (cam.Projection == ProjectionType::Perspective && dist > 0.001f)
+                {
                     ppu = (viewportSize.y * 0.5f) / (std::tan(glm::radians(cam.FovDegrees) * 0.5f) * dist);
+                }
                 else
+                {
                     ppu = (viewportSize.y * 0.5f) / std::max(cam.OrthographicSize, 0.001f);
+                }
                 return std::max(worldSz * ppu * 0.5f, 14.0f); // 14px minimum for comfortable clicking
             };
 
@@ -712,8 +743,11 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
 
             auto testIcon = [&](entt::entity id, const glm::vec3& wp) {
                 const glm::vec2 sp = worldToScreen(wp);
-                if (sp.x < 0.f) return;
-                const float r  = iconPixelRadius(wp);
+                if (sp.x < 0.f)
+                {
+                    return;
+                }
+                const float r = iconPixelRadius(wp);
                 const float dx = mousePos.x - sp.x;
                 const float dy = mousePos.y - sp.y;
                 if (dx * dx + dy * dy <= r * r)
@@ -733,7 +767,9 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
                 [&](entt::entity id, TransformComponent& tc, CameraComponent&) {
                     const glm::vec3 wp = glm::vec3(tc.WorldTransform[3]);
                     if (glm::distance(wp, cam.Position) >= 0.25f)
+                    {
                         testIcon(id, wp);
+                    }
                 });
 
             reg.view<TransformComponent, LightComponent>().each(
@@ -788,13 +824,21 @@ void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize
 
 void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
 {
+    SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
+    if (sceneState == SceneState::Play || sceneState == SceneState::Simulate)
+    {
+        // In Play/Simulate mode, Playback controls are in the Main Menu Bar at the top.
+        // Viewport canvas stays completely clean for game rendering & HUD scripts.
+        return;
+    }
+
     ImVec2 toolbarPos = {viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f};
     ImGui::SetNextWindowPos(toolbarPos);
     ImGui::PushStyleColor(ImGuiCol_ChildBg, EditorColors::ToolbarBg);
     ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 6.0f);
     ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(5, 5));
 
-    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(850, 40), true,
+    if (ImGui::BeginChild("##FloatingToolbar", ImVec2(750, 40), true,
                           ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoScrollWithMouse))
     {
         ImGui::SetCursorPosY(6); // Center align vertically-ish
@@ -835,9 +879,7 @@ void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize
         ImGui::SeparatorEx(ImGuiSeparatorFlags_Vertical);
         ImGui::SameLine(0, 15);
 
-        DrawPlaybackControls();
         DrawScriptReloadButton();
-
     }
     ImGui::EndChild();
     ImGui::PopStyleVar(2);
@@ -1032,7 +1074,8 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
             {
                 if (auto* renderer = ServiceLocator::TryGet<Renderer>())
                 {
-                    debugRenderer->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint, *renderer);
+                    debugRenderer->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint,
+                                                   *renderer);
                 }
             }
         }

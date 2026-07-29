@@ -19,7 +19,10 @@ namespace Chained
 // On Windows: UCChar = wchar_t (UTF-16), on Linux/macOS: UCChar = char (UTF-8).
 inline std::string ToUtf8(const Coral::UCChar* str)
 {
-    if (!str) return {};
+    if (!str)
+    {
+        return {};
+    }
     return Coral::StringHelper::ConvertWideToUtf8(str);
 }
 
@@ -29,7 +32,10 @@ inline Coral::UCString ToWide(const std::string& str)
 }
 
 // Backward-compat aliases so existing .cpp files compile without changes.
-static inline std::string ch_u16_to_string(const Coral::UCChar* ptr) { return ToUtf8(ptr); }
+static inline std::string ch_u16_to_string(const Coral::UCChar* ptr)
+{
+    return ToUtf8(ptr);
+}
 static inline std::u16string ch_utf8_to_u16(const std::string& str)
 {
     // This function is kept only for rare call sites that genuinely need std::u16string.
@@ -40,14 +46,23 @@ static inline std::u16string ch_utf8_to_u16(const std::string& str)
 
 inline void ResolveComponentName(std::string& name)
 {
-    if (name == "MeshComponent") name = "ModelComponent";
-    if (name == "PhysicsComponent") name = "ColliderComponent";
+    if (name == "MeshComponent")
+    {
+        name = "ModelComponent";
+    }
+    if (name == "PhysicsComponent")
+    {
+        name = "ColliderComponent";
+    }
     // The registry derives SerializationKey from the human-readable display name
     // (RegisterReflective("Rigid Body") -> "Rigid BodyComponent"), but C# sends the
     // CLR type name typeof(RigidBodyComponent).Name == "RigidBodyComponent" (no space).
     // Without this alias the registry lookup never matches, so GetComponent<RigidBodyComponent>()
     // returns null and PlayerController.OnUpdate bails before applying WASD movement.
-    if (name == "RigidBodyComponent") name = "Rigid BodyComponent";
+    if (name == "RigidBodyComponent")
+    {
+        name = "Rigid BodyComponent";
+    }
 }
 
 Scene* GetActiveScene();

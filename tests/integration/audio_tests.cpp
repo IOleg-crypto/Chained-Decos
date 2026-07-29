@@ -27,5 +27,4 @@ TEST(AudioTest, LoadAudio)
     auto audio = AudioLoader::Create();
     AudioLoader::Load(audio, "resources/audio/default.wav");
     EXPECT_EQ(audio->GetType(), AssetType::Audio);
-
 }

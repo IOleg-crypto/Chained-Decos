@@ -3,7 +3,6 @@
 #include "engine/scene/components.h"
 #include "engine/scene/components/component_utils.h"
 
-
 namespace Chained::Hierarchy
 {
 

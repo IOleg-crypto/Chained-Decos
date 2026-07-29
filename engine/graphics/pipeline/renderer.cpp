@@ -18,7 +18,6 @@
 #include <variant> // Added for type-safe variant visitation
 #include <vector>
 
-
 namespace Chained
 {
 
@@ -49,19 +48,23 @@ void Renderer::Initialize()
 
         m_Data->Geometry.FullscreenQuadVAO = VertexArray::Create();
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float2, "vertexTexCoord"}});
+        vbo->SetLayout(
+            {{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float2, "vertexTexCoord"}});
         m_Data->Geometry.FullscreenQuadVAO->AddVertexBuffer(vbo);
         auto ibo = IndexBuffer::Create(indices, 6);
         m_Data->Geometry.FullscreenQuadVAO->SetIndexBuffer(ibo);
     }
 
     InitializeSkybox();
-
-    LoadEngineResources();
 }
 
 void Renderer::LoadEngineResources()
 {
+    if (m_ResourcesLoaded)
+    {
+        return;
+    }
+
     auto& shaders = GetShaderLibrary();
 
     shaders.LoadConfig("engine/resources/config/shaders.yaml");
@@ -72,6 +75,7 @@ void Renderer::LoadEngineResources()
     shaders.LoadOrGet("Unlit");
     shaders.LoadOrGet("Billboard");
 
+    m_ResourcesLoaded = true;
     CH_CORE_INFO("[Renderer] LoadEngineResources done. {} shader(s) loaded.", shaders.GetNames().size());
 }
 
@@ -116,7 +120,8 @@ void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
     m_Data->Frame.View = glm::lookAt(camera.Position, camera.Target, camera.Up);
 
     // Projection matrix
-    float aspect = (m_ViewportHeight > 0) ? static_cast<float>(m_ViewportWidth) / static_cast<float>(m_ViewportHeight) : 1.0f;
+    float aspect =
+        (m_ViewportHeight > 0) ? static_cast<float>(m_ViewportWidth) / static_cast<float>(m_ViewportHeight) : 1.0f;
     if (camera.Projection == ProjectionType::Perspective)
     {
         m_Data->Frame.Proj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
@@ -404,15 +409,15 @@ void Renderer::DrawBillboard(const Camera3D& camera, uint32_t textureId, const g
     {
         float vertices[] = {
             // x,     y,     z,     u,    v,    nx,   ny,   nz
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"},
+                        {VertexAttributeType::Float2, "a_TexCoord"},
+                        {VertexAttributeType::Float3, "a_Normal"}});
 
         m_Data->Geometry.QuadVAO = VertexArray::Create();
         m_Data->Geometry.QuadVAO->AddVertexBuffer(vbo);
@@ -564,15 +569,15 @@ void Renderer::DrawSprite(uint32_t textureId, const glm::mat4& transform, const 
     {
         float vertices[] = {
             // x,     y,     z,     u,    v,    nx,   ny,   nz
-            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.5f, -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-             0.5f,  0.5f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-            -0.5f,  0.5f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
+            -0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,  -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
+            0.5f,  0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -0.5f, 0.5f,  0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
         };
         uint32_t indices[] = {0, 1, 2, 2, 3, 0};
 
         auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoord"}, {VertexAttributeType::Float3, "a_Normal"}});
+        vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"},
+                        {VertexAttributeType::Float2, "a_TexCoord"},
+                        {VertexAttributeType::Float3, "a_Normal"}});
 
         m_Data->Geometry.QuadVAO = VertexArray::Create();
         m_Data->Geometry.QuadVAO->AddVertexBuffer(vbo);
@@ -604,7 +609,9 @@ void Renderer::SetLightCount(int count)
 void Renderer::ClearLights()
 {
     for (int i = 0; i < LightingData::MaxLights; i++)
+    {
         m_Data->Lighting.Lights[i].enabled = 0;
+    }
     m_Data->Lighting.LightCount = 0;
     m_Data->Lighting.LightsDirty = true;
 }
@@ -640,7 +647,9 @@ void Renderer::SetShadowState(bool enabled, uint32_t mapTextureID, const glm::ma
 void Renderer::SetLightingUniforms(Shader* shader)
 {
     if (!shader)
+    {
         return;
+    }
 
     const auto& lighting = m_Data->Lighting.CurrentLighting;
     shader->Bind();
@@ -653,9 +662,8 @@ void Renderer::SetLightingUniforms(Shader* shader)
     shader->SetVec3("viewPos", m_Data->Frame.CameraPosition);
     shader->SetFloat("uTime", m_Data->Frame.Time);
     shader->SetFloat("uMode", m_Data->Frame.DiagnosticMode);
-    glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f
-                                 ? glm::normalize(lighting.Direction)
-                                 : glm::vec3(0.0f, -1.0f, 0.0f);
+    glm::vec3 lightDirNorm =
+        glm::length(lighting.Direction) > 0.0001f ? glm::normalize(lighting.Direction) : glm::vec3(0.0f, -1.0f, 0.0f);
     shader->SetVec3("lightDir", lightDirNorm);
     shader->SetVec4("lightColor", lightColor);
     shader->SetFloat("ambient", lighting.Ambient);
@@ -665,7 +673,9 @@ void Renderer::SetLightingUniforms(Shader* shader)
     shader->SetFloat("uGamma", lighting.Gamma);
 
     if (m_Data->Lighting.LightSSBO)
+    {
         m_Data->Lighting.LightSSBO->BindBase(0);
+    }
 
     // Shadow uniforms
     shader->SetInt("u_ShadowsEnabled", m_Data->Shadow.Enabled ? 1 : 0);
@@ -683,7 +693,9 @@ void Renderer::SetLightingUniforms(Shader* shader)
 void Renderer::ApplyFogUniforms(Shader* shader)
 {
     if (!shader)
+    {
         return;
+    }
 
     const auto& fog = m_Data->Lighting.CurrentFog;
     int enabled = fog.Enabled ? 1 : 0;

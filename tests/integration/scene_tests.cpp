@@ -5,7 +5,6 @@
 #include "engine/scene/component_serializer.h"
 #include "gtest/gtest.h"
 
-
 using namespace Chained;
 
 class SceneTest : public ::testing::Test
@@ -191,7 +190,9 @@ TEST_F(SceneTest, EntityTagUniqueness)
     {
         Entity e(entity, &reg);
         if (e.GetName() == "SameTag")
+        {
             ++count;
+        }
     }
     EXPECT_EQ(count, 2);
 }
@@ -247,7 +248,9 @@ TEST_F(SceneTest, DestroyEntityInIteration)
     {
         Entity e(entity, &reg);
         if (e.GetName() == "E2")
+        {
             toDestroy.push_back(entity);
+        }
     }
 
     for (auto handle : toDestroy)

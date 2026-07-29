@@ -6,7 +6,9 @@ Chained::Scene* Chained::GetActiveScene()
 {
     auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
     if (!scriptEngine)
+    {
         return nullptr;
+    }
     return scriptEngine->GetContextScene();
 }
 

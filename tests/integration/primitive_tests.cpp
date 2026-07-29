@@ -20,7 +20,7 @@ TEST(PrimitiveTest, Defaults)
 
     // Runtime state is a separate component; check its defaults independently.
     PrimitiveRuntimeState rt;
-    EXPECT_TRUE(rt.Dirty);  // defaults to true so mesh is built on first frame
+    EXPECT_TRUE(rt.Dirty); // defaults to true so mesh is built on first frame
     EXPECT_EQ(rt.Asset, nullptr);
 }
 

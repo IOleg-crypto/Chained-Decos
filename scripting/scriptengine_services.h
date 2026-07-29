@@ -61,7 +61,6 @@ private:
     bool m_ReloadInProgress = false;
 };
 
-
 class ScriptRegistry
 {
 public:

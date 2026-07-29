@@ -11,7 +11,8 @@ protected:
     void SetUp() override
     {
         std::ofstream out("test_load.obj");
-        if (!out.is_open()) {
+        if (!out.is_open())
+        {
             std::filesystem::create_directories("test_assets");
             out.open("test_load.obj");
         }
@@ -33,9 +34,10 @@ TEST_F(ImporterTest, AssimpImporter_LoadBasicObj)
     auto data = AssimpImporter::Import("test_load.obj", 30);
     EXPECT_TRUE(data.isValid);
     EXPECT_EQ(data.meshes.size(), 1);
-    if (!data.meshes.empty()) {
+    if (!data.meshes.empty())
+    {
         EXPECT_EQ(data.meshes[0].vertices.size(), 3 * 3); // 3 vertices * 3 coords
-        EXPECT_EQ(data.meshes[0].indices.size(), 3); // 1 face * 3 indices
+        EXPECT_EQ(data.meshes[0].indices.size(), 3);      // 1 face * 3 indices
     }
 }
 

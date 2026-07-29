@@ -4,7 +4,6 @@
 #include "scene/scene.h"
 #include "engine/core/service_locator.h"
 
-
 namespace Chained
 {
 

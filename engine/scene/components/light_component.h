@@ -1,7 +1,6 @@
 #ifndef CH_LIGHT_COMPONENT_H
 #define CH_LIGHT_COMPONENT_H
 
-
 #include "engine/reflection/reflection_rfl.h"
 
 namespace Chained
@@ -23,11 +22,11 @@ struct LightComponent
     float OuterCutoff = 20.0f; // Spot light only (degrees)
     bool Shadows = false;      // Future proofing
 
+    static const char* GetStaticName()
+    {
+        return "LightComponent";
+    }
 
-
-    static const char* GetStaticName() { return "LightComponent"; }
-
-    
     struct UI
     {
         UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Checkbox};

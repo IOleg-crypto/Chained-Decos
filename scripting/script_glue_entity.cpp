@@ -191,8 +191,10 @@ bool RigidBody_IsGrounded(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     if (!entity || !entity.HasComponent<RigidBodyComponent>())
+    {
         return false;
-        
+    }
+
     auto& rb = entity.GetComponent<RigidBodyComponent>();
     return rb.IsGrounded;
 }
@@ -223,7 +225,9 @@ void AudioComponent_Play(uint64_t entityID)
         {
             auto* audioService = ServiceLocator::TryGet<Audio>();
             if (!audioService)
+            {
                 return;
+            }
 
             glm::vec3 worldPos = {0.0f, 0.0f, 0.0f};
             if (entity.HasComponent<TransformComponent>())
@@ -247,7 +251,9 @@ void AudioComponent_Stop(uint64_t entityID)
         {
             auto* audioService = ServiceLocator::TryGet<Audio>();
             if (!audioService)
+            {
                 return;
+            }
             audioService->Stop(audio.SoundHandle);
             audio.IsPlaying = false;
         }

@@ -16,10 +16,9 @@ inline bool FileExists(const std::filesystem::path& path)
 
 inline std::string TrimCopy(const std::string& value)
 {
-    auto begin = std::find_if_not(value.begin(), value.end(),
-        [](unsigned char ch) { return std::isspace(ch) != 0; });
-    auto end = std::find_if_not(value.rbegin(), value.rend(),
-        [](unsigned char ch) { return std::isspace(ch) != 0; }).base();
+    auto begin = std::find_if_not(value.begin(), value.end(), [](unsigned char ch) { return std::isspace(ch) != 0; });
+    auto end =
+        std::find_if_not(value.rbegin(), value.rend(), [](unsigned char ch) { return std::isspace(ch) != 0; }).base();
 
     if (begin >= end)
     {

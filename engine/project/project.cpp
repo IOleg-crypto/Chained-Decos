@@ -3,10 +3,11 @@
 // Handles .chproject YAML deserialization and cross-platform path normalization.
 
 #include "project.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 #include "yaml-cpp/yaml.h"
 #include <fstream>
 #include <sstream>
-
 
 namespace Chained
 {
@@ -15,63 +16,100 @@ std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
 
 Project::~Project() = default;
 
+std::shared_ptr<Project> Project::Load(const std::filesystem::path& filepath)
+{
+    auto project = std::make_shared<Project>();
 
+    std::string content;
 
-    std::shared_ptr<Project> Project::Load(const std::filesystem::path& filepath)
+    // Try reading from pack first (exported builds)
+    if (auto* am = ServiceLocator::TryGet<AssetManager>())
     {
-        auto project = std::make_shared<Project>();
-        
+        if (am->IsPacked())
+        {
+            auto data = am->ReadAssetData("project.chproject");
+            if (!data.empty())
+            {
+                content.assign(data.begin(), data.end());
+            }
+        }
+    }
+
+    // Fallback to disk
+    if (content.empty())
+    {
         std::ifstream stream(filepath);
         if (!stream.is_open())
         {
             return nullptr;
         }
-
         std::stringstream strStream;
         strStream << stream.rdbuf();
-
-        YAML::Node data = YAML::Load(strStream.str());
-        auto projectNode = data["Project"];
-        if (!projectNode)
-        {
-            return nullptr;
-        }
-
-        auto& config = project->m_Config;
-        if (projectNode["Name"])
-            config.Name = projectNode["Name"].as<std::string>();
-        if (projectNode["IconPath"])
-            config.IconPath = projectNode["IconPath"].as<std::string>();
-
-        if (projectNode["StartScene"])
-            config.StartScene = projectNode["StartScene"].as<std::string>();
-        if (projectNode["AssetDirectory"])
-            config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
-
-        if (projectNode["ActiveScene"]) config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
-        if (projectNode["Environment"]) config.EnvironmentPath = projectNode["Environment"].as<std::string>();
-
-        if (projectNode["Physics"])
-        {
-            config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
-            if (projectNode["Physics"]["FixedTimestep"])
-                config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
-        }
-
-        if (projectNode["Scripting"])
-        {
-            config.Scripting.ModuleName = projectNode["Scripting"]["ModuleName"].as<std::string>();
-            if (projectNode["Scripting"]["ModuleDirectory"])
-                config.Scripting.ModuleDirectory = projectNode["Scripting"]["ModuleDirectory"].as<std::string>();
-            if (projectNode["Scripting"]["AutoLoad"])
-                config.Scripting.AutoLoad = projectNode["Scripting"]["AutoLoad"].as<bool>();
-        }
-
-        config.ProjectDirectory = filepath.parent_path();
-
-        SetActive(project);
-        return project;
+        content = strStream.str();
     }
+
+    YAML::Node data = YAML::Load(content);
+    auto projectNode = data["Project"];
+    if (!projectNode)
+    {
+        return nullptr;
+    }
+
+    auto& config = project->m_Config;
+    if (projectNode["Name"])
+    {
+        config.Name = projectNode["Name"].as<std::string>();
+    }
+    if (projectNode["IconPath"])
+    {
+        config.IconPath = projectNode["IconPath"].as<std::string>();
+    }
+
+    if (projectNode["StartScene"])
+    {
+        config.StartScene = projectNode["StartScene"].as<std::string>();
+    }
+    if (projectNode["AssetDirectory"])
+    {
+        config.AssetDirectory = projectNode["AssetDirectory"].as<std::string>();
+    }
+
+    if (projectNode["ActiveScene"])
+    {
+        config.ActiveScenePath = projectNode["ActiveScene"].as<std::string>();
+    }
+    if (projectNode["Environment"])
+    {
+        config.EnvironmentPath = projectNode["Environment"].as<std::string>();
+    }
+
+    if (projectNode["Physics"])
+    {
+        config.Physics.Gravity = projectNode["Physics"]["Gravity"].as<float>();
+        if (projectNode["Physics"]["FixedTimestep"])
+        {
+            config.Physics.FixedTimestep = projectNode["Physics"]["FixedTimestep"].as<float>();
+        }
+    }
+
+    if (projectNode["Scripting"])
+    {
+        config.Scripting.ModuleName = projectNode["Scripting"]["ModuleName"].as<std::string>();
+        if (projectNode["Scripting"]["ModuleDirectory"])
+        {
+            config.Scripting.ModuleDirectory = projectNode["Scripting"]["ModuleDirectory"].as<std::string>();
+        }
+        if (projectNode["Scripting"]["AutoLoad"])
+        {
+            config.Scripting.AutoLoad = projectNode["Scripting"]["AutoLoad"].as<bool>();
+        }
+    }
+
+    config.ProjectDirectory = filepath.parent_path();
+
+    SetActive(project);
+    return project;
+}
 
 std::shared_ptr<Project> Project::GetActive()
 {
@@ -108,7 +146,6 @@ std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path
     return s_ActiveProject ? s_ActiveProject->GetAbsolutePathForProject(path) : path;
 }
 
-
 std::vector<std::string> Project::GetAvailableScenes() const
 {
     std::vector<std::string> scenes;
@@ -128,8 +165,7 @@ std::vector<std::string> Project::GetAvailableScenes() const
                     scenes.push_back(relPath);
                 }
             }
-        }
-        catch (const std::filesystem::filesystem_error& e)
+        } catch (const std::filesystem::filesystem_error& e)
         {
             CH_CORE_WARN("Project: Failed to enumerate scenes in '{}': {}", scenesDir.string(), e.what());
         }
@@ -241,7 +277,7 @@ std::optional<std::string> Project::TryMakeRelative(const std::filesystem::path&
 
     auto normalizedBase = NormalizePath(basePath);
     std::filesystem::path rel = std::filesystem::relative(absolutePath, normalizedBase);
-    
+
     // std::filesystem::relative returns an absolute path if it cannot resolve relativity (e.g., different drives)
     if (rel.is_relative())
     {

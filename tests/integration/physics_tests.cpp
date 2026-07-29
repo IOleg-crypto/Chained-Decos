@@ -65,10 +65,10 @@ TEST(PhysicsTest, ColliderEnabledFlag)
     auto scene = std::make_shared<Scene>();
     auto entity = scene->CreateEntity("Collider Entity");
     auto& collider = entity.AddComponent<ColliderComponent>();
-    
+
     // Default is true
     EXPECT_TRUE(collider.Enabled);
-    
+
     // Set to false
     collider.Enabled = false;
     EXPECT_FALSE(collider.Enabled);
@@ -82,9 +82,8 @@ TEST(PhysicsTest, ContextLifecycleResetAndClear)
     context.Accumulator = 0.1337f;
 
     bool callbackInvoked = false;
-    ServiceLocator::Get<Physics>()->SetCollisionCallback(scene.get(), [&callbackInvoked](entt::entity, entt::entity) {
-        callbackInvoked = true;
-    });
+    ServiceLocator::Get<Physics>()->SetCollisionCallback(
+        scene.get(), [&callbackInvoked](entt::entity, entt::entity) { callbackInvoked = true; });
 
     ServiceLocator::Get<Physics>()->ResetAccumulator(scene.get());
     EXPECT_FLOAT_EQ(ServiceLocator::Get<Physics>()->GetContext(scene.get()).Accumulator, 0.0f);

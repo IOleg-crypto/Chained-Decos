@@ -10,8 +10,6 @@
 namespace Chained
 {
 
-
-
 // Immediate-mode GUI helpers shared by editor panels and property inspectors.
 class EditorGUI
 {
@@ -52,15 +50,14 @@ public:
     static void ApplyTheme();
 
 private:
-    template <typename F>
-    static bool PropertyWidget(const char* label, F&& widgetFn);
+    template <typename F> static bool PropertyWidget(const char* label, F&& widgetFn);
 
-    static bool FilePropertyImpl(const char* label, std::string& value,
-        const char* filter, std::function<void()> thumbnailFn);
+    static bool FilePropertyImpl(const char* label, std::string& value, const char* filter,
+                                 std::function<void()> thumbnailFn);
 
     template <int N>
-    static bool DrawVecImpl(const char* label, float* values, float resetValue,
-        const ImVec4* colors, const char* componentLabels[N]);
+    static bool DrawVecImpl(const char* label, float* values, float resetValue, const ImVec4* colors,
+                            const char* componentLabels[N]);
 };
 
 } // namespace Chained

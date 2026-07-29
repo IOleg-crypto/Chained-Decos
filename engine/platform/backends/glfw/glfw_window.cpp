@@ -19,7 +19,7 @@ static bool s_GLFWInitialized = false;
 
 std::unique_ptr<Window> Window::Create(const WindowProperties& properties)
 {
-    
+
     return std::make_unique<GlfwWindow>(properties);
 }
 
@@ -101,14 +101,11 @@ void GlfwWindow::Init(const WindowProperties& properties)
     m_FramebufferWidth = (uint32_t)fbWidth;
     m_FramebufferHeight = (uint32_t)fbHeight;
 
- 
     glfwSetFramebufferSizeCallback(m_WindowHandle, [](GLFWwindow* window, int width, int height) {
         auto& glWindow = *(GlfwWindow*)glfwGetWindowUserPointer(window);
 
-
         glWindow.m_FramebufferWidth = (uint32_t)width;
         glWindow.m_FramebufferHeight = (uint32_t)height;
-
 
         int winWidth, winHeight;
         glfwGetWindowSize(window, &winWidth, &winHeight);
@@ -131,34 +128,28 @@ void GlfwWindow::Init(const WindowProperties& properties)
         }
     });
 
-
     glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
         Core::Input::OnMouseScroll((float)xOffset, (float)yOffset);
         ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
     });
-
 
     glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
         Core::Input::OnKey(GlfwInputMapper::MapKey(key), action != GLFW_RELEASE);
         ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
     });
 
-
     glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int button, int action, int mods) {
         Core::Input::OnMouseButton(GlfwInputMapper::MapMouseButton(button), action != GLFW_RELEASE);
         ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
     });
-
 
     glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, double xpos, double ypos) {
         Core::Input::OnMouseMove((float)xpos, (float)ypos);
         ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
     });
 
-
     glfwSetCharCallback(m_WindowHandle,
                         [](GLFWwindow* window, unsigned int c) { ImGui_ImplGlfw_CharCallback(window, c); });
-
 
     glfwSetWindowFocusCallback(m_WindowHandle, [](GLFWwindow* window, int focused) {
         if (!focused)
@@ -295,14 +286,18 @@ void GlfwWindow::SetAntialiasing(bool enabled)
     if (enabled && m_Samples <= 0)
     {
         CH_CORE_WARN("SetAntialiasing(true) requested but the window was created with "
-                     "WindowProperties::Samples = 0. MSAA sample count can only be changed by "
+                     "Samples = 0. MSAA sample count can only be changed by "
                      "recreating the window; toggling GL_MULTISAMPLE will have no visible effect.");
     }
 
     if (enabled)
+    {
         glEnable(GL_MULTISAMPLE);
+    }
     else
+    {
         glDisable(GL_MULTISAMPLE);
+    }
 }
 
 void GlfwWindow::SetTargetFramesPerSecond(int framesPerSecond)

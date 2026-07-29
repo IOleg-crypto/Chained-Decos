@@ -86,11 +86,11 @@ std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
             activeCamera.FovDegrees = glm::degrees(camera.Camera.GetPerspectiveVerticalFOV());
             activeCamera.OrthographicSize = camera.Camera.GetOrthographicSize();
             activeCamera.NearClip = (camera.Camera.GetProjectionType() == Camera::ProjectionType::Perspective)
-                ? camera.Camera.GetPerspectiveNearClip()
-                : camera.Camera.GetOrthographicNearClip();
+                                        ? camera.Camera.GetPerspectiveNearClip()
+                                        : camera.Camera.GetOrthographicNearClip();
             activeCamera.FarClip = (camera.Camera.GetProjectionType() == Camera::ProjectionType::Perspective)
-                ? camera.Camera.GetPerspectiveFarClip()
-                : camera.Camera.GetOrthographicFarClip();
+                                       ? camera.Camera.GetPerspectiveFarClip()
+                                       : camera.Camera.GetOrthographicFarClip();
 
             // Compute ViewMatrix
             activeCamera.ViewMatrix = glm::lookAt(activeCamera.Position, activeCamera.Target, activeCamera.Up);
@@ -102,19 +102,21 @@ std::optional<Camera3D> SceneRenderer::GetActiveCamera(entt::registry& reg)
             {
                 uint32_t vw = renderer->GetViewportWidth();
                 uint32_t vh = renderer->GetViewportHeight();
-                if (vh > 0) aspect = static_cast<float>(vw) / static_cast<float>(vh);
+                if (vh > 0)
+                {
+                    aspect = static_cast<float>(vw) / static_cast<float>(vh);
+                }
             }
             if (activeCamera.Projection == ProjectionType::Perspective)
             {
-                activeCamera.ProjectionMatrix = glm::perspective(
-                    glm::radians(activeCamera.FovDegrees), aspect, activeCamera.NearClip, activeCamera.FarClip);
+                activeCamera.ProjectionMatrix = glm::perspective(glm::radians(activeCamera.FovDegrees), aspect,
+                                                                 activeCamera.NearClip, activeCamera.FarClip);
             }
             else
             {
                 float orthoSize = activeCamera.OrthographicSize;
-                activeCamera.ProjectionMatrix = glm::ortho(
-                    -aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize,
-                    activeCamera.NearClip, activeCamera.FarClip);
+                activeCamera.ProjectionMatrix = glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize,
+                                                           orthoSize, activeCamera.NearClip, activeCamera.FarClip);
             }
 
             return activeCamera;
@@ -143,7 +145,9 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
 
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
 
     GraphicsDevice::Get().EnableDepthTest();
 
@@ -194,9 +198,10 @@ void SceneRenderer::RenderScene(entt::registry& registry, const SceneSettings& s
             auto* shadowPass = static_cast<ShadowPass*>(pass.get());
             uint32_t shadowTexID = 0;
             if (shadowPass->HasShadows() && shadowPass->GetShadowMap())
+            {
                 shadowTexID = shadowPass->GetShadowMap()->GetDepthAttachmentRendererID();
-            renderer->SetShadowState(shadowPass->HasShadows(), shadowTexID,
-                                      shadowPass->GetLightSpaceMatrix(), 0.003f);
+            }
+            renderer->SetShadowState(shadowPass->HasShadows(), shadowTexID, shadowPass->GetLightSpaceMatrix(), 0.003f);
         }
     }
 
@@ -213,7 +218,9 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
     CH_PROFILE_FUNCTION();
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
     auto view = registry.view<TransformComponent, SpriteComponent>();
 
     struct SpriteEntry
@@ -250,9 +257,8 @@ void SceneRenderer::RenderSprites(entt::registry& registry, const Camera3D& came
         auto textureAsset = am ? am->Get<TextureAsset>(sprite.TexturePath) : nullptr;
         if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
         {
-            renderer->DrawSprite(textureAsset->GetTexture()->GetNativeHandle(),
-                                  transform.WorldTransform, ColorToVec4(sprite.Tint),
-                                  sprite.FlipX, sprite.FlipY);
+            renderer->DrawSprite(textureAsset->GetTexture()->GetNativeHandle(), transform.WorldTransform,
+                                 ColorToVec4(sprite.Tint), sprite.FlipX, sprite.FlipY);
         }
     }
 }
@@ -261,7 +267,9 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
 {
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
     auto& lighting = renderer->GetData().Lighting;
 
     for (auto& l : lighting.Lights)
@@ -387,7 +395,9 @@ bool SceneRenderer::EnqueueModelAsset(entt::registry& registry, entt::entity ent
         if (sc.Enabled && !sc.ShaderPath.empty())
         {
             if (auto* am = ServiceLocator::TryGet<AssetManager>())
+            {
                 shaderOver = am->Get<ShaderAsset>(sc.ShaderPath);
+            }
             uniforms = sc.Uniforms;
         }
     }
@@ -408,9 +418,8 @@ bool SceneRenderer::EnqueueModelAsset(entt::registry& registry, entt::entity ent
         {
             if (anim.Blending && anim.TargetAnimationIndex >= 0)
             {
-                float alpha = (anim.BlendDuration > 0.0f)
-                                  ? glm::clamp(anim.BlendTimer / anim.BlendDuration, 0.0f, 1.0f)
-                                  : 1.0f;
+                float alpha =
+                    (anim.BlendDuration > 0.0f) ? glm::clamp(anim.BlendTimer / anim.BlendDuration, 0.0f, 1.0f) : 1.0f;
                 auto matricesA = modelAsset->GetBoneMatrices(anim.CurrentAnimationIndex, anim.CurrentFrame);
                 auto matricesB = modelAsset->GetBoneMatrices(anim.TargetAnimationIndex, anim.TargetFrame);
 
@@ -493,7 +502,9 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
 {
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
 
     if (!modelAsset || modelAsset->GetState() != Chained::AssetState::Ready)
     {
@@ -509,7 +520,9 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
                                  ? renderer->GetShaderLibrary().Get(fallbackName)
                                  : nullptr;
         if (fallbackAsset)
+        {
             activeShader = fallbackAsset->GetShader().get();
+        }
     }
 
     if (!activeShader)
@@ -547,8 +560,7 @@ void SceneRenderer::DrawModel(Chained::ModelAsset* modelAsset, const glm::mat4& 
         material.ShaderID = activeShader->GetNativeHandle();
 
         activeShader->Bind();
-        renderer->DrawMesh(model.Meshes[i], material,
-                           transform * inst.localTransform);
+        renderer->DrawMesh(model.Meshes[i], material, transform * inst.localTransform);
         material.ShaderID = originalID;
     }
 }
@@ -596,7 +608,9 @@ void SceneRenderer::BindShaderUniforms(Chained::Shader* shader, const std::vecto
 
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
 
     shader->Bind();
 
@@ -610,8 +624,7 @@ void SceneRenderer::BindShaderUniforms(Chained::Shader* shader, const std::vecto
 
     ApplyShaderUniforms(shader, shaderUniformOverrides);
 }
-void SceneRenderer::BindMaterialUniforms(Shader* shader, const Material& material, int meshIndex,
-                                         const Model& model)
+void SceneRenderer::BindMaterialUniforms(Shader* shader, const Material& material, int meshIndex, const Model& model)
 {
     shader->Bind();
 
@@ -721,7 +734,9 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
 
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
 
     // Save current state
     auto guard = PipelineStateGuard::Capture();
@@ -730,7 +745,8 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     // Setup for debug drawing
     GraphicsDevice::Get().DisableDepthTest();
     GraphicsDevice::Get().SetBlendEnabled(true);
-    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha, GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
+    GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha,
+                                       GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
 
     // Polygon offset no longer needed since depth test is OFF
     GraphicsDevice::Get().SetPolygonOffset(false, 0.0f, 0.0f);
@@ -753,18 +769,24 @@ void SceneRenderer::RenderDebug(entt::registry& registry, const SceneSettings& s
     {
         auto& grid = settings.Grid;
         if (auto* dbg = ServiceLocator::TryGet<DebugRenderer>())
+        {
             dbg->DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f}, *renderer);
+        }
     }
 
     if (auto* dbg = ServiceLocator::TryGet<DebugRenderer>())
+    {
         dbg->Flush(*renderer);
+    }
 }
 
 void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRenderOptions& options)
 {
     auto* renderer = ServiceLocator::TryGet<Renderer>();
     if (!renderer)
+    {
         return;
+    }
 
     int mode = options.SetCollisionWireframeMode;
     bool drawSolid = (mode == 1 || mode == 2);
@@ -814,21 +836,27 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                 if (collider.Type == ColliderType::Box)
                 {
                     if (auto* dbg = ServiceLocator::TryGet<DebugRenderer>())
+                    {
                         dbg->DrawCubeWires(baseTransform, collider.Size * entityScale, color, *renderer, isWireframe);
+                    }
                 }
                 else if (collider.Type == ColliderType::Sphere)
                 {
                     float maxScale = glm::max(entityScale.x, glm::max(entityScale.y, entityScale.z));
                     if (auto* dbg = ServiceLocator::TryGet<DebugRenderer>())
+                    {
                         dbg->DrawSphereWires(baseTransform, collider.Radius * maxScale, color, *renderer, isWireframe);
+                    }
                 }
                 else if (collider.Type == ColliderType::Capsule)
                 {
 
                     float radiusScale = glm::max(entityScale.x, entityScale.z);
                     if (auto* dbg = ServiceLocator::TryGet<DebugRenderer>())
+                    {
                         dbg->DrawCapsuleWires(baseTransform, collider.Radius * radiusScale,
                                               collider.Height * entityScale.y, color, *renderer, isWireframe);
+                    }
                 }
             }
             else if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
@@ -845,7 +873,10 @@ void SceneRenderer::DrawColliderDebug(entt::registry& registry, const SceneRende
                         if (inst.meshIndex >= 0 && inst.meshIndex < model.Meshes.size())
                         {
                             if (auto* dbg = ServiceLocator::TryGet<DebugRenderer>())
-                                dbg->DrawMeshWire(model.Meshes[inst.meshIndex], color, finalMat, *renderer, isWireframe);
+                            {
+                                dbg->DrawMeshWire(model.Meshes[inst.meshIndex], color, finalMat, *renderer,
+                                                  isWireframe);
+                            }
                         }
                     }
                 }
