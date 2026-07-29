@@ -1,6 +1,7 @@
 #ifndef CH_EDITOR_MENU_H
 #define CH_EDITOR_MENU_H
 
+#include "engine/project/project.h"
 #include <string>
 #include <mutex>
 #include <atomic>
@@ -29,7 +30,11 @@ public:
     /// @brief Draws the export progress overlay (if an export is running).
     void DrawExportProgressOverlay();
 
+    /// @brief Draws the export settings dialog.
+    void DrawExportDialog();
+
 private:
+
     // State for the Export Project feature
     struct ExportState
     {
@@ -39,17 +44,26 @@ private:
         std::string OutDir;
         std::mutex Mutex;
         bool IsExporting = false;
-        
+
         // Progress tracking (updated from background thread under Mutex)
         uint64_t PackedFiles = 0;
         uint64_t TotalFiles = 0;
         std::string CurrentFile;
-        
+
         // Cancel flag (written by GUI, read by worker thread)
         std::atomic<bool> CancelRequested{false};
     };
 
+    // Export dialog state
+    struct ExportDialogState
+    {
+        bool Open = false;
+        PackMode SelectedMode = PackMode::Balanced;
+        std::string OutputDir;
+    };
+
     ExportState m_ExportState;
+    ExportDialogState m_ExportDialog;
     bool m_ShowEditorSettings = false;
 };
 
