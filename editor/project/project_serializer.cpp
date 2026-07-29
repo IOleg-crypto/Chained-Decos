@@ -8,8 +8,7 @@ namespace Chained
 {
 using namespace Serialization;
 
-bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
-                                        const std::filesystem::path& filepath)
+bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project, const std::filesystem::path& filepath)
 {
     const auto& config = project->GetConfig();
 
@@ -81,8 +80,8 @@ bool EditorProjectSerializer::Serialize(const std::shared_ptr<Project>& project,
         out << YAML::EndMap;
 
         out << YAML::Key << "Export" << YAML::Value << YAML::BeginMap;
+        out << YAML::Key << "Mode" << YAML::Value << static_cast<int>(config.Export.Mode);
         out << YAML::Key << "ZipThreshold" << YAML::Value << config.Export.ZipThreshold;
-        out << YAML::Key << "PreferSpeed" << YAML::Value << config.Export.PreferSpeed;
         out << YAML::Key << "DataVersion" << YAML::Value << config.Export.DataVersion;
         out << YAML::EndMap;
 
@@ -123,8 +122,7 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
     try
     {
         data = YAML::Load(stream);
-    }
-    catch (const YAML::Exception& e)
+    } catch (const YAML::Exception& e)
     {
         CH_CORE_ERROR("Failed to parse project file: {} ({})", filepath.string(), e.what());
         return false;
@@ -220,8 +218,19 @@ bool EditorProjectSerializer::Deserialize(const std::shared_ptr<Project>& projec
 
     if (auto exportNode = projectNode["Export"])
     {
+        if (exportNode["Mode"])
+        {
+            int mode = 0;
+            DeserializeProperty(exportNode, "Mode", mode);
+            config.Export.Mode = static_cast<PackMode>(mode);
+        }
+        else if (exportNode["PreferSpeed"])
+        {
+            bool preferSpeed = false;
+            DeserializeProperty(exportNode, "PreferSpeed", preferSpeed);
+            config.Export.Mode = preferSpeed ? PackMode::Fast : PackMode::Balanced;
+        }
         DeserializeProperty(exportNode, "ZipThreshold", config.Export.ZipThreshold);
-        DeserializeProperty(exportNode, "PreferSpeed", config.Export.PreferSpeed);
         DeserializeProperty(exportNode, "DataVersion", config.Export.DataVersion);
     }
 
