@@ -232,7 +232,8 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
     if (!instance->SoundData.empty())
     {
         ma_decoder_config config = ma_decoder_config_init(ma_format_f32, 0, 0);
-        result = ma_decoder_init_memory(instance->SoundData.data(), instance->SoundData.size(), &config, &instance->Decoder);
+        result =
+            ma_decoder_init_memory(instance->SoundData.data(), instance->SoundData.size(), &config, &instance->Decoder);
         if (result == MA_SUCCESS)
         {
             instance->HasDecoder = true;
@@ -250,7 +251,8 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
                 resolvedPath = project->GetAssetDirectoryForProject() / filepath;
             }
         }
-        result = ma_sound_init_from_file(m_engine.get(), resolvedPath.string().c_str(), flags, NULL, NULL, &instance->Sound);
+        result =
+            ma_sound_init_from_file(m_engine.get(), resolvedPath.string().c_str(), flags, NULL, NULL, &instance->Sound);
     }
 
     if (result != MA_SUCCESS)

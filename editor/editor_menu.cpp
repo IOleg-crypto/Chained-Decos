@@ -242,9 +242,13 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
     // (ImGui::Begin cannot be called inside BeginMenuBar/EndMenuBar context.)
     // ── Export result popup ───────────────────────────────────────────────────
     // Snapshot mutable state under the lock, then render without holding it.
+    // NOTE: ImGui::OpenPopup must NOT be called while holding m_ExportState.Mutex:
+    // ImGui is not thread-safe and doing so could deadlock if a background thread
+    // also tries to acquire the mutex while ImGui is in the middle of state mutation.
     static bool s_ExportSuccess = false;
     static std::string s_ExportMessage;
     static std::string s_ExportOutDir;
+    bool shouldOpenExportPopup = false;
     {
         std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
         if (m_ExportState.Open)
@@ -253,8 +257,12 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
             s_ExportMessage = m_ExportState.Message;
             s_ExportOutDir = m_ExportState.OutDir;
             m_ExportState.Open = false;
-            ImGui::OpenPopup("Export Result");
+            shouldOpenExportPopup = true;
         }
+    }
+    if (shouldOpenExportPopup)
+    {
+        ImGui::OpenPopup("Export Result");
     }
     if (ImGui::BeginPopupModal("Export Result", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
     {
@@ -410,8 +418,7 @@ void EditorMenu::DrawExportDialog()
                             m_ExportState.TotalFiles = total;
                             m_ExportState.CurrentFile = file;
                         };
-                        auto result =
-                            ProjectExporter::ExportTo(outDirPath, progressCb, &m_ExportState.CancelRequested);
+                        auto result = ProjectExporter::ExportTo(outDirPath, progressCb, &m_ExportState.CancelRequested);
                         std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
                         m_ExportState.Success = result.Success;
                         m_ExportState.Message = result.Cancelled ? "Export cancelled."
