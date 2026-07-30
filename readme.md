@@ -23,6 +23,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Developer Resources (Deep Dives)](#developer-resources-deep-dives)
 - [Editor and Simulation Workflow](#editor-and-simulation-workflow)
 - [Engine Feature Highlights](#engine-feature-highlights)
+- [Components Overview](#components-overview)
 - [Architecture](#architecture)
 - [Working with Projects](#working-with-projects)
 - [Project Structure](#project-structure)
@@ -35,12 +36,14 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Assets and Resources](#assets-and-resources)
 - [Project Export / Packaging](#project-export--packaging)
 - [Physics and Collisions](#physics-and-collisions)
+- [Audio System](#audio-system)
 - [In-Game UI](#in-game-ui)
 - [Extending the Engine (C++)](#extending-the-engine-c)
 - [Debugging and Profiling](#debugging-and-profiling)
 - [Testing](#testing)
 - [CI/CD](#cicd)
 - [Troubleshooting](#troubleshooting)
+- [FAQ / Common Patterns](#faq--common-patterns)
 - [Known Issues](#known-issues)
 - [Contributing](#contributing)
 - [License](#license)
@@ -95,6 +98,75 @@ The editor is the main authoring environment for scene creation, iteration, and 
 - Asset loading pipeline with dedup-oriented task handling.
 - Asset pack export pipeline using cfnptr/pack (ZSTD compression) for runtime distribution.
 - Virtual file system support is currently planned/in-progress.
+
+## Components Overview
+
+Chained Engine uses an ECS architecture with ~20 native components. Components are plain structs; serialization and the editor inspector work automatically through the reflection system.
+
+| Component | Category | Purpose |
+| :--- | :--- | :--- |
+| `TransformComponent` | Core | Position, rotation, scale with cached world matrix |
+| `TagComponent` | Core | String tag for entity lookup |
+| `NameComponent` | Core | Human-readable entity name |
+| `HierarchyComponent` | Core | Parent-child relationships (UUID-serialized) |
+| `CameraComponent` | Rendering | Perspective/orthographic camera, orbit mode |
+| `ModelComponent` | Rendering | 3D model asset (glTF/OBJ) with material overrides |
+| `SpriteComponent` | Rendering | 2D sprite with tint, flip, Z-ordering |
+| `PrimitiveComponent` | Rendering | Procedural geometry (cube, sphere, plane, cylinder, etc.) |
+| `LightComponent` | Rendering | Point, spot, or directional light |
+| `ShaderComponent` | Rendering | Custom GLSL shader override |
+| `RigidBodyComponent` | Physics | Body type (Static/Dynamic/Kinematic), mass, gravity |
+| `ColliderComponent` | Physics | Collision shape (Box/Sphere/Capsule/Mesh) with trigger support |
+| `AudioComponent` | Audio | Spatial or non-spatial audio playback |
+| `AnimationComponent` | Animation | Skeletal/sprite animation with blending |
+| `SpawnComponent` | Gameplay | Spawn zone with boundary visualization |
+| `PlayerComponent` | Gameplay | Movement speed, jump force, look sensitivity |
+| `SceneTransitionComponent` | Gameplay | Triggers scene load when activated |
+| `ManagedScriptComponent` | Scripting | Attaches C# scripts with persistent fields |
+| `WidgetComponent` | UI | In-game UI widgets (buttons, labels, sliders, etc.) |
+
+### Adding a Component in C#
+
+```csharp
+// Every component type has a static GetStaticName() that matches its struct name.
+// Use GetComponent<T>() to access it — returns null if missing.
+TransformComponent? transform = GetComponent<TransformComponent>();
+if (transform != null)
+    transform.Translation = new Vector3(0, 5, 0);
+
+// Adding a physics body
+RigidBodyComponent? rb = entity.AddComponent<RigidBodyComponent>();
+rb.Type = RigidBodyComponent.BodyType.Dynamic;
+rb.Mass = 2.0f;
+```
+
+### Adding a Native Component (C++)
+
+Define a struct in `engine/scene/components/`, register it, and hook a system:
+
+```cpp
+// 1. Define the component
+struct ParkourComponent {
+    float Stamina = 100.0f;
+    bool IsWallRunning = false;
+    static const char* GetStaticName() { return "ParkourComponent"; }
+};
+
+// 2. Register (component_registry.cpp)
+RegisterReflective<ParkourComponent>("Parkour", nullptr, "Gameplay");
+
+// 3. System (systems/parkour_system.cpp)
+void Parkour::Update(entt::registry& reg, Timestep ts) {
+    auto view = reg.view<ParkourComponent, TransformComponent>();
+    for (auto entity : view) {
+        auto& [parkour, transform] = view.get<ParkourComponent, TransformComponent>(entity);
+        // ...logic...
+    }
+}
+
+// 4. Hook into scene update (scene.cpp)
+Parkour::Update(*m_Registry, ts);
+```
 
 ## Architecture
 
@@ -427,6 +499,66 @@ All of your 3D models, textures, animations, and sound files must go into your g
 
 The engine includes a project exporter that packages game assets into a single compressed archive for distribution.
 
+### Scene Serialization Format
+
+Scenes are stored as YAML (`.chscene` files). Each entity is serialized with its UUID, and components are nested under their serialization keys.
+
+```yaml
+Scene:
+  Entities:
+    - Entity: 1234567890          # UUID as uint64
+      TagComponent:
+        Tag: "Player"
+      NameComponent:
+        Name: "Player Entity"
+      TransformComponent:
+        Translation: [0.0, 5.0, 0.0]
+        Rotation: [0.0, 0.0, 0.0]
+        Scale: [1.0, 1.0, 1.0]
+      RigidBodyComponent:
+        Type: 1                    # 0=Static, 1=Dynamic, 2=Kinematic
+        Mass: 1.0
+        UseGravity: true
+      ColliderComponent:
+        Type: 0                    # 0=Box, 1=Sphere, 2=Capsule, 3=Mesh
+        Size: [0.5, 0.5, 0.5]
+        Friction: 0.5
+      ModelComponent:
+        ModelPath: "assets/models/player.glb"
+      AudioComponent:
+        SoundPath: "assets/sounds/footstep.wav"
+        Spatialized: true
+        Volume: 0.8
+    - Entity: 9876543210
+      TagComponent:
+        Tag: "SpawnPoint"
+      SpawnComponent:
+        IsActive: true
+        SpawnPoint: [0.0, 1.0, 0.0]
+        ZoneSize: [5.0, 2.0, 5.0]
+      Hierarchy:
+        Parent: 0                  # 0 = root entity
+        Children: []
+```
+
+### Debug Settings in Scene
+
+Scene-level debug rendering is serialized under `DebugSettings`:
+
+```yaml
+DebugSettings:
+  DiagnosticMode: 0               # 0=Full, 1=Normals, 2=Lighting, 3=Albedo
+  DrawColliders: false
+  DrawHierarchy: false
+  DrawGrid: false
+  DrawSelection: true
+  DrawLights: true
+  DrawSpawnZones: true
+  CollisionWireframeMode: 0       # 0=Wireframe, 1=Solid, 2=Solid+Wireframe
+Grid:
+  Spacing: 1.0
+```
+
 ### How to Export
 
 1. Open **Editor → Project Settings → Export**.
@@ -482,6 +614,58 @@ public override void OnCollisionEnter(ulong otherEntityId)
     }
 }
 ```
+
+## Audio System
+
+The audio system uses `AssetHandle` for all sound references, with the `Audio` class wrapping miniaudio. Sounds are loaded once and identified by handle.
+
+### Audio API (C++)
+
+```cpp
+#include "engine/audio/audio.h"
+
+// Load a sound — returns an AssetHandle
+AssetHandle sound = Audio::LoadSound("assets/sounds/jump.wav");
+
+// Playback controls
+Audio::Play(sound, 1.0f, 1.0f, false, false, {0,0,0});  // volume, pitch, loop, spatial, position
+Audio::SetVolume(sound, 0.8f);
+Audio::SetPitch(sound, 1.2f);
+Audio::Stop(sound);
+
+// Spatial audio — update position each frame
+Audio::SetInstancePosition(sound, entityPos);
+Audio::SetListenerPosition(cameraPos, cameraForward, cameraUp);
+```
+
+### Audio from C# Scripts
+
+```csharp
+// AudioComponent auto-loads from SoundPath and manages playback.
+// To play audio manually from script, use the native Audio API via glue:
+public override void OnUpdate(float deltaTime) {
+    if (Input.IsKeyPressed(Key.Space)) {
+        // AudioComponent handles spatialization automatically
+        AudioComponent? audio = GetComponent<AudioComponent>();
+        if (audio != null && !audio.IsPlaying) {
+            // Trigger playback through the audio system
+        }
+    }
+}
+```
+
+### AudioComponent Fields
+
+| Field | Default | Description |
+| :--- | :--- | :--- |
+| `SoundPath` | `""` | Path to `.wav`/`.mp3`/`.ogg` |
+| `Volume` | `1.0` | Volume (0-2) |
+| `Pitch` | `1.0` | Playback speed (0.1-3.0) |
+| `Loop` | `false` | Looping playback |
+| `PlayOnStart` | `false` | Auto-play on scene start |
+| `Spatialized` | `false` | 3D positional audio |
+| `MinDistance` | `1.0` | 3D fade start distance |
+| `MaxDistance` | `100.0` | 3D max audible distance |
 
 ## In-Game UI
 
@@ -582,6 +766,29 @@ If `Chained Decos` ever suffers a frame-rate drop (a lag spike), do not optimize
 - **Built-in Editor Profiler:** Open the **Profiler** panel. It displays a breakdown (in `ms`) of where your frame time went — `Rendering`, `Physics Update`, or `Scripting Update`. Check this first.
 - **C# Debugging with CoreCLR:** Because the engine wraps .NET via Coral, you can attach a C# IDE debugger (like Visual Studio or Rider) to the running Engine/Editor process. Your breakpoints inside `OnUpdate` or `OnCreate` will pause the simulation.
 
+### Debug Rendering Flags
+
+Toggle these from the editor's **Effects** panel or via the scene's `DebugSettings`:
+
+| Flag | Default | Description |
+| :--- | :--- | :--- |
+| `DrawColliders` | `false` | Show physics collider shapes (wireframe) |
+| `DrawHierarchy` | `false` | Show parent-child relationship lines |
+| `DrawGrid` | `false` | Show world grid overlay |
+| `DrawSelection` | `true` | Show selection highlight on picked entities |
+| `DrawLights` | `true` | Show light gizmos |
+| `DrawSpawnZones` | `true` | Show spawn zone boundary visualization |
+| `CollisionWireframeMode` | `0` | 0=Wireframe, 1=Solid, 2=Solid+Wireframe |
+
+**Diagnostic modes** (override the full render):
+
+| Mode | Description |
+| :--- | :--- |
+| `0` | Full render (default) |
+| `1` | Normals visualization |
+| `2` | Lighting only |
+| `3` | Albedo only |
+
 ## Testing
 
 Native tests use GoogleTest + CTest and are split into two targets (see `tests/CMakeLists.txt`):
@@ -656,6 +863,64 @@ Changing `CH_ACTIVE_GAME` without reconfiguring the build tree can leave stale g
 - Some native test areas are currently being reworked and may be skipped or gated in CI depending on environment constraints.
 - Runtime and editor workflows are under active iteration.
 - Virtual file system support is planned/in-progress and should not be treated as fully delivered yet.
+
+## FAQ / Common Patterns
+
+### How do I teleport a player to a spawn point?
+
+Use `ForceSetVelocity` (not `Velocity =`) to avoid Jolt's Dynamic body Y-velocity override:
+
+```csharp
+public void TeleportToSpawn(Vector3 spawnPos) {
+    TransformComponent? transform = GetComponent<TransformComponent>();
+    RigidBodyComponent? rb = GetComponent<RigidBodyComponent>();
+    if (transform != null) transform.Translation = spawnPos;
+    if (rb != null) rb.ForceSetVelocity(Vector3.Zero);  // Not rb.Velocity = ...
+}
+```
+
+### How do I add a component from a C# script?
+
+```csharp
+public override void OnCreate() {
+    // Add a new component at runtime
+    RigidBodyComponent rb = entity.AddComponent<RigidBodyComponent>();
+    rb.Type = RigidBodyComponent.BodyType.Dynamic;
+    rb.Mass = 1.5f;
+}
+```
+
+### How do I respond to collisions?
+
+Override `OnCollisionEnter` in your script. The engine passes a raw entity ID, not an `Entity` wrapper:
+
+```csharp
+public override void OnCollisionEnter(ulong otherEntityId) {
+    Entity other = new Entity(otherEntityId);
+    TagComponent? tag = other.GetComponent<TagComponent>();
+    if (tag != null && tag.Tag == "Pickup") {
+        Log.Info("Collected a pickup!");
+    }
+}
+```
+
+### How do I trigger a scene transition?
+
+Add a `SceneTransitionComponent` to your entity and set `TargetScenePath`. When `Triggered` is set to `true` (by a script or collision), the engine loads the target scene automatically. No C# needed.
+
+### How do I play spatial audio?
+
+Add an `AudioComponent` with `Spatialized = true` and `PlayOnStart = true`. The audio system syncs the listener with the primary camera automatically.
+
+### How do I switch between game projects?
+
+Set `CH_ACTIVE_GAME` at CMake configure time:
+
+```bash
+cmake -S . -B build/windows-clang -DCH_ACTIVE_GAME=testproject
+```
+
+The executable name changes automatically. The `.chproject` file determines what scene the runtime opens.
 
 ## Contributing
 
