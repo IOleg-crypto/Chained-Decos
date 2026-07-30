@@ -39,7 +39,7 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
     }
 
     // Read font data: pack first, then filesystem
-    std::vector<unsigned char> buffer;
+    std::vector<unsigned char> fontFileData;
     auto* assetManager = ServiceLocator::TryGet<AssetManager>();
     bool usePack = assetManager && assetManager->IsPacked();
 
@@ -50,7 +50,7 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
         {
             return fail("font not found in pack '" + resolvedPath + "'");
         }
-        buffer.assign(data.begin(), data.end());
+        fontFileData.assign(data.begin(), data.end());
     }
     else
     {
@@ -68,9 +68,9 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
 
         std::streamsize size = file.tellg();
         file.seekg(0, std::ios::beg);
-        buffer.resize(static_cast<size_t>(size));
+        fontFileData.resize(static_cast<size_t>(size));
 
-        if (!file.read(reinterpret_cast<char*>(buffer.data()), size))
+        if (!file.read(reinterpret_cast<char*>(fontFileData.data()), size))
         {
             return fail("failed to read font file '" + resolvedPath + "'");
         }
@@ -84,7 +84,7 @@ bool FontLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedP
     std::vector<unsigned char> pixels(font.atlasWidth * font.atlasHeight);
     stbtt_bakedchar chardata[128];
 
-    int charsBaked = stbtt_BakeFontBitmap(buffer.data(), 0, font.fontSize, pixels.data(), font.atlasWidth,
+    int charsBaked = stbtt_BakeFontBitmap(fontFileData.data(), 0, font.fontSize, pixels.data(), font.atlasWidth,
                                           font.atlasHeight, 32, 128, chardata);
     if (charsBaked <= 0)
     {

@@ -36,7 +36,7 @@ public:
         auto task = std::make_shared<std::packaged_task<ReturnType()>>(
             std::bind(std::forward<F>(f), std::forward<Args>(args)...));
 
-        std::future<ReturnType> res = task->get_future();
+        std::future<ReturnType> taskFuture = task->get_future();
         {
             std::unique_lock<std::mutex> lock(m_QueueMutex);
 
@@ -49,7 +49,7 @@ public:
         }
 
         m_Condition.notify_one();
-        return res;
+        return taskFuture;
     }
 
     void QueueTask(std::function<void()> task)

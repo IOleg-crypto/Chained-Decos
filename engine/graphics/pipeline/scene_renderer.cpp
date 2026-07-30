@@ -300,7 +300,7 @@ void SceneRenderer::PrepareLights(entt::registry& registry, const Frustum& frust
         rl.color = ColorToVec4(light.LightColor);
         rl.intensity = light.Intensity;
         rl.radius = light.Radius;
-        rl.type = (int)light.Type;
+        rl.lightType = (int)light.Type;
         rl.direction = Entity(entity, &registry).GetForward();
         rl.innerCutoff = light.InnerCutoff;
         rl.outerCutoff = light.OuterCutoff;

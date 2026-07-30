@@ -116,8 +116,8 @@ void ShaderStorage::LoadConfig(const std::string& configPath)
         {
             try
             {
-                YAML::Node config = YAML::Load(std::string(data.begin(), data.end()));
-                ApplyShaderConfig(config, m_ShaderPaths);
+                YAML::Node shaderConfigNode = YAML::Load(std::string(data.begin(), data.end()));
+                ApplyShaderConfig(shaderConfigNode, m_ShaderPaths);
                 CH_CORE_INFO("ShaderStorage: Loaded {} shader paths from config.", m_ShaderPaths.size());
                 return;
             } catch (const YAML::Exception& e)
@@ -131,8 +131,8 @@ void ShaderStorage::LoadConfig(const std::string& configPath)
     std::string resolvedPath = am ? am->ResolvePath(configPath) : configPath;
     try
     {
-        YAML::Node config = YAML::LoadFile(resolvedPath);
-        ApplyShaderConfig(config, m_ShaderPaths);
+        YAML::Node shaderConfigNode = YAML::LoadFile(resolvedPath);
+        ApplyShaderConfig(shaderConfigNode, m_ShaderPaths);
         CH_CORE_INFO("ShaderStorage: Loaded {} shader paths from config.", m_ShaderPaths.size());
     } catch (const YAML::Exception& e)
     {
