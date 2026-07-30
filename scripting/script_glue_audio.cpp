@@ -16,7 +16,7 @@ void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
             return;
         }
 
-        AudioHandle handle = audioService->LoadSound(soundPath);
+        AssetHandle handle = audioService->LoadSound(soundPath);
         if (handle != 0)
         {
             audioService->Play(handle, volume, pitch, loop, false, glm::vec3(0));

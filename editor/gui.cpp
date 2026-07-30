@@ -129,24 +129,24 @@ bool EditorGUI::Property(const char* label, std::string& value, bool multiline)
     }
     DrawPropertyLabel(label);
     ImGui::PushID(label);
-    char buffer[1024];
-    memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, value.c_str(), sizeof(buffer) - 1);
+    char inputTextBuf[1024];
+    memset(inputTextBuf, 0, sizeof(inputTextBuf));
+    strncpy(inputTextBuf, value.c_str(), sizeof(inputTextBuf) - 1);
     bool changed = false;
     if (multiline)
     {
-        if (ImGui::InputTextMultiline("##prop", buffer, sizeof(buffer),
+        if (ImGui::InputTextMultiline("##prop", inputTextBuf, sizeof(inputTextBuf),
                                       ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 3)))
         {
-            value = buffer;
+            value = inputTextBuf;
             changed = true;
         }
     }
     else
     {
-        if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+        if (ImGui::InputText("##prop", inputTextBuf, sizeof(inputTextBuf)))
         {
-            value = buffer;
+            value = inputTextBuf;
             changed = true;
         }
     }
@@ -234,14 +234,14 @@ bool EditorGUI::FilePropertyImpl(const char* label, std::string& value, const ch
     ImGui::PushItemWidth(width - buttonSize - thumbnailSize - (thumbnailFn ? 10.0f : 5.0f));
 
     std::string displayPath = Project::GetRelativePath(value);
-    char buffer[256];
-    memset(buffer, 0, sizeof(buffer));
-    strncpy(buffer, displayPath.c_str(), sizeof(buffer) - 1);
+    char inputTextBuf[256];
+    memset(inputTextBuf, 0, sizeof(inputTextBuf));
+    strncpy(inputTextBuf, displayPath.c_str(), sizeof(inputTextBuf) - 1);
 
     bool changed = false;
-    if (ImGui::InputText("##prop", buffer, sizeof(buffer)))
+    if (ImGui::InputText("##prop", inputTextBuf, sizeof(inputTextBuf)))
     {
-        value = Project::GetAbsolutePath(buffer).string();
+        value = Project::GetAbsolutePath(inputTextBuf).string();
         changed = true;
     }
     if (ImGui::BeginDragDropTarget())

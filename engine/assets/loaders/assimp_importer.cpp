@@ -395,7 +395,7 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
     {
         CH_CORE_WARN("AssimpImporter: ReadFile failed for '{}', trying memory fallback...", path.string());
 
-        std::vector<char> buffer;
+        std::vector<char> modelFileData;
         if (auto* am = ServiceLocator::TryGet<AssetManager>())
         {
             if (am->IsPacked())
@@ -403,12 +403,12 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
                 auto packData = am->ReadAssetData(path.string());
                 if (!packData.empty())
                 {
-                    buffer.assign(packData.begin(), packData.end());
+                    modelFileData.assign(packData.begin(), packData.end());
                 }
             }
         }
 
-        if (buffer.empty())
+        if (modelFileData.empty())
         {
             std::ifstream file(path, std::ios::binary | std::ios::ate);
             if (file.is_open())
@@ -417,16 +417,16 @@ PendingModelData AssimpImporter::Import(const std::filesystem::path& path, int s
                 if (size > 0)
                 {
                     file.seekg(0);
-                    buffer.resize(static_cast<size_t>(size), 0);
-                    file.read(buffer.data(), size);
+                    modelFileData.resize(static_cast<size_t>(size), 0);
+                    file.read(modelFileData.data(), size);
                 }
             }
         }
 
-        if (!buffer.empty())
+        if (!modelFileData.empty())
         {
             tryLoad("ReadFileFromMemory", [&]() {
-                return importer.ReadFileFromMemory(buffer.data(), buffer.size(), flags,
+                return importer.ReadFileFromMemory(modelFileData.data(), modelFileData.size(), flags,
                                                    path.extension().string().c_str());
             });
         }

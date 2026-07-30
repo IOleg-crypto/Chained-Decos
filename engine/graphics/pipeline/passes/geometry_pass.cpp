@@ -8,9 +8,9 @@
 namespace Chained
 {
 
-void GeometryPass::Execute(const RenderContext& ctx)
+void GeometryPass::Execute(const RenderContext& renderCtx)
 {
-    auto& renderer = *ctx.Renderer;
+    auto& renderer = *renderCtx.Renderer;
 
     // 1. Opaque Pass — no blending
     for (const auto& item : renderer.GetOpaqueQueue())

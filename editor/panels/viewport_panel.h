@@ -77,7 +77,7 @@ private:
 
     std::shared_ptr<Framebuffer> m_ViewportFramebuffer;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
-    uint32_t m_HDRFramebufferSamples = 1; // MSAA sample count m_HDRFramebuffer was last (re)created with
+    uint32_t m_MSAAFramebufferSamples = 1; // MSAA sample count m_HDRFramebuffer was last (re)created with
 
     // Engine subsystem pointers are now accessed via static APIs (Renderer::Get(), etc.)
     std::unique_ptr<SceneRenderer> m_SceneRenderer;

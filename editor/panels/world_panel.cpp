@@ -214,13 +214,13 @@ void WorldPanel::DrawPhysicsSettings(bool readOnly)
 
     if (auto project = Project::GetActive())
     {
-        auto& settings = project->GetConfig().Physics;
+        auto& physicsSettings = project->GetConfig().Physics;
 
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Gravity");
         ImGui::SameLine(100);
         ImGui::SetNextItemWidth(-1);
-        ImGui::DragFloat("##Gravity", &settings.Gravity, 0.1f);
+        ImGui::DragFloat("##Gravity", &physicsSettings.Gravity, 0.1f);
 
         if (ImGui::IsItemDeactivatedAfterEdit())
         {
@@ -231,21 +231,21 @@ void WorldPanel::DrawPhysicsSettings(bool readOnly)
                 {
                     if (auto* world = physics->GetWorld())
                     {
-                        world->SetGravity(settings.Gravity);
+                        world->SetGravity(physicsSettings.Gravity);
                     }
                 }
             }
             SaveProjectConfig();
         }
 
-        float fps = 1.0f / settings.FixedTimestep;
+        float fps = 1.0f / physicsSettings.FixedTimestep;
         ImGui::AlignTextToFramePadding();
         ImGui::Text("Fixed FPS");
         ImGui::SameLine(100);
         ImGui::SetNextItemWidth(-1);
         if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
         {
-            settings.FixedTimestep = 1.0f / fps;
+            physicsSettings.FixedTimestep = 1.0f / fps;
         }
 
         if (ImGui::IsItemDeactivatedAfterEdit())

@@ -262,22 +262,22 @@ public:
         }
         else if constexpr (std::is_enum_v<T>)
         {
-            int temp = (int)value;
-            bool changed = m_Archive.Property(name, temp);
+            int intValue = (int)value;
+            bool changed = m_Archive.Property(name, intValue);
             if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
             {
-                value = (T)temp;
+                value = (T)intValue;
             }
             return changed;
         }
         else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, uint64_t> &&
                            !std::is_same_v<T, bool>)
         {
-            uint64_t temp = static_cast<uint64_t>(value);
-            bool changed = m_Archive.Property(name, temp);
+            uint64_t u64Value = static_cast<uint64_t>(value);
+            bool changed = m_Archive.Property(name, u64Value);
             if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
             {
-                value = static_cast<T>(temp);
+                value = static_cast<T>(u64Value);
             }
             return changed;
         }
