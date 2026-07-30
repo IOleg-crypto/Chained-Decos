@@ -499,18 +499,6 @@ bool SpawnComponent_IsActive(uint64_t entityID)
                ? entity.GetComponent<Chained::SpawnComponent>().IsActive
                : false;
 }
-void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint)
-{
-    Entity entity = GetEntity(entityID);
-    if (entity && entity.HasComponent<Chained::SpawnComponent>() && outPoint)
-    {
-        *outPoint = entity.GetComponent<Chained::SpawnComponent>().SpawnPoint;
-    }
-    else if (outPoint)
-    {
-        *outPoint = {};
-    }
-}
 bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);

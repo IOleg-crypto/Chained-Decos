@@ -133,20 +133,6 @@ namespace ChainedDecos.Scripts
                 }
             }
 
-            // --- Debug teleport ---
-            if (Input.IsKeyPressed(Key.T))
-            {
-                Entity? spawnZone = Scene.FindEntityByTag("SpawnPoint");
-                if (spawnZone != null)
-                {
-                    TransformComponent? spawnTransform = spawnZone.GetComponent<TransformComponent>();
-                    if (spawnTransform != null)
-                    {
-                        transform.Translation = spawnTransform.Translation;
-                        Log.Info("Teleported to spawn via C#!");
-                    }
-                }
-            }
         }
     }
 }
