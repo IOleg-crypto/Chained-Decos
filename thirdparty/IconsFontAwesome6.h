@@ -1,7 +1,6 @@
 #ifndef ICONS_FONT_AWESOME_6_H
 #define ICONS_FONT_AWESOME_6_H
 
-
 #define ICON_MIN_FA 0xe005
 #define ICON_MAX_16_FA 0xf8ff
 #define ICON_MAX_FA 0xf8ff
@@ -83,6 +82,5 @@
 #define ICON_FA_WINDOW_MAXIMIZE "\xef\x8b\x90"
 #define ICON_FA_WINDOW_RESTORE "\xef\x8b\x92"
 #define ICON_FA_XMARK "\xef\x80\x8d"
-
 
 #endif /* A9AA0D13_3152_475F_917F_26AAD4C14D0C */
