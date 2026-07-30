@@ -218,13 +218,13 @@ bool ScriptHost::Init()
         return true;
     }
 
-    Coral::HostSettings settings;
+    Coral::HostSettings coralSettings;
 
     m_CoralDirectory = ResolveCoralDirectory();
-    settings.CoralDirectory = m_CoralDirectory.string();
+    coralSettings.CoralDirectory = m_CoralDirectory.string();
     CH_CORE_INFO("ScriptEngine: Using Coral directory '{}'.", m_CoralDirectory.string());
 
-    settings.MessageCallback = [](std::string_view message, Coral::MessageLevel level) {
+    coralSettings.MessageCallback = [](std::string_view message, Coral::MessageLevel level) {
         switch (level)
         {
         case Coral::MessageLevel::Info:
@@ -242,11 +242,11 @@ bool ScriptHost::Init()
         }
     };
 
-    settings.ExceptionCallback = [](std::string_view message) {
+    coralSettings.ExceptionCallback = [](std::string_view message) {
         CH_CORE_ERROR("[Coral] Unhandled Exception: {}", message);
     };
 
-    auto status = m_Host.Initialize(settings);
+    auto status = m_Host.Initialize(coralSettings);
     if (status != Coral::CoralInitStatus::Success)
     {
         CH_CORE_ERROR("ScriptEngine: Failed to initialize Coral! Status: {}", (int)status);

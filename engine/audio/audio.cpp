@@ -2,6 +2,7 @@
 #include "miniaudio.h"
 #include "audio.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/types/audio_asset.h"
 #include "engine/core/service_locator.h"
 #include "engine/core/log.h"
 #include "engine/project/project.h"
@@ -93,60 +94,50 @@ void Audio::Update(Timestep ts)
     }
 }
 
-AudioHandle Audio::LoadSound(const std::string& filepath)
+AssetHandle Audio::LoadSound(const std::string& filepath)
 {
     if (filepath.empty())
     {
-        return 0;
-    }
-
-    auto project = Project::GetActive();
-    std::filesystem::path resolvedPath;
-    if (project && std::filesystem::path(filepath).is_relative())
-    {
-        resolvedPath = project->GetAssetDirectoryForProject() / filepath;
-    }
-    else
-    {
-        resolvedPath = filepath;
+        return AssetHandle(0);
     }
 
     auto* am = ServiceLocator::TryGet<AssetManager>();
-    bool existsOnDisk = !resolvedPath.empty() && std::filesystem::exists(resolvedPath);
-    bool existsInPack = am && (am->HasAsset(filepath) || am->HasAsset(resolvedPath.generic_string()));
-
-    if (!existsOnDisk && !existsInPack)
+    if (!am)
     {
-        CH_CORE_ERROR("Audio System: File not found: {}", filepath);
-        return 0;
+        CH_CORE_ERROR("Audio System: AssetManager not available");
+        return AssetHandle(0);
     }
 
-    std::string cacheKey = filepath;
-
-    std::lock_guard<std::mutex> lock(m_DataMutex);
-    auto existing = m_PathToHandle.find(cacheKey);
-    if (existing != m_PathToHandle.end())
+    auto asset = am->Load<AudioAsset>(filepath);
+    if (!asset)
     {
-        return existing->second;
+        CH_CORE_ERROR("Audio System: Failed to load audio asset: {}", filepath);
+        return AssetHandle(0);
     }
 
-    AudioHandle newHandle = UUID();
-    m_PathToHandle[cacheKey] = newHandle;
-    m_HandleToPath[newHandle] = filepath;
-
-    CH_CORE_INFO("Audio System: Registered sound path {}", cacheKey);
-    return newHandle;
+    return asset->GetID();
 }
 
-bool Audio::IsSoundLoaded(AudioHandle handle) const
+bool Audio::IsSoundLoaded(AssetHandle handle) const
 {
-    std::lock_guard lock(m_DataMutex);
-    return m_HandleToPath.contains(handle);
+    if (handle == AssetHandle(0))
+    {
+        return false;
+    }
+
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (!am)
+    {
+        return false;
+    }
+
+    auto asset = am->GetAsset(handle);
+    return asset != nullptr;
 }
 
-bool Audio::IsPlaying(AudioHandle handle) const
+bool Audio::IsPlaying(AssetHandle handle) const
 {
-    if (handle == 0)
+    if (handle == AssetHandle(0))
     {
         return false;
     }
@@ -177,9 +168,9 @@ void Audio::SetListenerPosition(const glm::vec3& position, const glm::vec3& forw
     ma_engine_listener_set_world_up(m_engine.get(), 0, up.x, up.y, up.z);
 }
 
-void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
+void Audio::SetInstancePosition(AssetHandle handle, const glm::vec3& pos)
 {
-    if (!m_engine || handle == 0)
+    if (!m_engine || handle == AssetHandle(0))
     {
         return;
     }
@@ -194,24 +185,28 @@ void Audio::SetInstancePosition(AudioHandle handle, const glm::vec3& pos)
     }
 }
 
-void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
+void Audio::Play(AssetHandle handle, float volume, float pitch, bool loop, bool spatial, const glm::vec3& pos)
 {
-    if (!m_engine || handle == 0)
+    if (!m_engine || handle == AssetHandle(0))
     {
         return;
     }
 
-    std::string filepath;
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (!am)
     {
-        std::lock_guard<std::mutex> lock(m_DataMutex);
-        auto it = m_HandleToPath.find(handle);
-        if (it == m_HandleToPath.end())
-        {
-            CH_CORE_WARN("Audio System: Try to play unknown handle {}", (uint64_t)handle);
-            return;
-        }
-        filepath = it->second;
+        CH_CORE_WARN("Audio System: AssetManager not available");
+        return;
     }
+
+    auto asset = am->GetAsset(handle);
+    if (!asset)
+    {
+        CH_CORE_WARN("Audio System: Try to play unknown handle {}", (uint64_t)handle);
+        return;
+    }
+
+    std::string filepath = asset->GetPath();
 
     auto instance = std::make_unique<SoundInstance>();
     instance->Handle = handle;
@@ -219,14 +214,10 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
     ma_uint32 flags = MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC;
     ma_result result = MA_ERROR;
 
-    auto* am = ServiceLocator::TryGet<AssetManager>();
-    if (am)
+    instance->SoundData = am->ReadProjectAsset(filepath);
+    if (instance->SoundData.empty())
     {
-        instance->SoundData = am->ReadProjectAsset(filepath);
-        if (instance->SoundData.empty())
-        {
-            instance->SoundData = am->ReadAssetData(filepath);
-        }
+        instance->SoundData = am->ReadAssetData(filepath);
     }
 
     if (!instance->SoundData.empty())
@@ -283,9 +274,9 @@ void Audio::Play(AudioHandle handle, float volume, float pitch, bool loop, bool 
     m_ActiveSounds.push_back(std::move(instance));
 }
 
-void Audio::SetVolume(AudioHandle handle, float volume)
+void Audio::SetVolume(AssetHandle handle, float volume)
 {
-    if (!m_engine || handle == 0)
+    if (!m_engine || handle == AssetHandle(0))
     {
         return;
     }
@@ -300,9 +291,9 @@ void Audio::SetVolume(AudioHandle handle, float volume)
     }
 }
 
-void Audio::SetPitch(AudioHandle handle, float pitch)
+void Audio::SetPitch(AssetHandle handle, float pitch)
 {
-    if (!m_engine || handle == 0)
+    if (!m_engine || handle == AssetHandle(0))
     {
         return;
     }
@@ -324,23 +315,24 @@ void Audio::Stop(const std::string& filepath)
         return;
     }
 
-    AudioHandle handle = 0;
+    auto* am = ServiceLocator::TryGet<AssetManager>();
+    if (!am)
     {
-        std::lock_guard<std::mutex> lock(m_DataMutex);
-        auto it = m_PathToHandle.find(filepath);
-        if (it == m_PathToHandle.end())
-        {
-            return;
-        }
-        handle = it->second;
+        return;
+    }
+
+    AssetHandle handle = am->ResolveToHandle(filepath);
+    if (handle == AssetHandle(0))
+    {
+        return;
     }
 
     Stop(handle);
 }
 
-void Audio::Stop(AudioHandle handle)
+void Audio::Stop(AssetHandle handle)
 {
-    if (!m_engine || handle == 0)
+    if (!m_engine || handle == AssetHandle(0))
     {
         return;
     }

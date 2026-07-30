@@ -91,7 +91,6 @@ static inline void ResolveModelPath(ModelComponent& mc)
         return;
     }
 
-    auto handle = assets->LoadAsset(mc.ModelPath, ModelAsset::GetStaticType());
     auto asset = assets->Get<ModelAsset>(mc.ModelPath);
     if (asset && asset->GetState() == AssetState::Ready)
     {

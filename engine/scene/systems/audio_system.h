@@ -8,7 +8,7 @@ namespace Chained
 {
 namespace AudioSystem
 {
-void Update(entt::registry& reg, Timestep ts);
+void Update(entt::registry& reg);
 void OnRuntimeStart(entt::registry& reg);
 void OnRuntimeStop(entt::registry& reg);
 } // namespace AudioSystem

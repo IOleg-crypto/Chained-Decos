@@ -30,14 +30,15 @@ uint64_t MetaUtils::ComputeFileHash(const std::filesystem::path& path)
         return 0;
     }
     file.seekg(0, std::ios::beg);
-    std::vector<char> buffer(static_cast<size_t>(size));
-    if (!file.read(buffer.data(), size))
+    std::vector<char> hashInputData(static_cast<size_t>(size));
+    if (!file.read(hashInputData.data(), size))
     {
         return 0;
     }
-    return std::accumulate(buffer.begin(), buffer.end(), UINT64_C(14695981039346656037), [](uint64_t hash, char c) {
-        return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL;
-    });
+    return std::accumulate(hashInputData.begin(), hashInputData.end(), UINT64_C(14695981039346656037),
+                           [](uint64_t hash, char c) {
+                               return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL;
+                           });
 }
 
 const char* MetaUtils::AssetTypeToString(AssetType type)
@@ -126,7 +127,7 @@ AssetMetadata MetaUtils::ReadMeta(const std::filesystem::path& metaPath)
 
         if (root["Type"])
         {
-            meta.type = StringToAssetType(root["Type"].as<std::string>());
+            meta.assetType = StringToAssetType(root["Type"].as<std::string>());
         }
 
         if (root["ImporterSettings"])
@@ -157,7 +158,7 @@ bool MetaUtils::WriteMeta(const std::filesystem::path& metaPath, const AssetMeta
         out << YAML::BeginMap;
         out << YAML::Key << "Version" << YAML::Value << meta.version;
         out << YAML::Key << "UUID" << YAML::Value << static_cast<uint64_t>(meta.uuid);
-        out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(meta.type);
+        out << YAML::Key << "Type" << YAML::Value << AssetTypeToString(meta.assetType);
         out << YAML::Key << "ContentHash" << YAML::Value << meta.contentHash;
         out << YAML::Key << "IsGenerated" << YAML::Value << meta.isGenerated;
 
@@ -212,7 +213,7 @@ AssetMetadata MetaUtils::LoadOrCreateMeta(const std::filesystem::path& assetPath
 
     AssetMetadata meta;
     meta.uuid = UUID();
-    meta.type = type;
+    meta.assetType = type;
     meta.contentHash = ComputeFileHash(assetPath);
     meta.isGenerated = true;
 

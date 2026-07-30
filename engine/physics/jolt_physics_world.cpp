@@ -146,8 +146,8 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
     switch (desc.Shape)
     {
     case ColliderType::Box: {
-        JPH::BoxShapeSettings s(JPH::Vec3(desc.Dimensions.x, desc.Dimensions.y, desc.Dimensions.z));
-        shape = s.Create().Get();
+        JPH::BoxShapeSettings boxSettings(JPH::Vec3(desc.Dimensions.x, desc.Dimensions.y, desc.Dimensions.z));
+        shape = boxSettings.Create().Get();
         if (!shape)
         {
             CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
@@ -160,8 +160,8 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         break;
     }
     case ColliderType::Sphere: {
-        JPH::SphereShapeSettings s(desc.Dimensions.x);
-        shape = s.Create().Get();
+        JPH::SphereShapeSettings sphereSettings(desc.Dimensions.x);
+        shape = sphereSettings.Create().Get();
         if (!shape)
         {
             CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
@@ -174,8 +174,8 @@ JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
         break;
     }
     case ColliderType::Capsule: {
-        JPH::CapsuleShapeSettings s(desc.Dimensions.y, desc.Dimensions.x);
-        shape = s.Create().Get();
+        JPH::CapsuleShapeSettings capsuleSettings(desc.Dimensions.y, desc.Dimensions.x);
+        shape = capsuleSettings.Create().Get();
         if (!shape)
         {
             CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
@@ -453,15 +453,15 @@ JPH::BodyCreationSettings JoltPhysicsWorld::BuildBodySettings(const PhysicsBodyD
         objectLayer = Layers::MOVING;
     }
 
-    JPH::BodyCreationSettings settings(shape, JPH::RVec3(desc.Position.x, desc.Position.y, desc.Position.z),
-                                       JPH::Quat(desc.Rotation.x, desc.Rotation.y, desc.Rotation.z, desc.Rotation.w),
-                                       motionType, objectLayer);
+    JPH::BodyCreationSettings bodySettings(
+        shape, JPH::RVec3(desc.Position.x, desc.Position.y, desc.Position.z),
+        JPH::Quat(desc.Rotation.x, desc.Rotation.y, desc.Rotation.z, desc.Rotation.w), motionType, objectLayer);
 
-    settings.mFriction = desc.Friction;
-    settings.mRestitution = desc.Restitution;
-    settings.mLinearDamping = desc.LinearDamping;
-    settings.mAngularDamping = desc.AngularDamping;
-    settings.mAllowSleeping = true;
+    bodySettings.mFriction = desc.Friction;
+    bodySettings.mRestitution = desc.Restitution;
+    bodySettings.mLinearDamping = desc.LinearDamping;
+    bodySettings.mAngularDamping = desc.AngularDamping;
+    bodySettings.mAllowSleeping = true;
 
     if (desc.Shape == ColliderType::Mesh && !desc.IsStatic && !desc.Triangles.empty())
     {
@@ -484,39 +484,39 @@ JPH::BodyCreationSettings JoltPhysicsWorld::BuildBodySettings(const PhysicsBodyD
         {
             float volume = boxSize.GetX() * boxSize.GetY() * boxSize.GetZ();
             float density = (volume > 0.0f) ? (desc.Mass / volume) : 1.0f;
-            settings.mMassPropertiesOverride.SetMassAndInertiaOfSolidBox(boxSize, density);
-            settings.mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
+            bodySettings.mMassPropertiesOverride.SetMassAndInertiaOfSolidBox(boxSize, density);
+            bodySettings.mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
         }
         else
         {
-            settings.mMassPropertiesOverride.mMass = desc.Mass;
-            settings.mMassPropertiesOverride.mInertia = JPH::Mat44::sScale(desc.Mass);
-            settings.mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
+            bodySettings.mMassPropertiesOverride.mMass = desc.Mass;
+            bodySettings.mMassPropertiesOverride.mInertia = JPH::Mat44::sScale(desc.Mass);
+            bodySettings.mOverrideMassProperties = JPH::EOverrideMassProperties::MassAndInertiaProvided;
         }
     }
     else
     {
-        settings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateMassAndInertia;
+        bodySettings.mOverrideMassProperties = JPH::EOverrideMassProperties::CalculateMassAndInertia;
     }
 
     if (desc.IsKinematic)
     {
-        settings.mGravityFactor = 0.0f;
+        bodySettings.mGravityFactor = 0.0f;
     }
     else
     {
-        settings.mGravityFactor = desc.UseGravity ? 1.0f : 0.0f;
+        bodySettings.mGravityFactor = desc.UseGravity ? 1.0f : 0.0f;
     }
 
     if (desc.IsFixedRotation)
     {
-        settings.mAllowedDOFs =
+        bodySettings.mAllowedDOFs =
             JPH::EAllowedDOFs::TranslationX | JPH::EAllowedDOFs::TranslationY | JPH::EAllowedDOFs::TranslationZ;
     }
 
-    settings.mUserData = desc.UserData;
+    bodySettings.mUserData = desc.UserData;
 
-    return settings;
+    return bodySettings;
 }
 
 PhysicsBodyHandle JoltPhysicsWorld::CreateBody(const PhysicsBodyDesc& desc)

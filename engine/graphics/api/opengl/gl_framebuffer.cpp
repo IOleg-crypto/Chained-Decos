@@ -59,9 +59,9 @@ void GLFramebuffer::Invalidate()
     // need a single-sample sampler2D/sampler2DShadow.
     GLint maxSamples = 1;
     glGetIntegerv(GL_MAX_SAMPLES, &maxSamples);
-    uint32_t samples =
+    uint32_t clampedMsaaSampleCount =
         m_Specification.DepthOnly ? 1 : std::min<uint32_t>(m_Specification.Samples, (uint32_t)maxSamples);
-    bool multisampled = samples > 1;
+    bool multisampled = clampedMsaaSampleCount > 1;
 
     glGenFramebuffers(1, &m_RendererID);
     glBindFramebuffer(GL_FRAMEBUFFER, m_RendererID);
@@ -105,14 +105,14 @@ void GLFramebuffer::Invalidate()
 
             glGenTextures(1, &m_ColorAttachment);
             glBindTexture(target, m_ColorAttachment);
-            glTexImage2DMultisample(target, samples, internalFormat, m_Specification.Width, m_Specification.Height,
-                                    GL_TRUE);
+            glTexImage2DMultisample(target, clampedMsaaSampleCount, internalFormat, m_Specification.Width,
+                                    m_Specification.Height, GL_TRUE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, target, m_ColorAttachment, 0);
 
             glGenTextures(1, &m_DepthAttachment);
             glBindTexture(target, m_DepthAttachment);
-            glTexImage2DMultisample(target, samples, GL_DEPTH24_STENCIL8, m_Specification.Width, m_Specification.Height,
-                                    GL_TRUE);
+            glTexImage2DMultisample(target, clampedMsaaSampleCount, GL_DEPTH24_STENCIL8, m_Specification.Width,
+                                    m_Specification.Height, GL_TRUE);
             glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_STENCIL_ATTACHMENT, target, m_DepthAttachment, 0);
         }
         else

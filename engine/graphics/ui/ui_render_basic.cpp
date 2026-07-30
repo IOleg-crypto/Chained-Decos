@@ -59,7 +59,7 @@ bool RenderLabel(const LabelData& label, UIControlComponent& wc, const ImVec2& p
     return false;
 }
 
-bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+bool RenderCheckbox(CheckboxData& checkbox, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
                     const TextStyle& textStyle)
 {
     ImDrawList* dl = ImGui::GetWindowDrawList();
@@ -71,7 +71,7 @@ bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos,
     dl->AddRectFilled(pos, boxMax, boxColor, wc.BoxStyle.Rounding);
     dl->AddRect(pos, boxMax, ToImU32(wc.BoxStyle.BorderColor), wc.BoxStyle.Rounding, 0, 1.0f);
 
-    if (cb.Checked)
+    if (checkbox.Checked)
     {
         float pad = boxSize * 0.25f;
         dl->AddRectFilled({pos.x + pad, pos.y + pad}, {boxMax.x - pad, boxMax.y - pad}, ToImU32(textStyle.TextColor),
@@ -80,11 +80,11 @@ bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos,
 
     ImVec2 textPos = {pos.x + boxSize + 8.0f, pos.y};
     ImVec2 textSize = {size.x - boxSize - 8.0f, size.y};
-    RenderAlignedTextureText(dl, font, textStyle.FontSize, cb.Label, textPos, textSize, textStyle);
+    RenderAlignedTextureText(dl, font, textStyle.FontSize, checkbox.Label, textPos, textSize, textStyle);
 
     if (wc.PressedThisFrame)
     {
-        cb.Checked = !cb.Checked;
+        checkbox.Checked = !checkbox.Checked;
         return true;
     }
 

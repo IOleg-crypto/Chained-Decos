@@ -47,9 +47,10 @@ void ShadowPass::Execute(const RenderContext& ctx)
         return;
     }
 
-    const auto& ld = ctx.Renderer->GetEnvironment().Lighting;
-    glm::vec3 lightDir = glm::length(glm::vec3(ld.Direction)) > 0.0001f ? glm::normalize(glm::vec3(ld.Direction))
-                                                                        : glm::normalize(glm::vec3(0.3f, -0.7f, 0.3f));
+    const auto& lightingSettings = ctx.Renderer->GetEnvironment().Lighting;
+    glm::vec3 lightDir = glm::length(glm::vec3(lightingSettings.Direction)) > 0.0001f
+                             ? glm::normalize(glm::vec3(lightingSettings.Direction))
+                             : glm::normalize(glm::vec3(0.3f, -0.7f, 0.3f));
 
     m_HasShadows = true;
 
@@ -79,12 +80,12 @@ void ShadowPass::Execute(const RenderContext& ctx)
     // Recreate shadow map FBO if size changed (depth-only)
     if (!m_ShadowMap || m_ShadowMap->GetSpecification().Width != shadowRes)
     {
-        FramebufferSpecification spec;
-        spec.Width = shadowRes;
-        spec.Height = shadowRes;
-        spec.Samples = 1;
-        spec.DepthOnly = true; // Pure depth texture — no color attachment
-        m_ShadowMap = Framebuffer::Create(spec);
+        FramebufferSpecification shadowFboSpec;
+        shadowFboSpec.Width = shadowRes;
+        shadowFboSpec.Height = shadowRes;
+        shadowFboSpec.Samples = 1;
+        shadowFboSpec.DepthOnly = true; // Pure depth texture — no color attachment
+        m_ShadowMap = Framebuffer::Create(shadowFboSpec);
     }
 
     if (!m_ShadowMap || !m_ShadowMap->IsValid())

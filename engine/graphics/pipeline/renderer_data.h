@@ -29,7 +29,7 @@ struct RenderLight
     float radius = 10.0f;                       // 4 bytes
     float innerCutoff = 15.0f;                  // 4 bytes
     float outerCutoff = 20.0f;                  // 4 bytes
-    int type = 0;                               // 4 bytes
+    int lightType = 0;                          // 4 bytes
     int enabled = 0;                            // 4 bytes
 };
 
