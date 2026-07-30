@@ -369,6 +369,42 @@ Notes:
   ]
   ```
 
+### Build Automation Scripts
+
+The build pipeline uses three Python scripts in `tools/` for C# and resource management:
+
+| Script | Purpose |
+| :--- | :--- |
+| `tools/build_managed.py` | Builds C# projects (Chained.Managed + game scripts) via `dotnet build` |
+| `tools/sync_resources.py` | Syncs engine resources (shaders, fonts, icons) to build output |
+| `tools/sync_scripts.py` | Copies C# DLLs from build output to game `assets/bin/` |
+
+These run automatically as CMake POST_BUILD steps. The pipeline:
+
+```
+1. build_managed.py   → compiles C# → build/<preset>/bin/<Config>/scripts/<Game>/
+2. sync_scripts.py    → copies DLLs → game/<game>/assets/bin/       (editor)
+                                   → build/<preset>/bin/<Config>/assets/bin/ (runtime)
+3. sync_resources.py  → copies resources/ → build/<preset>/bin/<Config>/resources/
+```
+
+Manual usage:
+
+```bash
+# Build C# (Chained.Managed)
+python tools/build_managed.py --project scripting/managed/Chained.Managed.csproj \
+    --output build/windows-clang/bin/Debug \
+    --coral-dir build/windows-clang/vendor/coral \
+    --configuration Debug --copy-coral --write-props --parallel
+
+# Sync C# DLLs to game assets
+python tools/sync_scripts.py --build-dir build/windows-clang/bin/Debug \
+    --game-dir game/chaineddecos
+
+# Sync engine resources
+python tools/sync_resources.py --root . --bin build/windows-clang/bin --all-configs
+```
+
 ## Run
 
 Binary outputs are generated under build/{preset}/bin.

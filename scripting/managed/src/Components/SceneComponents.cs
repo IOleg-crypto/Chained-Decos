@@ -285,7 +285,6 @@ public class SpawnComponent : Component
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_IsActive_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
     internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_GetRenderSpawnZoneInScene_Ptr;
     internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetZoneSize_Ptr;
 #pragma warning restore 0649
@@ -293,20 +292,6 @@ public class SpawnComponent : Component
     public bool IsActive
     {
         get { unsafe { return SpawnComponent_IsActive_Ptr != null && SpawnComponent_IsActive_Ptr(Entity.ID) != 0; } }
-    }
-
-    public Vector3 SpawnPoint
-    {
-        get
-        {
-            unsafe
-            {
-                if (SpawnComponent_GetSpawnPoint_Ptr == null) return Vector3.Zero;
-                Vector3 point;
-                SpawnComponent_GetSpawnPoint_Ptr(Entity.ID, &point);
-                return point;
-            }
-        }
     }
 
     public bool RenderSpawnZoneInScene

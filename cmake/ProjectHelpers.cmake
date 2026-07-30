@@ -17,12 +17,15 @@ function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
     set(SCRIPT_DLL_PATH "${SCRIPT_OUTPUT_DIR}/${TARGET_NAME}.dll")
 
     add_custom_target(${SCRIPT_TARGET}
-        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/sync_resources.py" build-managed
+        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/build_managed.py"
             --project "${FULL_CSPROJ_PATH}"
             --configuration $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release>
             --output "${SCRIPT_OUTPUT_DIR}"
             --coral-dir "${CORAL_MANAGED_DIR}"
             --parallel
+        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/sync_scripts.py"
+            --build-dir "${CMAKE_BINARY_DIR}/bin/$<CONFIG>"
+            --game-dir "${CMAKE_CURRENT_SOURCE_DIR}"
         WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
         COMMENT "Building C# Scripts for ${TARGET_NAME} (incremental)"
         BYPRODUCTS "${SCRIPT_DLL_PATH}"
