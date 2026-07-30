@@ -81,6 +81,12 @@ public:
     virtual void SetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity) = 0;
     virtual glm::vec3 GetVelocity(PhysicsBodyHandle handle) const = 0;
 
+    /// Sets the body velocity unconditionally, bypassing any per-component
+    /// Y-velocity overrides.  Use this when you need to truly zero the
+    /// velocity (e.g. after a respawn teleport) and the normal SetVelocity
+    /// path preserves the physics-simulated Y component.
+    virtual void SetVelocityForce(PhysicsBodyHandle handle, const glm::vec3& velocity) = 0;
+
     virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) = 0;
 
     virtual void Step(float fixedDt) = 0;

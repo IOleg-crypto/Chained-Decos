@@ -187,6 +187,23 @@ void RigidBody_SetVelocity(uint64_t entityID, glm::vec3* inVelocity)
         }
     }
 }
+void RigidBody_ForceSetVelocity(uint64_t entityID, glm::vec3* inVelocity)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<RigidBodyComponent>() && inVelocity)
+    {
+        auto& rb = entity.GetComponent<RigidBodyComponent>();
+        rb.Velocity = *inVelocity;
+        if (rb.Handle != kInvalidPhysicsBody)
+        {
+            auto* physics = ServiceLocator::TryGet<Physics>();
+            if (physics)
+            {
+                physics->ForceSetVelocity(rb.Handle, *inVelocity);
+            }
+        }
+    }
+}
 bool RigidBody_IsGrounded(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
