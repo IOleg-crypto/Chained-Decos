@@ -248,6 +248,14 @@ void Physics::UpdateColliders(Scene* scene)
     }
 }
 
+void Physics::ForceSetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity)
+{
+    if (auto world = GetWorld())
+    {
+        world->SetVelocityForce(handle, velocity);
+    }
+}
+
 RaycastResult Physics::Raycast(Scene* scene, Ray ray)
 {
     if (auto world = GetWorld())
