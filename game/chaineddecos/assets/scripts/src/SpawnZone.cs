@@ -69,7 +69,7 @@ namespace ChainedDecos.Scripts
                 
                 if (myRb != null)
                 {
-                    myRb.Velocity = Vector3.Zero;
+                    myRb.ForceSetVelocity(Vector3.Zero);
                 }
                 
                 Log.Info("spawnzone: Player respawned successfully.");

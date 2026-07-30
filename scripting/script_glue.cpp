@@ -63,6 +63,8 @@ void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
     // ── RigidBody ─────────────────────────────────────────────────────
     assembly.AddInternalCall("Chained.RigidBodyComponent", "RigidBody_GetVelocity_Ptr", (void*)&RigidBody_GetVelocity);
     assembly.AddInternalCall("Chained.RigidBodyComponent", "RigidBody_SetVelocity_Ptr", (void*)&RigidBody_SetVelocity);
+    assembly.AddInternalCall("Chained.RigidBodyComponent", "RigidBody_ForceSetVelocity_Ptr",
+                             (void*)&RigidBody_ForceSetVelocity);
     assembly.AddInternalCall("Chained.RigidBodyComponent", "RigidBody_IsGrounded_Ptr", (void*)&RigidBody_IsGrounded);
     assembly.AddInternalCall("Chained.RigidBodyComponent", "RigidBody_IsKinematic_Ptr", (void*)&RigidBody_IsKinematic);
     assembly.AddInternalCall("Chained.RigidBodyComponent", "RigidBody_SetKinematic_Ptr",

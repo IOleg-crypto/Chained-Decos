@@ -68,6 +68,10 @@ public:
     void ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider,
                             const glm::vec3& scale);
 
+    /// Unconditionally sets the velocity on a body, bypassing the Y-override
+    /// that the normal script-path applies.  Use for respawn teleports.
+    void ForceSetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity);
+
     // Scene context helpers
     PhysicsContext& GetContext(Scene* scene);
     void ResetAccumulator(Scene* scene);
