@@ -1,4 +1,6 @@
 #include "font_choice_gui.h"
+#include "engine/core/service_locator.h"
+#include "engine/assets/asset_manager.h"
 
 namespace Chained
 {
@@ -68,5 +70,27 @@ const std::vector<FontChoice>& GetEditorFontChoices()
 
     CH_CORE_INFO("EditorGUI: Discovered {} editor font(s) in '{}'.", s_Choices.size(), fontDir.string());
     return s_Choices;
+}
+
+std::string MakeFontLabel(const std::filesystem::path& file)
+{
+    std::string stem = file.stem().string();
+    std::string label;
+    label.reserve(stem.size());
+    bool upperNext = true;
+    for (char c : stem)
+    {
+        if (c == '-' || c == '_')
+        {
+            label += ' ';
+            upperNext = true;
+        }
+        else
+        {
+            label += upperNext ? (char)std::toupper((unsigned char)c) : c;
+            upperNext = false;
+        }
+    }
+    return label;
 }
 } // namespace Chained
