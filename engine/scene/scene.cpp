@@ -253,7 +253,7 @@ void Scene::UpdateCommon(Timestep ts, bool runScripting, bool runPhysics, bool r
 
     AssetResolutionSystem::Update(*m_Registry);
     AnimationSystem::Update(*m_Registry, ts);
-    AudioSystem::Update(*m_Registry, ts);
+    AudioSystem::Update(*m_Registry);
     PhysicsBodySystem::Update(*m_Registry);
 
     if (runPhysics)
@@ -325,7 +325,7 @@ void Scene::OnUpdateEditor(Timestep timestep)
 
     AssetResolutionSystem::Update(*m_Registry);
     AnimationSystem::Update(*m_Registry, timestep);
-    AudioSystem::Update(*m_Registry, timestep);
+    AudioSystem::Update(*m_Registry);
 }
 
 void Scene::OnViewportResize(uint32_t width, uint32_t height)
