@@ -78,7 +78,7 @@ set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
 
 find_package(Python3 REQUIRED COMPONENTS Interpreter)
-set(BUILD_HELPER_SCRIPT "${CMAKE_SOURCE_DIR}/tools/sync_resources.py") 
+set(BUILD_MANAGED_SCRIPT "${CMAKE_SOURCE_DIR}/tools/build_managed.py")
 
 file(GLOB_RECURSE MANAGED_SOURCES "${MANAGED_PROJECT_DIR}/src/*.cs")
 
@@ -86,7 +86,7 @@ set(MANAGED_DLL_OUTPUT "${MANAGED_OUTPUT_DIR}/Chained.Managed.dll")
 
 add_custom_command(
     OUTPUT  "${MANAGED_DLL_OUTPUT}"
-    COMMAND Python3::Interpreter "${BUILD_HELPER_SCRIPT}" build-managed
+    COMMAND Python3::Interpreter "${BUILD_MANAGED_SCRIPT}"
             --project "${MANAGED_PROJECT_PATH}"
             --output "${MANAGED_OUTPUT_DIR}"
             --coral-dir "${CORAL_MANAGED_DIR}"

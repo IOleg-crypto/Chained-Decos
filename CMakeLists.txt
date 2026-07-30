@@ -134,3 +134,12 @@ add_custom_target(sync-resources
     COMMENT "Syncing resources to all configs"
     VERBATIM
 )
+
+add_custom_target(sync-scripts
+    COMMAND ${CH_PYTHON_EXECUTABLE}
+            "${CMAKE_SOURCE_DIR}/tools/sync_scripts.py"
+            --build-dir "${CMAKE_BINARY_DIR}/bin/$<CONFIG>"
+            --game-dir  "${CMAKE_SOURCE_DIR}/game/chaineddecos"
+    COMMENT "Syncing C# scripts to game assets"
+    VERBATIM
+)
