@@ -1,20 +1,18 @@
 #ifndef CH_AUDIO_H
 #define CH_AUDIO_H
 
+#include "engine/assets/asset.h"
 #include "engine/common/timestep.h"
-#include "engine/common/uuid.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <miniaudio.h>
 #include <mutex>
 #include <string>
-#include <unordered_map>
 #include <vector>
 #include "engine/core/engine_module.h"
 
 namespace Chained
 {
-using AudioHandle = UUID;
 
 struct SoundInstance
 {
@@ -22,7 +20,7 @@ struct SoundInstance
     ma_decoder Decoder;
     std::vector<uint8_t> SoundData;
     bool HasDecoder = false;
-    AudioHandle Handle;
+    AssetHandle Handle;
 };
 
 // Custom deleter for ma_engine
@@ -53,19 +51,19 @@ public:
     void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
 
 public:
-    AudioHandle LoadSound(const std::string& filepath);
-    bool IsSoundLoaded(AudioHandle handle) const;
-    bool IsPlaying(AudioHandle handle) const;
+    AssetHandle LoadSound(const std::string& filepath);
+    bool IsSoundLoaded(AssetHandle handle) const;
+    bool IsPlaying(AssetHandle handle) const;
 
-    void Play(AudioHandle handle, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false,
+    void Play(AssetHandle handle, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false,
               const glm::vec3& pos = {0, 0, 0});
 
-    void SetInstancePosition(AudioHandle handle, const glm::vec3& pos);
-    void SetVolume(AudioHandle handle, float volume);
-    void SetPitch(AudioHandle handle, float pitch);
+    void SetInstancePosition(AssetHandle handle, const glm::vec3& pos);
+    void SetVolume(AssetHandle handle, float volume);
+    void SetPitch(AssetHandle handle, float pitch);
 
     void Stop(const std::string& filepath);
-    void Stop(AudioHandle handle);
+    void Stop(AssetHandle handle);
     void StopAll();
 
 public:
@@ -77,8 +75,6 @@ private:
 private:
     mutable std::mutex m_DataMutex;
     std::vector<std::unique_ptr<SoundInstance>> m_ActiveSounds;
-    std::unordered_map<std::string, AudioHandle> m_PathToHandle;
-    std::unordered_map<AudioHandle, std::string> m_HandleToPath;
 };
 
 } // namespace Chained

@@ -188,7 +188,7 @@ ViewportPanel::ViewportPanel(ImVec2& editorViewportSize)
     FramebufferSpecification hdrSpec = spec;
     hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
     hdrSpec.Samples = GetConfiguredMSAASamples();
-    m_HDRFramebufferSamples = hdrSpec.Samples;
+    m_MSAAFramebufferSamples = hdrSpec.Samples;
     m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
 
     m_SceneRenderer = std::make_unique<SceneRenderer>();
@@ -434,7 +434,7 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
     // or if the project's AntiAliasingSamples setting changed since we last (re)created them -
     // the sample count is baked into the framebuffer at creation and can't change in place.
     uint32_t configuredSamples = GetConfiguredMSAASamples();
-    if (m_HDRFramebuffer && configuredSamples != m_HDRFramebufferSamples)
+    if (m_HDRFramebuffer && configuredSamples != m_MSAAFramebufferSamples)
     {
         m_HDRFramebuffer.reset();
     }
@@ -456,7 +456,7 @@ void ViewportPanel::HandleResize(const ImVec2& viewportSize, Scene* activeScene)
             hdrSpec.Height = (uint32_t)m_ViewportSize.y;
             hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
             hdrSpec.Samples = configuredSamples;
-            m_HDRFramebufferSamples = configuredSamples;
+            m_MSAAFramebufferSamples = configuredSamples;
             m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
         }
     }
@@ -1034,12 +1034,12 @@ void ViewportPanel::RenderLightIcons(entt::registry& registry, const Camera3D& c
         glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f, light.LightColor.b / 255.0f,
                                0.95f};
 
-        uint32_t handle = GetIconHandle(m_EditorIcons.LightIcon);
-        if (handle != 0)
+        uint32_t iconTextureId = GetIconHandle(m_EditorIcons.LightIcon);
+        if (iconTextureId != 0)
         {
             if (auto* renderer = ServiceLocator::TryGet<Renderer>())
             {
-                renderer->DrawBillboard(camera, handle, iconPos, iconSize, lightTint);
+                renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, lightTint);
             }
             if (light.Type == LightType::Directional)
             {
@@ -1127,12 +1127,12 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
 
         const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
         const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
-        uint32_t handle = GetIconHandle(m_EditorIcons.CameraIcon);
-        if (handle != 0)
+        uint32_t iconTextureId = GetIconHandle(m_EditorIcons.CameraIcon);
+        if (iconTextureId != 0)
         {
             if (auto* renderer = ServiceLocator::TryGet<Renderer>())
             {
-                renderer->DrawBillboard(camera, handle, iconPos, iconSize, cameraTint);
+                renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, cameraTint);
             }
         }
     }
@@ -1149,12 +1149,12 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
             const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
             glm::vec4 spawnTint = {1.0f, 1.0f, 1.0f, 0.95f};
-            uint32_t handle = GetIconHandle(m_EditorIcons.SpawnIcon);
-            if (handle != 0)
+            uint32_t iconTextureId = GetIconHandle(m_EditorIcons.SpawnIcon);
+            if (iconTextureId != 0)
             {
                 if (auto* renderer = ServiceLocator::TryGet<Renderer>())
                 {
-                    renderer->DrawBillboard(camera, handle, iconPos, iconSize, spawnTint);
+                    renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, spawnTint);
                 }
             }
         }
@@ -1168,12 +1168,12 @@ void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSetti
             const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
             const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
             glm::vec4 audioTint = {1.0f, 1.0f, 1.0f, 0.95f};
-            uint32_t handle = GetIconHandle(m_EditorIcons.AudioIcon);
-            if (handle != 0)
+            uint32_t iconTextureId = GetIconHandle(m_EditorIcons.AudioIcon);
+            if (iconTextureId != 0)
             {
                 if (auto* renderer = ServiceLocator::TryGet<Renderer>())
                 {
-                    renderer->DrawBillboard(camera, handle, iconPos, iconSize, audioTint);
+                    renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, audioTint);
                 }
             }
         }

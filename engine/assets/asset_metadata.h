@@ -19,7 +19,7 @@ struct AssetMetadata
 {
     uint32_t version = 1;
     UUID uuid;
-    AssetType type = AssetType::None;
+    AssetType assetType = AssetType::None;
     uint64_t contentHash = 0;
     std::string importerSettingsYaml;
     std::vector<std::string> tags;

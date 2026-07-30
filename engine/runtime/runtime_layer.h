@@ -16,6 +16,24 @@
 
 namespace Chained
 {
+
+enum class RuntimeLoadState : uint8_t
+{
+    Idle,
+    LoadingScene,
+    ReadyToPlay,
+    Running
+};
+
+struct LoadingState
+{
+    RuntimeLoadState State = RuntimeLoadState::Idle;
+    float OverlayElapsed = 0.0f;
+    float MinOverlayDuration = 0.35f;
+    bool SuppressNextUIInput = false;
+    float BoostUploadsTimer = 0.0f;
+};
+
 // Runs the game/runtime experience, including scene loading and the scene renderer.
 class RuntimeLayer : public Layer
 {
@@ -36,13 +54,17 @@ public:
     // Loads a scene by index from the active project configuration.
     void LoadScene(int index);
 
+    bool IsRunning() const
+    {
+        return m_LoadState.State == RuntimeLoadState::Running;
+    }
+
 private:
     bool InitProject(const std::string& projectPath);
     bool DiscoverAndLoadProject(const std::string& projectPath);
     void ApplyWindowConfiguration();
     void SetupBrandingAndIcon();
     void LoadInitialScene();
-    std::string NormalizeScenePath(const std::string& path) const;
     bool TransitionToScene(const std::filesystem::path& scenePath);
     void StopCurrentScene();
     void PreloadSceneFonts(bool allowRuntimeMutation);
@@ -53,6 +75,21 @@ private:
 
     std::optional<Camera3D> GetActiveCamera();
 
+    struct CameraConfig
+    {
+        Camera3D Camera;
+        float NearClip = 0.01f;
+        float FarClip = 10000.0f;
+    };
+    std::optional<CameraConfig> GetCameraConfig();
+    glm::vec4 CalculateBackgroundColor() const;
+
+    bool SetupNewScene(const std::filesystem::path& scenePath);
+    void ResetUIState();
+    void BeginSceneLoading();
+    void AppendFontRequest(const struct TextStyle& style, std::vector<std::pair<std::string, float>>& out,
+                           std::unordered_set<std::string>& dedupe) const;
+
 private:
     std::shared_ptr<Scene> m_Scene;
     std::unique_ptr<SceneRenderer> m_SceneRenderer;
@@ -61,17 +98,11 @@ private:
 
 private:
     std::string m_ProjectPath;
-    float m_BoostUploadsTimer = 0.0f;
-    bool m_IsBoostingUploads = false;
-    bool m_RuntimeStarted = false;
-    bool m_IsSceneLoading = false;
-    float m_LoadingOverlayElapsed = 0.0f;
-    float m_LoadingOverlayMinDuration = 0.35f;
+    LoadingState m_LoadState;
 
     std::string m_PendingScenePath;
     std::shared_ptr<Framebuffer> m_HDRFramebuffer;
-    uint32_t m_HDRFramebufferSamples = 0;
-    bool m_SuppressNextUIInput = false;
+    uint32_t m_MSAAFramebufferSamples = 0;
 };
 } // namespace Chained
 

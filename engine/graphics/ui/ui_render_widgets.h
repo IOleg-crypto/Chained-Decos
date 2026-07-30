@@ -14,7 +14,7 @@ bool RenderButton(const ButtonData& button, UIControlComponent& wc, const ImVec2
                   const TextStyle& textStyle);
 bool RenderLabel(const LabelData& label, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
                  const TextStyle& textStyle);
-bool RenderCheckbox(CheckboxData& cb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+bool RenderCheckbox(CheckboxData& checkbox, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
                     const TextStyle& textStyle);
 bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
 bool RenderSeparator(const SeparatorData& sep, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);

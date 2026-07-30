@@ -30,27 +30,6 @@
 namespace Chained
 {
 
-void AppendTextStyleFontRequest(const TextStyle& style, std::vector<std::pair<std::string, float>>& out,
-                                std::unordered_set<std::string>& dedupe)
-{
-    std::string fontName = NormalizeAssetPath(style.FontName);
-    if (fontName.empty() || fontName == "Default")
-    {
-        return;
-    }
-
-    const float fontSize = (style.FontSize > 0.0f) ? style.FontSize : 16.0f;
-    const int roundedHalf = static_cast<int>(std::lround(fontSize * 2.0f));
-    const std::string key = fontName + "|" + std::to_string(roundedHalf);
-
-    if (!dedupe.insert(key).second)
-    {
-        return;
-    }
-
-    out.emplace_back(fontName, fontSize);
-}
-
 RuntimeLayer::RuntimeLayer(const std::string& projectPath)
     : Layer("RuntimeLayer"),
       m_ProjectPath(projectPath)
@@ -75,7 +54,6 @@ void RuntimeLayer::OnAttach()
 
     auto& io = ImGui::GetIO();
 
-    // Add default font through DLL if needed, but usually redundant if Editor/Engine already did it
     if (io.Fonts->Fonts.Size == 0)
     {
         io.Fonts->AddFontDefault();
@@ -98,7 +76,6 @@ void RuntimeLayer::OnAttach()
         imguiLayer->RefreshFontAtlasTexture();
     }
 
-    // Ensure camera aspect ratio is correct on startup
     if (m_Scene)
     {
         Window& window = Application::Get().GetWindow();
@@ -116,9 +93,7 @@ void RuntimeLayer::OnDetach()
     {
         se->SetContextScene(nullptr);
     }
-    m_RuntimeStarted = false;
-    m_IsSceneLoading = false;
-    m_LoadingOverlayElapsed = 0.0f;
+    m_LoadState = {};
 }
 
 void RuntimeLayer::OnUpdate(Timestep ts)
@@ -144,37 +119,27 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         }
     }
 
-    if (m_Scene && m_IsSceneLoading)
+    if (m_Scene && m_LoadState.State == RuntimeLoadState::LoadingScene)
     {
-        m_LoadingOverlayElapsed += (float)ts;
+        m_LoadState.OverlayElapsed += (float)ts;
 
-        if (IsSceneReadyToStart() && m_LoadingOverlayElapsed >= m_LoadingOverlayMinDuration)
+        if (IsSceneReadyToStart() && m_LoadState.OverlayElapsed >= m_LoadState.MinOverlayDuration)
         {
-            // Clear stale button press flags from the previous scene before starting runtime.
-            // Without this, a button press that triggered the scene change would still be "pressed"
-            // on the first frame of the new scene, causing immediate unintended transitions.
             if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
             {
                 wr->ResetButtonStates(m_Scene.get());
             }
-            // TransitionToState handles OnRuntimeStart internally — this is the single call site.
             m_Scene->TransitionToState(SceneState::Play);
-            m_RuntimeStarted = true;
-            m_IsSceneLoading = false;
-            m_SuppressNextUIInput = true;
+            m_LoadState.State = RuntimeLoadState::Running;
+            m_LoadState.SuppressNextUIInput = true;
             CH_CORE_INFO("RuntimeSystem: Scene assets are ready, entering runtime.");
         }
     }
 
-    if (m_Scene && m_RuntimeStarted)
+    if (m_Scene && IsRunning())
     {
-        // Process UI input BEFORE scripts run, unconditionally each frame. This
-        // guarantees PressedThisFrame is reset every frame regardless of whether
-        // the canvas is drawn this frame (BeginChild can be skipped when the
-        // window is collapsed/clipped), so a one-frame click edge never sticks
-        // and re-fires script actions on subsequent frames.
-        bool suppress = m_SuppressNextUIInput;
-        m_SuppressNextUIInput = false;
+        bool suppress = m_LoadState.SuppressNextUIInput;
+        m_LoadState.SuppressNextUIInput = false;
         if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
         {
             wr->ProcessInput(m_Scene.get(), suppress);
@@ -183,13 +148,9 @@ void RuntimeLayer::OnUpdate(Timestep ts)
         m_Scene->OnUpdateRuntime(ts);
     }
 
-    if (m_IsBoostingUploads)
+    if (m_LoadState.BoostUploadsTimer > 0.0f)
     {
-        m_BoostUploadsTimer -= ts;
-        if (m_BoostUploadsTimer <= 0.0f)
-        {
-            m_IsBoostingUploads = false;
-        }
+        m_LoadState.BoostUploadsTimer -= ts;
     }
 }
 
@@ -212,64 +173,25 @@ void RuntimeLayer::OnRender(Timestep ts)
 
     EnsureRuntimeFramebuffer(width, height);
 
-    const auto& settings = m_Scene->GetSettings();
-    glm::vec4 bgColor = {settings.BackgroundColor.r / 255.0f, settings.BackgroundColor.g / 255.0f,
-                         settings.BackgroundColor.b / 255.0f, settings.BackgroundColor.a / 255.0f};
+    glm::vec4 bgColor = CalculateBackgroundColor();
 
-    if (settings.Environment && settings.Mode != BackgroundMode::Color)
+    auto camConfig = GetCameraConfig();
+    if (camConfig)
     {
-        auto& env = settings.Environment->GetSettings();
-        if (env.Fog.Enabled)
-        {
-            bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, env.Fog.FogColor.b / 255.0f,
-                                env.Fog.FogColor.a / 255.0f);
-        }
-    }
-
-    auto camera = GetActiveCamera();
-    if (camera)
-    {
-        float nearClip = 0.01f;
-        float farClip = 10000.0f;
-
-        Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(m_Scene->GetRegistry(), m_Scene->GetRegistryPtr());
-        if (primaryCam && primaryCam.HasComponent<CameraComponent>())
-        {
-            auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
-            nearClip = cameraComp.GetPerspectiveNearClip();
-            farClip = cameraComp.GetPerspectiveFarClip();
-        }
-
         SceneRenderOptions options;
 
         m_HDRFramebuffer->Bind();
         m_Renderer->Clear(bgColor);
-        m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camera.value(), nearClip, farClip,
-                                     options);
+        m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camConfig->Camera,
+                                     camConfig->NearClip, camConfig->FarClip, options);
         m_HDRFramebuffer->Unbind();
         m_HDRFramebuffer->Resolve();
 
         m_Renderer->SetViewport(0, 0, (int)width, (int)height);
         m_Renderer->Clear(bgColor);
         m_Renderer->ApplyPostProcessing(m_HDRFramebuffer->GetColorAttachmentRendererID(),
-                                        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camera.value(), nullptr, {});
-
-        ShaderAsset* overrideShader = nullptr;
-        std::vector<ShaderUniform> uniforms;
-
-        if (primaryCam && primaryCam.HasComponent<ShaderComponent>())
-        {
-            auto& sc = primaryCam.GetComponent<ShaderComponent>();
-            if (sc.Enabled && !sc.ShaderPath.empty())
-            {
-                auto asset = m_AssetManager->Get<ShaderAsset>(sc.ShaderPath);
-                if (asset)
-                {
-                    overrideShader = asset.get();
-                    uniforms = sc.Uniforms;
-                }
-            }
-        }
+                                        m_HDRFramebuffer->GetDepthAttachmentRendererID(), camConfig->Camera, nullptr,
+                                        {});
     }
     else
     {
@@ -286,20 +208,17 @@ void RuntimeLayer::OnImGuiRender()
         ImGui::SetNextWindowSize(viewport->WorkSize);
         ImGui::SetNextWindowViewport(viewport->ID);
 
-        ImGuiWindowFlags flags =
-            ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground |
-            ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings | ImGuiWindowFlags_NoScrollbar |
-            ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
-
-        // Allow inputs for runtime UI
-        flags &= ~ImGuiWindowFlags_NoInputs;
+        ImGuiWindowFlags flags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
+                                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings |
+                                 ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_NoBringToFrontOnFocus |
+                                 ImGuiWindowFlags_NoNav | ImGuiWindowFlags_NoDocking;
 
         ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, {0, 0});
         ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
 
         if (ImGui::Begin("RuntimeUI", nullptr, flags))
         {
-            if (m_RuntimeStarted)
+            if (IsRunning())
             {
                 ImVec2 childSize = ImGui::GetContentRegionAvail();
                 if (ImGui::BeginChild("##RuntimeUICanvas", childSize, false,
@@ -320,7 +239,7 @@ void RuntimeLayer::OnImGuiRender()
         ImGui::End();
         ImGui::PopStyleVar(2);
 
-        if (m_IsSceneLoading)
+        if (m_LoadState.State == RuntimeLoadState::LoadingScene)
         {
             DrawLoadingOverlay();
         }
@@ -329,7 +248,6 @@ void RuntimeLayer::OnImGuiRender()
 
 void RuntimeLayer::OnEvent(Event& e)
 {
-
     EventDispatcher dispatcher(e);
     dispatcher.Dispatch<WindowResizeEvent>([this](auto& ev) {
         if (ev.GetWidth() == 0 || ev.GetHeight() == 0)
@@ -356,7 +274,7 @@ void RuntimeLayer::OnEvent(Event& e)
 //-----------------------------------------------------------------------------
 void RuntimeLayer::LoadScene(const std::string& path)
 {
-    const std::string normalizedPath = NormalizeScenePath(path);
+    const std::string normalizedPath = NormalizeAssetPath(path);
     if (normalizedPath.empty())
     {
         CH_CORE_WARN("RuntimeSystem: Ignoring empty scene path request.");
@@ -381,7 +299,6 @@ void RuntimeLayer::LoadScene(const std::string& path)
         }
     }
 
-    // Check scene accessibility: disk first, then pack archive
     bool sceneAccessible = FileExists(scenePath);
     if (!sceneAccessible && m_AssetManager && m_AssetManager->IsPacked())
     {
@@ -433,7 +350,6 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
 
     CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
-    // Initialize Scripting for the loaded project
     auto* se = ServiceLocator::TryGet<ScriptEngine>();
     if (assemblyPath.empty() || !se || !se->ReloadAssembly(assemblyPath.string()))
     {
@@ -442,7 +358,6 @@ bool RuntimeLayer::InitProject(const std::string& projectPath)
                      assemblyPath.string());
     }
 
-    // Discover project fonts once before any scene loads.
     if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
     {
         wr->LoadProjectFonts();
@@ -481,7 +396,6 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
         return false;
     }
 
-    // Open resources.pack BEFORE loading the project so assets can be read from pack
     std::filesystem::path packPath = Platform::GetExecutableDirectory() / "resources.pack";
     if (std::filesystem::exists(packPath))
     {
@@ -502,7 +416,6 @@ bool RuntimeLayer::DiscoverAndLoadProject(const std::string& projectPath)
     m_AssetManager->SetProjectDirectory(project->GetProjectDirectoryForProject());
     m_AssetManager->SetAssetDirectory(Project::GetAssetDirectory());
 
-    // CRITICAL: Load engine shaders and resources immediately after project is resolved
     m_Renderer->LoadEngineResources();
 
     if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
@@ -580,21 +493,10 @@ void RuntimeLayer::SetupBrandingAndIcon()
         return;
     }
 
-    std::filesystem::path iconPath = "";
-    std::string resolved = config.IconPath;
-    if (!resolved.empty() && std::filesystem::exists(resolved))
+    if (std::filesystem::exists(config.IconPath))
     {
-        iconPath = resolved;
-    }
-    else if (std::filesystem::exists(config.IconPath))
-    {
-        iconPath = config.IconPath;
-    }
-
-    if (!iconPath.empty())
-    {
-        CH_CORE_INFO("RuntimeSystem: Setting window icon: {}", iconPath.string());
-        window.SetWindowIcon(iconPath.string());
+        CH_CORE_INFO("RuntimeSystem: Setting window icon: {}", config.IconPath);
+        window.SetWindowIcon(config.IconPath);
     }
     else
     {
@@ -658,11 +560,6 @@ void RuntimeLayer::LoadInitialScene()
     }
 }
 
-std::string RuntimeLayer::NormalizeScenePath(const std::string& path) const
-{
-    return NormalizeAssetPath(path);
-}
-
 void RuntimeLayer::StopCurrentScene()
 {
     if (!m_Scene)
@@ -671,6 +568,27 @@ void RuntimeLayer::StopCurrentScene()
     }
 
     m_Scene->OnRuntimeStop();
+}
+
+void RuntimeLayer::AppendFontRequest(const TextStyle& style, std::vector<std::pair<std::string, float>>& out,
+                                     std::unordered_set<std::string>& dedupe) const
+{
+    std::string fontName = NormalizeAssetPath(style.FontName);
+    if (fontName.empty() || fontName == "Default")
+    {
+        return;
+    }
+
+    const float fontSize = (style.FontSize > 0.0f) ? style.FontSize : 16.0f;
+    const int roundedHalf = static_cast<int>(std::lround(fontSize * 2.0f));
+    const std::string key = fontName + "|" + std::to_string(roundedHalf);
+
+    if (!dedupe.insert(key).second)
+    {
+        return;
+    }
+
+    out.emplace_back(fontName, fontSize);
 }
 
 std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequests() const
@@ -687,7 +605,7 @@ std::vector<std::pair<std::string, float>> RuntimeLayer::CollectSceneFontRequest
     auto view = registry.view<UIControlComponent>();
     for (entt::entity id : view)
     {
-        AppendTextStyleFontRequest(view.get<UIControlComponent>(id).TextStyle, requests, dedupe);
+        AppendFontRequest(view.get<UIControlComponent>(id).TextStyle, requests, dedupe);
     }
 
     return requests;
@@ -727,16 +645,8 @@ void RuntimeLayer::PreloadSceneFonts(bool allowRuntimeMutation)
     }
 }
 
-bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
+bool RuntimeLayer::SetupNewScene(const std::filesystem::path& scenePath)
 {
-    StopCurrentScene();
-
-    m_RuntimeStarted = false;
-    m_IsSceneLoading = false;
-    m_LoadingOverlayElapsed = 0.0f;
-
-    // Runtime scenes need the active ScriptEngine so ManagedScriptComponent instances can be created.
-
     auto nextScene = std::make_shared<Scene>();
     SceneSerializer serializer(nextScene.get());
     if (!serializer.Deserialize(scenePath.string()))
@@ -751,52 +661,103 @@ bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
 
     m_Scene = nextScene;
     m_Scene->GetSettings().ScenePath = scenePath.string();
-
-    // Bind the event callback so SceneTransitionComponents can dispatch SceneChangeRequestEvent
-    // back to RuntimeLayer::OnEvent, which handles the actual scene loading.
     m_Scene->SetEventCallback([this](Event& e) { OnEvent(e); });
 
-    // Keep current ScriptEngine behavior intact while runtime owns transition flow.
     if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
     {
         se->SetContextScene(m_Scene.get());
     }
 
-    // NOTE: Scene is left in Edit state here. TransitionToState(Play) — which calls
-    // OnRuntimeStart — will happen once in OnUpdate when all async assets are ready.
-    // This prevents a double OnRuntimeStart that caused a segfault.
-
     Window& window = Application::Get().GetWindow();
     m_Scene->OnViewportResize(window.GetWidth(), window.GetHeight());
     EnsureRuntimeFramebuffer((uint32_t)window.GetWidth(), (uint32_t)window.GetHeight());
 
-    // Ensure no stale button press flags survive from before the scene transition.
-    // Scripts run in OnUpdate (before ImGui DrawCanvas which normally resets these),
-    // so without this, ExitScript or SceneScript would fire on the very first frame.
+    return true;
+}
+
+void RuntimeLayer::ResetUIState()
+{
+    if (!m_Scene)
     {
-        auto& registry = m_Scene->GetRegistry();
-        auto view = registry.view<UIControlComponent>();
-        for (entt::entity id : view)
-        {
-            view.get<UIControlComponent>(id).PressedThisFrame = false;
-        }
+        return;
     }
 
-    // Suppress UI input for the entire loading phase so that a stale ImGui
-    // IsMouseClicked edge (from the click that triggered the scene change) cannot
-    // fire button callbacks during the loading-overlay frames before Play starts.
-    m_SuppressNextUIInput = true;
+    auto& registry = m_Scene->GetRegistry();
+    auto view = registry.view<UIControlComponent>();
+    for (entt::entity id : view)
+    {
+        view.get<UIControlComponent>(id).PressedThisFrame = false;
+    }
+}
+
+void RuntimeLayer::BeginSceneLoading()
+{
+    m_LoadState.SuppressNextUIInput = true;
 
     PreloadSceneFonts(ImGui::GetFrameCount() > 0);
 
-    m_IsBoostingUploads = true;
-    m_BoostUploadsTimer = 5.0f;
+    m_LoadState.BoostUploadsTimer = 5.0f;
     CH_CORE_INFO("RuntimeSystem: Boosting asset uploads for scene loading...");
 
-    m_IsSceneLoading = true;
-    m_LoadingOverlayElapsed = 0.0f;
+    m_LoadState.State = RuntimeLoadState::LoadingScene;
+    m_LoadState.OverlayElapsed = 0.0f;
     CH_CORE_INFO("RuntimeSystem: Scene loaded, waiting for async assets before runtime start.");
+}
+
+bool RuntimeLayer::TransitionToScene(const std::filesystem::path& scenePath)
+{
+    StopCurrentScene();
+    m_LoadState = {};
+
+    if (!SetupNewScene(scenePath))
+    {
+        return false;
+    }
+
+    ResetUIState();
+    BeginSceneLoading();
     return true;
+}
+
+std::optional<RuntimeLayer::CameraConfig> RuntimeLayer::GetCameraConfig()
+{
+    auto camera = GetActiveCamera();
+    if (!camera)
+    {
+        return std::nullopt;
+    }
+
+    CameraConfig activeCameraConfig;
+    activeCameraConfig.Camera = camera.value();
+
+    Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(m_Scene->GetRegistry(), m_Scene->GetRegistryPtr());
+    if (primaryCam && primaryCam.HasComponent<CameraComponent>())
+    {
+        auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
+        activeCameraConfig.NearClip = cameraComp.GetPerspectiveNearClip();
+        activeCameraConfig.FarClip = cameraComp.GetPerspectiveFarClip();
+    }
+
+    return activeCameraConfig;
+}
+
+glm::vec4 RuntimeLayer::CalculateBackgroundColor() const
+{
+    const auto& settings = m_Scene->GetSettings();
+    glm::vec4 bgColor = {settings.BackgroundColor.r / 255.0f, settings.BackgroundColor.g / 255.0f,
+                         settings.BackgroundColor.b / 255.0f, settings.BackgroundColor.a / 255.0f};
+
+    if (settings.Environment && settings.Mode != BackgroundMode::Color)
+    {
+        auto& env = settings.Environment->GetSettings();
+        if (env.Fog.Enabled)
+        {
+            bgColor = glm::vec4(env.Fog.FogColor.r / 255.0f, env.Fog.FogColor.g / 255.0f, env.Fog.FogColor.b / 255.0f,
+                                env.Fog.FogColor.a / 255.0f);
+        }
+    }
+
+    return bgColor;
 }
 
 std::optional<Camera3D> RuntimeLayer::GetActiveCamera()
@@ -816,10 +777,10 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
     }
 
     auto project = Project::GetActive();
-    int samples = project ? project->GetConfig().Render.AntiAliasingSamples : 4;
-    uint32_t configuredSamples = samples > 1 ? (uint32_t)samples : 1u;
+    int msaaSampleCount = project ? project->GetConfig().Render.AntiAliasingSamples : 4;
+    uint32_t msaaSamplesClamped = msaaSampleCount > 1 ? (uint32_t)msaaSampleCount : 1u;
 
-    if (m_HDRFramebuffer && configuredSamples != m_HDRFramebufferSamples)
+    if (m_HDRFramebuffer && msaaSamplesClamped != m_MSAAFramebufferSamples)
     {
         m_HDRFramebuffer.reset();
     }
@@ -829,10 +790,10 @@ void RuntimeLayer::EnsureRuntimeFramebuffer(uint32_t width, uint32_t height)
         FramebufferSpecification hdrSpec;
         hdrSpec.Width = width;
         hdrSpec.Height = height;
-        hdrSpec.Samples = configuredSamples;
+        hdrSpec.Samples = msaaSamplesClamped;
         hdrSpec.ColorFormat = FramebufferColorFormat::RGBA16F;
         m_HDRFramebuffer = Framebuffer::Create(hdrSpec);
-        m_HDRFramebufferSamples = configuredSamples;
+        m_MSAAFramebufferSamples = msaaSamplesClamped;
     }
     else
     {

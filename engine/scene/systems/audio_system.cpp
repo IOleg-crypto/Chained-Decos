@@ -9,7 +9,7 @@
 namespace Chained::AudioSystem
 {
 
-void Update(entt::registry& reg, Timestep ts)
+void Update(entt::registry& reg)
 {
     CH_PROFILE_FUNCTION();
 
@@ -49,14 +49,14 @@ void Update(entt::registry& reg, Timestep ts)
         // Load sound if path is set but handle is invalid
         if (!audio.SoundPath.empty())
         {
-            if (audio.SoundHandle == AudioHandle{} || !audioSvc->IsSoundLoaded(audio.SoundHandle))
+            if (audio.SoundHandle == AssetHandle(0) || !audioSvc->IsSoundLoaded(audio.SoundHandle))
             {
                 CH_CORE_INFO("AudioComponent: Loading sound: {}", audio.SoundPath);
                 audio.SoundHandle = audioSvc->LoadSound(audio.SoundPath);
             }
         }
 
-        if (audio.SoundHandle == AudioHandle{})
+        if (audio.SoundHandle == AssetHandle(0))
         {
             continue;
         }

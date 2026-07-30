@@ -75,7 +75,7 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
         return {};
     }
 
-    YAML::Node data;
+    YAML::Node prefabRootNode;
     try
     {
         std::string content;
@@ -107,20 +107,20 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
             content = ss.str();
         }
 
-        data = YAML::Load(content);
+        prefabRootNode = YAML::Load(content);
     } catch (...)
     {
         CH_CORE_ERROR("PrefabSerializer: Failed to load prefab file '{}'", filepath);
         return {};
     }
 
-    if (!data["Prefab"] || !data["Entities"])
+    if (!prefabRootNode["Prefab"] || !prefabRootNode["Entities"])
     {
         CH_CORE_ERROR("PrefabSerializer: Invalid prefab file format '{}'", filepath);
         return {};
     }
 
-    auto entitiesNode = data["Entities"];
+    auto entitiesNode = prefabRootNode["Entities"];
 
     std::unordered_map<uint64_t, Entity> remapTable;
     std::vector<Entity> createdEntities;
@@ -203,12 +203,12 @@ Entity PrefabSerializer::Deserialize(Scene* scene, const std::string& filepath)
     }
 
     // Step 4: Find and return the root entity
-    if (!data["RootEntity"])
+    if (!prefabRootNode["RootEntity"])
     {
         CH_CORE_ERROR("PrefabSerializer: Missing 'RootEntity' in '{}'", filepath);
         return createdEntities.empty() ? Entity{} : createdEntities[0];
     }
-    uint64_t rootOldUUID = data["RootEntity"].as<uint64_t>();
+    uint64_t rootOldUUID = prefabRootNode["RootEntity"].as<uint64_t>();
     if (remapTable.count(rootOldUUID))
     {
         return remapTable[rootOldUUID];
