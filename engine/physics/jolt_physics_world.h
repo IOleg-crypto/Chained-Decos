@@ -38,6 +38,7 @@ public:
 
     virtual void SetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity) override;
     virtual glm::vec3 GetVelocity(PhysicsBodyHandle handle) const override;
+    virtual void SetVelocityForce(PhysicsBodyHandle handle, const glm::vec3& velocity) override;
 
     virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) override;
 

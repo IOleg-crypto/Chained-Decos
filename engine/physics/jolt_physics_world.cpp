@@ -696,6 +696,12 @@ void JoltPhysicsWorld::SetVelocity(PhysicsBodyHandle handle, const glm::vec3& ve
                                                          JPH::Vec3(velocity.x, velocity.y, velocity.z));
 }
 
+void JoltPhysicsWorld::SetVelocityForce(PhysicsBodyHandle handle, const glm::vec3& velocity)
+{
+    m_PhysicsSystem.GetBodyInterface().SetLinearVelocity((JPH::BodyID)handle,
+                                                         JPH::Vec3(velocity.x, velocity.y, velocity.z));
+}
+
 glm::vec3 JoltPhysicsWorld::GetVelocity(PhysicsBodyHandle handle) const
 {
     JPH::Vec3 v = m_PhysicsSystem.GetBodyInterface().GetLinearVelocity((JPH::BodyID)handle);
