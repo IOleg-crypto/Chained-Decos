@@ -11,21 +11,21 @@ namespace
 // Our DialogFilter::Spec is authored as a bare, comma-separated extension list
 // ("png,jpg,tga" or "chscene"), so translate it into the glob form PFD understands.
 // Already-globbed specs ("*.png", "*") are passed through untouched.
-std::string NormalizeSpec(const std::string& spec)
+std::string NormalizeSpec(const std::string& fileFilterSpec)
 {
-    if (spec.empty())
+    if (fileFilterSpec.empty())
     {
         return "*";
     }
 
     // If the caller already provided wildcard globs, trust them as-is.
-    if (spec.find('*') != std::string::npos)
+    if (fileFilterSpec.find('*') != std::string::npos)
     {
-        return spec;
+        return fileFilterSpec;
     }
 
     std::string result;
-    std::stringstream stream(spec);
+    std::stringstream stream(fileFilterSpec);
     std::string ext;
     while (std::getline(stream, ext, ','))
     {

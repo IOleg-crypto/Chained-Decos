@@ -31,7 +31,6 @@ void SkyboxPass::Execute(const RenderContext& ctx)
             {
                 return;
             }
-            auto handle = am->LoadAsset(skySettings.TexturePath, TextureAsset::GetStaticType());
             auto textureAsset = am->Get<TextureAsset>(skySettings.TexturePath);
             if (textureAsset && textureAsset->IsReady() && textureAsset->GetTexture())
             {

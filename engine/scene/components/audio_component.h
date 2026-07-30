@@ -37,9 +37,9 @@ struct AudioComponent
         UIMeta Pitch = {
             .Min = 0.1f, .Max = 3.0f, .Speed = 0.01f, .Tooltip = "Playback speed/pitch of the audio source"};
         UIMeta MinDistance = {
-            .Min = 0.0f, .Max = 50.0f, .Speed = 0.5f, .Tooltip = "Radius where the sound starts to fade"};
+            .Min = 0.0f, .Max = 500.0f, .Speed = 0.5f, .Tooltip = "Radius where the sound starts to fade"};
         UIMeta MaxDistance = {
-            .Min = 1.0f, .Max = 1000.0f, .Speed = 5.0f, .Tooltip = "Maximum distance for 3D sound visibility"};
+            .Min = 1.0f, .Max = 10000.0f, .Speed = 5.0f, .Tooltip = "Maximum distance for 3D sound visibility"};
     };
 };
 

@@ -117,8 +117,8 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         return;
     }
 
-    PhysicsContext& ctx = GetContext(scene);
-    ctx.Accumulator += deltaTime;
+    PhysicsContext& physicsSim = GetContext(scene);
+    physicsSim.Accumulator += deltaTime;
 
     float kFixedDt = 1.0f / 60.0f;
     if (auto project = Project::GetActive())
@@ -173,18 +173,18 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
     }
 
     int steps = 0;
-    while (ctx.Accumulator >= kFixedDt && steps < kMaxStepsPerFrame)
+    while (physicsSim.Accumulator >= kFixedDt && steps < kMaxStepsPerFrame)
     {
         world->ClearGroundedState();
         world->Step(kFixedDt);
-        ctx.Accumulator -= kFixedDt;
+        physicsSim.Accumulator -= kFixedDt;
         stepped = true;
         steps++;
     }
 
-    if (ctx.Accumulator >= kFixedDt)
+    if (physicsSim.Accumulator >= kFixedDt)
     {
-        ctx.Accumulator = 0.0f;
+        physicsSim.Accumulator = 0.0f;
     }
 
     if (stepped)

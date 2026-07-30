@@ -38,14 +38,14 @@ static bool IsValidFontMetrics(const std::filesystem::path& path)
     }
     file.seekg(0, std::ios::beg);
 
-    std::vector<char> buffer(size);
-    if (!file.read(buffer.data(), size))
+    std::vector<char> fontFileData(size);
+    if (!file.read(fontFileData.data(), size))
     {
         return false;
     }
 
     stbtt_fontinfo fontInfo;
-    if (!stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(buffer.data()), 0))
+    if (!stbtt_InitFont(&fontInfo, reinterpret_cast<const unsigned char*>(fontFileData.data()), 0))
     {
         return false;
     }
