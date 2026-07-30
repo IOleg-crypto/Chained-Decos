@@ -79,7 +79,6 @@ CH_SCRIPT_FUNC void PlayerComponent_SetLookSensitivity(uint64_t entityID, float 
 // ── SpawnComponent ────────────────────────────────────────────────────
 CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID);
 
-CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint);
 CH_SCRIPT_FUNC bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID);
 CH_SCRIPT_FUNC void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize);
 

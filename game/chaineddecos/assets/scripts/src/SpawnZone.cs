@@ -7,74 +7,82 @@ namespace ChainedDecos.Scripts
     {
         public override void OnUpdate(float deltaTime)
         {
-            TransformComponent? transform = Entity.GetComponent<TransformComponent>();
-            if (transform != null && transform.Translation.Y < -100.0f)
+            ulong[] players = Entity.FindAllWithComponent<PlayerComponent>();
+            if (players.Length == 0)
+                return;
+
+            Entity player = new Entity(players[0]);
+            TransformComponent? playerTransform = player.GetComponent<TransformComponent>();
+            if (playerTransform == null)
+                return;
+
+            if (playerTransform.Translation.Y < -50.0f)
             {
-                Respawn();
+                Respawn(player);
             }
 
-            if (Input.IsKeyPressed(Key.F)) // KEY_F
+            if(Input.IsKeyPressed(Key.F))
             {
-                Respawn();
+                Respawn(player);
             }
         }
 
-        private void Respawn()
+        private void Respawn(Entity player)
         {
-            // Find all entities with SpawnComponent instead of relying solely on a generic tag
             ulong[] spawnEntities = Entity.FindAllWithComponent<SpawnComponent>();
             if (spawnEntities.Length == 0)
             {
-                // Fallback to Tag if no Component is found (for backwards compatibility)
-                Entity? fallback = Scene.FindEntityByTag("SpawnPoint");
-                if (fallback != null)
-                {
-                    TeleportTo(fallback);
-                }
-                else
-                {
-                    Log.Info("spawnzone: No spawn points found in the scene.");
-                }
+                Log.Info("spawnzone: No spawn points found in the scene.");
                 return;
             }
 
-            // Iterate and pick the active one (or just use the first match)
             foreach (ulong id in spawnEntities)
             {
                 Entity spawner = new Entity(id);
                 SpawnComponent? spawnComp = spawner.GetComponent<SpawnComponent>();
                 if (spawnComp != null && spawnComp.IsActive)
                 {
-                    TeleportTo(spawner);
+                    TeleportTo(player, spawner, spawnComp);
                     return;
                 }
             }
 
-            // If none are specifically "active", just use the very first one
-            TeleportTo(new Entity(spawnEntities[0]));
+            Entity fallback = new Entity(spawnEntities[0]);
+            SpawnComponent? fallbackComp = fallback.GetComponent<SpawnComponent>();
+            if (fallbackComp != null)
+                TeleportTo(player, fallback, fallbackComp);
         }
 
-        private void TeleportTo(Entity spawnEntity)
+        private void TeleportTo(Entity player, Entity spawnEntity, SpawnComponent spawnComp)
         {
-            SpawnComponent? spawnComp = spawnEntity.GetComponent<SpawnComponent>();
             TransformComponent? spawnTransform = spawnEntity.GetComponent<TransformComponent>();
-            TransformComponent? myTransform = Entity.GetComponent<TransformComponent>();
-            RigidBodyComponent? myRb = Entity.GetComponent<RigidBodyComponent>();
+            TransformComponent? playerTransform = player.GetComponent<TransformComponent>();
+            RigidBodyComponent? playerRb = player.GetComponent<RigidBodyComponent>();
 
-            if (spawnTransform != null && myTransform != null)
+            if (spawnTransform == null || playerTransform == null)
+                return;
+
+            float halfX = spawnComp.ZoneSize.X * 0.5f;
+            float halfY = spawnComp.ZoneSize.Y * 0.5f;
+            float halfZ = spawnComp.ZoneSize.Z * 0.5f;
+
+            Random rng = new Random();
+            float offsetX = (float)(rng.NextDouble() * 2.0 - 1.0) * halfX;
+            float offsetY = (float)(rng.NextDouble() * 2.0 - 1.0) * halfY;
+            float offsetZ = (float)(rng.NextDouble() * 2.0 - 1.0) * halfZ;
+
+            playerTransform.Translation = new Vector3(
+                spawnTransform.Translation.X + offsetX,
+                spawnTransform.Translation.Y + offsetY,
+                spawnTransform.Translation.Z + offsetZ
+            );
+
+            if (playerRb != null)
             {
-                // If it has a spawn component, add its offset; otherwise just use its transform translation
-                Vector3 offset = spawnComp != null ? spawnComp.SpawnPoint : Vector3.Zero;
-                myTransform.Translation = spawnTransform.Translation + offset;
-                
-                if (myRb != null)
-                {
-                    myRb.ForceSetVelocity(Vector3.Zero);
-                }
-                
-                Log.Info("spawnzone: Player respawned successfully.");
+                playerRb.ForceSetVelocity(Vector3.Zero);
             }
+
+            Log.Info("spawnzone: Player respawned at random position within zone.");
         }
     }
 }
-

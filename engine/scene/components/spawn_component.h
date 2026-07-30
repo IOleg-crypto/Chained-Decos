@@ -13,7 +13,6 @@ struct SpawnComponent
     AssetHandle TextureHandle = 0;
     glm::vec3 ZoneSize = {1.0f, 1.0f, 1.0f};
     bool RenderSpawnZoneInScene = true;
-    glm::vec3 SpawnPoint = {0.0f, 0.0f, 0.0f};
 
     static const char* GetStaticName()
     {
@@ -23,9 +22,8 @@ struct SpawnComponent
     struct UI
     {
         UIMeta IsActive = {.Tooltip = "Whether the spawn zone is active"};
-        UIMeta ZoneSize = {.Tooltip = "Size of the generation zone (X, Y, Z)"};
+        UIMeta ZoneSize = {.Tooltip = "Random spawn area dimensions (X, Y, Z) around entity position"};
         UIMeta RenderSpawnZoneInScene = {.Tooltip = "Render the zone boundaries in the viewport"};
-        UIMeta SpawnPoint = {.Tooltip = "Local or world spawn point position"};
     };
 };
 CH_MARK_RFL(SpawnComponent);

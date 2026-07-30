@@ -186,8 +186,6 @@ void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
 
     // ── SpawnComponent ────────────────────────────────────────────────
     assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_IsActive_Ptr", (void*)&SpawnComponent_IsActive);
-    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetSpawnPoint_Ptr",
-                             (void*)&SpawnComponent_GetSpawnPoint);
     assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetRenderSpawnZoneInScene_Ptr",
                              (void*)&SpawnComponent_GetRenderSpawnZoneInScene);
     assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetZoneSize_Ptr",
