@@ -22,7 +22,7 @@ enum class AssetType : uint16_t
     Font,
     Scene,
     Script,
-    AnimationGraph // Not existing yet, reserved for future use
+    AnimationGraph
 };
 // Asset loading state.
 enum class AssetState : uint8_t

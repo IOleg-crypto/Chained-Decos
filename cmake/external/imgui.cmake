@@ -1,6 +1,7 @@
 # ImGui + ImGuizmo dependency
 set(IMGUI_DIR "${CMAKE_SOURCE_DIR}/thirdparty/imgui")
 set(IMGUIZMO_DIR "${CMAKE_SOURCE_DIR}/thirdparty/imguizmo")
+set(IMNODES_DIR "${CMAKE_SOURCE_DIR}/thirdparty/imnodes")
 
 set(IMGUI_PLATFORM_SOURCES "${IMGUI_DIR}/backends/imgui_impl_glfw.cpp")
 set(IMGUI_PLATFORM_DEPS glfw)
@@ -19,11 +20,13 @@ add_library(engine_external_imgui STATIC
     "${IMGUIZMO_DIR}/ImCurveEdit.cpp"
     "${IMGUIZMO_DIR}/ImGradient.cpp"
     "${IMGUIZMO_DIR}/ImSequencer.cpp"
+    "${IMNODES_DIR}/imnodes.cpp"
 )
 
 target_include_directories(engine_external_imgui PUBLIC 
     "${IMGUI_DIR}" 
     "${IMGUIZMO_DIR}" 
+    "${IMNODES_DIR}"
     "${IMGUI_DIR}/backends"
 )
 

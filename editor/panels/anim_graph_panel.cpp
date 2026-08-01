@@ -1,0 +1,910 @@
+#include <imgui.h>
+#include <GraphEditor.h>
+#include "engine/scene/animation_graph.h"
+#include "engine/scene/components/animation_component.h"
+#include "engine/scene/components/model_component.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/model_asset.h"
+#include "engine/assets/loaders/anim_graph_loader.h"
+#include "engine/core/service_locator.h"
+#include "editor/panels/anim_graph_panel.h"
+#include "editor/layer.h"
+
+namespace Chained
+{
+
+static const char* s_InputNames[] = {"In"};
+static const char* s_OutputNames[] = {"Out"};
+
+static const GraphEditor::Template s_Templates[] = {
+    // 0: Entry node — gold header, no inputs, 1 output
+    {IM_COL32(255, 200, 0, 255), IM_COL32(60, 60, 40, 255), IM_COL32(80, 80, 50, 255), 0, nullptr, nullptr, 1,
+     s_OutputNames, nullptr},
+    // 1: State node — blue header, 1 input, 1 output
+    {IM_COL32(100, 150, 200, 255), IM_COL32(60, 80, 100, 255), IM_COL32(70, 90, 110, 255), 1, s_InputNames, nullptr, 1,
+     s_OutputNames, nullptr}};
+
+// ── Delegate ──────────────────────────────────────────────────────
+
+void AnimGraphPanel::Delegate::SyncSelection()
+{
+    if (!graph)
+    {
+        nodeSelected.clear();
+        return;
+    }
+    nodeSelected.resize(graph->Nodes.size(), false);
+}
+
+bool AnimGraphPanel::Delegate::AllowedLink(GraphEditor::NodeIndex from, GraphEditor::NodeIndex to)
+{
+    return from != to;
+}
+
+void AnimGraphPanel::Delegate::SelectNode(GraphEditor::NodeIndex nodeIndex, bool selected)
+{
+    if (nodeIndex < nodeSelected.size())
+    {
+        nodeSelected[nodeIndex] = selected;
+    }
+
+    // Override/restore animation preview in main viewport
+    if (panel)
+    {
+        Entity entity = EditorLayer::Get().GetSelectedEntity();
+        if (selected)
+        {
+            panel->ApplyPreview(graph, (int)nodeIndex, entity);
+        }
+        else
+        {
+            panel->RestorePreview();
+        }
+    }
+}
+
+void AnimGraphPanel::Delegate::MoveSelectedNodes(const ImVec2 delta)
+{
+    if (!graph)
+    {
+        return;
+    }
+    for (size_t i = 0; i < graph->Nodes.size(); i++)
+    {
+        if (i < nodeSelected.size() && nodeSelected[i])
+        {
+            graph->Nodes[i].EditorX += delta.x;
+            graph->Nodes[i].EditorY += delta.y;
+        }
+    }
+}
+
+void AnimGraphPanel::Delegate::AddLink(GraphEditor::NodeIndex inputNodeIndex, GraphEditor::SlotIndex,
+                                       GraphEditor::NodeIndex outputNodeIndex, GraphEditor::SlotIndex)
+{
+    if (!graph)
+    {
+        return;
+    }
+    if (inputNodeIndex >= graph->Nodes.size() || outputNodeIndex >= graph->Nodes.size())
+    {
+        return;
+    }
+
+    AnimTransition tr;
+    tr.ID = graph->NextLinkID++;
+    tr.SourceNodeID = graph->Nodes[outputNodeIndex].ID;
+    tr.TargetNodeID = graph->Nodes[inputNodeIndex].ID;
+    tr.BlendDuration = 0.2f;
+    graph->Transitions.push_back(tr);
+    if (changedFlag)
+    {
+        *changedFlag = true;
+    }
+}
+
+void AnimGraphPanel::Delegate::DelLink(GraphEditor::LinkIndex linkIndex)
+{
+    if (!graph || linkIndex >= graph->Transitions.size())
+    {
+        return;
+    }
+    graph->Transitions.erase(graph->Transitions.begin() + linkIndex);
+    if (changedFlag)
+    {
+        *changedFlag = true;
+    }
+}
+
+void AnimGraphPanel::Delegate::RightClick(GraphEditor::NodeIndex, GraphEditor::SlotIndex, GraphEditor::SlotIndex)
+{
+    // Because Delegate is abstract class , but don`t implement any right now.
+}
+
+void AnimGraphPanel::Delegate::CustomDraw(ImDrawList* drawList, ImRect rectangle, GraphEditor::NodeIndex nodeIndex)
+{
+    if (!graph || nodeIndex >= graph->Nodes.size())
+    {
+        return;
+    }
+
+    auto& node = graph->Nodes[nodeIndex];
+    ImVec2 textPos = rectangle.Min + ImVec2(8, 28);
+
+    if (node.ID == graph->EntryNodeID)
+    {
+        drawList->AddText(textPos, IM_COL32(255, 220, 80, 255), "[Entry]");
+        textPos.y += 16;
+    }
+    else
+    {
+        char buf[64];
+        snprintf(buf, sizeof(buf), "Anim: %d", node.AnimationIndex);
+        drawList->AddText(textPos, IM_COL32(200, 200, 200, 200), buf);
+        textPos.y += 16;
+    }
+
+    // Frame range
+    char rangeBuf[64];
+    if (node.EndFrame < 0)
+    {
+        snprintf(rangeBuf, sizeof(rangeBuf), "Frames: %d-end", node.StartFrame);
+    }
+    else
+    {
+        snprintf(rangeBuf, sizeof(rangeBuf), "Frames: %d-%d", node.StartFrame, node.EndFrame);
+    }
+    drawList->AddText(textPos, IM_COL32(160, 160, 160, 200), rangeBuf);
+    textPos.y += 14;
+
+    // Speed
+    if (node.Speed != 1.0f)
+    {
+        char spdBuf[32];
+        snprintf(spdBuf, sizeof(spdBuf), "Speed: %.1fx", node.Speed);
+        drawList->AddText(textPos, IM_COL32(180, 220, 180, 200), spdBuf);
+    }
+}
+
+const size_t AnimGraphPanel::Delegate::GetTemplateCount()
+{
+    return 2;
+}
+
+const GraphEditor::Template AnimGraphPanel::Delegate::GetTemplate(GraphEditor::TemplateIndex index)
+{
+    if (index < 2)
+    {
+        return s_Templates[index];
+    }
+    return s_Templates[1];
+}
+
+const size_t AnimGraphPanel::Delegate::GetNodeCount()
+{
+    return graph ? graph->Nodes.size() : 0;
+}
+
+const GraphEditor::Node AnimGraphPanel::Delegate::GetNode(GraphEditor::NodeIndex index)
+{
+    if (!graph || index >= graph->Nodes.size())
+    {
+        return {};
+    }
+
+    auto& node = graph->Nodes[index];
+    GraphEditor::TemplateIndex tpl = (node.ID == graph->EntryNodeID) ? 0 : 1;
+    bool sel = (index < nodeSelected.size()) ? nodeSelected[index] : false;
+
+    return {node.Name.c_str(), tpl,
+            ImRect(ImVec2(node.EditorX, node.EditorY), ImVec2(node.EditorX + 180, node.EditorY + 80)), sel};
+}
+
+const size_t AnimGraphPanel::Delegate::GetLinkCount()
+{
+    return graph ? graph->Transitions.size() : 0;
+}
+
+const GraphEditor::Link AnimGraphPanel::Delegate::GetLink(GraphEditor::LinkIndex index)
+{
+    if (!graph || index >= graph->Transitions.size())
+    {
+        return {};
+    }
+
+    auto& tr = graph->Transitions[index];
+
+    auto findIndex = [&](int nodeID) -> GraphEditor::NodeIndex {
+        for (size_t i = 0; i < graph->Nodes.size(); i++)
+        {
+            if (graph->Nodes[i].ID == nodeID)
+            {
+                return i;
+            }
+        }
+        return 0;
+    };
+
+    return {findIndex(tr.TargetNodeID), 0, findIndex(tr.SourceNodeID), 0};
+}
+
+// ── Panel ─────────────────────────────────────────────────────────
+
+AnimGraphPanel::AnimGraphPanel()
+{
+    m_Name = "Animation Graph";
+    m_Delegate.panel = this;
+}
+
+AnimGraphPanel::~AnimGraphPanel()
+{
+    RestorePreview();
+}
+
+void AnimGraphPanel::OnImGuiRender(bool readOnly)
+{
+    if (!m_IsOpen)
+    {
+        return;
+    }
+
+    ImGui::Begin("Animation Graph", &m_IsOpen);
+
+    Entity selectedEntity = EditorLayer::Get().GetSelectedEntity();
+
+    // Restore preview if entity changed
+    if (m_PreviewNodeIdx >= 0 && m_PreviewEntity != selectedEntity)
+    {
+        RestorePreview();
+    }
+
+    if (!selectedEntity || !selectedEntity.HasComponent<AnimationComponent>())
+    {
+        ImGui::Text("Select an entity with an AnimationComponent.");
+        ImGui::End();
+        return;
+    }
+
+    if (!selectedEntity.HasComponent<ModelComponent>())
+    {
+        ImGui::Text("Entity must have a ModelComponent.");
+        ImGui::End();
+        return;
+    }
+
+    auto& animComp = selectedEntity.GetComponent<AnimationComponent>();
+
+    AnimationGraphAsset* graph = nullptr;
+    if (!animComp.GraphPath.empty())
+    {
+        auto* assets = ServiceLocator::TryGet<AssetManager>();
+        if (assets)
+        {
+            auto asset = assets->Get<AnimationGraphAsset>(animComp.GraphPath);
+            if (asset)
+            {
+                graph = asset.get();
+            }
+        }
+    }
+
+    if (!graph)
+    {
+        RestorePreview();
+        ImGui::TextDisabled("No animation graph loaded.");
+        if (ImGui::Button("Create New Graph"))
+        {
+            animComp.GraphPath = "animations/new_graph.chag";
+            animComp.GraphAssetHandle = 0;
+            m_ChangedGraph = true;
+        }
+        ImGui::End();
+        return;
+    }
+
+    // Toolbar
+    {
+        ImVec4 btnColor = m_ChangedGraph ? ImVec4(0.8f, 0.4f, 0.1f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
+        ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
+        if (ImGui::Button("Save"))
+        {
+            SaveGraph(graph, animComp.GraphPath);
+            m_ChangedGraph = false;
+        }
+        ImGui::PopStyleColor();
+
+        ImGui::SameLine();
+        if (ImGui::Button("Add State"))
+        {
+            AnimNode newNode;
+            newNode.ID = graph->NextNodeID++;
+            newNode.Name = "State " + std::to_string(newNode.ID);
+            newNode.EditorX = 100.0f + (graph->Nodes.size() % 3) * 220.0f;
+            newNode.EditorY = 100.0f + (graph->Nodes.size() / 3) * 120.0f;
+            graph->Nodes.push_back(newNode);
+            m_Delegate.nodeSelected.push_back(false);
+            m_ChangedGraph = true;
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Fit All"))
+        {
+            m_Fit = GraphEditor::Fit_AllNodes;
+        }
+
+        ImGui::SameLine();
+        if (ImGui::Button("Fit Selected"))
+        {
+            m_Fit = GraphEditor::Fit_SelectedNodes;
+        }
+    }
+
+    // Graph editor | Properties side-by-side
+    m_Delegate.graph = graph;
+    m_Delegate.changedFlag = &m_ChangedGraph;
+    m_Delegate.SyncSelection();
+
+    float avail = ImGui::GetContentRegionAvail().x;
+    float graphWidth = avail * 0.72f;
+
+    ImGui::BeginChild("GraphEditor", ImVec2(graphWidth, 0));
+    GraphEditor::Show(m_Delegate, m_Options, m_ViewState, true, &m_Fit);
+    ImGui::EndChild();
+
+    ImGui::SameLine();
+
+    ImGui::BeginChild("Properties", ImVec2(0, 0));
+    DrawProperties(graph, selectedEntity);
+    ImGui::EndChild();
+
+    ImGui::End();
+}
+
+void AnimGraphPanel::RestorePreview()
+{
+    if (!m_PreviewEntity || !m_PreviewEntity.HasComponent<AnimationComponent>())
+    {
+        return;
+    }
+    auto& anim = m_PreviewEntity.GetComponent<AnimationComponent>();
+    anim.CurrentAnimationIndex = m_OrigAnimIndex;
+    anim.CurrentFrame = m_OrigFrame;
+    anim.StartFrame = m_OrigStartFrame;
+    anim.EndFrame = m_OrigEndFrame;
+    anim.Speed = m_OrigSpeed;
+    anim.IsLooping = m_OrigIsLooping;
+    anim.IsPlaying = m_OrigIsPlaying;
+    m_PreviewNodeIdx = -1;
+}
+
+void AnimGraphPanel::ApplyPreview(AnimationGraphAsset* graph, int nodeIdx, Entity entity)
+{
+    if (!graph || nodeIdx < 0 || nodeIdx >= (int)graph->Nodes.size())
+    {
+        return;
+    }
+    if (!entity || !entity.HasComponent<AnimationComponent>())
+    {
+        return;
+    }
+
+    auto& anim = entity.GetComponent<AnimationComponent>();
+    auto& node = graph->Nodes[nodeIdx];
+
+    // Save original state
+    m_OrigAnimIndex = anim.CurrentAnimationIndex;
+    m_OrigFrame = anim.CurrentFrame;
+    m_OrigStartFrame = anim.StartFrame;
+    m_OrigEndFrame = anim.EndFrame;
+    m_OrigSpeed = anim.Speed;
+    m_OrigIsLooping = anim.IsLooping;
+    m_OrigIsPlaying = anim.IsPlaying;
+    m_PreviewEntity = entity;
+
+    // Override with node's animation
+    anim.CurrentNodeID = node.ID;
+    anim.CurrentAnimationIndex = node.AnimationIndex;
+    anim.StartFrame = node.StartFrame;
+    anim.EndFrame = node.EndFrame;
+    anim.Speed = (node.Speed > 0.0f) ? node.Speed : 1.0f;
+    anim.IsLooping = node.IsLooping;
+    anim.CurrentFrame = node.StartFrame;
+    anim.IsPlaying = true;
+
+    m_PreviewNodeIdx = nodeIdx;
+}
+
+void AnimGraphPanel::DrawProperties(AnimationGraphAsset* graph, Entity entity)
+{
+    if (!entity || !entity.HasComponent<AnimationComponent>())
+    {
+        return;
+    }
+    auto& animComp = entity.GetComponent<AnimationComponent>();
+
+    ImGui::Text("Is Playing");
+    ImGui::SameLine(120);
+    ImGui::Checkbox("##isPlaying", &animComp.IsPlaying);
+
+    ImGui::Separator();
+
+    ImGui::Text("Properties");
+    ImGui::Separator();
+
+    // Find first selected node
+    int selectedIdx = -1;
+    for (size_t i = 0; i < m_Delegate.nodeSelected.size(); i++)
+    {
+        if (m_Delegate.nodeSelected[i])
+        {
+            selectedIdx = (int)i;
+            break;
+        }
+    }
+
+    if (selectedIdx != -1 && selectedIdx < (int)graph->Nodes.size())
+    {
+        AnimNode& node = graph->Nodes[selectedIdx];
+
+        // Keep entity preview synced to selected node in Edit mode
+        bool isSimulation = EditorLayer::Get().GetSceneState() != SceneState::Edit;
+        if (!isSimulation)
+        {
+            animComp.CurrentNodeID = node.ID;
+            animComp.CurrentAnimationIndex = node.AnimationIndex;
+            animComp.StartFrame = node.StartFrame;
+            animComp.EndFrame = node.EndFrame;
+            animComp.Speed = (node.Speed > 0.0f) ? node.Speed : 1.0f;
+            animComp.IsLooping = node.IsLooping;
+        }
+
+        char buffer[256];
+        strncpy(buffer, node.Name.c_str(), sizeof(buffer));
+        buffer[sizeof(buffer) - 1] = '\0';
+        if (ImGui::InputText("Name", buffer, sizeof(buffer)))
+        {
+            node.Name = buffer;
+            m_ChangedGraph = true;
+        }
+
+        if (node.ID == graph->EntryNodeID)
+        {
+            ImGui::TextColored(ImVec4(1.0f, 0.85f, 0.0f, 1.0f), "Entry Node");
+        }
+        else
+        {
+            if (ImGui::Button("Set as Entry"))
+            {
+                graph->EntryNodeID = node.ID;
+                m_ChangedGraph = true;
+            }
+        }
+
+        // Animation picker
+        {
+            bool foundModel = false;
+            if (entity.HasComponent<ModelComponent>())
+            {
+                auto& modelComp = entity.GetComponent<ModelComponent>();
+                auto* assets = ServiceLocator::TryGet<AssetManager>();
+                if (assets)
+                {
+                    auto modelAsset = assets->Get<ModelAsset>(modelComp.ModelPath);
+                    if (modelAsset && modelAsset->GetAnimationCount() > 0)
+                    {
+                        foundModel = true;
+                        int animCount = modelAsset->GetAnimationCount();
+                        int idx = node.AnimationIndex;
+                        if (idx < 0 || idx >= animCount)
+                        {
+                            idx = 0;
+                        }
+
+                        char labelBuf[128];
+                        std::string animName = modelAsset->GetAnimationName(idx);
+                        if (animName.empty())
+                        {
+                            snprintf(labelBuf, sizeof(labelBuf), "Animation %d", idx);
+                        }
+                        else
+                        {
+                            snprintf(labelBuf, sizeof(labelBuf), "%s (%d)", animName.c_str(), idx);
+                        }
+
+                        if (ImGui::BeginCombo("Animation", labelBuf))
+                        {
+                            for (int i = 0; i < animCount; i++)
+                            {
+                                bool isSel = (idx == i);
+                                std::string name = modelAsset->GetAnimationName(i);
+                                char itemBuf[128];
+                                if (name.empty())
+                                {
+                                    snprintf(itemBuf, sizeof(itemBuf), "Animation %d", i);
+                                }
+                                else
+                                {
+                                    snprintf(itemBuf, sizeof(itemBuf), "%s (%d)", name.c_str(), i);
+                                }
+                                if (ImGui::Selectable(itemBuf, isSel))
+                                {
+                                    node.AnimationIndex = i;
+                                    node.StartFrame = 0;
+                                    node.EndFrame = -1;
+                                    m_ChangedGraph = true;
+                                }
+                            }
+                            ImGui::EndCombo();
+                        }
+
+                        // Show frame range info
+                        const auto& rawAnims = modelAsset->GetAnimations();
+                        if (idx >= 0 && idx < (int)rawAnims.size())
+                        {
+                            int totalFrames = rawAnims[idx].frameCount;
+                            float fps = rawAnims[idx].frameRate;
+                            float duration = (float)totalFrames / fps;
+                            ImGui::TextDisabled("Total: %d frames (%.2fs @ %.0f fps)", totalFrames, duration, fps);
+
+                            // Start Frame
+                            int sf = node.StartFrame;
+                            if (ImGui::DragInt("Start Frame", &sf, 1, 0, totalFrames - 1))
+                            {
+                                node.StartFrame = std::clamp(sf, 0, totalFrames - 1);
+                                if (node.EndFrame >= 0 && node.EndFrame < node.StartFrame)
+                                {
+                                    node.EndFrame = node.StartFrame;
+                                }
+                                m_ChangedGraph = true;
+                            }
+
+                            // End Frame
+                            int ef = node.EndFrame;
+                            const char* endLabel = (node.EndFrame < 0) ? "End Frame (auto)" : "End Frame";
+                            if (ImGui::DragInt(endLabel, &ef, 1, -1, totalFrames - 1))
+                            {
+                                node.EndFrame = ef;
+                                if (node.EndFrame >= 0 && node.EndFrame < node.StartFrame)
+                                {
+                                    node.EndFrame = node.StartFrame;
+                                }
+                                m_ChangedGraph = true;
+                            }
+
+                            // Duration preview
+                            int endFrame = (node.EndFrame < 0) ? (totalFrames - 1) : node.EndFrame;
+                            int clipLength = endFrame - node.StartFrame + 1;
+                            float clipDuration = (float)clipLength / fps;
+                            float speedDuration = (node.Speed > 0.0f) ? clipDuration / node.Speed : clipDuration;
+                            ImGui::Text("Clip: %d frames (%.2fs)", clipLength, clipDuration);
+                            if (node.Speed != 1.0f)
+                            {
+                                ImGui::Text("Effective: %.2fs (speed %.1fx)", speedDuration, node.Speed);
+                            }
+                        }
+                    }
+                }
+            }
+            if (!foundModel)
+            {
+                if (ImGui::InputInt("Animation Index", &node.AnimationIndex))
+                {
+                    m_ChangedGraph = true;
+                }
+                if (ImGui::InputInt("Start Frame", &node.StartFrame))
+                {
+                    m_ChangedGraph = true;
+                }
+                if (ImGui::InputInt("End Frame", &node.EndFrame))
+                {
+                    m_ChangedGraph = true;
+                }
+            }
+        }
+
+        if (ImGui::Checkbox("Is Looping", &node.IsLooping))
+        {
+            m_ChangedGraph = true;
+        }
+
+        if (ImGui::DragFloat("Speed", &node.Speed, 0.05f, 0.01f, 10.0f, "%.2f"))
+        {
+            m_ChangedGraph = true;
+        }
+
+        if (m_ChangedGraph)
+        {
+            animComp.CurrentNodeID = node.ID;
+            animComp.CurrentAnimationIndex = node.AnimationIndex;
+            animComp.StartFrame = node.StartFrame;
+            animComp.EndFrame = node.EndFrame;
+            animComp.Speed = (node.Speed > 0.0f) ? node.Speed : 1.0f;
+            animComp.IsLooping = node.IsLooping;
+            if (animComp.CurrentFrame < animComp.StartFrame ||
+                (animComp.EndFrame >= 0 && animComp.CurrentFrame > animComp.EndFrame))
+            {
+                animComp.CurrentFrame = animComp.StartFrame;
+            }
+        }
+
+        ImGui::Separator();
+        if (ImGui::Button("Delete Node"))
+        {
+            int nodeId = node.ID;
+            graph->Nodes.erase(std::remove_if(graph->Nodes.begin(), graph->Nodes.end(),
+                                              [nodeId](const AnimNode& n) { return n.ID == nodeId; }),
+                               graph->Nodes.end());
+            graph->Transitions.erase(std::remove_if(graph->Transitions.begin(), graph->Transitions.end(),
+                                                    [nodeId](const AnimTransition& t) {
+                                                        return t.SourceNodeID == nodeId || t.TargetNodeID == nodeId;
+                                                    }),
+                                     graph->Transitions.end());
+            if (graph->EntryNodeID == nodeId)
+            {
+                graph->EntryNodeID = -1;
+            }
+            m_Delegate.SyncSelection();
+            m_ChangedGraph = true;
+        }
+    }
+    else
+    {
+        ImGui::TextDisabled("Select a node to edit properties");
+    }
+
+    // Transitions section
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text("Transitions");
+    ImGui::Separator();
+
+    if (ImGui::Button("+ Add Transition"))
+    {
+        AnimTransition tr;
+        tr.ID = graph->NextLinkID++;
+        tr.BlendDuration = 0.2f;
+        graph->Transitions.push_back(tr);
+        m_ChangedGraph = true;
+    }
+
+    for (size_t i = 0; i < graph->Transitions.size(); i++)
+    {
+        AnimTransition& tr = graph->Transitions[i];
+
+        auto findNodeName = [&](int nodeID) -> std::string {
+            for (auto& n : graph->Nodes)
+            {
+                if (n.ID == nodeID)
+                {
+                    return n.Name;
+                }
+            }
+            return "Unknown";
+        };
+
+        ImGui::PushID((int)i);
+
+        bool open = ImGui::TreeNode("##tr", "%s -> %s", findNodeName(tr.SourceNodeID).c_str(),
+                                    findNodeName(tr.TargetNodeID).c_str());
+        if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(0))
+        {
+            // Select this transition
+        }
+
+        if (open)
+        {
+            // Source node picker
+            {
+                int srcIdx = -1;
+                for (size_t j = 0; j < graph->Nodes.size(); j++)
+                {
+                    if (graph->Nodes[j].ID == tr.SourceNodeID)
+                    {
+                        srcIdx = (int)j;
+                        break;
+                    }
+                }
+
+                char srcLabel[128];
+                snprintf(srcLabel, sizeof(srcLabel), "%s###src",
+                         (srcIdx >= 0) ? graph->Nodes[srcIdx].Name.c_str() : "None");
+                if (ImGui::BeginCombo("From", srcLabel))
+                {
+                    for (size_t j = 0; j < graph->Nodes.size(); j++)
+                    {
+                        bool isSel = ((int)j == srcIdx);
+                        if (ImGui::Selectable(graph->Nodes[j].Name.c_str(), isSel))
+                        {
+                            tr.SourceNodeID = graph->Nodes[j].ID;
+                            m_ChangedGraph = true;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+
+            // Target node picker
+            {
+                int tgtIdx = -1;
+                for (size_t j = 0; j < graph->Nodes.size(); j++)
+                {
+                    if (graph->Nodes[j].ID == tr.TargetNodeID)
+                    {
+                        tgtIdx = (int)j;
+                        break;
+                    }
+                }
+
+                char tgtLabel[128];
+                snprintf(tgtLabel, sizeof(tgtLabel), "%s###tgt",
+                         (tgtIdx >= 0) ? graph->Nodes[tgtIdx].Name.c_str() : "None");
+                if (ImGui::BeginCombo("To", tgtLabel))
+                {
+                    for (size_t j = 0; j < graph->Nodes.size(); j++)
+                    {
+                        bool isSel = ((int)j == tgtIdx);
+                        if (ImGui::Selectable(graph->Nodes[j].Name.c_str(), isSel))
+                        {
+                            tr.TargetNodeID = graph->Nodes[j].ID;
+                            m_ChangedGraph = true;
+                        }
+                    }
+                    ImGui::EndCombo();
+                }
+            }
+
+            if (ImGui::DragFloat("Blend Duration", &tr.BlendDuration, 0.01f, 0.0f, 5.0f, "%.2f s"))
+            {
+                m_ChangedGraph = true;
+            }
+
+            if (ImGui::Checkbox("Has Exit Time", &tr.HasExitTime))
+            {
+                m_ChangedGraph = true;
+            }
+
+            if (tr.HasExitTime)
+            {
+                if (ImGui::DragFloat("Exit Time", &tr.ExitTime, 0.01f, 0.0f, 1.0f, "%.2f"))
+                {
+                    m_ChangedGraph = true;
+                }
+            }
+
+            // Conditions
+            ImGui::Text("Conditions:");
+            if (ImGui::Button("+ Condition"))
+            {
+                AnimCondition cond;
+                cond.Op = AnimConditionOp::Greater;
+                tr.Conditions.push_back(cond);
+                m_ChangedGraph = true;
+            }
+
+            for (size_t c = 0; c < tr.Conditions.size(); c++)
+            {
+                AnimCondition& cond = tr.Conditions[c];
+                ImGui::PushID((int)c);
+
+                char varBuf[128];
+                strncpy(varBuf, cond.VariableName.c_str(), sizeof(varBuf));
+                varBuf[sizeof(varBuf) - 1] = '\0';
+                if (ImGui::InputText("Var", varBuf, sizeof(varBuf)))
+                {
+                    cond.VariableName = varBuf;
+                    m_ChangedGraph = true;
+                }
+
+                const char* ops[] = {"==", "!=", ">", "<", ">=", "<="};
+                int opIdx = (int)cond.Op;
+                if (ImGui::Combo("Op", &opIdx, ops, IM_ARRAYSIZE(ops)))
+                {
+                    cond.Op = (AnimConditionOp)opIdx;
+                    m_ChangedGraph = true;
+                }
+
+                if (ImGui::DragFloat("Value", &cond.Value, 0.01f))
+                {
+                    m_ChangedGraph = true;
+                }
+
+                ImGui::SameLine();
+                if (ImGui::SmallButton("X"))
+                {
+                    tr.Conditions.erase(tr.Conditions.begin() + c);
+                    m_ChangedGraph = true;
+                    ImGui::PopID();
+                    break;
+                }
+
+                ImGui::PopID();
+            }
+
+            if (ImGui::SmallButton("Delete Transition"))
+            {
+                graph->Transitions.erase(graph->Transitions.begin() + i);
+                m_ChangedGraph = true;
+                ImGui::TreePop();
+                ImGui::PopID();
+                break;
+            }
+
+            ImGui::TreePop();
+        }
+
+        ImGui::PopID();
+    }
+
+    // Variables section
+    ImGui::Spacing();
+    ImGui::Separator();
+    ImGui::Text("Variables");
+    ImGui::Separator();
+
+    if (ImGui::Button("+ Add Variable"))
+    {
+        animComp.Variables["new_var"] = 0.0f;
+    }
+
+    auto it = animComp.Variables.begin();
+    while (it != animComp.Variables.end())
+    {
+        ImGui::PushID(it->first.c_str());
+
+        char varBuf[128];
+        strncpy(varBuf, it->first.c_str(), sizeof(varBuf));
+        varBuf[sizeof(varBuf) - 1] = '\0';
+        if (ImGui::InputText("##name", varBuf, sizeof(varBuf)))
+        {
+            float val = it->second;
+            std::string newKey = varBuf;
+            animComp.Variables.erase(it);
+            animComp.Variables[newKey] = val;
+            ImGui::PopID();
+            break;
+        }
+
+        float val = it->second;
+        if (ImGui::DragFloat("##val", &val, 0.01f))
+        {
+            it->second = val;
+        }
+
+        ImGui::SameLine();
+        if (ImGui::SmallButton("X"))
+        {
+            it = animComp.Variables.erase(it);
+            ImGui::PopID();
+        }
+        else
+        {
+            ++it;
+            ImGui::PopID();
+        }
+    }
+}
+
+void AnimGraphPanel::SaveGraph(AnimationGraphAsset* graph, const std::string& path)
+{
+    if (!graph || path.empty())
+    {
+        return;
+    }
+
+    auto* assets = ServiceLocator::TryGet<AssetManager>();
+    if (assets)
+    {
+        std::string resolved = assets->ResolvePath(path);
+        AnimGraphLoader loader;
+        if (loader.Save(*graph, resolved))
+        {
+            CH_CORE_INFO("Animation graph saved: {}", resolved);
+        }
+        else
+        {
+            CH_CORE_ERROR("Failed to save animation graph: {}", resolved);
+        }
+    }
+}
+
+} // namespace Chained

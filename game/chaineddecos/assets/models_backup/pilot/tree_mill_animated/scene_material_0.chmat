@@ -1,0 +1,17 @@
+Material:
+  Name: Wood.005
+  AlbedoColor:
+    - 0.545098007
+    - 0.415686011
+    - 0.301961005
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0.375692815
+  Roughness: 1
+  Transparent: false
+  Alpha: 1

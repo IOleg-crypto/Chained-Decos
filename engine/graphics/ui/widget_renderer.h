@@ -13,7 +13,7 @@
 #include <map>
 
 #include <vector>
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 
 namespace Chained
 {
@@ -21,7 +21,7 @@ class Scene;
 class AssetManager;
 
 // Singleton renderer for in-game UI canvases and project fonts.
-class WidgetRenderer : public EngineModule
+class WidgetRenderer : public Service
 {
 public:
     WidgetRenderer();

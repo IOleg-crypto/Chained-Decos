@@ -48,7 +48,8 @@ TEST(MaterialTest, StateModification)
 
 TEST(MaterialTest, LoadMaterial)
 {
-    auto material = MaterialLoader::Create();
-    MaterialLoader::Load(material, "resources/materials/default.mat");
+    MaterialLoader loader;
+    auto material = loader.Create();
+    loader.Load(material, "resources/materials/default.mat");
     EXPECT_EQ(material->GetType(), AssetType::Material);
 }

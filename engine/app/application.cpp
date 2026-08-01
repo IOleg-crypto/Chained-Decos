@@ -119,8 +119,8 @@ Application::~Application()
 
     ServiceLocator::Shutdown();
     Dialogs::Shutdown();
-    // NOTE: Input is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
-    // NOTE: ThreadPool is now an EngineModule, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
+    // NOTE: Input is now a Service, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
+    // NOTE: ThreadPool is now a Service, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
     // Log::Shutdown() MUST come after m_Window.reset(): ~GlfwWindow::Shutdown() emits
     // CH_CORE_INFO("Glfw Window Closed"). If the core logger were reset first, that log

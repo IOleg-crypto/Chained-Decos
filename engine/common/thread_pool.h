@@ -11,11 +11,11 @@
 #include <memory>
 #include <type_traits>
 
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 
 namespace Chained
 {
-class ThreadPool : public EngineModule
+class ThreadPool : public Service
 {
 public:
     void Initialize() override

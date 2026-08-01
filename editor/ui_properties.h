@@ -11,6 +11,7 @@
 #include <cstring>
 #include <functional>
 #include <string_view>
+#include <unordered_map>
 #include <vector>
 
 namespace Chained
@@ -92,10 +93,6 @@ public:
     {
         return FileInternal(name, value, extensions, meta);
     }
-    virtual bool Action(const char* label, std::function<void()> func) override
-    {
-        return ActionInternal(label, func);
-    }
     virtual void Header(const char* label) override
     {
         HeaderInternal(label);
@@ -104,15 +101,6 @@ public:
     {
         SeparatorInternal();
     }
-    virtual bool BeginGroup(const char* label, bool defaultOpen = true) override
-    {
-        return BeginGroupInternal(label, defaultOpen);
-    }
-    virtual void EndGroup() override
-    {
-        EndGroupInternal();
-    }
-
     bool HasFinished() const
     {
         return m_Started && m_Finished;
@@ -139,123 +127,6 @@ public:
     bool Property(const char* name, T_Enum& value, const char** names, int count, const PropertyMeta& meta)
     {
         return EnumPropertyInternal(name, (int&)value, names, count, meta);
-    }
-
-    template <typename T> bool Sequence(const char* name, std::vector<T>& values, bool allowAddRemove = true)
-    {
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-        }
-
-        bool localChanged = false;
-        ImGuiTreeNodeFlags flags =
-            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            flags |= ImGuiTreeNodeFlags_SpanAllColumns;
-        }
-
-        if (ImGui::TreeNodeEx(name, flags))
-        {
-            for (size_t i = 0; i < values.size(); i++)
-            {
-                ImGui::PushID((int)i);
-                if (ImGui::GetCurrentTable() != nullptr)
-                {
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(1);
-                }
-
-                if (allowAddRemove && ImGui::Button(ICON_FA_TRASH))
-                {
-                    values.erase(values.begin() + i);
-                    m_Changed = localChanged = true;
-                    ImGui::PopID();
-                    break;
-                }
-
-                if (allowAddRemove)
-                {
-                    ImGui::SameLine();
-                }
-
-                if constexpr (std::is_arithmetic_v<T> || std::is_same_v<T, std::string> || is_variant_v<T> ||
-                              std::is_enum_v<T> || (std::is_integral_v<T> && std::is_unsigned_v<T>))
-                {
-                    Properties<UIProperties> itemProps(*this);
-                    if (itemProps.Property("##val", values[i]))
-                    {
-                        m_Changed = localChanged = true;
-                    }
-                }
-                else if constexpr (is_rfl_component<T>::value)
-                {
-                    char label[32];
-                    sprintf(label, "Item %d", (int)i);
-                    if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-                    {
-                        EditorGUI::BeginPropertyGrid();
-                        Properties<UIProperties> itemProps(*this);
-                        ReflectFromRfl(values[i], itemProps);
-                        EditorGUI::EndPropertyGrid();
-                        ImGui::TreePop();
-                    }
-                }
-                else if constexpr (requires(T t, Properties<UIProperties>& p) { t.Reflect(p); })
-                {
-                    char label[32];
-                    sprintf(label, "Item %d", (int)i);
-                    if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-                    {
-                        EditorGUI::BeginPropertyGrid();
-                        Properties<UIProperties> itemProps(*this);
-                        values[i].Reflect(itemProps);
-                        EditorGUI::EndPropertyGrid();
-                        ImGui::TreePop();
-                    }
-                }
-                else if constexpr (std::is_same_v<T, std::string>)
-                {
-                    char buf[256];
-                    strncpy(buf, values[i].c_str(), sizeof(buf) - 1);
-                    buf[sizeof(buf) - 1] = '\0';
-                    ImGui::SetNextItemWidth(-1);
-                    if (ImGui::InputText("##val", buf, sizeof(buf)))
-                    {
-                        values[i] = buf;
-                        m_Changed = localChanged = true;
-                    }
-                }
-                else
-                {
-                    ImGui::Text("Item %d", (int)i);
-                }
-
-                ImGui::PopID();
-                if constexpr (!requires(T t, Properties<UIProperties>& p) { t.Reflect(p); })
-                {
-                    ImGui::Separator();
-                }
-            }
-
-            ImGui::Spacing();
-            if (ImGui::GetCurrentTable() != nullptr)
-            {
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(1);
-            }
-
-            if (allowAddRemove && EditorGUI::ActionButton(ICON_FA_PLUS, "Add New Item"))
-            {
-                values.emplace_back();
-                m_Changed = localChanged = true;
-            }
-            ImGui::TreePop();
-        }
-        return localChanged;
     }
 
     virtual void BeginSequence(const char* name, size_t& size) override
@@ -299,6 +170,112 @@ public:
             return true; // Simplified: assume changed if we opened and called callback
         }
         return false;
+    }
+
+    virtual void BeginMap(const char* name, size_t& size) override
+    {
+        // Not used directly in UI mode — Map() template handles rendering
+    }
+
+    virtual void EndMap() override
+    {
+    }
+
+    virtual bool MapNextKey(std::string& key) override
+    {
+        return false;
+    }
+
+    template <typename V> bool Map(const char* name, std::unordered_map<std::string, V>& map)
+    {
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            ImGui::TableNextRow();
+            ImGui::TableSetColumnIndex(0);
+            ImGui::AlignTextToFramePadding();
+        }
+
+        bool localChanged = false;
+        ImGuiTreeNodeFlags flags =
+            ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+        if (ImGui::GetCurrentTable() != nullptr)
+        {
+            flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+        }
+
+        if (ImGui::TreeNodeEx(name, flags))
+        {
+            auto it = map.begin();
+            while (it != map.end())
+            {
+                ImGui::PushID(it->first.c_str());
+
+                if (ImGui::GetCurrentTable() != nullptr)
+                {
+                    ImGui::TableNextRow();
+                    ImGui::TableSetColumnIndex(1);
+                }
+
+                if (ImGui::Button(ICON_FA_TRASH))
+                {
+                    it = map.erase(it);
+                    m_Changed = localChanged = true;
+                    ImGui::PopID();
+                    continue;
+                }
+
+                ImGui::SameLine();
+
+                // Key input
+                char keyBuf[128];
+                strncpy(keyBuf, it->first.c_str(), sizeof(keyBuf));
+                keyBuf[sizeof(keyBuf) - 1] = '\0';
+                ImGui::SetNextItemWidth(120);
+                if (ImGui::InputText("##key", keyBuf, sizeof(keyBuf)))
+                {
+                    float val = it->second;
+                    std::string newKey = keyBuf;
+                    it = map.erase(it);
+                    map[newKey] = val;
+                    m_Changed = localChanged = true;
+                    ImGui::PopID();
+                    continue;
+                }
+
+                ImGui::SameLine();
+                ImGui::Text("=");
+                ImGui::SameLine();
+
+                // Value input
+                float val = it->second;
+                ImGui::SetNextItemWidth(-1);
+                if (ImGui::DragFloat("##val", &val, 0.01f))
+                {
+                    it->second = val;
+                    m_Changed = localChanged = true;
+                }
+
+                ++it;
+                ImGui::PopID();
+                ImGui::Separator();
+            }
+
+            ImGui::Spacing();
+            if (ImGui::GetCurrentTable() != nullptr)
+            {
+                ImGui::TableNextRow();
+                ImGui::TableSetColumnIndex(1);
+            }
+
+            if (EditorGUI::ActionButton(ICON_FA_PLUS, "Add Variable"))
+            {
+                std::string newKey = "var_" + std::to_string(map.size());
+                map[newKey] = 0.0f;
+                m_Changed = localChanged = true;
+            }
+            ImGui::TreePop();
+        }
+        return localChanged;
     }
 
 private:
@@ -355,11 +332,8 @@ private:
                             const PropertyMeta& meta);
     bool HandleInternal(const char* name, uint64_t& value);
     bool FileInternal(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta);
-    bool ActionInternal(const char* label, std::function<void()> func);
     void HeaderInternal(const char* label);
     void SeparatorInternal();
-    bool BeginGroupInternal(const char* label, bool defaultOpen = true);
-    void EndGroupInternal();
     void UpdateState(bool changed);
     bool StringProperty(const char* name, std::string& value, const PropertyMeta& meta);
 

@@ -1,5 +1,6 @@
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/loaders/iasset_loader.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/components.h"
 #include "gtest/gtest.h"
@@ -32,6 +33,30 @@ public:
     }
 };
 
+class RegressionLoader final : public IAssetLoader
+{
+public:
+    bool IsAsync() const override
+    {
+        return m_Async;
+    }
+    std::shared_ptr<Asset> Create() override
+    {
+        return std::make_shared<RegressionAsset>();
+    }
+    bool Load(std::shared_ptr<Asset> asset, const std::string& path, std::string*) override
+    {
+        auto dummy = std::dynamic_pointer_cast<RegressionAsset>(asset);
+        if (!dummy)
+        {
+            return false;
+        }
+        dummy->SetPath(path);
+        return true;
+    }
+    bool m_Async = true;
+};
+
 std::string RegressionPath(const char* suffix)
 {
     static std::atomic<uint64_t> counter{0};
@@ -51,19 +76,9 @@ protected:
         m_AssetManager->SetEngineRoot(currentPath);
         std::filesystem::create_directories(m_AssetManager->GetAssetDirectory());
 
-        AssetLoader loader;
-        loader.IsAsync = true;
-        loader.Create = []() { return std::make_shared<RegressionAsset>(); };
-        loader.Load = [](std::shared_ptr<Asset> asset, const std::string& path, std::string*) {
-            auto dummy = std::dynamic_pointer_cast<RegressionAsset>(asset);
-            if (!dummy)
-            {
-                return false;
-            }
-            dummy->SetPath(path);
-            return true;
-        };
-        m_AssetManager->RegisterLoader(RegressionAsset::GetStaticType(), loader);
+        auto loader = std::make_unique<RegressionLoader>();
+        loader->m_Async = true;
+        m_AssetManager->RegisterLoader(RegressionAsset::GetStaticType(), std::move(loader));
     }
 
     void TearDown() override

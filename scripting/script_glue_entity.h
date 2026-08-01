@@ -77,8 +77,12 @@ CH_SCRIPT_FUNC float PlayerComponent_GetLookSensitivity(uint64_t entityID);
 CH_SCRIPT_FUNC void PlayerComponent_SetLookSensitivity(uint64_t entityID, float value);
 
 // ── SpawnComponent ────────────────────────────────────────────────────
-CH_SCRIPT_FUNC bool SpawnComponent_IsActive(uint64_t entityID);
-
+CH_SCRIPT_FUNC bool SpawnComponent_GetIsActive(uint64_t entityID);
+CH_SCRIPT_FUNC void SpawnComponent_SetIsActive(uint64_t entityID, bool value);
+CH_SCRIPT_FUNC bool SpawnComponent_IsCheckpoint(uint64_t entityID);
+CH_SCRIPT_FUNC void SpawnComponent_SetIsCheckpoint(uint64_t entityID, bool value);
+CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint);
+CH_SCRIPT_FUNC void SpawnComponent_SetSpawnPoint(uint64_t entityID, glm::vec3* inPoint);
 CH_SCRIPT_FUNC bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID);
 CH_SCRIPT_FUNC void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize);
 
@@ -87,6 +91,19 @@ CH_SCRIPT_FUNC int AnimationComponent_GetCurrentAnimationIndex(uint64_t entityID
 CH_SCRIPT_FUNC void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index);
 CH_SCRIPT_FUNC uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID);
 CH_SCRIPT_FUNC void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying);
+CH_SCRIPT_FUNC bool AnimationComponent_GetIsLooping(uint64_t entityID);
+CH_SCRIPT_FUNC void AnimationComponent_SetIsLooping(uint64_t entityID, bool isLooping);
+CH_SCRIPT_FUNC bool AnimationComponent_GetIsFinished(uint64_t entityID);
+CH_SCRIPT_FUNC float AnimationComponent_GetDuration(uint64_t entityID);
+CH_SCRIPT_FUNC float AnimationComponent_GetNormalizedTime(uint64_t entityID);
+CH_SCRIPT_FUNC float AnimationComponent_GetBlendDuration(uint64_t entityID);
+CH_SCRIPT_FUNC void AnimationComponent_SetBlendDuration(uint64_t entityID, float blendDuration);
+CH_SCRIPT_FUNC void AnimationComponent_CrossFade(uint64_t entityID, int targetIndex, float blendDuration);
+
+// ── AnimationComponent graph variables ──────────────────────────────
+CH_SCRIPT_FUNC void AnimationComponent_SetFloat(uint64_t entityID, const Coral::UCChar* name, float value);
+CH_SCRIPT_FUNC void AnimationComponent_SetBool(uint64_t entityID, const Coral::UCChar* name, bool value);
+CH_SCRIPT_FUNC float AnimationComponent_GetFloat(uint64_t entityID, const Coral::UCChar* name);
 
 } // namespace Chained
 #endif

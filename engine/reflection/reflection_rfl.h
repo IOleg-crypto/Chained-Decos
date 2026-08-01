@@ -6,6 +6,7 @@
 #include <rfl.hpp>
 #include <rfl/to_view.hpp>
 #include <rfl/yaml.hpp>
+#include <rfl/parsing/is_map_like.hpp>
 #include <string>
 #include <string_view>
 #include <type_traits>
@@ -15,6 +16,10 @@
 
 namespace Chained
 {
+
+class UIProperties; // forward declaration for if constexpr check
+
+class UIProperties; // forward declaration for if constexpr check
 
 struct UIMeta
 {
@@ -105,6 +110,18 @@ template <typename T, typename T_Archive> void ReflectFromRfl(T& component, Chai
         if constexpr (is_vector_v<FieldType>)
         {
             props.Sequence(name_cstr, *field.get());
+        }
+
+        else if constexpr (rfl::parsing::is_map_like_v<FieldType>)
+        {
+            if constexpr (std::is_same_v<T_Archive, Chained::UIProperties>)
+            {
+                props.GetArchive().Map(name_cstr, *field.get());
+            }
+            else
+            {
+                props.Map(name_cstr, *field.get());
+            }
         }
 
         else if constexpr (std::is_same_v<FieldType, Chained::AssetPath>)

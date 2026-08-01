@@ -4,6 +4,7 @@ add_library(engine_scene_core STATIC
     scene.h
     scene_events.h scene_settings.h scene_state.h
     camera.cpp camera.h
+    animation_graph.h
     components.h
     components/animation_component.h
     components/audio_component.h

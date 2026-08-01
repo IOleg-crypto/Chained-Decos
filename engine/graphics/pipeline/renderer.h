@@ -1,7 +1,7 @@
 #ifndef CH_RENDERER_H
 #define CH_RENDERER_H
 
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "engine/common/timestep.h"
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/camera_types.h"
@@ -22,7 +22,7 @@ class ShaderAsset;
 ///
 /// Manages the OpenGL rendering pipeline: shader compilation, uniform buffer management,
 /// draw call batching, skybox rendering, and post-processing. Accessed globally via ServiceLocator.
-class CH_API Renderer : public EngineModule
+class CH_API Renderer : public Service
 {
 public:
     Renderer();

@@ -324,9 +324,9 @@ Mesh GeometryGenerator::GenerateCapsule(float radius, float height, int slices, 
 
 namespace
 {
-// Builds a RawMesh (de-interleaved arrays, no VAO) for a box of the given dimensions.
+// Builds a MeshData (de-interleaved arrays, no VAO) for a box of the given dimensions.
 // Matches the interleaved layout of GenerateCube: 24 verts, per-face normals + texcoords.
-RawMesh BuildCube(const glm::vec3& dimensions)
+MeshData BuildCube(const glm::vec3& dimensions)
 {
     float w = dimensions.x * 0.5f;
     float h = dimensions.y * 0.5f;
@@ -370,7 +370,7 @@ RawMesh BuildCube(const glm::vec3& dimensions)
         {{-w, h, -d}, {-1, 0, 0}, {0, 1}},
     };
 
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
     for (const auto& v : verts)
     {
@@ -389,9 +389,9 @@ RawMesh BuildCube(const glm::vec3& dimensions)
 }
 
 // UV-sphere with positions == normals*radius (unit normals), matching GenerateSphere.
-RawMesh BuildSphere(float radius, int slices, int stacks)
+MeshData BuildSphere(float radius, int slices, int stacks)
 {
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
 
     for (int stackIndex = 0; stackIndex <= stacks; ++stackIndex)
@@ -430,12 +430,12 @@ RawMesh BuildSphere(float radius, int slices, int stacks)
 }
 
 // Flat XZ plane (up = +Y), spanning dimensions.x by dimensions.z.
-RawMesh BuildPlane(const glm::vec3& dimensions)
+MeshData BuildPlane(const glm::vec3& dimensions)
 {
     float hx = dimensions.x * 0.5f;
     float hz = dimensions.z * 0.5f;
 
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
     const glm::vec3 pos[] = {{-hx, 0.0f, -hz}, {hx, 0.0f, -hz}, {hx, 0.0f, hz}, {-hx, 0.0f, hz}};
     const glm::vec2 uv[] = {{0, 0}, {1, 0}, {1, 1}, {0, 1}};
@@ -453,9 +453,9 @@ RawMesh BuildPlane(const glm::vec3& dimensions)
 
 // Capsule: cylinder body + two hemispheres. Normals are the unit sphere directions
 // (a good approximation; the cylinder band gets radial normals from the polar sweep).
-RawMesh BuildCapsule(float radius, float height, int slices, int stacks)
+MeshData BuildCapsule(float radius, float height, int slices, int stacks)
 {
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
 
     float cylinderHeight = std::max(0.0f, height - 2.0f * radius);
@@ -500,9 +500,9 @@ RawMesh BuildCapsule(float radius, float height, int slices, int stacks)
 
 // Cylinder aligned to Y, centered at origin. `radiusBottom`/`radiusTop` differ for a cone
 // (top == 0) or a truncated cone. Side wall + two caps. `slices` = radial segments.
-RawMesh BuildConeLike(float radiusBottom, float radiusTop, float height, int slices)
+MeshData BuildConeLike(float radiusBottom, float radiusTop, float height, int slices)
 {
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
     slices = std::max(3, slices);
 
@@ -582,9 +582,9 @@ RawMesh BuildConeLike(float radiusBottom, float radiusTop, float height, int sli
 }
 
 // Upper half of a sphere (dome) + a flat bottom cap. `stacks` covers the dome only.
-RawMesh BuildHemisphere(float radius, int slices, int stacks)
+MeshData BuildHemisphere(float radius, int slices, int stacks)
 {
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
     slices = std::max(3, slices);
     stacks = std::max(2, stacks);
@@ -643,9 +643,9 @@ RawMesh BuildHemisphere(float radius, int slices, int stacks)
 
 // Torus in the XZ plane. `majorRadius` = ring center distance, `minorRadius` = tube radius.
 // `slices` = segments around the ring, `stacks` = segments around the tube.
-RawMesh BuildTorus(float majorRadius, float minorRadius, int slices, int stacks)
+MeshData BuildTorus(float majorRadius, float minorRadius, int slices, int stacks)
 {
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
     slices = std::max(3, slices);
     stacks = std::max(3, stacks);
@@ -690,9 +690,9 @@ RawMesh BuildTorus(float majorRadius, float minorRadius, int slices, int stacks)
 // scaled by `majorRadius`. `slices` = segments along the curve, `stacks` = segments
 // around the tube. The frame is built from the analytic tangent plus an arbitrary
 // reference axis, which is stable here because the curve never runs parallel to +Y.
-RawMesh BuildKnot(float majorRadius, float minorRadius, int slices, int stacks)
+MeshData BuildKnot(float majorRadius, float minorRadius, int slices, int stacks)
 {
-    RawMesh raw;
+    MeshData raw;
     raw.materialIndex = 0;
     slices = std::max(16, slices);
     stacks = std::max(3, stacks);
@@ -761,7 +761,7 @@ PendingModelData GeometryGenerator::GeneratePrimitivePendingData(const std::stri
 {
     PendingModelData data;
 
-    RawMesh raw;
+    MeshData raw;
     bool generated = true;
 
     if (type == ":cube:")
@@ -813,7 +813,7 @@ PendingModelData GeometryGenerator::GeneratePrimitivePendingData(const std::stri
     data.meshes.push_back(std::move(raw));
     data.instances.push_back(MeshInstance{0, glm::mat4(1.0f)});
 
-    RawMaterial defaultMat;
+    MaterialData defaultMat;
     // Named so it shows up as a selectable entry in the Material Editor's list.
     defaultMat.name = "Primitive Material";
     defaultMat.albedoColor = {1.0f, 1.0f, 1.0f, 1.0f};

@@ -15,6 +15,7 @@
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/assets/loaders/shader_loader.h"
+#include "engine/assets/loaders/anim_graph_loader.h"
 
 #include "pack/reader.hpp"
 
@@ -27,13 +28,14 @@ AssetManager::AssetManager() = default;
 
 void AssetManager::Initialize()
 {
-    RegisterLoader(AssetType::Model, AssetLoader{ModelLoader::Create, ModelLoader::Load, true});
-    RegisterLoader(AssetType::Texture, AssetLoader{TextureLoader::Create, TextureLoader::Load, true});
-    RegisterLoader(AssetType::Shader, AssetLoader{ShaderLoader::Create, ShaderLoader::Load, false});
-    RegisterLoader(AssetType::Environment, AssetLoader{EnvironmentLoader::Create, EnvironmentLoader::Load, true});
-    RegisterLoader(AssetType::Font, AssetLoader{FontLoader::Create, FontLoader::Load, false});
-    RegisterLoader(AssetType::Audio, AssetLoader{AudioLoader::Create, AudioLoader::Load, false});
-    RegisterLoader(AssetType::Material, AssetLoader{MaterialLoader::Create, MaterialLoader::Load, false});
+    RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
+    RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
+    RegisterLoader(AssetType::Shader, std::make_unique<ShaderLoader>());
+    RegisterLoader(AssetType::Environment, std::make_unique<EnvironmentLoader>());
+    RegisterLoader(AssetType::Font, std::make_unique<FontLoader>());
+    RegisterLoader(AssetType::Audio, std::make_unique<AudioLoader>());
+    RegisterLoader(AssetType::Material, std::make_unique<MaterialLoader>());
+    RegisterLoader(AssetType::AnimationGraph, std::make_unique<AnimGraphLoader>());
 }
 
 void AssetManager::Shutdown()
@@ -70,19 +72,57 @@ void AssetManager::Update(Timestep ts)
     FinalizePendingLoads();
 }
 
+std::string AssetManager::ResolvePackKey(const std::string& assetPath) const
+{
+    auto NormalizeSlashes = [](std::string& s) { std::replace(s.begin(), s.end(), '\\', '/'); };
+
+    auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
+        if (base.empty())
+        {
+            return;
+        }
+        std::string basePath = base.generic_string();
+        if (!basePath.empty() && basePath.back() != '/')
+        {
+            basePath += '/';
+        }
+        if (input.size() >= basePath.size() && input.compare(0, basePath.size(), basePath) == 0)
+        {
+            input = input.substr(basePath.size());
+        }
+    };
+
+    std::string packKey = assetPath;
+    NormalizeSlashes(packKey);
+    StripPrefix(packKey, m_EngineRoot);
+    StripPrefix(packKey, m_ProjectDirectory);
+
+    packKey = std::filesystem::path(packKey).lexically_normal().generic_string();
+    return packKey;
+}
+
 std::vector<AssetManager::StaleAsset> AssetManager::CollectStaleAssets(int thresholdSeconds) const
 {
     CH_PROFILE_FUNCTION();
     std::vector<StaleAsset> stale;
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 
-    for (const auto& [handle, asset] : m_AssetCache)
+    // Snapshot the cache under a short lock
+    std::vector<std::pair<AssetHandle, std::shared_ptr<Asset>>> snapshot;
     {
-        if (!asset || asset->GetState() == AssetState::Loading)
+        std::lock_guard<std::mutex> lock(m_AssetLock);
+        snapshot.reserve(m_AssetCache.size());
+        for (const auto& [handle, asset] : m_AssetCache)
         {
-            continue;
+            if (asset && asset->GetState() != AssetState::Loading)
+            {
+                snapshot.emplace_back(handle, asset);
+            }
         }
+    }
 
+    auto now = std::filesystem::file_time_type::clock::now();
+    for (const auto& [handle, asset] : snapshot)
+    {
         AssetType type = asset->GetType();
         if (type != AssetType::Model && type != AssetType::Texture && type != AssetType::Material)
         {
@@ -102,9 +142,7 @@ std::vector<AssetManager::StaleAsset> AssetManager::CollectStaleAssets(int thres
             continue;
         }
 
-        auto now = std::filesystem::file_time_type::clock::now();
         auto age = std::chrono::duration_cast<std::chrono::seconds>(now - fileTime).count();
-
         if (age < thresholdSeconds)
         {
             stale.push_back({handle, type, path});
@@ -130,8 +168,7 @@ void AssetManager::CheckAssetHotReload()
 
 AssetManager::~AssetManager()
 {
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-    m_PackReader.reset();
+    std::lock_guard<std::mutex> lock(m_AssetLock);
     m_PackOpen = false;
     m_AssetCache.clear();
     m_PathToHandle.clear();
@@ -139,7 +176,7 @@ AssetManager::~AssetManager()
     m_Loaders.clear();
 }
 
-void AssetManager::RegisterLoader(AssetType type, AssetLoader loader)
+void AssetManager::RegisterLoader(AssetType type, std::unique_ptr<IAssetLoader> loader)
 {
     m_Loaders[type] = std::move(loader);
 }
@@ -152,7 +189,7 @@ std::string AssetManager::ResolvePath(const std::string& path) const
     }
 
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        std::lock_guard<std::mutex> lock(m_AssetLock);
         if (auto it = m_PathCache.find(path); it != m_PathCache.end())
         {
             return it->second;
@@ -189,7 +226,6 @@ std::string AssetManager::ResolvePath(const std::string& path) const
         }
         else
         {
-            // Try asset directory first
             if (!m_AssetDirectory.empty())
             {
                 std::filesystem::path candidate = m_AssetDirectory / pathStr;
@@ -199,7 +235,6 @@ std::string AssetManager::ResolvePath(const std::string& path) const
                 }
             }
 
-            // Try project root next
             if (resolvedPath.empty() && !m_ProjectDirectory.empty())
             {
                 std::filesystem::path candidate = m_ProjectDirectory / pathStr;
@@ -210,7 +245,6 @@ std::string AssetManager::ResolvePath(const std::string& path) const
             }
         }
 
-        // Fallback
         if (resolvedPath.empty())
         {
             if (!isEngineResource && !m_AssetDirectory.empty())
@@ -228,10 +262,9 @@ std::string AssetManager::ResolvePath(const std::string& path) const
         }
     }
 
-    // Normalize and convert to string
     std::string resolved = std::filesystem::absolute(resolvedPath).lexically_normal().generic_string();
 
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    std::lock_guard<std::mutex> lock(m_AssetLock);
     m_PathCache[path] = resolved;
     return resolved;
 }
@@ -239,7 +272,7 @@ std::string AssetManager::ResolvePath(const std::string& path) const
 AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
 {
     std::string resolved = ResolvePath(path);
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    std::lock_guard<std::mutex> lock(m_AssetLock);
     if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
     {
         return it->second;
@@ -247,7 +280,7 @@ AssetHandle AssetManager::ResolveToHandle(const std::string& path) const
     return AssetHandle(0);
 }
 
-bool AssetManager::ExecuteLoad(const std::shared_ptr<Asset>& asset, AssetLoader* loader, const std::string& resolved)
+bool AssetManager::ExecuteLoad(const std::shared_ptr<Asset>& asset, IAssetLoader* loader, const std::string& resolved)
 {
     try
     {
@@ -279,15 +312,11 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
 
     std::string resolved = ResolvePath(path);
 
-    AssetLoader* loader = nullptr;
+    IAssetLoader* loader = nullptr;
     std::shared_ptr<Asset> asset;
 
     {
-        // Cache check and registration MUST share one critical section: with two
-        // separate lock scopes, two threads racing on the same path both miss the
-        // cache and both create an asset — the second overwrites m_PathToHandle and
-        // callers end up holding different instances of the "same" asset.
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        std::lock_guard<std::mutex> lock(m_AssetLock);
         if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
         {
             auto handle = it->second;
@@ -304,22 +333,26 @@ std::shared_ptr<Asset> AssetManager::LoadAsset(const std::string& path, AssetTyp
             return nullptr;
         }
 
-        asset = loaderIt->second.Create();
+        asset = loaderIt->second->Create();
         if (!asset)
         {
             return nullptr;
         }
 
-        loader = &loaderIt->second;
-        AssetHandle newHandle = asset->GetID();
+        loader = loaderIt->second.get();
+
+        // Load or create .meta sidecar to get a stable UUID
+        auto meta = MetaUtils::LoadOrCreateMeta(resolved, type);
+        AssetHandle stableHandle = meta.uuid;
+        asset->SetID(stableHandle);
         asset->SetPath(resolved);
         asset->SetState(AssetState::Loading);
         asset->ClearError();
-        m_AssetCache[newHandle] = asset;
-        m_PathToHandle[resolved] = newHandle;
+        m_AssetCache[stableHandle] = asset;
+        m_PathToHandle[resolved] = stableHandle;
     }
 
-    if (!loader->IsAsync)
+    if (!loader->IsAsync())
     {
         if (ExecuteLoad(asset, loader, resolved))
         {
@@ -348,7 +381,7 @@ std::shared_ptr<Asset> AssetManager::GetAsset(AssetHandle handle)
 {
     if (handle != 0)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        std::lock_guard<std::mutex> lock(m_AssetLock);
         if (auto it = m_AssetCache.find(handle); it != m_AssetCache.end())
         {
             return it->second;
@@ -418,7 +451,7 @@ size_t AssetManager::GetPendingFinalizeCount() const
 
 size_t AssetManager::GetLoadingAssetCount() const
 {
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    std::lock_guard<std::mutex> lock(m_AssetLock);
 
     size_t loadingCount = 0;
     for (const auto& [handle, asset] : m_AssetCache)
@@ -442,7 +475,7 @@ bool AssetManager::HasBackgroundWork() const
             return true;
         }
     }
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    std::lock_guard<std::mutex> lock(m_AssetLock);
     for (const auto& [handle, asset] : m_AssetCache)
     {
         if (asset && asset->GetState() == AssetState::Loading)
@@ -455,11 +488,11 @@ bool AssetManager::HasBackgroundWork() const
 void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
 {
     std::shared_ptr<Asset> asset;
-    AssetLoader* loader = nullptr;
+    IAssetLoader* loader = nullptr;
     std::string path;
 
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        std::lock_guard<std::mutex> lock(m_AssetLock);
 
         auto it = m_AssetCache.find(handle);
         if (it == m_AssetCache.end())
@@ -474,7 +507,7 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
         }
 
         asset = it->second;
-        loader = &loaderIt->second;
+        loader = loaderIt->second.get();
         path = asset->GetPath();
         if (path.empty())
         {
@@ -488,6 +521,18 @@ void AssetManager::ReloadAsset(AssetHandle handle, AssetType type)
     {
         asset->OnLoaded();
         asset->SetState(AssetState::Ready);
+
+        // Update content hash in .meta after successful reload
+        if (std::filesystem::exists(resolved))
+        {
+            auto metaPath = MetaUtils::GetMetaPath(resolved);
+            if (std::filesystem::exists(metaPath))
+            {
+                auto meta = MetaUtils::ReadMeta(metaPath);
+                meta.contentHash = MetaUtils::ComputeFileHash(resolved);
+                MetaUtils::WriteMeta(metaPath, meta);
+            }
+        }
     }
 }
 
@@ -505,7 +550,7 @@ void AssetManager::Invalidate(const std::string& path, bool deleteFromDisk)
         DeleteChasset(resolved);
     }
 
-    std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+    std::lock_guard<std::mutex> lock(m_AssetLock);
 
     auto pathIt = m_PathToHandle.find(resolved);
     if (pathIt == m_PathToHandle.end())
@@ -517,7 +562,6 @@ void AssetManager::Invalidate(const std::string& path, bool deleteFromDisk)
     m_AssetCache.erase(handle);
     m_PathToHandle.erase(pathIt);
 
-    // Also remove any path cache entries that resolve to this path
     for (auto it = m_PathCache.begin(); it != m_PathCache.end();)
     {
         if (it->second == resolved)
@@ -584,7 +628,7 @@ size_t AssetManager::DeleteAllChassets()
 
     if (deleted > 0)
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        std::lock_guard<std::mutex> lock(m_AssetLock);
         m_AssetCache.clear();
         m_PathToHandle.clear();
         m_PathCache.clear();
@@ -652,38 +696,10 @@ bool AssetManager::OpenPack(const std::filesystem::path& packPath)
 std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
 {
     {
-        std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+        std::lock_guard<std::mutex> lock(m_AssetLock);
         if (m_PackOpen && m_PackReader)
         {
-            // Convert absolute path to relative pack key by stripping known base directories
-            std::string packKey = assetPath;
-
-            auto NormalizeSlashes = [](std::string& s) { std::replace(s.begin(), s.end(), '\\', '/'); };
-
-            auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
-                if (base.empty())
-                {
-                    return;
-                }
-                std::string basePath = base.generic_string();
-                // Ensure base ends with '/' for proper prefix matching
-                if (!basePath.empty() && basePath.back() != '/')
-                {
-                    basePath += '/';
-                }
-                if (input.size() >= basePath.size() && input.compare(0, basePath.size(), basePath) == 0)
-                {
-                    input = input.substr(basePath.size());
-                }
-            };
-
-            NormalizeSlashes(packKey);
-            StripPrefix(packKey, m_EngineRoot);
-            StripPrefix(packKey, m_ProjectDirectory);
-            // Note: m_AssetDirectory is deliberately not stripped because items are packed under "assets/..."
-
-            // Resolve any remaining ".." segments in the pack key
-            packKey = std::filesystem::path(packKey).lexically_normal().generic_string();
+            std::string packKey = ResolvePackKey(assetPath);
 
             uint64_t idx = 0;
             if (m_PackReader->getItemIndex(packKey.c_str(), idx))
@@ -693,7 +709,6 @@ std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
                 return data;
             }
 
-            // Fallback: Prepend "assets/" or "resources/" if not present
             if (packKey.rfind("assets/", 0) != 0 && packKey.rfind("resources/", 0) != 0)
             {
                 std::string altKey = "assets/" + packKey;
@@ -729,35 +744,10 @@ std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
 
 bool AssetManager::HasAsset(const std::string& path) const
 {
+    std::lock_guard<std::mutex> lock(m_AssetLock);
     if (m_PackOpen && m_PackReader)
     {
-        // Same prefix stripping as ReadAssetData
-        std::string packKey = path;
-
-        auto NormalizeSlashes = [](std::string& s) { std::replace(s.begin(), s.end(), '\\', '/'); };
-
-        auto StripPrefix = [](std::string& input, const std::filesystem::path& base) {
-            if (base.empty())
-            {
-                return;
-            }
-            std::string basePath = base.generic_string();
-            if (!basePath.empty() && basePath.back() != '/')
-            {
-                basePath += '/';
-            }
-            if (input.size() >= basePath.size() && input.compare(0, basePath.size(), basePath) == 0)
-            {
-                input = input.substr(basePath.size());
-            }
-        };
-
-        NormalizeSlashes(packKey);
-        StripPrefix(packKey, m_EngineRoot);
-        StripPrefix(packKey, m_ProjectDirectory);
-
-        // Resolve any remaining ".." segments in the pack key
-        packKey = std::filesystem::path(packKey).lexically_normal().generic_string();
+        std::string packKey = ResolvePackKey(path);
 
         uint64_t idx = 0;
         if (m_PackReader->getItemIndex(packKey.c_str(), idx))

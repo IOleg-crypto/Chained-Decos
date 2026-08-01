@@ -11,6 +11,7 @@ struct ShaderComponent
 {
     AssetHandle ShaderHandle = AssetHandle(0);
     std::string ShaderPath;
+    uint64_t ShaderUUID = 0;
     std::vector<ShaderUniform> Uniforms;
     bool Enabled = true;
 
@@ -25,6 +26,8 @@ struct ShaderComponent
         UIMeta ShaderPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
                              .Tooltip = "Path to the source GLSL shader file (vertex, fragment, or unified code)",
                              .Extensions = ".glsl,.vs,.fs,.vert,.frag"};
+
+        UIMeta ShaderUUID = {.ReadOnly = true};
 
         UIMeta Enabled = {.Tooltip = "Toggle whether this custom shader is active and applied during rendering"};
 

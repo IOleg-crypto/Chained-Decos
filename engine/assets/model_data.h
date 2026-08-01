@@ -49,7 +49,7 @@ struct TransformData
     }
 };
 
-struct RawMesh
+struct MeshData
 {
     std::vector<float> vertices;
     std::vector<float> texcoords;
@@ -74,7 +74,7 @@ struct RawMesh
     }
 };
 
-struct RawMaterial
+struct MaterialData
 {
     std::string name;
     std::string albedoPath;
@@ -122,7 +122,7 @@ struct PendingTexture
     int mapIndex; // MATERIAL_MAP_ALBEDO, MATERIAL_MAP_EMISSION, etc.
 };
 
-struct RawAnimation
+struct AnimationData
 {
     std::string name;
     int frameCount;
@@ -162,8 +162,8 @@ struct BoneInfoData
 struct PendingModelData
 {
     std::string fullPath;
-    std::vector<RawMesh> meshes;
-    std::vector<RawMaterial> materials;
+    std::vector<MeshData> meshes;
+    std::vector<MaterialData> materials;
     std::unordered_map<std::string, EmbeddedTextureData> embeddedTextures;
 
     // Skeletal / Hierarchy data (Original data for animations only)
@@ -181,7 +181,7 @@ struct PendingModelData
     std::vector<glm::mat4> globalBindPoses;
     std::vector<glm::mat4> offsetMatrices;
 
-    std::vector<RawAnimation> animations;
+    std::vector<AnimationData> animations;
     int FinalizationProgress = 0; // Index of the next mesh to be finalized
     bool isValid = false;
 
