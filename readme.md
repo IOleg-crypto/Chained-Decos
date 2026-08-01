@@ -536,6 +536,10 @@ Animation Graphs are node-based state machines serialized as YAML. A graph conta
 - **Nodes (`AnimNode`)**: Define animation states, frame ranges, looping, and playback speed.
 - **Transitions (`AnimTransition`)**: Define connections between states with blend durations and variable-based conditions.
 
+[![Znimok-ekrana-2026-08-01-173424.png](https://i.postimg.cc/sgHrQcjq/Znimok-ekrana-2026-08-01-173424.png)](https://postimg.cc/FYSqw0JV)
+
+[![Znimok-ekrana-2026-08-01-175555.png](https://i.postimg.cc/bNJ8zW8D/Znimok-ekrana-2026-08-01-175555.png)](https://postimg.cc/kDkLsj2q)
+
 Example `new_graph.chag` structure:
 
 ```yaml
