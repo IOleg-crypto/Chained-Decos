@@ -12,7 +12,7 @@
 namespace Chained::AnimationSystem
 {
 
-static void EvaluateGraph(AnimationComponent& anim, const ModelComponent& model)
+static void EvaluateGraph(AnimationComponent& anim, const ModelComponent& model, bool isRuntimePlay)
 {
     auto* assets = ServiceLocator::TryGet<AssetManager>();
     if (!assets)
@@ -38,6 +38,18 @@ static void EvaluateGraph(AnimationComponent& anim, const ModelComponent& model)
     if (anim.CurrentNodeID == -1)
     {
         anim.CurrentNodeID = graphAsset->EntryNodeID;
+
+        // First-time init: seed Variables from the graph's DefaultVariables.
+        // Scripts can then override values via SetFloat/SetBool.
+        // This ensures every variable the graph references (e.g. isGrounded)
+        // exists in the map with a sane default - no hardcoding needed in C++.
+        for (const auto& [name, defaultVal] : graphAsset->DefaultVariables)
+        {
+            if (anim.Variables.find(name) == anim.Variables.end())
+            {
+                anim.Variables[name] = defaultVal;
+            }
+        }
     }
 
     AnimNode* currentNode = graphAsset->FindNode(anim.CurrentNodeID);
@@ -111,6 +123,14 @@ static void EvaluateGraph(AnimationComponent& anim, const ModelComponent& model)
                 }
             }
         }
+    }
+
+    // Only evaluate transitions during simulation.
+    // In edit mode, variables are never set by scripts so all conditions
+    // evaluate against 0.0 defaults, causing the graph to thrash states every frame.
+    if (!isRuntimePlay)
+    {
+        return;
     }
 
     // Sort by priority (higher first)
@@ -256,18 +276,8 @@ static void ProcessPlayback(entt::registry& reg, AnimationComponent& anim, const
         {
             baseSpeed = 1.0f;
         }
-        if (isRuntimePlay)
-        {
-            auto itSpd = anim.Variables.find("speed");
-            if (itSpd == anim.Variables.end())
-            {
-                itSpd = anim.Variables.find("Speed");
-            }
-            if (itSpd != anim.Variables.end() && itSpd->second >= 0.0f)
-            {
-                baseSpeed *= itSpd->second;
-            }
-        }
+        // NOTE: anim.Variables["speed"] is used ONLY for graph transition conditions.
+        // Do NOT multiply baseSpeed by it - that's what Node.Speed is for.
 
         // ===== BLEND HANDLING =====
         if (anim.Blending)
@@ -280,28 +290,10 @@ static void ProcessPlayback(entt::registry& reg, AnimationComponent& anim, const
             // Note: IsLooping switches at blend end (handled below)
             float interpSpeed = glm::mix(anim.Speed, anim.TargetSpeed, blendAlpha);
             interpSpeed = interpSpeed > 0.0f ? interpSpeed : 1.0f;
-            if (isRuntimePlay)
-            {
-                auto itSpd = anim.Variables.find("speed");
-                if (itSpd == anim.Variables.end())
-                {
-                    itSpd = anim.Variables.find("Speed");
-                }
-                if (itSpd != anim.Variables.end() && itSpd->second >= 0.0f)
-                {
-                    interpSpeed *= itSpd->second;
-                }
-            }
-            int interpStartFrame =
-                (int)glm::round(glm::mix((float)anim.StartFrame, (float)anim.TargetStartFrame, blendAlpha));
-            int interpEndFrame =
-                (int)glm::round(glm::mix((float)anim.EndFrame, (float)anim.TargetEndFrame, blendAlpha));
-
-            // Recalculate effective range with interpolated StartFrame/EndFrame
-            int interpEffectiveStart = std::clamp(interpStartFrame, 0, currentTotalFrames - 1);
-            int interpEffectiveEnd = (interpEndFrame < 0)
-                                         ? (currentTotalFrames - 1)
-                                         : std::clamp(interpEndFrame, interpEffectiveStart, currentTotalFrames - 1);
+            // NOTE: interpSpeed is purely from Node.Speed interpolation, not from variables.
+            // Keep current animation within its own effective range during blend
+            int interpEffectiveStart = currentEffectiveStart;
+            int interpEffectiveEnd = currentEffectiveEnd;
             float interpFrameTime = 1.0f / currentFPS;
 
             // Advance current animation with interpolated speed
@@ -430,6 +422,15 @@ void Update(entt::registry& reg, Timestep ts)
 {
     CH_PROFILE_FUNCTION();
 
+    bool isRuntimePlay = false;
+    if (auto* scenePtr = reg.ctx().find<Scene*>())
+    {
+        if (*scenePtr && (*scenePtr)->IsSimulationRunning())
+        {
+            isRuntimePlay = true;
+        }
+    }
+
     auto view = reg.view<AnimationComponent, ModelComponent>();
     for (auto entity : view)
     {
@@ -438,7 +439,9 @@ void Update(entt::registry& reg, Timestep ts)
 
         if (anim.IsGraphDriven())
         {
-            EvaluateGraph(anim, model);
+            // Only evaluate graph transitions during simulation.
+            // Variables are only set by scripts, which don't run in edit mode.
+            EvaluateGraph(anim, model, isRuntimePlay);
         }
 
         ProcessPlayback(reg, anim, model, ts);

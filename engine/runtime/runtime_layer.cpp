@@ -40,9 +40,7 @@ RuntimeLayer::RuntimeLayer(const std::string& projectPath)
     m_AssetManager = ServiceLocator::TryGet<AssetManager>();
 }
 
-RuntimeLayer::~RuntimeLayer()
-{
-}
+RuntimeLayer::~RuntimeLayer() = default;
 
 void RuntimeLayer::OnAttach()
 {

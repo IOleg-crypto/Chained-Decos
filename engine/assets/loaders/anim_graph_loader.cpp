@@ -160,6 +160,14 @@ bool AnimGraphLoader::Load(std::shared_ptr<Asset> asset, const std::string& reso
                 graph->Transitions.push_back(tr);
             }
         }
+        // Load DefaultVariables (schema: name -> default value)
+        if (auto vars = root["Variables"])
+        {
+            for (auto it = vars.begin(); it != vars.end(); ++it)
+            {
+                graph->DefaultVariables[it->first.as<std::string>()] = it->second.as<float>();
+            }
+        }
 
         return true;
     } catch (const YAML::Exception& e)
@@ -230,6 +238,17 @@ bool AnimGraphLoader::Save(const AnimationGraphAsset& graph, const std::string& 
             out << YAML::EndMap;
         }
         out << YAML::EndSeq;
+
+        // Save DefaultVariables
+        if (!graph.DefaultVariables.empty())
+        {
+            out << YAML::Key << "Variables" << YAML::Value << YAML::BeginMap;
+            for (const auto& [name, val] : graph.DefaultVariables)
+            {
+                out << YAML::Key << name << YAML::Value << val;
+            }
+            out << YAML::EndMap;
+        }
 
         out << YAML::EndMap;
         out << YAML::EndMap;

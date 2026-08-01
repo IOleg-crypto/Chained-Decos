@@ -104,6 +104,11 @@ public:
     std::vector<AnimTransition> Transitions;
     int EntryNodeID = -1;
 
+    // Variable definitions: name -> default value.
+    // These are the "schema" for the graph, saved in .chag.
+    // At runtime, AnimationComponent.Variables is initialised from this map.
+    std::unordered_map<std::string, float> DefaultVariables;
+
     // Editor tracking
     int NextNodeID = 1;
     int NextLinkID = 1;

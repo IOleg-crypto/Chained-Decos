@@ -19,8 +19,6 @@ namespace Chained
 
 class UIProperties; // forward declaration for if constexpr check
 
-class UIProperties; // forward declaration for if constexpr check
-
 struct UIMeta
 {
     PropertyMeta::WidgetHint Hint = PropertyMeta::WidgetHint::Default;
@@ -230,7 +228,7 @@ struct UUIDProxy
     {
         return {static_cast<uint64_t>(u)};
     }
-    Chained::UUID to_class() const
+    UUID to_class() const
     {
         return Chained::UUID(value);
     }
@@ -243,9 +241,9 @@ struct ColorProxy
     {
         return {c.r, c.g, c.b, c.a};
     }
-    Chained::Color to_class() const
+    Color to_class() const
     {
-        return Chained::Color(r, g, b, a);
+        return Color(r, g, b, a);
     }
 };
 } // namespace Chained
