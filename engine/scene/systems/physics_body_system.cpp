@@ -115,7 +115,7 @@ bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc
             return false;
         }
 
-        const auto& rawMeshes = modelAsset->GetRawMeshes();
+        const auto& rawMeshes = modelAsset->GetMeshes();
         const auto& instances = modelAsset->GetInstances();
 
         desc.MeshScale = transform.Scale;
@@ -128,7 +128,7 @@ bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc
                 continue;
             }
 
-            const RawMesh& raw = rawMeshes[inst.meshIndex];
+            const MeshData& raw = rawMeshes[inst.meshIndex];
             if (raw.indices.size() < 3)
             {
                 continue;

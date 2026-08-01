@@ -1,0 +1,17 @@
+Material:
+  Name: Material.007
+  AlbedoColor:
+    - 0.0253767427
+    - 0.0223918892
+    - 0.0157370288
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 0.600000024
+  Transparent: false
+  Alpha: 1

@@ -304,119 +304,6 @@ void PropertyEditor::Init()
             return changed;
         },
         ICON_FA_SHIELD);
-    RegisterCustom<AnimationComponent>(
-        "Animation",
-        [&](AnimationComponent& comp, Entity entity) {
-            bool changed = false;
-            UIProperties ui;
-            Properties props(ui);
-
-            if (ui.Property("Blend Duration", comp.BlendDuration, PropertyMeta(0.0f, 2.0f, 0.01f)))
-            {
-                changed = true;
-            }
-            if (ui.Property("Is Looping", comp.IsLooping))
-            {
-                changed = true;
-            }
-            if (ui.Property("Play On Start", comp.PlayOnStart))
-            {
-                changed = true;
-            }
-            if (ui.Property("Is Playing", comp.IsPlaying))
-            {
-                changed = true;
-            }
-
-            if (entity.HasComponent<ModelComponent>())
-            {
-                auto& mc = entity.GetComponent<ModelComponent>();
-                auto* am = ServiceLocator::TryGet<AssetManager>();
-                if (mc.ModelHandle != 0 && am)
-                {
-                    if (auto asset = am->Get<ModelAsset>(mc.ModelHandle))
-                    {
-                        if (asset->GetAnimationCount() > 0)
-                        {
-                            std::vector<std::string> animNames;
-                            std::vector<const char*> cStrs;
-                            for (int i = 0; i < asset->GetAnimationCount(); i++)
-                            {
-                                std::string name = asset->GetAnimationName(i);
-                                if (name.empty())
-                                {
-                                    name = "Animation " + std::to_string(i);
-                                }
-                                animNames.push_back(name);
-                            }
-                            for (auto& s : animNames)
-                            {
-                                cStrs.push_back(s.c_str());
-                            }
-
-                            ImGui::SetNextItemWidth(-1);
-                            int currentIdx = comp.CurrentAnimationIndex;
-                            if (ui.Enum("Current Animation", currentIdx, cStrs.data(), (int)cStrs.size()))
-                            {
-                                comp.CurrentAnimationIndex = currentIdx;
-                                comp.CurrentFrame = 0;
-                                comp.FrameTimeCounter = 0.0f;
-                                // Reset blend state and ensure the new animation starts playing.
-                                comp.Blending = false;
-                                comp.TargetAnimationIndex = -1;
-                                comp.TargetFrame = 0;
-                                comp.BlendTimer = 0.0f;
-                                comp.IsPlaying = true;
-                                changed = true;
-                            }
-
-                            if (comp.CurrentAnimationIndex >= 0 && comp.CurrentAnimationIndex < (int)animNames.size())
-                            {
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("Name");
-                                ImGui::TableSetColumnIndex(1);
-                                ImGui::TextDisabled("%s", animNames[comp.CurrentAnimationIndex].c_str());
-
-                                ImGui::TableNextRow();
-                                ImGui::TableSetColumnIndex(0);
-                                ImGui::Text("Playback");
-                                ImGui::TableSetColumnIndex(1);
-                                if (comp.IsPlaying)
-                                {
-                                    if (ImGui::Button("Stop", ImVec2(-1, 0)))
-                                    {
-                                        comp.IsPlaying = false;
-                                        changed = true;
-                                    }
-                                }
-                                else
-                                {
-                                    if (ImGui::Button("Play", ImVec2(-1, 0)))
-                                    {
-                                        comp.IsPlaying = true;
-                                        comp.CurrentFrame = 0;
-                                        comp.FrameTimeCounter = 0;
-                                        changed = true;
-                                    }
-                                }
-                            }
-                        }
-                        else
-                        {
-                            ImGui::TextDisabled("No animations in model.");
-                        }
-                    }
-                }
-            }
-            else
-            {
-                ImGui::TextDisabled("Requires ModelComponent");
-            }
-
-            return changed;
-        },
-        ICON_FA_FILM);
 
     // --- Scripting ---
     RegisterCustom<ManagedScriptComponent>(
@@ -1019,7 +906,7 @@ void PropertyEditor::DrawEntityHeader(Chained::Entity entity)
     }
 }
 
-void PropertyEditor::DrawAddComponentPopup(Chained::Entity entity)
+void PropertyEditor::DrawAddComponentPopup(Entity entity)
 {
     if (ImGui::BeginPopup("AddComponent"))
     {

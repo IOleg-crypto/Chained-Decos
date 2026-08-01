@@ -1,7 +1,6 @@
 add_library(engine_reflection STATIC
     reflection.h
     reflection_rfl.h
-    reflection.cpp
 )
 
 target_include_directories(engine_reflection PUBLIC

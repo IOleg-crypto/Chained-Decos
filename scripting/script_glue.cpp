@@ -185,11 +185,56 @@ void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
     assembly.AddInternalCall("Chained.ComboBoxControl", "ComboBoxControl_GetItem_Ptr", (void*)&ComboBoxControl_GetItem);
 
     // ── SpawnComponent ────────────────────────────────────────────────
-    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_IsActive_Ptr", (void*)&SpawnComponent_IsActive);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetIsActive_Ptr",
+                             (void*)&SpawnComponent_GetIsActive);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_SetIsActive_Ptr",
+                             (void*)&SpawnComponent_SetIsActive);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_IsCheckpoint_Ptr",
+                             (void*)&SpawnComponent_IsCheckpoint);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_SetIsCheckpoint_Ptr",
+                             (void*)&SpawnComponent_SetIsCheckpoint);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetSpawnPoint_Ptr",
+                             (void*)&SpawnComponent_GetSpawnPoint);
+    assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_SetSpawnPoint_Ptr",
+                             (void*)&SpawnComponent_SetSpawnPoint);
     assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetRenderSpawnZoneInScene_Ptr",
                              (void*)&SpawnComponent_GetRenderSpawnZoneInScene);
     assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetZoneSize_Ptr",
                              (void*)&SpawnComponent_GetZoneSize);
+
+    // ── AnimationComponent ──────────────────────────────────────────────────
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetCurrentAnimationIndex_Ptr",
+                             (void*)&AnimationComponent_GetCurrentAnimationIndex);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_SetCurrentAnimationIndex_Ptr",
+                             (void*)&AnimationComponent_SetCurrentAnimationIndex);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetIsPlaying_Ptr",
+                             (void*)&AnimationComponent_GetIsPlaying);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_SetIsPlaying_Ptr",
+                             (void*)&AnimationComponent_SetIsPlaying);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetIsLooping_Ptr",
+                             (void*)&AnimationComponent_GetIsLooping);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_SetIsLooping_Ptr",
+                             (void*)&AnimationComponent_SetIsLooping);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetIsFinished_Ptr",
+                             (void*)&AnimationComponent_GetIsFinished);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetDuration_Ptr",
+                             (void*)&AnimationComponent_GetDuration);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetNormalizedTime_Ptr",
+                             (void*)&AnimationComponent_GetNormalizedTime);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetBlendDuration_Ptr",
+                             (void*)&AnimationComponent_GetBlendDuration);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_SetBlendDuration_Ptr",
+                             (void*)&AnimationComponent_SetBlendDuration);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_CrossFade_Ptr",
+                             (void*)&AnimationComponent_CrossFade);
+
+    // ── AnimationComponent graph variables ──────────────────────────────
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_SetFloat_Ptr",
+                             (void*)&AnimationComponent_SetFloat);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_SetBool_Ptr",
+                             (void*)&AnimationComponent_SetBool);
+    assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetFloat_Ptr",
+                             (void*)&AnimationComponent_GetFloat);
 
     // ── Shader ────────────────────────────────────────────────────────
     assembly.AddInternalCall("Chained.ShaderComponent", "Shader_SetFloat_Ptr", (void*)&Shader_SetFloat);

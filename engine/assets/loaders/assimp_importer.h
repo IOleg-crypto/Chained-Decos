@@ -27,11 +27,7 @@ private:
     void ProcessHierarchy();
     void ProcessSingleMesh(uint32_t meshIndex);
     void ProcessMeshes();
-    void ProcessMaterials();
     void DecodeEmbeddedTextures();
-    void ProcessAnimations();
-    void MergeMeshesByMaterial();
-    void MergeMeshesByMaterialInner();
 
 private:
     std::filesystem::path m_Path;

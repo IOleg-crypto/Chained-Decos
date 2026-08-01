@@ -14,6 +14,7 @@ struct ModelComponent
 {
     AssetHandle ModelHandle = AssetHandle(0);
     std::string ModelPath;
+    uint64_t ModelUUID = 0;
     std::vector<std::string> MaterialPaths;
 
     static const char* GetStaticName()
@@ -24,6 +25,7 @@ struct ModelComponent
     struct UI
     {
         UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glb,.gltf,.obj"};
+        UIMeta ModelUUID = {.ReadOnly = true};
     };
 };
 

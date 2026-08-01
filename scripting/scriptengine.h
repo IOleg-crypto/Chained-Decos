@@ -1,7 +1,7 @@
 #ifndef CH_SCRIPT_ENGINE_H
 #define CH_SCRIPT_ENGINE_H
 
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "scriptengine_services.h"
 #include "engine/scene/scene.h"
 #include "engine/project/project.h"
@@ -13,7 +13,7 @@
 namespace Chained
 {
 
-class ScriptEngine : public EngineModule
+class ScriptEngine : public Service
 {
 public:
     ScriptEngine(bool enableScripting);

@@ -86,17 +86,6 @@ bool UIProperties::FileInternal(const char* name, std::string& path, const char*
     return changed;
 }
 
-bool UIProperties::ActionInternal(const char* label, std::function<void()> func)
-{
-    if (EditorGUI::ActionButton(nullptr, label))
-    {
-        func();
-        m_Changed = true;
-        return true;
-    }
-    return false;
-}
-
 void UIProperties::HeaderInternal(const char* label)
 {
     if (ImGui::GetCurrentTable() != nullptr)
@@ -117,34 +106,6 @@ void UIProperties::HeaderInternal(const char* label)
 void UIProperties::SeparatorInternal()
 {
     ImGui::Separator();
-}
-
-bool UIProperties::BeginGroupInternal(const char* label, bool defaultOpen)
-{
-    if (ImGui::GetCurrentTable() != nullptr)
-    {
-        ImGui::TableNextRow();
-        ImGui::TableSetColumnIndex(0);
-        ImGui::AlignTextToFramePadding();
-    }
-    ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap |
-                               ImGuiTreeNodeFlags_FramePadding | ImGuiTreeNodeFlags_SpanAvailWidth |
-                               ImGuiTreeNodeFlags_SpanAllColumns;
-    if (defaultOpen)
-    {
-        flags |= ImGuiTreeNodeFlags_DefaultOpen;
-    }
-    bool opened = ImGui::TreeNodeEx(label, flags);
-    if (ImGui::GetCurrentTable() != nullptr)
-    {
-        ImGui::TableSetColumnIndex(1);
-    }
-    return opened;
-}
-
-void UIProperties::EndGroupInternal()
-{
-    ImGui::TreePop();
 }
 
 void UIProperties::UpdateState(bool changed)

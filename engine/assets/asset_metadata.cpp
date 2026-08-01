@@ -2,7 +2,6 @@
 #include "engine/core/log.h"
 #include <yaml-cpp/yaml.h>
 #include <fstream>
-#include <numeric>
 
 namespace Chained
 {
@@ -19,95 +18,58 @@ bool MetaUtils::HasMeta(const std::filesystem::path& assetPath)
 
 uint64_t MetaUtils::ComputeFileHash(const std::filesystem::path& path)
 {
-    std::ifstream file(path, std::ios::binary | std::ios::ate);
+    constexpr size_t kChunkSize = 65536;
+    std::ifstream file(path, std::ios::binary);
     if (!file.is_open())
     {
         return 0;
     }
-    auto size = file.tellg();
-    if (size <= 0)
+    uint64_t hash = UINT64_C(14695981039346656037);
+    char buf[kChunkSize];
+    while (file.read(buf, kChunkSize) || file.gcount() > 0)
     {
-        return 0;
+        auto count = static_cast<size_t>(file.gcount());
+        for (size_t i = 0; i < count; ++i)
+        {
+            hash = (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(buf[i]))) * 1099511628211ULL;
+        }
+        if (count < kChunkSize)
+        {
+            break;
+        }
     }
-    file.seekg(0, std::ios::beg);
-    std::vector<char> hashInputData(static_cast<size_t>(size));
-    if (!file.read(hashInputData.data(), size))
-    {
-        return 0;
-    }
-    return std::accumulate(hashInputData.begin(), hashInputData.end(), UINT64_C(14695981039346656037),
-                           [](uint64_t hash, char c) {
-                               return (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(c))) * 1099511628211ULL;
-                           });
+    return hash;
 }
 
-const char* MetaUtils::AssetTypeToString(AssetType type)
+namespace
 {
-    switch (type)
-    {
-    case AssetType::Texture:
-        return "Texture";
-    case AssetType::Model:
-        return "Model";
-    case AssetType::Audio:
-        return "Audio";
-    case AssetType::Shader:
-        return "Shader";
-    case AssetType::Material:
-        return "Material";
-    case AssetType::Environment:
-        return "Environment";
-    case AssetType::Scene:
-        return "Scene";
-    case AssetType::Script:
-        return "Script";
-    case AssetType::Font:
-        return "Font";
-    default:
-        return "Unknown";
-    }
+constexpr const char* kAssetTypeNames[] = {
+    "None",     "Model", "Texture", "Audio",  "Shader",         "Environment",
+    "Material", "Font",  "Scene",   "Script", "AnimationGraph",
+};
+
+static_assert(sizeof(kAssetTypeNames) / sizeof(kAssetTypeNames[0]) ==
+                  static_cast<size_t>(AssetType::AnimationGraph) + 1,
+              "kAssetTypeNames size does not match AssetType enum");
+
+const char* AssetTypeToString(AssetType type)
+{
+    auto idx = static_cast<size_t>(type);
+    return idx < sizeof(kAssetTypeNames) / sizeof(kAssetTypeNames[0]) ? kAssetTypeNames[idx] : "Unknown";
 }
 
-AssetType MetaUtils::StringToAssetType(const std::string& str)
+AssetType StringToAssetType(const std::string& str)
 {
-    if (str == "Texture")
+    for (size_t i = 0; i < sizeof(kAssetTypeNames) / sizeof(kAssetTypeNames[0]); ++i)
     {
-        return AssetType::Texture;
-    }
-    if (str == "Model")
-    {
-        return AssetType::Model;
-    }
-    if (str == "Audio")
-    {
-        return AssetType::Audio;
-    }
-    if (str == "Shader")
-    {
-        return AssetType::Shader;
-    }
-    if (str == "Material")
-    {
-        return AssetType::Material;
-    }
-    if (str == "Environment")
-    {
-        return AssetType::Environment;
-    }
-    if (str == "Scene")
-    {
-        return AssetType::Scene;
-    }
-    if (str == "Script")
-    {
-        return AssetType::Script;
-    }
-    if (str == "Font")
-    {
-        return AssetType::Font;
+        if (str == kAssetTypeNames[i])
+        {
+            return static_cast<AssetType>(i);
+        }
     }
     return AssetType::None;
 }
+} // namespace
 
 AssetMetadata MetaUtils::ReadMeta(const std::filesystem::path& metaPath)
 {

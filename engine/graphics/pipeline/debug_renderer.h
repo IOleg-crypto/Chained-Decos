@@ -4,7 +4,7 @@
 #include "engine/graphics/camera_types.h"
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/scene/components/model_component.h"
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "engine/graphics/api/buffer.h"
 #include "engine/graphics/api/vertex_array.h"
 #include <glm/glm.hpp>
@@ -38,7 +38,7 @@ struct StaticResources
     std::unique_ptr<Model> WireCubeModel;
 };
 
-class CH_API DebugRenderer : public EngineModule
+class CH_API DebugRenderer : public Service
 {
 public:
     DebugRenderer() = default;

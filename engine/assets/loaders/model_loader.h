@@ -1,7 +1,7 @@
 #ifndef CH_MODEL_LOADER_H
 #define CH_MODEL_LOADER_H
 
-#include "engine/assets/loaders/asset_loader.h"
+#include "engine/assets/loaders/iasset_loader.h"
 #include "engine/assets/types/model_asset.h"
 #include <memory>
 #include <string>
@@ -36,15 +36,18 @@ struct ChainedAssetHeader
     }
 };
 
-namespace ModelLoader
+class ModelLoader : public IAssetLoader
 {
-std::shared_ptr<Asset> Create();
-bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
+public:
+    bool IsAsync() const override
+    {
+        return true;
+    }
+    std::shared_ptr<Asset> Create() override;
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
 
-Model GenerateProceduralModel(const std::string& type, const ProceduralParameters& params = ProceduralParameters());
-
-PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
-} // namespace ModelLoader
+    PendingModelData LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS = 30);
+};
 } // namespace Chained
 
 #endif // CH_MODEL_LOADER_H

@@ -116,7 +116,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
         bool hit = false;
 
         const auto& instances = modelAsset->GetInstances();
-        const auto& rawMeshes = modelAsset->GetRawMeshes();
+        const auto& rawMeshes = modelAsset->GetMeshes();
 
         for (const auto& inst : instances)
         {
@@ -125,7 +125,7 @@ SceneRaycastResult ScenePicker::Raycast(Scene* scene, const Ray& ray)
                 continue;
             }
 
-            const RawMesh& raw = rawMeshes[inst.meshIndex];
+            const MeshData& raw = rawMeshes[inst.meshIndex];
             if (raw.indices.size() < 3)
             {
                 continue;
