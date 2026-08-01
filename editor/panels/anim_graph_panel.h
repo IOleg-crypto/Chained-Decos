@@ -5,6 +5,8 @@
 #include "engine/scene/animation_graph.h"
 #include <GraphEditor.h>
 #include <vector>
+#include <string>
+#include <unordered_map>
 
 #include "editor/panels/panel.h"
 #include <imgui.h>
@@ -22,6 +24,14 @@ public:
 
 private:
     bool m_ChangedGraph = false;
+
+    enum class VarType
+    {
+        Float,
+        Bool
+    };
+    std::unordered_map<std::string, VarType> m_VariableTypes; // tracks type per variable name
+    bool m_AddVarAsFloat = true;                              // which type to add next
 
     GraphEditor::ViewState m_ViewState;
     GraphEditor::Options m_Options;

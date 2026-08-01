@@ -1,17 +1,20 @@
 AnimationGraph:
-  EntryNodeID: 1
-  NextNodeID: 4
-  NextLinkID: 3
+  EntryNodeID: 4
+  NextNodeID: 5
+  Variables:
+    speed: 0
+    isMoving: 0
+    isGrounded: 1
   Nodes:
     - ID: 1
       Name: Walk
       AnimationIndex: 0
       IsLooping: true
-      StartFrame: 700
+      StartFrame: 690
       EndFrame: 780
-      Speed: 1
-      EditorX: 312.885986
-      EditorY: -68.3647766
+      Speed: 0.959999979
+      EditorX: 342.039978
+      EditorY: -232.528412
     - ID: 2
       Name: Run
       AnimationIndex: 0
@@ -21,23 +24,32 @@ AnimationGraph:
       Speed: 1
       EditorX: 127.624664
       EditorY: 128.917786
+    - ID: 4
+      Name: Stop
+      AnimationIndex: 0
+      IsLooping: true
+      StartFrame: 0
+      EndFrame: 0
+      Speed: 1
+      EditorX: 543.386963
+      EditorY: 124.709152
   Transitions:
     - ID: 1
       SourceNodeID: 1
       TargetNodeID: 2
-      BlendDuration: 900
+      BlendDuration: 0.200000003
       HasExitTime: false
       ExitTime: 0.899999976
       ExitTimeMode: 0
       Priority: 0
       Conditions:
         - VariableName: speed
-          Op: 2
-          Value: 0.5
+          Op: 4
+          Value: 0.9
     - ID: 2
       SourceNodeID: 2
       TargetNodeID: 1
-      BlendDuration: 9200
+      BlendDuration: 0.200000003
       HasExitTime: false
       ExitTime: 0.899999976
       ExitTimeMode: 0
@@ -46,3 +58,39 @@ AnimationGraph:
         - VariableName: speed
           Op: 3
           Value: 0.5
+    - ID: 3
+      SourceNodeID: 4
+      TargetNodeID: 1
+      BlendDuration: 0.200000003
+      HasExitTime: false
+      ExitTime: 0.899999976
+      ExitTimeMode: 0
+      Priority: 0
+      Conditions:
+        - VariableName: isMoving
+          Op: 0
+          Value: 1
+    - ID: 4
+      SourceNodeID: 1
+      TargetNodeID: 4
+      BlendDuration: 0.200000003
+      HasExitTime: false
+      ExitTime: 0.899999976
+      ExitTimeMode: 0
+      Priority: 0
+      Conditions:
+        - VariableName: isMoving
+          Op: 0
+          Value: 0
+    - ID: 5
+      SourceNodeID: 2
+      TargetNodeID: 4
+      BlendDuration: 0.200000003
+      HasExitTime: false
+      ExitTime: 0.899999976
+      ExitTimeMode: 0
+      Priority: 0
+      Conditions:
+        - VariableName: isMoving
+          Op: 0
+          Value: 0
