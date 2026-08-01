@@ -1,7 +1,7 @@
 #ifndef CH_COMPONENT_SERIALIZER_H
 #define CH_COMPONENT_SERIALIZER_H
 
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "engine/scene/component_registry.h"
 #include <vector>
 #include <yaml-cpp/yaml.h>

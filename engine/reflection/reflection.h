@@ -8,6 +8,7 @@
 #include <glm/glm.hpp>
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 #include <vector>
 #include <type_traits>
 #include <variant>
@@ -116,6 +117,9 @@ public:
     virtual void BeginSequence(const char* name, size_t& size) = 0;
     virtual void EndSequence() = 0;
     virtual bool Nested(const char* name, std::function<void(IPropertyArchiveBase&)> callback) = 0;
+    virtual void BeginMap(const char* name, size_t& size) = 0;
+    virtual void EndMap() = 0;
+    virtual bool MapNextKey(std::string& key) = 0;
 };
 
 /**
@@ -125,11 +129,8 @@ class CH_API IPropertyArchive : public IPropertyArchiveBase
 {
 public:
     virtual ~IPropertyArchive() = default;
-    virtual bool Action(const char* label, std::function<void()> func) = 0;
     virtual void Header(const char* label) = 0;
     virtual void Separator() = 0;
-    virtual bool BeginGroup(const char* label, bool defaultOpen = true) = 0;
-    virtual void EndGroup() = 0;
     virtual bool HasChanged() const = 0;
     virtual void SetChanged(bool changed) = 0;
 };
@@ -254,48 +255,47 @@ public:
         });
     }
 
+    template <typename V> bool Map(const char* name, std::unordered_map<std::string, V>& map)
+    {
+        size_t size = map.size();
+        m_Archive.BeginMap(name, size);
+
+        if (GetMode() == ReflectionMode::Serialize)
+        {
+            for (auto& [key, value] : map)
+            {
+                std::string k = key;
+                m_Archive.MapNextKey(k);
+                Property(nullptr, value);
+            }
+        }
+        else if (GetMode() == ReflectionMode::Deserialize)
+        {
+            map.clear();
+            std::string key;
+            for (size_t i = 0; i < size; i++)
+            {
+                m_Archive.MapNextKey(key);
+                V value{};
+                Property(nullptr, value);
+                map[key] = value;
+            }
+        }
+        // UI mode: BeginMap/EndMap are stubs; actual rendering
+        // is done by UIProperties::Map() template when T_Archive = UIProperties
+
+        m_Archive.EndMap();
+        return false;
+    }
+
     template <typename T> bool Property(const char* name, T& value)
     {
-        if constexpr (is_variant_v<T>)
-        {
-            return std::visit([&](auto&& v) { return m_Archive.Property(name, v); }, value);
-        }
-        else if constexpr (std::is_enum_v<T>)
-        {
-            int intValue = (int)value;
-            bool changed = m_Archive.Property(name, intValue);
-            if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
-            {
-                value = (T)intValue;
-            }
-            return changed;
-        }
-        else if constexpr (std::is_integral_v<T> && std::is_unsigned_v<T> && !std::is_same_v<T, uint64_t> &&
-                           !std::is_same_v<T, bool>)
-        {
-            uint64_t u64Value = static_cast<uint64_t>(value);
-            bool changed = m_Archive.Property(name, u64Value);
-            if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
-            {
-                value = static_cast<T>(u64Value);
-            }
-            return changed;
-        }
-        else
-        {
-            return m_Archive.Property(name, value);
-        }
+        return Property(name, value, {});
     }
 
     template <typename T_Enum> bool Enum(const char* name, T_Enum& value, const char** names, int count)
     {
-        int temp = (int)value;
-        bool changed = m_Archive.Enum(name, temp, names, count);
-        if (changed || m_Archive.GetReflectionMode() == ReflectionMode::Deserialize)
-        {
-            value = (T_Enum)temp;
-        }
-        return changed;
+        return Enum(name, value, names, count, {});
     }
 
     template <typename T_Enum> bool Property(const char* name, T_Enum& value, const char** names, int count)
@@ -305,7 +305,7 @@ public:
 
     bool File(const char* name, std::string& value, const char* extensions = nullptr)
     {
-        return m_Archive.File(name, value, extensions);
+        return File(name, value, extensions, {});
     }
 
     bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options,
@@ -374,31 +374,6 @@ public:
     bool File(const char* name, std::string& value, const char* extensions, const PropertyMeta& meta)
     {
         return m_Archive.File(name, value, extensions, meta);
-    }
-
-    bool Action(const char* label, std::function<void()> func)
-    {
-        return m_Archive.Action(label, func);
-    }
-
-    void Header(const char* label)
-    {
-        m_Archive.Header(label);
-    }
-
-    void Separator()
-    {
-        m_Archive.Separator();
-    }
-
-    bool BeginGroup(const char* label, bool defaultOpen = true)
-    {
-        return m_Archive.BeginGroup(label, defaultOpen);
-    }
-
-    void EndGroup()
-    {
-        m_Archive.EndGroup();
     }
 
     // Post-change hook

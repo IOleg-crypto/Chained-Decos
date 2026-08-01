@@ -2,7 +2,7 @@
 #define CH_GEOMETRY_GENERATOR_H
 
 #include "engine/graphics/api/renderer_types.h"
-#include "engine/graphics/api/model_data.h"
+#include "engine/assets/model_data.h"
 #include "engine/assets/loaders/model_loader.h"
 #include <string>
 

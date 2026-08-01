@@ -7,6 +7,7 @@
 #include "engine/common/zstd_compression.h"
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/asset_metadata.h"
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
 #include <cereal/types/vector.hpp>
@@ -17,30 +18,6 @@
 
 namespace Chained
 {
-static uint64_t ComputeFileHash(const std::filesystem::path& path)
-{
-    constexpr size_t kChunkSize = 65536;
-    std::ifstream file(path, std::ios::binary);
-    if (!file.is_open())
-    {
-        return 0;
-    }
-    uint64_t hash = UINT64_C(14695981039346656037);
-    char buf[kChunkSize];
-    while (file.read(buf, kChunkSize) || file.gcount() > 0)
-    {
-        auto count = static_cast<size_t>(file.gcount());
-        for (size_t i = 0; i < count; ++i)
-        {
-            hash = (hash ^ static_cast<uint64_t>(static_cast<unsigned char>(buf[i]))) * 1099511628211ULL;
-        }
-        if (count < kChunkSize)
-        {
-            break;
-        }
-    }
-    return hash;
-}
 
 std::shared_ptr<Asset> ModelLoader::Create()
 {
@@ -138,7 +115,7 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
                 bool hashValid = true;
                 if (!am || !am->IsPacked())
                 {
-                    uint64_t currentHash = ComputeFileHash(path);
+                    uint64_t currentHash = MetaUtils::ComputeFileHash(path);
                     if (currentHash != 0 && header.sourceHash != currentHash)
                     {
                         CH_CORE_WARN("Source file changed since .chasset was created, re-importing: {}", path.string());
@@ -208,7 +185,7 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
                 }
 
                 std::string serializedData = dataStream.str();
-                uint64_t sourceHash = ComputeFileHash(path);
+                uint64_t sourceHash = MetaUtils::ComputeFileHash(path);
 
                 auto compressed = Zstd::Compress(serializedData.data(), serializedData.size(), 3);
 
@@ -246,55 +223,5 @@ PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& 
     }
 
     return data;
-}
-
-Model ModelLoader::GenerateProceduralModel(const std::string& type, const ProceduralParameters& params)
-{
-    Model model;
-    RawMesh raw;
-
-    if (type == ":cube:")
-    {
-        float w = params.Dimensions.x * 0.5f;
-        float h = params.Dimensions.y * 0.5f;
-        float d = params.Dimensions.z * 0.5f;
-
-        raw.vertices = {-w, -h, d,  w,  -h, d,  w, h, d, -w, h,  d,  -w, -h, -d, -w, h,  -d, w,  h,  -d, w,  -h, -d,
-                        -w, h,  -d, -w, h,  d,  w, h, d, w,  h,  -d, -w, -h, -d, w,  -h, -d, w,  -h, d,  -w, -h, d,
-                        w,  -h, -d, w,  h,  -d, w, h, d, w,  -h, d,  -w, -h, -d, -w, -h, d,  -w, h,  d,  -w, h,  -d};
-
-        raw.normals = {0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0,  0,  -1, 0,  0,  -1, 0,  0,  -1, 0,  0,  -1,
-                       0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0,  -1, 0,  0,  -1, 0,  0,  -1, 0,  0,  -1, 0,
-                       1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, -1, 0,  0,  -1, 0,  0,  -1, 0,  0,  -1, 0,  0};
-
-        std::vector<uint32_t> indices;
-        for (int i = 0; i < 6; i++)
-        {
-            indices.push_back(i * 4 + 0);
-            indices.push_back(i * 4 + 1);
-            indices.push_back(i * 4 + 2);
-            indices.push_back(i * 4 + 0);
-            indices.push_back(i * 4 + 2);
-            indices.push_back(i * 4 + 3);
-        }
-
-        Mesh mesh;
-        mesh.MaterialIndex = 0;
-        mesh.VertexCount = (uint32_t)(raw.vertices.size() / 3);
-        mesh.TriangleCount = (uint32_t)(indices.size() / 3);
-
-        mesh.VAO = VertexArray::Create();
-        auto vb = VertexBuffer::Create(raw.vertices.data(), (uint32_t)(raw.vertices.size() * sizeof(float)));
-        vb->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
-        mesh.VAO->AddVertexBuffer(vb);
-
-        auto ib = IndexBuffer::Create(indices.data(), (uint32_t)indices.size());
-        mesh.VAO->SetIndexBuffer(ib);
-
-        model.Meshes.push_back(mesh);
-        model.Materials.push_back(Material{});
-    }
-
-    return model;
 }
 } // namespace Chained

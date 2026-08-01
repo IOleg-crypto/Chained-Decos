@@ -19,27 +19,7 @@ namespace Chained::AssetResolutionSystem
 static void ResolveSprite(entt::registry& reg, entt::entity e)
 {
     auto& sprite = reg.get<SpriteComponent>(e);
-    if (!sprite.TexturePath.empty() && sprite.TextureHandle == 0)
-    {
-        auto* assets = ServiceLocator::TryGet<AssetManager>();
-        if (!assets)
-        {
-            return;
-        }
-
-        auto handle = assets->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
-        auto asset = assets->Get<TextureAsset>(sprite.TexturePath);
-        if (asset && asset->IsReady())
-        {
-            sprite.TextureHandle = asset->GetID();
-        }
-    }
-}
-
-static void ResolveShader(entt::registry& reg, entt::entity e)
-{
-    auto& shader = reg.get<ShaderComponent>(e);
-    if (shader.ShaderPath.empty() || shader.ShaderHandle != 0)
+    if (sprite.TextureHandle != 0)
     {
         return;
     }
@@ -50,19 +30,107 @@ static void ResolveShader(entt::registry& reg, entt::entity e)
         return;
     }
 
-    auto handle = assets->LoadAsset(shader.ShaderPath, ShaderAsset::GetStaticType());
-    auto asset = assets->Get<ShaderAsset>(shader.ShaderPath);
-    if (!asset || !asset->IsReady())
+    // Try UUID first
+    if (sprite.TextureUUID != 0)
+    {
+        auto asset = assets->GetByUUID<TextureAsset>(sprite.TextureUUID);
+        if (asset && asset->IsReady())
+        {
+            sprite.TextureHandle = asset->GetID();
+            return;
+        }
+    }
+
+    // Fallback to path
+    if (!sprite.TexturePath.empty())
+    {
+        assets->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
+        auto asset = assets->Get<TextureAsset>(sprite.TexturePath);
+        if (asset && asset->IsReady())
+        {
+            sprite.TextureHandle = asset->GetID();
+            sprite.TextureUUID = asset->GetID();
+        }
+    }
+}
+
+static void ResolveShader(entt::registry& reg, entt::entity e)
+{
+    auto& shader = reg.get<ShaderComponent>(e);
+    if (shader.ShaderHandle != 0)
     {
         return;
     }
-    shader.ShaderHandle = asset->GetID();
+
+    auto* assets = ServiceLocator::TryGet<AssetManager>();
+    if (!assets)
+    {
+        return;
+    }
+
+    // Try UUID first
+    if (shader.ShaderUUID != 0)
+    {
+        auto asset = assets->GetByUUID<ShaderAsset>(shader.ShaderUUID);
+        if (asset && asset->IsReady())
+        {
+            shader.ShaderHandle = asset->GetID();
+            return;
+        }
+    }
+
+    // Fallback to path
+    if (!shader.ShaderPath.empty())
+    {
+        assets->LoadAsset(shader.ShaderPath, ShaderAsset::GetStaticType());
+        auto asset = assets->Get<ShaderAsset>(shader.ShaderPath);
+        if (asset && asset->IsReady())
+        {
+            shader.ShaderHandle = asset->GetID();
+            shader.ShaderUUID = asset->GetID();
+        }
+    }
 }
 
 static void ResolveModel(entt::registry& reg, entt::entity e)
 {
     auto& model = reg.get<ModelComponent>(e);
+
+    // Already resolved
+    if (model.ModelHandle != 0)
+    {
+        return;
+    }
+
+    auto* assets = ServiceLocator::TryGet<AssetManager>();
+    if (!assets)
+    {
+        return;
+    }
+
+    // Try UUID first
+    if (model.ModelUUID != 0)
+    {
+        auto asset = assets->GetByUUID<ModelAsset>(model.ModelUUID);
+        if (asset && asset->IsReady())
+        {
+            model.ModelHandle = asset->GetID();
+            return;
+        }
+    }
+
+    // Fallback to path
     ComponentUtils::ResolveModelPath(model);
+
+    // Remember UUID for next time
+    if (model.ModelHandle != 0 && model.ModelUUID == 0)
+    {
+        auto asset = assets->Get<ModelAsset>(model.ModelPath);
+        if (asset)
+        {
+            model.ModelUUID = asset->GetID();
+        }
+    }
 }
 
 static void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
@@ -265,21 +333,21 @@ void Update(entt::registry& reg)
     CH_PROFILE_FUNCTION();
 
     reg.view<SpriteComponent>().each([&](auto entity, auto& sprite) {
-        if (!sprite.TexturePath.empty() && sprite.TextureHandle == 0)
+        if (sprite.TextureHandle == 0 && (sprite.TextureUUID != 0 || !sprite.TexturePath.empty()))
         {
             ResolveSprite(reg, entity);
         }
     });
 
     reg.view<ShaderComponent>().each([&](auto entity, auto& shader) {
-        if (!shader.ShaderPath.empty() && shader.ShaderHandle == 0)
+        if (shader.ShaderHandle == 0 && (shader.ShaderUUID != 0 || !shader.ShaderPath.empty()))
         {
             ResolveShader(reg, entity);
         }
     });
 
     reg.view<ModelComponent>().each([&](auto entity, auto& model) {
-        if (!model.ModelPath.empty() && model.ModelHandle == 0)
+        if (model.ModelHandle == 0 && (model.ModelUUID != 0 || !model.ModelPath.empty()))
         {
             ResolveModel(reg, entity);
         }

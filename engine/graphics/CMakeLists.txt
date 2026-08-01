@@ -6,7 +6,6 @@ add_library(engine_graphics STATIC
     api/framebuffer.cpp
     api/graphics_device.h
     api/graphics_device.cpp
-    api/model_data.h
     api/renderer_types.h
     api/shader.h
     api/shader.cpp

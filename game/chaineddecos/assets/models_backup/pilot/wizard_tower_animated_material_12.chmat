@@ -1,0 +1,17 @@
+Material:
+  Name: Material.016
+  AlbedoColor:
+    - 0.304781169
+    - 0.590815902
+    - 0.800000072
+    - 0.0409876145
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0.21472393
+  Roughness: 0.171779141
+  Transparent: true
+  Alpha: 0.0409876145

@@ -20,7 +20,7 @@ struct TransformComponent
     // Cached world transform.
     glm::mat4 WorldTransform = glm::mat4(1.0f);
     glm::mat4 InverseWorldTransform = glm::mat4(1.0f);
-    bool IsDirty = true;
+    bool TransformChanged = true;
 
     // Previous state for interpolation.
     glm::vec3 PrevTranslation = {0, 0, 0};
@@ -41,7 +41,7 @@ struct TransformComponent
         UIMeta Scale = {
             .Min = 0.1f, .Max = 10.0f, .Speed = 0.1f, .Tooltip = "Local scale multipliers along X, Y, and Z axes"};
 
-        UIMeta IsDirty = {.ReadOnly = true, .Transient = true};
+        UIMeta TransformChanged = {.ReadOnly = true, .Transient = true};
         UIMeta PrevTranslation = {.ReadOnly = true, .Transient = true};
         UIMeta PrevRotationQuat = {.ReadOnly = true, .Transient = true};
         UIMeta PrevScale = {.ReadOnly = true, .Transient = true};

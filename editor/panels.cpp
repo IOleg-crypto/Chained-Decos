@@ -11,6 +11,7 @@
 #include "panels/project_settings_panel.h"
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
+#include "panels/anim_graph_panel.h"
 
 namespace Chained
 {
@@ -27,6 +28,7 @@ void EditorPanels::Init()
     Register<MaterialPanel>();
     Register<ProfilerPanel>();
     Register<ProjectSettingsPanel>();
+    Register<AnimGraphPanel>();
 }
 
 void EditorPanels::OnUpdate(Timestep ts)

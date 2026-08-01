@@ -202,6 +202,8 @@ void EditorSceneManager::SetSceneState(SceneState state)
             return;
         }
 
+        EditorLayer::Get().GetEditorState().SelectedEntity = {};
+
         CH_CORE_INFO("Editor: Play Mode Stopped");
         if (m_RuntimeScene)
         {
@@ -214,8 +216,6 @@ void EditorSceneManager::SetSceneState(SceneState state)
         {
             m_EditorScene->TransitionToState(SceneState::Edit);
         }
-
-        EditorLayer::Get().GetEditorState().SelectedEntity = {};
     }
 }
 

@@ -37,7 +37,6 @@ public:
     }
 
     void SaveToFile(const std::string& path) const;
-    bool LoadFromFile(const std::string& path, std::string* outError = nullptr);
 
 private:
     Material m_Material;

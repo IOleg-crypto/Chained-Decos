@@ -1,6 +1,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/loaders/iasset_loader.h"
 #include "thirdparty/googletest/googletest/include/gtest/gtest.h"
 
 #include <atomic>
@@ -42,6 +43,46 @@ struct CountingLoaderData
     int LoadCalls = 0;
 };
 
+class DummyLoader final : public IAssetLoader
+{
+public:
+    bool IsAsync() const override
+    {
+        return m_Async;
+    }
+    std::shared_ptr<Asset> Create() override
+    {
+        return std::make_shared<DummyAsset>();
+    }
+    bool Load(std::shared_ptr<Asset> asset, const std::string& path, std::string* outError) override
+    {
+        auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset);
+        if (!dummy)
+        {
+            return false;
+        }
+
+        ++m_Data->LoadCalls;
+        if (!m_ShouldSucceed)
+        {
+            if (outError)
+            {
+                *outError = "CountingLoader: forced failure for test path '" + path + "'";
+            }
+            return false;
+        }
+
+        dummy->SetPath(path);
+        dummy->LoadCount = 1;
+        dummy->LastLoadedPath = path;
+        return true;
+    }
+
+    bool m_Async = false;
+    bool m_ShouldSucceed = true;
+    std::shared_ptr<CountingLoaderData> m_Data;
+};
+
 std::string MakeUniqueAssetPath(const char* suffix)
 {
     static std::atomic<uint64_t> counter{0};
@@ -77,33 +118,11 @@ protected:
         auto data = std::make_shared<CountingLoaderData>();
         m_LoaderData.push_back(data);
 
-        AssetLoader loader;
-        loader.IsAsync = asyncLoad;
-        loader.Create = []() { return std::make_shared<DummyAsset>(); };
-        loader.Load = [data, shouldSucceed](std::shared_ptr<Asset> asset, const std::string& path,
-                                            std::string* outError) {
-            auto dummy = std::dynamic_pointer_cast<DummyAsset>(asset);
-            if (!dummy)
-            {
-                return false;
-            }
-
-            ++data->LoadCalls;
-            if (!shouldSucceed)
-            {
-                if (outError)
-                {
-                    *outError = "CountingLoader: forced failure for test path '" + path + "'";
-                }
-                return false;
-            }
-
-            dummy->SetPath(path);
-            dummy->LoadCount = 1;
-            dummy->LastLoadedPath = path;
-            return true;
-        };
-        m_AssetManager->RegisterLoader(DummyAsset::GetStaticType(), loader);
+        auto loader = std::make_unique<DummyLoader>();
+        loader->m_Async = asyncLoad;
+        loader->m_ShouldSucceed = shouldSucceed;
+        loader->m_Data = data;
+        m_AssetManager->RegisterLoader(DummyAsset::GetStaticType(), std::move(loader));
         return data.get();
     }
 };

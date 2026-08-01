@@ -5,6 +5,8 @@ namespace ChainedDecos.Scripts
 {
     public class SpawnZone : Script
     {
+        private bool IsPlayerInside = false;
+
         public override void OnUpdate(float deltaTime)
         {
             ulong[] players = Entity.FindAllWithComponent<PlayerComponent>();
@@ -16,26 +18,63 @@ namespace ChainedDecos.Scripts
             if (playerTransform == null)
                 return;
 
-            if (playerTransform.Translation.Y < -50.0f)
+            ulong[] spawnEntities = Entity.FindAllWithComponent<SpawnComponent>();
+            if (spawnEntities.Length == 0)
+                return;
+
+            TransformComponent? spawnTransform = Entity.GetComponent<TransformComponent>();
+            SpawnComponent? thisSpawnComp = Entity.GetComponent<SpawnComponent>();
+            if (spawnTransform == null || thisSpawnComp == null || !thisSpawnComp.IsActive)
+                return;
+
+            Vector3 zoneSize = thisSpawnComp.ZoneSize;
+            float halfX = Math.Abs(zoneSize.X) * 0.5f;
+            float halfY = Math.Abs(zoneSize.Y) * 0.5f;
+            float halfZ = Math.Abs(zoneSize.Z) * 0.5f;
+
+            if (halfX < 0.5f) halfX = 1.0f;
+            if (halfY < 0.5f) halfY = 1.0f;
+            if (halfZ < 0.5f) halfZ = 1.0f;
+
+            float dx = Math.Abs(playerTransform.Translation.X - spawnTransform.Translation.X);
+            float dy = Math.Abs(playerTransform.Translation.Y - spawnTransform.Translation.Y);
+            float dz = Math.Abs(playerTransform.Translation.Z - spawnTransform.Translation.Z);
+
+            IsPlayerInside = (dx <= halfX && dy <= halfY && dz <= halfZ);
+
+            if (IsPlayerInside)
             {
-                Respawn(player);
+                foreach (ulong id in spawnEntities)
+                {
+                    Entity spawner = new Entity(id);
+                    SpawnComponent? sc = spawner.GetComponent<SpawnComponent>();
+                    if (sc != null && sc.IsActive)
+                    {
+                        sc.IsCheckpoint = (id == Entity.ID);
+                    }
+                }
             }
 
-            if(Input.IsKeyPressed(Key.F))
+            if (playerTransform.Translation.Y < -50.0f || Input.IsKeyPressed(Key.F))
             {
-                Respawn(player);
+                Respawn(player, spawnEntities);
             }
         }
 
-        private void Respawn(Entity player)
+        private void Respawn(Entity player, ulong[] spawnEntities)
         {
-            ulong[] spawnEntities = Entity.FindAllWithComponent<SpawnComponent>();
-            if (spawnEntities.Length == 0)
+            foreach (ulong id in spawnEntities)
             {
-                Log.Info("spawnzone: No spawn points found in the scene.");
-                return;
+                Entity spawner = new Entity(id);
+                SpawnComponent? spawnComp = spawner.GetComponent<SpawnComponent>();
+                if (spawnComp != null && spawnComp.IsActive && spawnComp.IsCheckpoint)
+                {
+                    TeleportTo(player, spawner, spawnComp);
+                    return;
+                }
             }
 
+            // Fallback to first active spawn zone if no checkpoint is active
             foreach (ulong id in spawnEntities)
             {
                 Entity spawner = new Entity(id);
@@ -46,11 +85,6 @@ namespace ChainedDecos.Scripts
                     return;
                 }
             }
-
-            Entity fallback = new Entity(spawnEntities[0]);
-            SpawnComponent? fallbackComp = fallback.GetComponent<SpawnComponent>();
-            if (fallbackComp != null)
-                TeleportTo(player, fallback, fallbackComp);
         }
 
         private void TeleportTo(Entity player, Entity spawnEntity, SpawnComponent spawnComp)
@@ -62,27 +96,21 @@ namespace ChainedDecos.Scripts
             if (spawnTransform == null || playerTransform == null)
                 return;
 
-            float halfX = spawnComp.ZoneSize.X * 0.5f;
-            float halfY = spawnComp.ZoneSize.Y * 0.5f;
-            float halfZ = spawnComp.ZoneSize.Z * 0.5f;
+            Vector3 targetPos = spawnTransform.Translation + spawnComp.SpawnPoint;
+            if (Math.Abs(spawnComp.SpawnPoint.Y) < 0.01f)
+            {
+                targetPos.Y += 0.5f;
+            }
 
-            Random rng = new Random();
-            float offsetX = (float)(rng.NextDouble() * 2.0 - 1.0) * halfX;
-            float offsetY = (float)(rng.NextDouble() * 2.0 - 1.0) * halfY;
-            float offsetZ = (float)(rng.NextDouble() * 2.0 - 1.0) * halfZ;
-
-            playerTransform.Translation = new Vector3(
-                spawnTransform.Translation.X + offsetX,
-                spawnTransform.Translation.Y + offsetY,
-                spawnTransform.Translation.Z + offsetZ
-            );
+            playerTransform.Translation = targetPos;
 
             if (playerRb != null)
             {
                 playerRb.ForceSetVelocity(Vector3.Zero);
+                playerRb.Velocity = Vector3.Zero;
             }
 
-            Log.Info("spawnzone: Player respawned at random position within zone.");
+            Log.Info("spawnzone: Player respawned at checkpoint.");
         }
     }
 }
