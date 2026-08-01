@@ -1,19 +1,23 @@
 #ifndef CH_TEXTURE_LOADER_H
 #define CH_TEXTURE_LOADER_H
 
-#include "engine/assets/types/texture_asset.h"
-#include "engine/assets/loaders/asset_loader.h"
+#include "engine/assets/loaders/iasset_loader.h"
 #include "engine/assets/types/texture_asset.h"
 #include <memory>
 #include <string>
 
 namespace Chained
 {
-namespace TextureLoader
+class TextureLoader : public IAssetLoader
 {
-std::shared_ptr<Asset> Create();
-bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr);
-} // namespace TextureLoader
+public:
+    bool IsAsync() const override
+    {
+        return true;
+    }
+    std::shared_ptr<Asset> Create() override;
+    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
+};
 } // namespace Chained
 
 #endif // CH_TEXTURE_LOADER_H

@@ -270,6 +270,78 @@ public:
         return false;
     }
 
+    virtual void BeginMap(const char* name, size_t& size) override
+    {
+        if (m_Mode == ReflectionMode::Serialize)
+        {
+            if (name)
+            {
+                *m_Out << YAML::Key << name << YAML::Value << YAML::BeginMap;
+            }
+            m_MapStack.push_back({YAML::Node(), 0, false});
+        }
+        else
+        {
+            YAML::Node mapNode;
+            if (name && m_Node[name] && m_Node[name].IsMap())
+            {
+                mapNode = m_Node[name];
+                size = mapNode.size();
+            }
+            else
+            {
+                size = 0;
+            }
+            m_MapStack.push_back({mapNode, 0, true});
+        }
+    }
+
+    virtual void EndMap() override
+    {
+        if (m_Mode == ReflectionMode::Serialize)
+        {
+            *m_Out << YAML::EndMap;
+        }
+        if (!m_MapStack.empty())
+        {
+            m_MapStack.pop_back();
+        }
+    }
+
+    virtual bool MapNextKey(std::string& key) override
+    {
+        if (m_Mode == ReflectionMode::Serialize)
+        {
+            *m_Out << YAML::Key << key;
+            return true;
+        }
+        else
+        {
+            if (m_MapStack.empty())
+            {
+                return false;
+            }
+            auto& state = m_MapStack.back();
+            if (!state.Node || !state.IsMap)
+            {
+                return false;
+            }
+
+            auto it = state.Node.begin();
+            for (size_t i = 0; i < state.Index && it != state.Node.end(); ++i, ++it)
+            {
+            }
+            if (it == state.Node.end())
+            {
+                return false;
+            }
+
+            key = it->first.as<std::string>();
+            state.Index++;
+            return true;
+        }
+    }
+
 private:
     template <typename T> bool PropertyInternal(const char* name, T& value)
     {
@@ -308,6 +380,14 @@ private:
         size_t Index;
     };
     std::vector<SequenceState> m_SequenceStack;
+
+    struct MapState
+    {
+        YAML::Node Node;
+        size_t Index;
+        bool IsMap;
+    };
+    std::vector<MapState> m_MapStack;
 
     ReflectionMode m_Mode;
     YAML::Emitter* m_Out = nullptr;

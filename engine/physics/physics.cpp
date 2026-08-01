@@ -151,24 +151,25 @@ void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
         {
             glm::vec3 currentJoltVelocity = world->GetVelocity(rb.Handle);
             glm::vec3 finalVelocity = rb.Velocity;
-            if (rb.Velocity.y <= 0.5f)
+            if (!rb.VelocityForced && rb.Velocity.y <= 0.5f)
             {
                 finalVelocity.y = currentJoltVelocity.y;
             }
+            rb.VelocityForced = false;
             world->SetVelocity(rb.Handle, finalVelocity);
         }
         else if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
         {
             world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
             world->SetVelocity(rb.Handle, rb.Velocity);
-            transform.IsDirty = false;
+            transform.TransformChanged = false;
             continue;
         }
 
-        if (transform.IsDirty)
+        if (transform.TransformChanged)
         {
             world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
-            transform.IsDirty = false;
+            transform.TransformChanged = false;
         }
     }
 
@@ -241,7 +242,7 @@ void Physics::UpdateColliders(Scene* scene)
         transform.Translation = pos;
         transform.RotationQuat = rot;
         transform.Rotation = glm::eulerAngles(rot);
-        transform.IsDirty = true;
+        transform.TransformChanged = true;
 
         rb.Velocity = world->GetVelocity(rb.Handle);
         rb.IsGrounded = world->IsBodyGrounded(rb.Handle);

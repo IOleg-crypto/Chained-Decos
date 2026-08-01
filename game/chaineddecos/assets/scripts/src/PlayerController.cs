@@ -8,8 +8,25 @@ namespace ChainedDecos.Scripts
     {
         private float MovementSpeed => Entity.GetComponent<PlayerComponent>()?.MovementSpeed ?? 15.0f;
         private float JumpForce    => Entity.GetComponent<PlayerComponent>()?.JumpForce ?? 15.0f;
-        public  float Gravity      = 30.0f;   // Units per second^2 (should match physics config)
+        public  float Gravity;  
         public  string MenuScene   = "scenes/start_menu.chscene";
+
+        // Animation Indices
+        public int IdleAnim = 0;
+        public int RunAnim = 1;
+        public int JumpAnim = 2;
+        public float CrossFadeTime = 0.2f;
+
+        private enum PlayerState
+        {
+            None,
+            Idle,
+            Running,
+            Jumping,
+            Falling
+        }
+
+        private PlayerState _currentState = PlayerState.None;
 
         public override void OnCreate()
         {
@@ -37,8 +54,8 @@ namespace ChainedDecos.Scripts
                 currentSpeed *= 2.0f;
 
             // --- Camera-relative directions ---
-            Vector3 forward = Vector3.Zero;
-            Vector3 right   = Vector3.Zero;
+            Vector3 forward = new Vector3(0.0f, 0.0f, -1.0f);
+            Vector3 right   = new Vector3(1.0f, 0.0f, 0.0f);
 
             Entity? camEntity = Scene.GetMainCamera();
             if (camEntity != null)
@@ -46,9 +63,14 @@ namespace ChainedDecos.Scripts
                 CameraComponent? camera = camEntity.GetComponent<CameraComponent>();
                 if (camera != null)
                 {
-                    // Flatten for XZ ground movement
-                    forward = Vector3.Normalize(new Vector3(camera.Forward.X, 0.0f, camera.Forward.Z));
-                    right   = Vector3.Normalize(new Vector3(camera.Right.X,   0.0f, camera.Right.Z));
+                    Vector3 camFwd = new Vector3(camera.Forward.X, 0.0f, camera.Forward.Z);
+                    Vector3 camRight = new Vector3(camera.Right.X, 0.0f, camera.Right.Z);
+
+                    if (camFwd.LengthSquared() > 0.0001f)
+                        forward = Vector3.Normalize(camFwd);
+
+                    if (camRight.LengthSquared() > 0.0001f)
+                        right = Vector3.Normalize(camRight);
                 }
             }
 
@@ -116,10 +138,6 @@ namespace ChainedDecos.Scripts
             }
             else
             {
-                // ДЛЯ ДИНАМІЧНОГО ТІЛА:
-                // Jolt є єдиним авторитетом для Y (гравітація, пружність).
-                // Скрипт контролює лише X та Z.
-                // Стрибок: ставимо позитивний Y — physics.cpp пропустить його (> 0.5).
                 bool wantsJump = Input.IsKeyPressed(Key.Space);
 
                 if (wantsJump && rb.IsGrounded)
@@ -133,6 +151,71 @@ namespace ChainedDecos.Scripts
                 }
             }
 
+            // --- Animation State Machine ---
+            UpdateAnimation(rb, movementDir);
+        }
+
+        private void UpdateAnimation(RigidBodyComponent rb, Vector3 movementDir)
+        {
+            // If we have an AnimationComponent with a graph, feed variables to it.
+            AnimationComponent? anim = Entity.GetComponent<AnimationComponent>();
+            if (anim != null)
+            {
+                bool isSprinting = Input.IsKeyDown(Key.LeftShift);
+                bool isMoving = movementDir.LengthSquared() > 0.0001f;
+                float speedVal = 0.0f;
+                if (isMoving)
+                {
+                    speedVal = isSprinting ? 1.0f : 0.5f;
+                }
+
+                // Feed speed, isMoving, and isGrounded to graph variables
+                anim.SetFloat("speed", speedVal);
+                anim.SetFloat("Speed", speedVal);
+                anim.SetBool("isMoving", isMoving);
+                anim.SetBool("IsMoving", isMoving);
+                anim.SetBool("IsGrounded", rb.IsGrounded);
+                anim.SetBool("isGrounded", rb.IsGrounded);
+            }
+
+            // Fallback for when no graph is attached (manual C# state machine)
+            if (anim == null) return;
+
+            PlayerState newState = _currentState;
+
+            if (rb.IsGrounded)
+            {
+                if (movementDir.LengthSquared() > 0.0001f)
+                    newState = PlayerState.Running;
+                else
+                    newState = PlayerState.Idle;
+            }
+            else
+            {
+                // In air
+                if (rb.Velocity.Y > 0)
+                    newState = PlayerState.Jumping;
+                else
+                    newState = PlayerState.Falling;
+            }
+
+            if (newState != _currentState)
+            {
+                _currentState = newState;
+                switch (newState)
+                {
+                    case PlayerState.Idle:
+                        anim.CrossFade(IdleAnim, CrossFadeTime);
+                        break;
+                    case PlayerState.Running:
+                        anim.CrossFade(RunAnim, CrossFadeTime);
+                        break;
+                    case PlayerState.Jumping:
+                    case PlayerState.Falling:
+                        anim.CrossFade(JumpAnim, CrossFadeTime);
+                        break;
+                }
+            }
         }
     }
 }

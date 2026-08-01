@@ -375,7 +375,7 @@ void ModelAsset::OnLoaded()
     m_Model = std::move(newModel);
     m_Materials = m_Model.Materials;
     m_BoundingBox = totalBox;
-    m_RawMeshes = std::move(m_PendingData.meshes);
+    m_Meshes = std::move(m_PendingData.meshes);
     m_Animations = std::move(m_PendingData.animations);
     m_Instances = std::move(m_PendingData.instances);
     m_OffsetMatrices = std::move(m_PendingData.offsetMatrices);

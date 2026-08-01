@@ -26,7 +26,23 @@ void Transform_SetTranslation(uint64_t entityID, glm::vec3* inTranslation)
     Entity entity = GetEntity(entityID);
     if (entity && entity.HasComponent<TransformComponent>() && inTranslation)
     {
-        ComponentUtils::SetTranslation(entity.GetComponent<TransformComponent>(), *inTranslation);
+        auto& tc = entity.GetComponent<TransformComponent>();
+        tc.Translation = *inTranslation;
+        tc.PrevTranslation = *inTranslation;
+        tc.TransformChanged = true;
+
+        if (entity.HasComponent<RigidBodyComponent>())
+        {
+            auto& rb = entity.GetComponent<RigidBodyComponent>();
+            if (rb.Handle != kInvalidPhysicsBody)
+            {
+                auto* physics = ServiceLocator::TryGet<Physics>();
+                if (physics && physics->GetWorld())
+                {
+                    physics->GetWorld()->SetTransform(rb.Handle, *inTranslation, tc.RotationQuat);
+                }
+            }
+        }
     }
 }
 void Transform_GetRotation(uint64_t entityID, glm::vec3* outRotation)
@@ -194,6 +210,7 @@ void RigidBody_ForceSetVelocity(uint64_t entityID, glm::vec3* inVelocity)
     {
         auto& rb = entity.GetComponent<RigidBodyComponent>();
         rb.Velocity = *inVelocity;
+        rb.VelocityForced = true;
         if (rb.Handle != kInvalidPhysicsBody)
         {
             auto* physics = ServiceLocator::TryGet<Physics>();
@@ -353,10 +370,6 @@ bool Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName)
     }
     std::string name = ch_u16_to_string(componentName);
     ResolveComponentName(name);
-    if (name == "AnimationComponent")
-    {
-        return false;
-    }
 
     if (name.find("Control") != std::string::npos || name.find("Group") != std::string::npos)
     {
@@ -491,13 +504,55 @@ void PlayerComponent_SetLookSensitivity(uint64_t entityID, float value)
     }
 }
 
-// ── SpawnComponent ────────────────────────────────────────────────────
-bool SpawnComponent_IsActive(uint64_t entityID)
+bool SpawnComponent_GetIsActive(uint64_t entityID)
 {
     Entity entity = GetEntity(entityID);
     return entity && entity.HasComponent<Chained::SpawnComponent>()
                ? entity.GetComponent<Chained::SpawnComponent>().IsActive
                : false;
+}
+void SpawnComponent_SetIsActive(uint64_t entityID, bool value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::SpawnComponent>())
+    {
+        entity.GetComponent<Chained::SpawnComponent>().IsActive = value;
+    }
+}
+bool SpawnComponent_IsCheckpoint(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<Chained::SpawnComponent>()
+               ? entity.GetComponent<Chained::SpawnComponent>().IsCheckpoint
+               : false;
+}
+void SpawnComponent_SetIsCheckpoint(uint64_t entityID, bool value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::SpawnComponent>())
+    {
+        entity.GetComponent<Chained::SpawnComponent>().IsCheckpoint = value;
+    }
+}
+void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::SpawnComponent>() && outPoint)
+    {
+        *outPoint = entity.GetComponent<Chained::SpawnComponent>().SpawnPoint;
+    }
+    else if (outPoint)
+    {
+        *outPoint = {};
+    }
+}
+void SpawnComponent_SetSpawnPoint(uint64_t entityID, glm::vec3* inPoint)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<Chained::SpawnComponent>() && inPoint)
+    {
+        entity.GetComponent<Chained::SpawnComponent>().SpawnPoint = *inPoint;
+    }
 }
 bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
 {
@@ -533,8 +588,13 @@ void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index)
     if (entity && entity.HasComponent<AnimationComponent>())
     {
         auto& anim = entity.GetComponent<AnimationComponent>();
-        anim.CurrentAnimationIndex = index;
-        anim.TargetAnimationIndex = index;
+        if (anim.CurrentAnimationIndex != index)
+        {
+            anim.CurrentAnimationIndex = index;
+            anim.CurrentFrame = 0;
+            anim.FrameTimeCounter = 0.0f;
+            anim.IsFinished = false;
+        }
     }
 }
 uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID)
@@ -551,6 +611,103 @@ void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying)
     {
         entity.GetComponent<AnimationComponent>().IsPlaying = isPlaying != 0;
     }
+}
+bool AnimationComponent_GetIsLooping(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().IsLooping
+                                                               : false;
+}
+void AnimationComponent_SetIsLooping(uint64_t entityID, bool isLooping)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        entity.GetComponent<AnimationComponent>().IsLooping = isLooping;
+    }
+}
+bool AnimationComponent_GetIsFinished(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().IsFinished
+                                                               : false;
+}
+float AnimationComponent_GetDuration(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().Duration
+                                                               : 0.0f;
+}
+float AnimationComponent_GetNormalizedTime(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>()
+               ? entity.GetComponent<AnimationComponent>().NormalizedTime
+               : 0.0f;
+}
+float AnimationComponent_GetBlendDuration(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().BlendDuration
+                                                               : 0.0f;
+}
+void AnimationComponent_SetBlendDuration(uint64_t entityID, float blendDuration)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        entity.GetComponent<AnimationComponent>().BlendDuration = blendDuration;
+    }
+}
+void AnimationComponent_CrossFade(uint64_t entityID, int targetIndex, float blendDuration)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        auto& anim = entity.GetComponent<AnimationComponent>();
+        if (anim.CurrentAnimationIndex == targetIndex && !anim.Blending)
+        {
+            return;
+        }
+        anim.TargetAnimationIndex = targetIndex;
+        anim.TargetFrame = 0;
+        anim.BlendDuration = blendDuration;
+        anim.BlendTimer = 0.0f;
+        anim.Blending = true;
+        anim.IsPlaying = true;
+        anim.IsFinished = false;
+    }
+}
+// ── AnimationComponent graph variables ──────────────────────────────
+void AnimationComponent_SetFloat(uint64_t entityID, const Coral::UCChar* name, float value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        std::string strName = ch_u16_to_string(name);
+        entity.GetComponent<AnimationComponent>().SetFloat(strName, value);
+    }
+}
+
+void AnimationComponent_SetBool(uint64_t entityID, const Coral::UCChar* name, bool value)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        std::string strName = ch_u16_to_string(name);
+        entity.GetComponent<AnimationComponent>().SetBool(strName, value);
+    }
+}
+
+float AnimationComponent_GetFloat(uint64_t entityID, const Coral::UCChar* name)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AnimationComponent>())
+    {
+        std::string strName = ch_u16_to_string(name);
+        return entity.GetComponent<AnimationComponent>().GetFloat(strName);
+    }
+    return 0.0f;
 }
 
 } // namespace Chained

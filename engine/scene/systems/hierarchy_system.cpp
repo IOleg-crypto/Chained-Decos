@@ -31,13 +31,13 @@ void UpdateWorldTransforms(entt::registry& reg, const std::vector<entt::entity>&
         auto& tc = reg.get<TransformComponent>(task.Entity);
 
         // A node needs update if it is explicitly dirty OR its parent's world transform changed
-        bool needsUpdate = task.ParentChanged || tc.IsDirty;
+        bool needsUpdate = task.ParentChanged || tc.TransformChanged;
 
         if (needsUpdate)
         {
             tc.WorldTransform = task.ParentTransform * ComponentUtils::GetTransform(tc);
             tc.InverseWorldTransform = glm::inverse(tc.WorldTransform);
-            tc.IsDirty = false;
+            tc.TransformChanged = false;
         }
 
         if (reg.all_of<HierarchyComponent>(task.Entity))

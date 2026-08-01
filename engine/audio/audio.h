@@ -9,7 +9,7 @@
 #include <mutex>
 #include <string>
 #include <vector>
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 
 namespace Chained
 {
@@ -36,7 +36,7 @@ struct MiniaudioEngineDeleter
     }
 };
 
-class Audio : public EngineModule
+class Audio : public Service
 {
 public:
     virtual void Initialize() override;

@@ -1,4 +1,5 @@
-#pragma once
+#ifndef CH_RENDER_PASS_H
+#define CH_RENDER_PASS_H
 
 #include "engine/common/base.h"
 #include "engine/graphics/camera_types.h"
@@ -38,3 +39,4 @@ public:
     virtual const std::string& GetName() const = 0;
 };
 } // namespace Chained
+#endif

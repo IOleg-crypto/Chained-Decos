@@ -25,27 +25,27 @@ static inline glm::mat4 GetTransform(const TransformComponent& tc)
 static inline void SetTranslation(TransformComponent& tc, const glm::vec3& translation)
 {
     tc.Translation = translation;
-    tc.IsDirty = true;
+    tc.TransformChanged = true;
 }
 
 static inline void SetRotation(TransformComponent& tc, const glm::vec3& eulerAngles)
 {
     tc.Rotation = eulerAngles;
     tc.RotationQuat = glm::quat(eulerAngles);
-    tc.IsDirty = true;
+    tc.TransformChanged = true;
 }
 
 static inline void SetScale(TransformComponent& tc, const glm::vec3& scale)
 {
     tc.Scale = scale;
-    tc.IsDirty = true;
+    tc.TransformChanged = true;
 }
 
 static inline void SetRotationQuat(TransformComponent& tc, const glm::quat& rotationQuat)
 {
     tc.RotationQuat = rotationQuat;
     tc.Rotation = glm::eulerAngles(rotationQuat);
-    tc.IsDirty = true;
+    tc.TransformChanged = true;
 }
 
 static inline glm::mat4 GetInterpolatedTransform(const TransformComponent& tc, float alpha)

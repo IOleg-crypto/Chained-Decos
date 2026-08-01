@@ -16,9 +16,20 @@ add_library(engine_assets STATIC
     types/shader_asset.h
     types/texture_asset.h
     types/texture_asset.cpp
-    loaders/asset_loader.h
+    loaders/iasset_loader.h
+    loaders/anim_graph_loader.h
+    loaders/anim_graph_loader.cpp
     loaders/assimp_importer.h
     loaders/assimp_importer.cpp
+    loaders/assimp_helpers.h
+    loaders/pack_io.h
+    loaders/pack_io.cpp
+    loaders/material_extractor.h
+    loaders/material_extractor.cpp
+    loaders/animation_sampler.h
+    loaders/animation_sampler.cpp
+    loaders/mesh_merger.h
+    loaders/mesh_merger.cpp
     loaders/audio_loader.h
     loaders/audio_loader.cpp
     loaders/environment_loader.h
