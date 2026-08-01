@@ -841,9 +841,29 @@ void AnimGraphPanel::DrawProperties(AnimationGraphAsset* graph, Entity entity)
     ImGui::Text("Variables");
     ImGui::Separator();
 
-    if (ImGui::Button("+ Add Variable"))
+    // Two buttons: + Float  |  + Bool
+    if (ImGui::Button("+ Float"))
     {
-        animComp.Variables["new_var"] = 0.0f;
+        std::string key = "new_float";
+        int idx = 0;
+        while (animComp.Variables.count(key))
+        {
+            key = "new_float_" + std::to_string(++idx);
+        }
+        animComp.Variables[key] = 0.0f;
+        m_VariableTypes[key] = VarType::Float;
+    }
+    ImGui::SameLine();
+    if (ImGui::Button("+ Bool"))
+    {
+        std::string key = "new_bool";
+        int idx = 0;
+        while (animComp.Variables.count(key))
+        {
+            key = "new_bool_" + std::to_string(++idx);
+        }
+        animComp.Variables[key] = 0.0f;
+        m_VariableTypes[key] = VarType::Bool;
     }
 
     auto it = animComp.Variables.begin();
@@ -851,28 +871,92 @@ void AnimGraphPanel::DrawProperties(AnimationGraphAsset* graph, Entity entity)
     {
         ImGui::PushID(it->first.c_str());
 
+        // Infer type: if not in our map, guess by name
+        if (m_VariableTypes.find(it->first) == m_VariableTypes.end())
+        {
+            std::string lowerKey = it->first;
+            std::transform(lowerKey.begin(), lowerKey.end(), lowerKey.begin(), ::tolower);
+
+            bool looksLikeBool =
+                (lowerKey.rfind("is", 0) == 0 || lowerKey.rfind("has", 0) == 0 || lowerKey.rfind("can", 0) == 0 ||
+                 lowerKey.rfind("should", 0) == 0 || lowerKey.find("bool") != std::string::npos ||
+                 lowerKey.find("flag") != std::string::npos);
+            m_VariableTypes[it->first] = looksLikeBool ? VarType::Bool : VarType::Float;
+        }
+
+        VarType varType = m_VariableTypes[it->first];
+
+        // Type badge button: clickable [F] or [B] to toggle type
+        if (varType == VarType::Float)
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+            if (ImGui::Button("[F]"))
+            {
+                m_VariableTypes[it->first] = VarType::Bool;
+            }
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Float (Click to switch to Bool)");
+            }
+        }
+        else
+        {
+            ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.8f, 0.5f, 0.1f, 1.0f));
+            if (ImGui::Button("[B]"))
+            {
+                m_VariableTypes[it->first] = VarType::Float;
+            }
+            ImGui::PopStyleColor();
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Bool (Click to switch to Float)");
+            }
+        }
+        ImGui::SameLine();
+
+        // Name field
         char varBuf[128];
         strncpy(varBuf, it->first.c_str(), sizeof(varBuf));
         varBuf[sizeof(varBuf) - 1] = '\0';
-        if (ImGui::InputText("##name", varBuf, sizeof(varBuf)))
+        ImGui::SetNextItemWidth(120.0f);
+        if (ImGui::InputText("##name", varBuf, sizeof(varBuf), ImGuiInputTextFlags_EnterReturnsTrue))
         {
             float val = it->second;
+            VarType t = m_VariableTypes[it->first];
+            m_VariableTypes.erase(it->first);
             std::string newKey = varBuf;
             animComp.Variables.erase(it);
             animComp.Variables[newKey] = val;
+            m_VariableTypes[newKey] = t;
             ImGui::PopID();
             break;
         }
+        ImGui::SameLine();
 
-        float val = it->second;
-        if (ImGui::DragFloat("##val", &val, 0.01f))
+        // Value widget: checkbox for bool, drag for float
+        if (varType == VarType::Bool)
         {
-            it->second = val;
+            bool bval = (it->second >= 0.5f);
+            if (ImGui::Checkbox("##val", &bval))
+            {
+                it->second = bval ? 1.0f : 0.0f;
+            }
+        }
+        else
+        {
+            float val = it->second;
+            ImGui::SetNextItemWidth(80.0f);
+            if (ImGui::DragFloat("##val", &val, 0.01f))
+            {
+                it->second = val;
+            }
         }
 
         ImGui::SameLine();
         if (ImGui::SmallButton("X"))
         {
+            m_VariableTypes.erase(it->first);
             it = animComp.Variables.erase(it);
             ImGui::PopID();
         }

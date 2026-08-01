@@ -35,7 +35,6 @@ Application::Application(const ApplicationSpecification& spec)
 
     Log::Init();
     Core::Input::Init();
-    Dialogs::Init();
     ComponentRegistry::RegisterEngineComponents();
 
     unsigned int threads = std::thread::hardware_concurrency();
@@ -118,9 +117,6 @@ Application::~Application()
     Project::SetActive(nullptr);
 
     ServiceLocator::Shutdown();
-    Dialogs::Shutdown();
-    // NOTE: Input is now a Service, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
-    // NOTE: ThreadPool is now a Service, so its Shutdown() is handled natively by ServiceLocator::Shutdown()
     m_Window.reset();
     // Log::Shutdown() MUST come after m_Window.reset(): ~GlfwWindow::Shutdown() emits
     // CH_CORE_INFO("Glfw Window Closed"). If the core logger were reset first, that log
@@ -147,7 +143,6 @@ void Application::Run()
 
         if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
         {
-            // 1. Systems Update
             if (auto* audio = ServiceLocator::TryGet<Audio>())
             {
                 audio->Update(m_Timer.DeltaTime);
@@ -156,8 +151,6 @@ void Application::Run()
             {
                 am->Update(m_Timer.DeltaTime);
             }
-
-            // 2. Fixed Update
             m_Timer.Accumulator += (float)m_Timer.DeltaTime;
             while (m_Timer.Accumulator >= m_Timer.FixedStepCount)
             {
@@ -169,16 +162,12 @@ void Application::Run()
                 m_Timer.Accumulator -= m_Timer.FixedStepCount;
             }
 
-            // 3. Logic Update
             for (auto& layer : *m_LayerStack)
             {
                 layer->OnUpdate(m_Timer.DeltaTime);
             }
 
-            // 4. Input Backup
             Core::Input::Update(m_Timer.DeltaTime);
-
-            // 5. Rendering
 
             for (auto& layer : *m_LayerStack)
             {
