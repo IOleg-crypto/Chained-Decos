@@ -33,6 +33,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Build](#build)
 - [Run](#run)
 - [Gameplay Scripting (C#)](#gameplay-scripting-c)
+- [Animation Graph Workflow & Tutorial](#animation-graph-workflow--tutorial)
 - [Assets and Resources](#assets-and-resources)
 - [Project Export / Packaging](#project-export--packaging)
 - [Physics and Collisions](#physics-and-collisions)
@@ -523,6 +524,130 @@ If you are modifying the engine itself, you will find the native-to-managed brid
 - [scripting/managed/src/UI.cs](scripting/managed/src/UI.cs) exposes minimal UI helpers.
 
 Managed artifacts are built as part of the scripting target when dotnet is available.
+
+## Animation Graph Workflow & Tutorial
+
+Chained Engine features a visual, data-driven Animation Graph system (`.chag`) for driving state machine animations with smooth blending.
+
+### 1. Overview & Graph File Format (`.chag`)
+
+Animation Graphs are node-based state machines serialized as YAML. A graph contains:
+- **Default Variables**: Declares the schema of parameters (e.g., `speed`, `isMoving`, `isGrounded`).
+- **Nodes (`AnimNode`)**: Define animation states, frame ranges, looping, and playback speed.
+- **Transitions (`AnimTransition`)**: Define connections between states with blend durations and variable-based conditions.
+
+Example `new_graph.chag` structure:
+
+```yaml
+AnimationGraph:
+  EntryNodeID: 4
+  NextNodeID: 5
+  Variables:
+    speed: 0
+    isMoving: 0
+    isGrounded: 1
+  Nodes:
+    - ID: 1
+      Name: Walk
+      AnimationIndex: 0
+      IsLooping: true
+      StartFrame: 690
+      EndFrame: 780
+      Speed: 1.0
+    - ID: 2
+      Name: Run
+      AnimationIndex: 0
+      IsLooping: true
+      StartFrame: 1450
+      EndFrame: 1500
+      Speed: 1.0
+    - ID: 4
+      Name: Stop
+      AnimationIndex: 0
+      IsLooping: true
+      StartFrame: 0
+      EndFrame: 0
+      Speed: 1.0
+  Transitions:
+    - ID: 1
+      SourceNodeID: 1
+      TargetNodeID: 2
+      BlendDuration: 0.2
+      HasExitTime: false
+      Conditions:
+        - VariableName: speed
+          Op: 4 # GreaterThan (>)
+          Value: 0.9
+```
+
+### 2. Editor Workflow (`AnimGraphPanel`)
+
+1. **Open the Animation Graph Panel:** In the editor top menu, open **Panels -> Animation Graph Editor**.
+2. **Create/Load Graph:** Click **New Graph** or select an existing `.chag` file.
+3. **Configure Nodes:**
+   - Add nodes for states like `Idle`/`Stop`, `Walk`, `Run`, `Jump`.
+   - Set `StartFrame` and `EndFrame` according to your model asset's animation tracks.
+4. **Manage Variables:**
+   - Add variables (e.g., `speed`, `isMoving`, `isGrounded`).
+   - Use the type toggle in the editor to switch between `Float` and `Bool` parameter types.
+5. **Create Transitions & Conditions:**
+   - Drag connections between nodes.
+   - Select a transition to edit `BlendDuration` (e.g., `0.2s` crossfade) and add conditions (e.g., `isMoving == 1`, `speed >= 0.9`).
+6. **Assign to Entity:**
+   - Select an entity with an `AnimationComponent`.
+   - Set `GraphPath` to `assets/animations/new_graph.chag`.
+
+### 3. Driving Animation Graph from C# Scripts
+
+C# gameplay scripts pass parameters directly to `AnimationComponent`. The engine automatically seeds graph variables on entity initialization and updates state transitions at runtime during simulation.
+
+```csharp
+using Chained;
+
+public class PlayerController : Script
+{
+    private AnimationComponent? m_Anim;
+
+    public override void OnCreate()
+    {
+        m_Anim = GetComponent<AnimationComponent>();
+    }
+
+    public override void OnUpdate(float ts)
+    {
+        Vector3 movement = GetInputVector();
+        bool isMoving = movement.LengthSquared() > 0.01f;
+        bool isSprinting = Input.IsKeyDown(Key.LeftShift);
+
+        float speed = 0.0f;
+        if (isMoving)
+        {
+            speed = isSprinting ? 1.0f : 0.5f;
+        }
+
+        // Drive graph variables dynamically from script
+        m_Anim?.SetBool("isMoving", isMoving);
+        m_Anim?.SetFloat("speed", speed);
+        m_Anim?.SetBool("isGrounded", IsGrounded());
+    }
+}
+```
+
+### 4. Transition Condition Comparison Operators
+
+| Op Code | Operator | Description |
+| :--- | :--- | :--- |
+| `0` | `==` | Equal |
+| `1` | `!=` | Not Equal |
+| `2` | `<` | Less Than |
+| `3` | `<=` | Less Than or Equal |
+| `4` | `>` | Greater Than |
+| `5` | `>=` | Greater Than or Equal |
+
+### 5. Runtime vs. Edit Mode Execution
+
+- **Simulation Mode (`Play`):** C# scripts update `AnimationComponent.Variables`, and `AnimationSystem` evaluates transitions frame-by-frame with smooth interpolation.
+- **Edit Mode:** Animation transitions are paused to keep the editor viewport stable and prevent state jitter while authoring.
 
 ## Assets and Resources
 

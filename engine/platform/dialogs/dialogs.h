@@ -42,14 +42,6 @@ enum class CH_API MessageBoxResult
 class CH_API Dialogs
 {
 public:
-    // PFD does not require initialization or shutdown.
-    static void Init()
-    {
-    }
-    static void Shutdown()
-    {
-    }
-
     // Opens a file dialog and returns the selected path.
     static std::optional<std::filesystem::path> OpenFile(const std::vector<DialogFilter>& filters = {});
 
