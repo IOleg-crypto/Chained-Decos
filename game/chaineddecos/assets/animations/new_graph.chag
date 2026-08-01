@@ -1,0 +1,48 @@
+AnimationGraph:
+  EntryNodeID: 1
+  NextNodeID: 4
+  NextLinkID: 3
+  Nodes:
+    - ID: 1
+      Name: Walk
+      AnimationIndex: 0
+      IsLooping: true
+      StartFrame: 700
+      EndFrame: 780
+      Speed: 1
+      EditorX: 312.885986
+      EditorY: -68.3647766
+    - ID: 2
+      Name: Run
+      AnimationIndex: 0
+      IsLooping: true
+      StartFrame: 1450
+      EndFrame: 1500
+      Speed: 1
+      EditorX: 127.624664
+      EditorY: 128.917786
+  Transitions:
+    - ID: 1
+      SourceNodeID: 1
+      TargetNodeID: 2
+      BlendDuration: 900
+      HasExitTime: false
+      ExitTime: 0.899999976
+      ExitTimeMode: 0
+      Priority: 0
+      Conditions:
+        - VariableName: speed
+          Op: 2
+          Value: 0.5
+    - ID: 2
+      SourceNodeID: 2
+      TargetNodeID: 1
+      BlendDuration: 9200
+      HasExitTime: false
+      ExitTime: 0.899999976
+      ExitTimeMode: 0
+      Priority: 0
+      Conditions:
+        - VariableName: speed
+          Op: 3
+          Value: 0.5

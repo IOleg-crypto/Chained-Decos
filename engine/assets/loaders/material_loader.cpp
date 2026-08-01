@@ -1,5 +1,6 @@
 #include "engine/assets/loaders/material_loader.h"
 #include "engine/assets/types/material_asset.h"
+#include "engine/assets/loaders/yaml_helpers.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
@@ -16,32 +17,12 @@ std::shared_ptr<Asset> MaterialLoader::Create()
     return std::make_shared<MaterialAsset>();
 }
 
-static YAML::Node Vec4ToYAML(const glm::vec4& v)
-{
-    YAML::Node node;
-    node.push_back(v.x);
-    node.push_back(v.y);
-    node.push_back(v.z);
-    node.push_back(v.w);
-    return node;
-}
-
-static glm::vec4 Vec4FromYAML(const YAML::Node& node)
-{
-    if (!node || !node.IsSequence() || node.size() < 4)
-    {
-        return {0, 0, 0, 1};
-    }
-    return {node[0].as<float>(), node[1].as<float>(), node[2].as<float>(), node[3].as<float>()};
-}
-
 bool MaterialLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
 {
     auto matAsset = std::static_pointer_cast<MaterialAsset>(asset);
 
     std::string content;
 
-    // Try reading from pack first
     if (auto* am = ServiceLocator::TryGet<AssetManager>())
     {
         if (am->IsPacked())
@@ -54,7 +35,6 @@ bool MaterialLoader::Load(std::shared_ptr<Asset> asset, const std::string& resol
         }
     }
 
-    // Fallback to disk
     if (content.empty())
     {
         if (!std::filesystem::exists(resolvedPath))

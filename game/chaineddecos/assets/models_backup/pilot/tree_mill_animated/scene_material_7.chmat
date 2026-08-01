@@ -1,0 +1,17 @@
+Material:
+  Name: Door.004
+  AlbedoColor:
+    - 0.388235003
+    - 0.137254998
+    - 0.0352941006
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 0.959023654
+  Transparent: false
+  Alpha: 1

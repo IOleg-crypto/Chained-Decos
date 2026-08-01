@@ -1,0 +1,17 @@
+Material:
+  Name: color
+  AlbedoColor:
+    - 1
+    - 1
+    - 1
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0.0613496937
+  Roughness: 0.932515323
+  Transparent: false
+  Alpha: 1

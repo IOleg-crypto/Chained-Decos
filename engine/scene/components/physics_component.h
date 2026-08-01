@@ -2,7 +2,7 @@
 #define CH_PHYSICS_COMPONENTS_H
 
 #include "engine/assets/asset.h"
-#include "engine/graphics/api/model_data.h"
+#include "engine/assets/model_data.h"
 #include "engine/physics/iphysics_world.h"
 #include "engine/reflection/reflection_rfl.h"
 #include <glm/glm.hpp>
@@ -85,6 +85,7 @@ struct RigidBodyComponent
     PhysicsBodyHandle Handle = kInvalidPhysicsBody;
     glm::vec3 Velocity = glm::vec3(0.0f);
     bool IsGrounded = false;
+    bool VelocityForced = false;
 
     static const char* GetStaticName()
     {

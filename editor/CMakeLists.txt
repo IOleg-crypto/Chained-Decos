@@ -18,6 +18,8 @@ add_library(editor_core STATIC
     layout.cpp
     panels.h
     panels.cpp
+    panels/anim_graph_panel.h
+    panels/anim_graph_panel.cpp
     panels/console_panel.h
     panels/console_panel.cpp
     panels/content_browser_panel.h

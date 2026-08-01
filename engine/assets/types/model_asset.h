@@ -3,7 +3,7 @@
 
 #include "engine/assets/asset.h"
 #include "engine/common/base.h"
-#include "engine/graphics/api/model_data.h"
+#include "engine/assets/model_data.h"
 #include "engine/graphics/api/renderer_types.h"
 #include <future>
 // #include <mutex>
@@ -34,7 +34,7 @@ public:
     {
         return m_Model;
     }
-    const std::vector<RawAnimation>& GetAnimations() const
+    const std::vector<AnimationData>& GetAnimations() const
     {
         return m_Animations;
     }
@@ -47,9 +47,9 @@ public:
         return m_BoundingBox;
     }
 
-    const std::vector<RawMesh>& GetRawMeshes() const
+    const std::vector<MeshData>& GetMeshes() const
     {
-        return m_RawMeshes;
+        return m_Meshes;
     }
 
     const std::vector<Material>& GetMaterials() const
@@ -84,7 +84,7 @@ public:
     {
         m_Model = model;
     }
-    void SetAnimations(const std::vector<RawAnimation>& animations)
+    void SetAnimations(const std::vector<AnimationData>& animations)
     {
         m_Animations = animations;
     }
@@ -96,9 +96,9 @@ public:
     {
         m_BoundingBox = bbox;
     }
-    void SetRawMeshes(const std::vector<RawMesh>& meshes)
+    void SetMeshes(const std::vector<MeshData>& meshes)
     {
-        m_RawMeshes = meshes;
+        m_Meshes = meshes;
     }
     void SetOffsetMatrices(const std::vector<glm::mat4>& matrices)
     {
@@ -120,8 +120,8 @@ public:
 
 private:
     Model m_Model;
-    std::vector<RawMesh> m_RawMeshes;
-    std::vector<RawAnimation> m_Animations;
+    std::vector<MeshData> m_Meshes;
+    std::vector<AnimationData> m_Animations;
     std::vector<MeshInstance> m_Instances;
     std::vector<Material> m_Materials;
     BoundingBox m_BoundingBox = {{0, 0, 0}, {0, 0, 0}};

@@ -1,9 +1,10 @@
 #ifndef CH_SERVICE_LOCATOR_H
 #define CH_SERVICE_LOCATOR_H
 
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "engine/common/engine_assert.h"
 #include "engine/common/base.h"
+#include <atomic>
 #include <memory>
 #include <shared_mutex>
 #include <type_traits>
@@ -16,16 +17,15 @@ class CH_API ServiceLocator
 {
 public:
     // Registers a service by its type. Takes ownership of the service.
-    // T must inherit from EngineModule.
+    // T must inherit from Service.
     // On rejection (locked locator, duplicate registration) the service is destroyed
     // by the unique_ptr — no leak, unlike the old raw-pointer overload.
     template <typename T> static void Provide(std::unique_ptr<T> service)
     {
         static_assert(std::is_class_v<T>, "ServiceLocator: Provided type T must be a class or a struct!");
-        static_assert(std::is_base_of_v<EngineModule, T>,
-                      "ServiceLocator: Provided type T must inherit from EngineModule!");
-        static_assert(std::has_virtual_destructor_v<EngineModule>,
-                      "ServiceLocator: EngineModule must have a virtual destructor!");
+        static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Provided type T must inherit from Service!");
+        static_assert(std::has_virtual_destructor_v<Service>,
+                      "ServiceLocator: Service must have a virtual destructor!");
 
         std::unique_lock<std::shared_mutex> lock(GetMutex());
 
@@ -52,42 +52,6 @@ public:
         GetModuleOrder().push_back(sharedService);
     }
 
-    // Convenience overload for legacy call sites: Provide(new T(...)).
-    // Wraps immediately so rejection paths cannot leak.
-    template <typename T> static void Provide(T* service)
-    {
-        Provide(std::unique_ptr<T>(service));
-    }
-
-    // Registers a NON-OWNING reference to an existing service.
-    // Use this when the service lifetime is managed externally (e.g. existing singletons).
-    // ServiceLocator::Shutdown() will NOT call delete on such services.
-    template <typename T> static void ProvideRef(T* service)
-    {
-        static_assert(std::is_class_v<T>, "ServiceLocator: Provided type T must be a class or a struct!");
-        static_assert(std::is_base_of_v<EngineModule, T>,
-                      "ServiceLocator: Provided type T must inherit from EngineModule!");
-
-        std::unique_lock<std::shared_mutex> lock(GetMutex());
-
-        if (s_IsLocked)
-        {
-            CH_CORE_ERROR("ServiceLocator: ProvideRef<{}> rejected — locator is locked.", typeid(T).name());
-            return;
-        }
-
-        auto& services = GetInternalMap();
-        if (services.find(typeid(T)) != services.end())
-        {
-            CH_CORE_ERROR("ServiceLocator: ProvideRef<{}> rejected — service already provided.", typeid(T).name());
-            return;
-        }
-        // No-op deleter: ServiceLocator does NOT own this pointer
-        auto sharedService = std::shared_ptr<T>(service, [](T*) {});
-        services[typeid(T)] = sharedService;
-        // NOTE: we do NOT add to GetModuleOrder() — lifecycle is external
-    }
-
     static void Lock()
     {
         std::unique_lock<std::shared_mutex> lock(GetMutex());
@@ -98,7 +62,7 @@ public:
         // Copy the module list under the lock, then iterate WITHOUT holding it.
         // A module's Initialize() may legitimately call Get()/TryGet() (and re-locking
         // a shared_mutex on the same thread is UB); holding the lock here would deadlock.
-        std::vector<std::shared_ptr<EngineModule>> modules;
+        std::vector<std::shared_ptr<Service>> modules;
         {
             std::shared_lock<std::shared_mutex> lock(GetMutex());
             modules = GetModuleOrder();
@@ -128,7 +92,7 @@ public:
 
     static void Shutdown()
     {
-        std::vector<std::shared_ptr<EngineModule>> modulesToShutdown;
+        std::vector<std::shared_ptr<Service>> modulesToShutdown;
         {
             std::unique_lock<std::shared_mutex> lock(GetMutex());
             s_IsLocked = false;
@@ -166,8 +130,7 @@ public:
     // asserts, because callers of Get() declare a hard dependency.
     template <typename T> static T* Get()
     {
-        static_assert(std::is_base_of_v<EngineModule, T>,
-                      "ServiceLocator: Requested type T must inherit from EngineModule!");
+        static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Requested type T must inherit from Service!");
 
         std::shared_lock<std::shared_mutex> lock(GetMutex());
         auto& services = GetInternalMap();
@@ -201,8 +164,7 @@ public:
 
     template <typename T> static T* TryGet()
     {
-        static_assert(std::is_base_of_v<EngineModule, T>,
-                      "ServiceLocator: Requested type T must inherit from EngineModule!");
+        static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Requested type T must inherit from Service!");
 
         std::shared_lock<std::shared_mutex> lock(GetMutex());
         auto& services = GetInternalMap();
@@ -221,8 +183,7 @@ public:
 
     template <typename T> static bool Has()
     {
-        static_assert(std::is_base_of_v<EngineModule, T>,
-                      "ServiceLocator: Checked type T must inherit from EngineModule!");
+        static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Checked type T must inherit from Service!");
 
         std::shared_lock<std::shared_mutex> lock(GetMutex());
         auto& services = GetInternalMap();
@@ -236,9 +197,9 @@ private:
         return s_Services;
     }
 
-    static std::vector<std::shared_ptr<EngineModule>>& GetModuleOrder()
+    static std::vector<std::shared_ptr<Service>>& GetModuleOrder()
     {
-        static std::vector<std::shared_ptr<EngineModule>> s_Order;
+        static std::vector<std::shared_ptr<Service>> s_Order;
         return s_Order;
     }
 
@@ -249,7 +210,7 @@ private:
     }
 
     inline static bool s_IsLocked = false;
-    inline static bool s_IsShuttingDown = false;
+    inline static std::atomic<bool> s_IsShuttingDown{false};
 };
 } // namespace Chained
 

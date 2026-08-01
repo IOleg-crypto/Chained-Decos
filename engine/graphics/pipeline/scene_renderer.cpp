@@ -20,6 +20,7 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include "engine/graphics/pipeline/passes/composite_pass.h"
 #include "engine/graphics/pipeline/passes/geometry_pass.h"
@@ -28,6 +29,30 @@
 
 namespace Chained
 {
+
+// Helper: decompose matrix to TRS and interpolate properly (fixes rotation blending artifacts)
+static glm::mat4 InterpolateBoneMatrices(const glm::mat4& a, const glm::mat4& b, float t)
+{
+    // Decompose A
+    glm::vec3 scaleA, translationA, skewA;
+    glm::quat rotationA;
+    glm::vec4 perspectiveA;
+    glm::decompose(a, scaleA, rotationA, translationA, skewA, perspectiveA);
+
+    // Decompose B
+    glm::vec3 scaleB, translationB, skewB;
+    glm::quat rotationB;
+    glm::vec4 perspectiveB;
+    glm::decompose(b, scaleB, rotationB, translationB, skewB, perspectiveB);
+
+    // Interpolate components
+    glm::vec3 translation = glm::mix(translationA, translationB, t);
+    glm::quat rotation = glm::slerp(rotationA, rotationB, t);
+    glm::vec3 scale = glm::mix(scaleA, scaleB, t);
+
+    // Recompose
+    return glm::translate(glm::mat4(1.0f), translation) * glm::mat4_cast(rotation) * glm::scale(glm::mat4(1.0f), scale);
+}
 
 // --- Obsolete local utilities removed ---
 
@@ -426,11 +451,10 @@ bool SceneRenderer::EnqueueModelAsset(entt::registry& registry, entt::entity ent
                 if (!matricesA.empty() && !matricesB.empty())
                 {
                     size_t count = glm::min(matricesA.size(), matricesB.size());
-                    float oneMinusAlpha = 1.0f - alpha;
                     item.BoneMatrices.resize(count);
                     for (size_t i = 0; i < count; ++i)
                     {
-                        item.BoneMatrices[i] = matricesA[i] * oneMinusAlpha + matricesB[i] * alpha;
+                        item.BoneMatrices[i] = InterpolateBoneMatrices(matricesA[i], matricesB[i], alpha);
                     }
                 }
                 else if (!matricesA.empty())

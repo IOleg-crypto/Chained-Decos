@@ -11,6 +11,7 @@ struct SpriteComponent
 {
     AssetHandle TextureHandle = 0;
     std::string TexturePath;
+    uint64_t TextureUUID = 0;
     Color Tint = Color::White();
     bool FlipX = false;
     bool FlipY = false;
@@ -24,6 +25,7 @@ struct SpriteComponent
     struct UI
     {
         UIMeta TexturePath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".png,.jpg,.jpeg,.tga,.bmp"};
+        UIMeta TextureUUID = {.ReadOnly = true};
         UIMeta Tint = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
         UIMeta ZOrder = {.Speed = 1.0f};
     };

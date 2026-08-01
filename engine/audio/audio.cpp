@@ -43,7 +43,7 @@ void Audio::Initialize()
     }
     else
     {
-        CH_CORE_INFO("Audio System: Initialized miniaudio engine successfully via EngineModule.");
+        CH_CORE_INFO("Audio System: Initialized miniaudio engine successfully via Service.");
     }
 }
 

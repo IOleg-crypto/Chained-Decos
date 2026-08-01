@@ -3,7 +3,7 @@
 
 #include "engine/common/base.h"
 #include "engine/common/timestep.h"
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "key_codes.h"
 #include "mouse_codes.h"
 #include <array>
@@ -11,7 +11,7 @@
 
 namespace Chained::Core
 {
-class CH_API Input : public EngineModule
+class CH_API Input : public Service
 {
 public:
     Input();

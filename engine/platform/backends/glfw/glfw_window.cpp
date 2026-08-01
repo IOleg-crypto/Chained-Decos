@@ -1,11 +1,10 @@
-#include "glfw_window.h"
+#include "engine/platform/backends/glfw/glfw_window.h"
 #include "engine/common/engine_assert.h"
 #include "engine/common/platform_detection.h"
 #include "engine/core/events/window_events.h"
 #include "engine/core/input.h"
 #include "engine/core/log.h"
-
-#include "glfw_input_mapper.h"
+#include "engine/platform/backends/glfw/glfw_input_mapper.h"
 #include "imgui_impl_glfw.h"
 
 #include <GLFW/glfw3.h>

@@ -1,7 +1,7 @@
 #ifndef CH_PHYSICS_H
 #define CH_PHYSICS_H
 
-#include "engine/core/engine_module.h"
+#include "engine/core/service.h"
 #include "engine/common/base.h"
 #include "engine/common/timestep.h"
 #include "engine/physics/raycast_result.h"
@@ -29,13 +29,13 @@ struct PhysicsContext
 
 // High-level physics module that owns the Jolt world and orchestrates
 // body creation, fixed-timestep stepping, and component synchronization.
-class CH_API Physics : public EngineModule
+class CH_API Physics : public Service
 {
 public:
     Physics();
     virtual ~Physics() override;
 
-    // EngineModule lifecycle
+    // Service lifecycle
     virtual void Initialize() override;
     virtual void Update(Timestep ts)
     {
