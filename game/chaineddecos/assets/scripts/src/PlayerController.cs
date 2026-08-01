@@ -1,5 +1,4 @@
 using System;
-// Build trigger test 2
 using Chained;
 
 namespace ChainedDecos.Scripts
@@ -11,211 +10,166 @@ namespace ChainedDecos.Scripts
         public  float Gravity;  
         public  string MenuScene   = "scenes/start_menu.chscene";
 
-        // Animation Indices
         public int IdleAnim = 0;
         public int RunAnim = 1;
         public int JumpAnim = 2;
-        public float CrossFadeTime = 0.2f;
+        public float CrossFadeTime = 8.5f;
 
-        private enum PlayerState
-        {
-            None,
-            Idle,
-            Running,
-            Jumping,
-            Falling
-        }
+        private RigidBodyComponent? _rb;
+        private TransformComponent? _transform;
+        private AnimationComponent? _anim;
 
-        private PlayerState _currentState = PlayerState.None;
+
 
         public override void OnCreate()
         {
-            Log.Info("C# PlayerController initialized!");
-
-            // Read gravity from the engine's project configuration so it always
-            // matches the value set in Project Settings -> Physics -> World Gravity.
             Gravity = Physics.GetGravity();
+            _rb        = Entity.GetComponent<RigidBodyComponent>();
+            _transform = Entity.GetComponent<TransformComponent>();
+            _anim      = Entity.GetComponent<AnimationComponent>();
+            Log.Info("PlayerController initialized");
         }
 
         public override void OnUpdate(float deltaTime)
         {
-            // Allow leaving gameplay back to menu with a single key press.
             if (Input.IsKeyPressed(Key.Escape))
             {
-                Log.Info("PlayerController: Escape pressed, returning to menu: " + MenuScene);
+                Log.Info($"Returning to menu: {MenuScene}");
                 Scene.LoadScene(MenuScene);
                 return;
             }
 
-            float currentSpeed = MovementSpeed;
-            float effectiveJumpForce = JumpForce;
+            if (_rb == null || _transform == null) return;
 
-            if (Input.IsKeyDown(Key.LeftShift))
-                currentSpeed *= 2.0f;
+            float speed = MovementSpeed;
+            if (Input.IsKeyDown(Key.LeftShift)) speed *= 2.0f;
 
-            // --- Camera-relative directions ---
-            Vector3 forward = new Vector3(0.0f, 0.0f, -1.0f);
-            Vector3 right   = new Vector3(1.0f, 0.0f, 0.0f);
+            // Camera-relative basis
+            var (forward, right) = GetCameraBasis();
 
-            Entity? camEntity = Scene.GetMainCamera();
-            if (camEntity != null)
-            {
-                CameraComponent? camera = camEntity.GetComponent<CameraComponent>();
-                if (camera != null)
-                {
-                    Vector3 camFwd = new Vector3(camera.Forward.X, 0.0f, camera.Forward.Z);
-                    Vector3 camRight = new Vector3(camera.Right.X, 0.0f, camera.Right.Z);
+            // Input
+            var movementDir = GetMovementInput(forward, right);
 
-                    if (camFwd.LengthSquared() > 0.0001f)
-                        forward = Vector3.Normalize(camFwd);
-
-                    if (camRight.LengthSquared() > 0.0001f)
-                        right = Vector3.Normalize(camRight);
-                }
-            }
-
-            // --- Input ---
-            Vector3 movementDir = Vector3.Zero;
-            bool wDown = Input.IsKeyDown(Key.W);
-            bool sDown = Input.IsKeyDown(Key.S);
-            bool aDown = Input.IsKeyDown(Key.A);
-            bool dDown = Input.IsKeyDown(Key.D);
-            if (wDown) movementDir += forward;
-            if (sDown) movementDir -= forward;
-            if (aDown) movementDir -= right;
-            if (dDown) movementDir += right;
-
-            RigidBodyComponent?  rb        = Entity.GetComponent<RigidBodyComponent>();
-            TransformComponent?  transform = Entity.GetComponent<TransformComponent>();
-            if (rb == null || transform == null) { return; }
-
-            bool isKinematic = rb.IsKinematic;
-            Vector3 velocity = rb.Velocity;
-
-            // --- Horizontal movement ---
+            // Movement & rotation
             if (movementDir.LengthSquared() > 0.0001f)
             {
                 movementDir = Vector3.Normalize(movementDir);
-                velocity.X = movementDir.X * currentSpeed;
-                velocity.Z = movementDir.Z * currentSpeed;
-
-                // Face movement direction (Y-axis only)
-                float targetYaw = Mathf.Atan2(movementDir.X, movementDir.Z);
-                transform.Rotation = new Vector3(0, targetYaw, 0);
+                ApplyHorizontalMovement(movementDir, speed);
+                RotateTowardsMovement(movementDir);
             }
             else
             {
-                velocity.X = 0;
-                velocity.Z = 0;
+                StopHorizontalMovement();
             }
 
-            // --- Застосування швидкості ---
-            if (isKinematic)
-            {
-                const float kTerminalVelocity = -50.0f;
+            HandleVerticalMovement(deltaTime);
 
-                // Apply gravity only when not grounded
-                if (!rb.IsGrounded)
-                    velocity.Y -= Gravity * deltaTime;
-
-                // Terminal velocity cap — prevents extreme penetration
-                if (velocity.Y < kTerminalVelocity)
-                    velocity.Y = kTerminalVelocity;
-
-                // Stop downward movement when grounded to prevent creep-through
-                if (rb.IsGrounded && velocity.Y < 0.0f)
-                    velocity.Y = 0.0f;
-
-                // Manual integration for Kinematic bodies
-                transform.Translation = new Vector3(
-                    transform.Translation.X + velocity.X * deltaTime,
-                    transform.Translation.Y + velocity.Y * deltaTime,
-                    transform.Translation.Z + velocity.Z * deltaTime
-                );
-                
-                // Для кінематики ми повністю контролюємо весь вектор
-                rb.Velocity = velocity; 
-            }
-            else
-            {
-                bool wantsJump = Input.IsKeyPressed(Key.Space);
-
-                if (wantsJump && rb.IsGrounded)
-                {
-                    rb.Velocity = new Vector3(velocity.X, effectiveJumpForce, velocity.Z);
-                }
-                else
-                {
-                    // Тільки горизонталь — Y залишається за Jolt
-                    rb.Velocity = new Vector3(velocity.X, 0.0f, velocity.Z);
-                }
-            }
-
-            // --- Animation State Machine ---
-            UpdateAnimation(rb, movementDir);
+            // Animation
+            if (_anim != null) UpdateAnimation(movementDir);
         }
 
-        private void UpdateAnimation(RigidBodyComponent rb, Vector3 movementDir)
+        private (Vector3 forward, Vector3 right) GetCameraBasis()
         {
-            // If we have an AnimationComponent with a graph, feed variables to it.
-            AnimationComponent? anim = Entity.GetComponent<AnimationComponent>();
-            if (anim != null)
+            // Default: camera behind player along +Z axis, looking along -Z
+            var forward = new Vector3(0.0f, 0.0f, -1.0f);
+            var right   = new Vector3(1.0f, 0.0f, 0.0f);
+
+            var camEntity = Scene.GetMainCamera();
+            if (camEntity != null)
             {
-                bool isSprinting = Input.IsKeyDown(Key.LeftShift);
-                bool isMoving = movementDir.LengthSquared() > 0.0001f;
-                float speedVal = 0.0f;
-                if (isMoving)
+                var camera = camEntity.GetComponent<CameraComponent>();
+                if (camera != null)
                 {
-                    speedVal = isSprinting ? 1.0f : 0.5f;
+                    // Camera.Forward = direction camera looks (towards player) = rotation*(0,0,-1)
+                    // Flatten to XZ plane to get movement-relative forward
+                    var camFwd = new Vector3(camera.Forward.X, 0.0f, camera.Forward.Z);
+                    if (camFwd.LengthSquared() > 0.0001f)
+                    {
+                        forward = Vector3.Normalize(camFwd);
+                        // Rotate forward 90° clockwise in XZ to get right: (-fwd.Z, 0, fwd.X)
+                        // Verified: fwd=(0,0,-1) -> right=(1,0,0) ✓
+                        right = Vector3.Normalize(new Vector3(-forward.Z, 0.0f, forward.X));
+                    }
                 }
-
-                // Feed speed, isMoving, and isGrounded to graph variables
-                anim.SetFloat("speed", speedVal);
-                anim.SetFloat("Speed", speedVal);
-                anim.SetBool("isMoving", isMoving);
-                anim.SetBool("IsMoving", isMoving);
-                anim.SetBool("IsGrounded", rb.IsGrounded);
-                anim.SetBool("isGrounded", rb.IsGrounded);
             }
+            return (forward, right);
+        }
 
-            // Fallback for when no graph is attached (manual C# state machine)
-            if (anim == null) return;
+        private Vector3 GetMovementInput(Vector3 forward, Vector3 right)
+        {
+            var dir = Vector3.Zero;
+            if (Input.IsKeyDown(Key.W)) dir += forward;
+            if (Input.IsKeyDown(Key.S)) dir -= forward;
+            if (Input.IsKeyDown(Key.A)) dir -= right;
+            if (Input.IsKeyDown(Key.D)) dir += right;
+            return dir;
+        }
 
-            PlayerState newState = _currentState;
+        private void ApplyHorizontalMovement(Vector3 dir, float speed)
+        {
+            if (_rb == null) return;
+            _rb.Velocity = new Vector3(
+                dir.X * speed,
+                _rb.Velocity.Y,
+                dir.Z * speed
+            );
+        }
 
-            if (rb.IsGrounded)
+        private void StopHorizontalMovement()
+        {
+            if (_rb == null) return;
+            _rb.Velocity = new Vector3(0, _rb.Velocity.Y, 0);
+        }
+
+        private void RotateTowardsMovement(Vector3 dir)
+        {
+            if (_transform == null) return;
+            float yaw = Mathf.Atan2(dir.X, dir.Z);
+            _transform.Rotation = new Vector3(0, yaw, 0);
+        }
+
+        private void HandleVerticalMovement(float deltaTime)
+        {
+            if (_rb == null || _transform == null) return;
+
+            if (_rb.IsKinematic)
             {
-                if (movementDir.LengthSquared() > 0.0001f)
-                    newState = PlayerState.Running;
-                else
-                    newState = PlayerState.Idle;
+                const float terminalVelocity = -50.0f;
+                if (!_rb.IsGrounded) _rb.Velocity = new Vector3(_rb.Velocity.X, _rb.Velocity.Y - Gravity * deltaTime, _rb.Velocity.Z);
+                if (_rb.Velocity.Y < terminalVelocity) _rb.Velocity = new Vector3(_rb.Velocity.X, terminalVelocity, _rb.Velocity.Z);
+                if (_rb.IsGrounded && _rb.Velocity.Y < 0) _rb.Velocity = new Vector3(_rb.Velocity.X, 0, _rb.Velocity.Z);
+
+                _transform.Translation += _rb.Velocity * deltaTime;
             }
             else
             {
-                // In air
-                if (rb.Velocity.Y > 0)
-                    newState = PlayerState.Jumping;
-                else
-                    newState = PlayerState.Falling;
-            }
-
-            if (newState != _currentState)
-            {
-                _currentState = newState;
-                switch (newState)
+                if (Input.IsKeyPressed(Key.Space) && _rb.IsGrounded)
                 {
-                    case PlayerState.Idle:
-                        anim.CrossFade(IdleAnim, CrossFadeTime);
-                        break;
-                    case PlayerState.Running:
-                        anim.CrossFade(RunAnim, CrossFadeTime);
-                        break;
-                    case PlayerState.Jumping:
-                    case PlayerState.Falling:
-                        anim.CrossFade(JumpAnim, CrossFadeTime);
-                        break;
+                    _rb.Velocity = new Vector3(_rb.Velocity.X, JumpForce, _rb.Velocity.Z);
+                }
+                else
+                {
+                    _rb.Velocity = new Vector3(_rb.Velocity.X, 0, _rb.Velocity.Z);
                 }
             }
+        }
+
+        private void UpdateAnimation(Vector3 movementDir)
+        {
+            if (_anim == null) return;
+
+            bool isMoving = movementDir.LengthSquared() > 0.0001f;
+            bool isSprinting = Input.IsKeyDown(Key.LeftShift);
+            float speed = isMoving ? (isSprinting ? 1.0f : 0.5f) : 0.0f;
+            bool isGrounded = _rb?.IsGrounded ?? true;
+
+            // Ensure animation system is active for Animation Graph evaluation
+            _anim.IsPlaying = true;
+
+            // Feed parameters to Animation Graph
+            _anim.SetFloat("speed", speed);
+            _anim.SetBool("IsMoving", isMoving);
+            _anim.SetBool("IsGrounded", isGrounded);
         }
     }
 }

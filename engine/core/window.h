@@ -24,9 +24,6 @@ struct WindowProperties
     bool Fullscreen = false;
     int TargetFramesPerSecond = 60;
     std::string IconPath;
-    // MSAA sample count (0 = disabled, typical values 2/4/8).
-    // Must be set before window creation — GLFW cannot change a framebuffer's
-    // sample count on an already-created window, only recreate it.
     int Samples = 0;
 };
 

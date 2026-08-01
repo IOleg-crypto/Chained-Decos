@@ -10,6 +10,7 @@
 #include <type_traits>
 #include <typeindex>
 #include <unordered_map>
+#include <vector>
 
 namespace Chained
 {
@@ -27,7 +28,7 @@ public:
         static_assert(std::has_virtual_destructor_v<Service>,
                       "ServiceLocator: Service must have a virtual destructor!");
 
-        std::unique_lock<std::shared_mutex> lock(GetMutex());
+        std::unique_lock<std::shared_mutex> lock(s_Mutex);
 
         // Handled gracefully (log + destroy via unique_ptr) rather than asserted,
         // so release builds and tests behave the same as debug builds.
@@ -37,8 +38,7 @@ public:
             return;
         }
 
-        auto& services = GetInternalMap();
-        if (services.find(typeid(T)) != services.end())
+        if (s_Services.find(typeid(T)) != s_Services.end())
         {
             // Bail explicitly so the duplicate doesn't overwrite the map entry
             // while the old instance lingers in ModuleOrder.
@@ -46,15 +46,16 @@ public:
             return;
         }
 
-        // shared_ptr<T> -> shared_ptr<void> preserves the correct deleter automatically
-        std::shared_ptr<T> sharedService = std::move(service);
-        services[typeid(T)] = sharedService;
-        GetModuleOrder().push_back(sharedService);
+        // unique_ptr<T> -> shared_ptr<T> -> shared_ptr<Service> via static_pointer_cast
+        std::shared_ptr<T> typedService = std::move(service);
+        std::shared_ptr<Service> sharedService = std::static_pointer_cast<Service>(typedService);
+        s_Services[typeid(T)] = sharedService;
+        s_Order.push_back(sharedService);
     }
 
     static void Lock()
     {
-        std::unique_lock<std::shared_mutex> lock(GetMutex());
+        std::unique_lock<std::shared_mutex> lock(s_Mutex);
         s_IsLocked = true;
     }
     static void InitializeModule()
@@ -64,8 +65,8 @@ public:
         // a shared_mutex on the same thread is UB); holding the lock here would deadlock.
         std::vector<std::shared_ptr<Service>> modules;
         {
-            std::shared_lock<std::shared_mutex> lock(GetMutex());
-            modules = GetModuleOrder();
+            std::shared_lock<std::shared_mutex> lock(s_Mutex);
+            modules = s_Order;
         }
 
         for (auto& module : modules)
@@ -94,10 +95,10 @@ public:
     {
         std::vector<std::shared_ptr<Service>> modulesToShutdown;
         {
-            std::unique_lock<std::shared_mutex> lock(GetMutex());
+            std::unique_lock<std::shared_mutex> lock(s_Mutex);
             s_IsLocked = false;
             s_IsShuttingDown = true;
-            modulesToShutdown = GetModuleOrder();
+            modulesToShutdown = s_Order;
         }
 
         for (auto it = modulesToShutdown.rbegin(); it != modulesToShutdown.rend(); ++it)
@@ -114,16 +115,16 @@ public:
         }
 
         {
-            std::unique_lock<std::shared_mutex> lock(GetMutex());
-            GetInternalMap().clear();
-            GetModuleOrder().clear();
+            std::unique_lock<std::shared_mutex> lock(s_Mutex);
+            s_Services.clear();
+            s_Order.clear();
             s_IsShuttingDown = false;
         }
     }
     static bool IsAvailable()
     {
-        std::shared_lock<std::shared_mutex> lock(GetMutex());
-        return !GetInternalMap().empty();
+        std::shared_lock<std::shared_mutex> lock(s_Mutex);
+        return !s_Services.empty();
     }
     // Contract (shared with TryGet): a disabled module (e.g. its Initialize() threw) is
     // treated as UNAVAILABLE — both methods return nullptr for it. Get() additionally
@@ -132,13 +133,12 @@ public:
     {
         static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Requested type T must inherit from Service!");
 
-        std::shared_lock<std::shared_mutex> lock(GetMutex());
-        auto& services = GetInternalMap();
-        auto it = services.find(typeid(T));
+        std::shared_lock<std::shared_mutex> lock(s_Mutex);
+        auto it = s_Services.find(typeid(T));
 
-        if (it != services.end())
+        if (it != s_Services.end())
         {
-            T* svc = static_cast<T*>(it->second.get());
+            T* svc = std::static_pointer_cast<T>(it->second).get();
             if (!svc->IsEnabled())
             {
                 if (s_IsShuttingDown)
@@ -166,13 +166,12 @@ public:
     {
         static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Requested type T must inherit from Service!");
 
-        std::shared_lock<std::shared_mutex> lock(GetMutex());
-        auto& services = GetInternalMap();
-        auto it = services.find(typeid(T));
+        std::shared_lock<std::shared_mutex> lock(s_Mutex);
+        auto it = s_Services.find(typeid(T));
 
-        if (it != services.end())
+        if (it != s_Services.end())
         {
-            T* svc = static_cast<T*>(it->second.get());
+            T* svc = std::static_pointer_cast<T>(it->second).get();
             if (svc && svc->IsEnabled())
             {
                 return svc;
@@ -185,30 +184,14 @@ public:
     {
         static_assert(std::is_base_of_v<Service, T>, "ServiceLocator: Checked type T must inherit from Service!");
 
-        std::shared_lock<std::shared_mutex> lock(GetMutex());
-        auto& services = GetInternalMap();
-        return services.find(typeid(T)) != services.end();
+        std::shared_lock<std::shared_mutex> lock(s_Mutex);
+        return s_Services.find(typeid(T)) != s_Services.end();
     }
 
 private:
-    static std::unordered_map<std::type_index, std::shared_ptr<void>>& GetInternalMap()
-    {
-        static std::unordered_map<std::type_index, std::shared_ptr<void>> s_Services;
-        return s_Services;
-    }
-
-    static std::vector<std::shared_ptr<Service>>& GetModuleOrder()
-    {
-        static std::vector<std::shared_ptr<Service>> s_Order;
-        return s_Order;
-    }
-
-    static std::shared_mutex& GetMutex()
-    {
-        static std::shared_mutex s_Mutex;
-        return s_Mutex;
-    }
-
+    inline static std::unordered_map<std::type_index, std::shared_ptr<Service>> s_Services;
+    inline static std::vector<std::shared_ptr<Service>> s_Order;
+    inline static std::shared_mutex s_Mutex;
     inline static bool s_IsLocked = false;
     inline static std::atomic<bool> s_IsShuttingDown{false};
 };
