@@ -20,6 +20,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 ## Table of Contents
 
 - [Overview](#overview)
+- [User Guide (Step-by-Step)](#user-guide-step-by-step)
 - [Developer Resources (Deep Dives)](#developer-resources-deep-dives)
 - [Editor and Simulation Workflow](#editor-and-simulation-workflow)
 - [Engine Feature Highlights](#engine-feature-highlights)
@@ -33,7 +34,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Build](#build)
 - [Run](#run)
 - [Gameplay Scripting (C#)](#gameplay-scripting-c)
-- [Animation Graph Workflow & Tutorial](#animation-graph-workflow--tutorial)
+- [Animation Graphs](#animation-graphs)
 - [Assets and Resources](#assets-and-resources)
 - [Project Export / Packaging](#project-export--packaging)
 - [Physics and Collisions](#physics-and-collisions)
@@ -44,8 +45,8 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Testing](#testing)
 - [CI/CD](#cicd)
 - [Troubleshooting](#troubleshooting)
-- [FAQ / Common Patterns](#faq--common-patterns)
 - [Known Issues](#known-issues)
+- [FAQ / Common Patterns](#faq--common-patterns)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -62,6 +63,12 @@ Main capabilities:
 - Flexible bootstrapping via custom Entry Points for Headless, Runtime, and Editor modes.
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
 - Project export pipeline with compressed asset packs (ZSTD) for distribution.
+
+> **Inspiration:** ChainedEngine is inspired by [Hazel](https://github.com/TheCherno/Hazel) by TheCherno, with significant custom additions — C# scripting via Coral, Jolt physics, animation graph system, project export pipeline, and multi-platform support.
+
+## User Guide (Step-by-Step)
+
+New to ChainedEngine? Start with the [**User Guide**](docs/USER_GUIDE.md) — it walks you through building, running, creating scenes, writing scripts, and exporting your project.
 
 ## Developer Resources (Deep Dives)
 
@@ -450,208 +457,17 @@ Editor play-mode note:
 
 ## Gameplay Scripting (C#)
 
-Chained Engine uses managed C# for gameplay, powered by Coral (.NET/CoreCLR). This means you write your game logic in C# while the heavy lifting (rendering, physics) stays in C++.
+Chained Engine uses managed C# for gameplay, powered by Coral (.NET/CoreCLR). You write game logic in C# while rendering and physics stay in C++.
 
-### Writing Your First Script
+For the full API reference and examples, see:
+- [Scripting API Reference](docs/SCRIPTING_API.md) — script lifecycle, entities, components, input, scene services, logging, UI.
+- [User Guide — Writing Your First Script](docs/USER_GUIDE.md#writing-your-first-script) — step-by-step tutorial.
 
-Scripts live inside your game's source folder (e.g., [game/chaineddecos/src](game/chaineddecos/src)). Here is a practical example of a basic script:
-
-```csharp
-using System;
-using Chained;
-
-namespace ChainedDecos
-{
-    public class PlayerController : Script
-    {
-        public float Speed = 5.0f;
-
-        // Lifecycle methods are public virtual on the base class; override the ones you need.
-        public override void OnCreate()
-        {
-            // Called once, one frame after the script is instantiated.
-            Log.Info("Player Controller initialized");
-        }
-
-        public override void OnUpdate(float deltaTime)
-        {
-            // Called every frame. Input takes the Key enum (not KeyCode).
-            TransformComponent? transform = GetComponent<TransformComponent>();
-            if (transform == null)
-                return;
-
-            if (Input.IsKeyDown(Key.W))
-            {
-                Vector3 pos = transform.Translation;
-                pos.Z -= Speed * deltaTime;
-                transform.Translation = pos;
-            }
-        }
-    }
-}
-```
-
-`GetComponent<T>()` returns `null` when the component is absent, so null-check the
-result before using it. See [docs/SCRIPTING_API.md](docs/SCRIPTING_API.md) for the full,
-verified API surface.
-
-### Connecting the Script in the Editor
-
-Once a script is written, wire it to an entity:
-
-1. **Build the scripts:** Either rebuild the project through CMake/Ninja, or navigate to your `.csproj` folder and run `dotnet build`.
-2. **Open the Editor** and select the entity you want to control.
-3. **Add Component:** In the Inspector panel, click **Add Component** and choose **Managed Script Component**.
-4. **Link it:** In the `Class Name` text field, type the **fully qualified name** of your script — namespace included (for example: `ChainedDecos.PlayerController`).
-5. **Play:** Press Play in the editor. The engine instantiates the C# class and drives its lifecycle methods.
-
-### Under the Hood: Architecture & Registration
-
-If you are modifying the engine itself, you will find the native-to-managed bridge here:
-- **Native Host:** [scripting/scriptengine.h](scripting/scriptengine.h) initializes Coral and loads assemblies.
-- **Interops:** Native C++ calls are exposed to C# via `script_glue.cpp`.
-- **Discovery:** At startup, `ScriptTypeRegistry::Discover()` scans the game DLL for classes deriving from `Chained.Script`.
-- **Lifecycle:** `SceneScripting` instantiates the script in C++, calls `__Init()` to cache delegates, and forwards events from the native Scene to C#.
-
-### Managed API Surface
-
-- [scripting/managed/src/Script.cs](scripting/managed/src/Script.cs) defines the script lifecycle base class.
-- [scripting/managed/src/Entity.cs](scripting/managed/src/Entity.cs) exposes entity/component access.
-- [scripting/managed/src/SceneAndApplication.cs](scripting/managed/src/SceneAndApplication.cs) exposes scene, audio, application, time, and window helpers.
-- [scripting/managed/src/Input.cs](scripting/managed/src/Input.cs) wraps input queries.
-- [scripting/managed/src/Log.cs](scripting/managed/src/Log.cs) wraps logging.
-- [scripting/managed/src/Math.cs](scripting/managed/src/Math.cs) provides vector and scalar helpers.
-- [scripting/managed/src/UI.cs](scripting/managed/src/UI.cs) exposes minimal UI helpers.
-
-Managed artifacts are built as part of the scripting target when dotnet is available.
-
-## Animation Graph Workflow & Tutorial
+## Animation Graphs
 
 Chained Engine features a visual, data-driven Animation Graph system (`.chag`) for driving state machine animations with smooth blending.
 
-### 1. Overview & Graph File Format (`.chag`)
-
-Animation Graphs are node-based state machines serialized as YAML. A graph contains:
-- **Default Variables**: Declares the schema of parameters (e.g., `speed`, `isMoving`, `isGrounded`).
-- **Nodes (`AnimNode`)**: Define animation states, frame ranges, looping, and playback speed.
-- **Transitions (`AnimTransition`)**: Define connections between states with blend durations and variable-based conditions.
-
-[![Znimok-ekrana-2026-08-01-173424.png](https://i.postimg.cc/sgHrQcjq/Znimok-ekrana-2026-08-01-173424.png)](https://postimg.cc/FYSqw0JV)
-
-[![Znimok-ekrana-2026-08-01-175555.png](https://i.postimg.cc/bNJ8zW8D/Znimok-ekrana-2026-08-01-175555.png)](https://postimg.cc/kDkLsj2q)
-
-Example `new_graph.chag` structure:
-
-```yaml
-AnimationGraph:
-  EntryNodeID: 4
-  NextNodeID: 5
-  Variables:
-    speed: 0
-    isMoving: 0
-    isGrounded: 1
-  Nodes:
-    - ID: 1
-      Name: Walk
-      AnimationIndex: 0
-      IsLooping: true
-      StartFrame: 690
-      EndFrame: 780
-      Speed: 1.0
-    - ID: 2
-      Name: Run
-      AnimationIndex: 0
-      IsLooping: true
-      StartFrame: 1450
-      EndFrame: 1500
-      Speed: 1.0
-    - ID: 4
-      Name: Stop
-      AnimationIndex: 0
-      IsLooping: true
-      StartFrame: 0
-      EndFrame: 0
-      Speed: 1.0
-  Transitions:
-    - ID: 1
-      SourceNodeID: 1
-      TargetNodeID: 2
-      BlendDuration: 0.2
-      HasExitTime: false
-      Conditions:
-        - VariableName: speed
-          Op: 4 # GreaterThan (>)
-          Value: 0.9
-```
-
-### 2. Editor Workflow (`AnimGraphPanel`)
-
-1. **Open the Animation Graph Panel:** In the editor top menu, open **Panels -> Animation Graph Editor**.
-2. **Create/Load Graph:** Click **New Graph** or select an existing `.chag` file.
-3. **Configure Nodes:**
-   - Add nodes for states like `Idle`/`Stop`, `Walk`, `Run`, `Jump`.
-   - Set `StartFrame` and `EndFrame` according to your model asset's animation tracks.
-4. **Manage Variables:**
-   - Add variables (e.g., `speed`, `isMoving`, `isGrounded`).
-   - Use the type toggle in the editor to switch between `Float` and `Bool` parameter types.
-5. **Create Transitions & Conditions:**
-   - Drag connections between nodes.
-   - Select a transition to edit `BlendDuration` (e.g., `0.2s` crossfade) and add conditions (e.g., `isMoving == 1`, `speed >= 0.9`).
-6. **Assign to Entity:**
-   - Select an entity with an `AnimationComponent`.
-   - Set `GraphPath` to `assets/animations/new_graph.chag`.
-
-### 3. Driving Animation Graph from C# Scripts
-
-C# gameplay scripts pass parameters directly to `AnimationComponent`. The engine automatically seeds graph variables on entity initialization and updates state transitions at runtime during simulation.
-
-```csharp
-using Chained;
-
-public class PlayerController : Script
-{
-    private AnimationComponent? m_Anim;
-
-    public override void OnCreate()
-    {
-        m_Anim = GetComponent<AnimationComponent>();
-    }
-
-    public override void OnUpdate(float ts)
-    {
-        Vector3 movement = GetInputVector();
-        bool isMoving = movement.LengthSquared() > 0.01f;
-        bool isSprinting = Input.IsKeyDown(Key.LeftShift);
-
-        float speed = 0.0f;
-        if (isMoving)
-        {
-            speed = isSprinting ? 1.0f : 0.5f;
-        }
-
-        // Drive graph variables dynamically from script
-        m_Anim?.SetBool("isMoving", isMoving);
-        m_Anim?.SetFloat("speed", speed);
-        m_Anim?.SetBool("isGrounded", IsGrounded());
-    }
-}
-```
-
-### 4. Transition Condition Comparison Operators
-
-| Op Code | Operator | Description |
-| :--- | :--- | :--- |
-| `0` | `==` | Equal |
-| `1` | `!=` | Not Equal |
-| `2` | `<` | Less Than |
-| `3` | `<=` | Less Than or Equal |
-| `4` | `>` | Greater Than |
-| `5` | `>=` | Greater Than or Equal |
-
-### 5. Runtime vs. Edit Mode Execution
-
-- **Simulation Mode (`Play`):** C# scripts update `AnimationComponent.Variables`, and `AnimationSystem` evaluates transitions frame-by-frame with smooth interpolation.
-- **Edit Mode:** Animation transitions are paused to keep the editor viewport stable and prevent state jitter while authoring.
+For the full tutorial and YAML format reference, see [Animation Graph Tutorial](docs/ANIMATION_GRAPHS.md).
 
 ## Assets and Resources
 
@@ -664,93 +480,7 @@ All of your 3D models, textures, animations, and sound files must go into your g
 
 The engine includes a project exporter that packages game assets into a single compressed archive for distribution.
 
-### Scene Serialization Format
-
-Scenes are stored as YAML (`.chscene` files). Each entity is serialized with its UUID, and components are nested under their serialization keys.
-
-```yaml
-Scene:
-  Entities:
-    - Entity: 1234567890          # UUID as uint64
-      TagComponent:
-        Tag: "Player"
-      NameComponent:
-        Name: "Player Entity"
-      TransformComponent:
-        Translation: [0.0, 5.0, 0.0]
-        Rotation: [0.0, 0.0, 0.0]
-        Scale: [1.0, 1.0, 1.0]
-      RigidBodyComponent:
-        Type: 1                    # 0=Static, 1=Dynamic, 2=Kinematic
-        Mass: 1.0
-        UseGravity: true
-      ColliderComponent:
-        Type: 0                    # 0=Box, 1=Sphere, 2=Capsule, 3=Mesh
-        Size: [0.5, 0.5, 0.5]
-        Friction: 0.5
-      ModelComponent:
-        ModelPath: "assets/models/player.glb"
-      AudioComponent:
-        SoundPath: "assets/sounds/footstep.wav"
-        Spatialized: true
-        Volume: 0.8
-    - Entity: 9876543210
-      TagComponent:
-        Tag: "SpawnPoint"
-      SpawnComponent:
-        IsActive: true
-        SpawnPoint: [0.0, 1.0, 0.0]
-        ZoneSize: [5.0, 2.0, 5.0]
-      Hierarchy:
-        Parent: 0                  # 0 = root entity
-        Children: []
-```
-
-### Debug Settings in Scene
-
-Scene-level debug rendering is serialized under `DebugSettings`:
-
-```yaml
-DebugSettings:
-  DiagnosticMode: 0               # 0=Full, 1=Normals, 2=Lighting, 3=Albedo
-  DrawColliders: false
-  DrawHierarchy: false
-  DrawGrid: false
-  DrawSelection: true
-  DrawLights: true
-  DrawSpawnZones: true
-  CollisionWireframeMode: 0       # 0=Wireframe, 1=Solid, 2=Solid+Wireframe
-Grid:
-  Spacing: 1.0
-```
-
-### How to Export
-
-1. Open **Editor → Project Settings → Export**.
-2. Configure compression settings (or use defaults).
-3. The exporter packages `.chproject`, `assets/`, and `resources/` into `resources.pack` using ZSTD compression (via [cfnptr/pack](https://github.com/cfnptr/pack)).
-4. The executable, DLLs, and subdirectories are copied alongside the pack.
-
-### Export Settings
-
-| Setting | Default | Description |
-| :--- | :--- | :--- |
-| `ZipThreshold` | 0.3 | Files above this ratio of compressed/original size are stored uncompressed |
-| `PreferSpeed` | false | Use faster compression (larger output) |
-| `DataVersion` | 0 | Custom data version tag for the pack |
-
-### Runtime Loading
-
-At startup, `AssetManager::OpenPack()` automatically looks for `resources.pack` next to the executable. When found, all asset loading (textures, shaders, fonts) reads from the pack first, falling back to the filesystem if not found.
-
-```bash
-# The exported output structure looks like:
-MyGame/
-  MyGame.exe
-  resources.pack
-  engine.dll
-  ...
-```
+For the full export guide, scene serialization format, and settings reference, see [Export Guide](docs/EXPORT.md).
 
 ## Physics and Collisions
 
@@ -853,76 +583,9 @@ rather than drawing from script.
 
 ## Extending the Engine (C++)
 
-Need performance that scripting can't provide, or want to create a brand new foundational Component? Here is the flow for a native ECS update:
+Need performance that scripting can't provide, or want to create a brand new foundational component?
 
-### 1. Define the Component
-Add a fast `struct` in `engine/scene/components/`. We use `EnTT`, so components are simple structs. 
-
-```cpp
-// engine/scene/components/parkour_component.h
-#pragma once
-#include "engine/reflection/reflection_rfl.h"
-
-namespace Chained
-{
-struct ParkourComponent
-{
-    float Stamina = 100.0f;
-    bool  IsWallRunning = false;
-
-    static const char* GetStaticName() { return "ParkourComponent"; }
-
-    struct UI
-    {
-        UIMeta Stamina = {.Min = 0.0f, .Max = 100.0f, .Speed = 1.0f};
-        UIMeta IsWallRunning = {.ReadOnly = true, .Transient = true};
-    };
-};
-CH_MARK_RFL(ParkourComponent);
-} // namespace Chained
-```
-
-### 2. Register the Component
-Add one line in `engine/scene/component_registry.cpp` inside `RegisterEngineComponents()`:
-
-```cpp
-RegisterReflective<ParkourComponent>("Parkour", nullptr, "Gameplay");
-```
-
-Serialization and the editor inspector work automatically through the reflection system.
-
-### 3. Create a System
-Implement the logic as a free function in a namespace:
-
-```cpp
-// engine/scene/systems/parkour_system.h
-namespace Chained::Parkour {
-    void Update(entt::registry& reg, Timestep ts);
-}
-
-// engine/scene/systems/parkour_system.cpp
-void Parkour::Update(entt::registry& reg, Timestep ts) {
-    auto view = reg.view<ParkourComponent, TransformComponent>();
-    for (auto entity : view) {
-        auto& [parkour, transform] = view.get<ParkourComponent, TransformComponent>(entity);
-        if (parkour.IsWallRunning) {
-            // Apply wallrun physics logic...
-        }
-    }
-}
-```
-
-### 4. Hook into the Scene
-Add one call in `engine/scene/scene.cpp` in the appropriate update method:
-
-```cpp
-#include "engine/scene/systems/parkour_system.h"
-
-void Scene::OnUpdateRuntime(Timestep ts) {
-    // ...existing systems...
-    Parkour::Update(*m_Registry, ts);
-}
-```
+For the full guide with code examples, see [Component Reference — Adding a Native Component](docs/COMPONENTS.md#adding-a-native-component-c).
 
 ## Debugging and Profiling
 
@@ -1031,61 +694,7 @@ Changing `CH_ACTIVE_GAME` without reconfiguring the build tree can leave stale g
 
 ## FAQ / Common Patterns
 
-### How do I teleport a player to a spawn point?
-
-Use `ForceSetVelocity` (not `Velocity =`) to avoid Jolt's Dynamic body Y-velocity override:
-
-```csharp
-public void TeleportToSpawn(Vector3 spawnPos) {
-    TransformComponent? transform = GetComponent<TransformComponent>();
-    RigidBodyComponent? rb = GetComponent<RigidBodyComponent>();
-    if (transform != null) transform.Translation = spawnPos;
-    if (rb != null) rb.ForceSetVelocity(Vector3.Zero);  // Not rb.Velocity = ...
-}
-```
-
-### How do I add a component from a C# script?
-
-```csharp
-public override void OnCreate() {
-    // Add a new component at runtime
-    RigidBodyComponent rb = entity.AddComponent<RigidBodyComponent>();
-    rb.Type = RigidBodyComponent.BodyType.Dynamic;
-    rb.Mass = 1.5f;
-}
-```
-
-### How do I respond to collisions?
-
-Override `OnCollisionEnter` in your script. The engine passes a raw entity ID, not an `Entity` wrapper:
-
-```csharp
-public override void OnCollisionEnter(ulong otherEntityId) {
-    Entity other = new Entity(otherEntityId);
-    TagComponent? tag = other.GetComponent<TagComponent>();
-    if (tag != null && tag.Tag == "Pickup") {
-        Log.Info("Collected a pickup!");
-    }
-}
-```
-
-### How do I trigger a scene transition?
-
-Add a `SceneTransitionComponent` to your entity and set `TargetScenePath`. When `Triggered` is set to `true` (by a script or collision), the engine loads the target scene automatically. No C# needed.
-
-### How do I play spatial audio?
-
-Add an `AudioComponent` with `Spatialized = true` and `PlayOnStart = true`. The audio system syncs the listener with the primary camera automatically.
-
-### How do I switch between game projects?
-
-Set `CH_ACTIVE_GAME` at CMake configure time:
-
-```bash
-cmake -S . -B build/windows-clang -DCH_ACTIVE_GAME=testproject
-```
-
-The executable name changes automatically. The `.chproject` file determines what scene the runtime opens.
+For the full list of frequently asked questions and common patterns, see [FAQ](docs/FAQ.md).
 
 ## Contributing
 
