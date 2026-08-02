@@ -58,6 +58,8 @@ private:
     {
         bool Open = false;
         PackMode SelectedMode = PackMode::Balanced;
+        float ZipThreshold = 0.05f;
+        uint32_t DataVersion = 0;
         std::string OutputDir;
     };
 
