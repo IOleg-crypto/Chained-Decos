@@ -43,8 +43,7 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
                                     ICON_FA_MOUNTAIN_SUN " Rendering",
                                     ICON_FA_VOLUME_HIGH " Audio",
                                     ICON_FA_CUBE " Mesh",
-                                    ICON_FA_PLAY " Runtime",
-                                    ICON_FA_FILE_EXPORT " Export"};
+                                    ICON_FA_PLAY " Runtime"};
 
         // Two-column layout: sidebar left, content right
         ImGui::Columns(2, "ProjectSettingsColumns", true);
@@ -288,45 +287,6 @@ void ProjectSettingsPanel::OnImGuiRender(bool readOnly)
             if (ImGui::IsItemHovered())
             {
                 ImGui::SetTooltip("0 = Uncapped framerate");
-            }
-            break;
-        }
-        case 8: // Export
-        {
-            ImGui::TextDisabled("Export Settings");
-            ImGui::Separator();
-            ImGui::Spacing();
-
-            ImGui::SliderFloat("Compression Threshold", &config.Export.ZipThreshold, 0.0f, 1.0f, "%.2f");
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Files with compression ratio above this threshold stay uncompressed.\n0.0 = "
-                                  "compress everything, 1.0 = compress nothing.");
-            }
-
-            {
-                int mode = static_cast<int>(config.Export.Mode);
-                const char* modeNames[] = {"Fast (LZ4)", "Balanced (ZSTD)", "Raw (No compression)"};
-                if (ImGui::Combo("Pack Mode", &mode, modeNames, IM_ARRAYSIZE(modeNames)))
-                {
-                    config.Export.Mode = static_cast<PackMode>(mode);
-                }
-                if (ImGui::IsItemHovered())
-                {
-                    ImGui::SetTooltip("Fast: LZ4 HC — quick export, larger file.\n"
-                                      "Balanced: ZSTD — slower export, smaller file.\n"
-                                      "Raw: No compression — stored as-is.");
-                }
-            }
-
-            int dataVersion = static_cast<int>(config.Export.DataVersion);
-            if (ImGui::InputInt("Data Version", &dataVersion))
-            {
-                config.Export.DataVersion = static_cast<uint32_t>(dataVersion);
-            }
-            if (ImGui::IsItemHovered())
-            {
-                ImGui::SetTooltip("Increment to invalidate cached packs at runtime.");
             }
             break;
         }
