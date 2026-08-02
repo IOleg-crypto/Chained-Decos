@@ -133,6 +133,8 @@ void EditorMenu::DrawMenuBar(EditorPanels& panels)
                 if (project)
                 {
                     m_ExportDialog.SelectedMode = project->GetConfig().Export.Mode;
+                    m_ExportDialog.ZipThreshold = project->GetConfig().Export.ZipThreshold;
+                    m_ExportDialog.DataVersion = project->GetConfig().Export.DataVersion;
                 }
             }
         }
@@ -337,7 +339,7 @@ void EditorMenu::DrawExportDialog()
     }
 
     ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Once);
-    if (ImGui::BeginPopupModal("Export Project", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+    if (ImGui::Begin("Export Project", &m_ExportDialog.Open))
     {
         ImGui::Text("Choose export mode:");
         ImGui::Spacing();
@@ -369,6 +371,29 @@ void EditorMenu::DrawExportDialog()
         ImGui::Separator();
         ImGui::Spacing();
 
+        ImGui::SliderFloat("Compression Threshold", &m_ExportDialog.ZipThreshold, 0.0f, 1.0f, "%.2f");
+        if (ImGui::IsItemHovered())
+        {
+            ImGui::SetTooltip("Files with compression ratio above this threshold stay uncompressed.\n0.0 = "
+                              "compress everything, 1.0 = compress nothing.");
+        }
+
+        {
+            int dataVersion = static_cast<int>(m_ExportDialog.DataVersion);
+            if (ImGui::InputInt("Data Version", &dataVersion))
+            {
+                m_ExportDialog.DataVersion = static_cast<uint32_t>(dataVersion);
+            }
+            if (ImGui::IsItemHovered())
+            {
+                ImGui::SetTooltip("Increment to invalidate cached packs at runtime.");
+            }
+        }
+
+        ImGui::Spacing();
+        ImGui::Separator();
+        ImGui::Spacing();
+
         if (ImGui::Button("Browse Output Folder...", ImVec2(-1, 0)))
         {
             auto outDir = Dialogs::PickFolder();
@@ -376,15 +401,15 @@ void EditorMenu::DrawExportDialog()
             {
                 m_ExportDialog.OutputDir = outDir->string();
 
-                // Save selected mode to project config
+                // Save export settings to project config
                 auto project = Project::GetActive();
                 if (project)
                 {
                     project->GetConfig().Export.Mode = m_ExportDialog.SelectedMode;
+                    project->GetConfig().Export.ZipThreshold = m_ExportDialog.ZipThreshold;
+                    project->GetConfig().Export.DataVersion = m_ExportDialog.DataVersion;
                 }
 
-                // Close dialog and start export
-                ImGui::CloseCurrentPopup();
                 m_ExportDialog.Open = false;
 
                 // Start the export
@@ -429,18 +454,8 @@ void EditorMenu::DrawExportDialog()
             }
         }
 
-        ImGui::SameLine();
-        if (ImGui::Button("Cancel", ImVec2(-1, 0)))
-        {
-            ImGui::CloseCurrentPopup();
-            m_ExportDialog.Open = false;
-        }
-
-        ImGui::EndPopup();
+        ImGui::End();
     }
-
-    // Open the popup on first call
-    ImGui::OpenPopup("Export Project");
 }
 
 void EditorMenu::DrawExportProgressOverlay()
