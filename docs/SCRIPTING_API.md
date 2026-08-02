@@ -12,6 +12,7 @@ entity is valid.
 
 ## Contents
 
+0. [Quick reference](#0-quick-reference)
 1. [Script lifecycle](#1-script-lifecycle)
 2. [Entities and components](#2-entities-and-components)
 3. [Components](#3-components)
@@ -20,6 +21,31 @@ entity is valid.
 6. [Logging](#6-logging)
 7. [In-game UI](#7-in-game-ui)
 8. [Worked example](#8-worked-example)
+
+---
+
+## 0. Quick reference
+
+| Namespace | Class | Purpose |
+|---|---|---|
+| `Chained` | `Script` | Base class for all gameplay scripts |
+| `Chained` | `Entity` | Wraps a native entity, provides component access |
+| `Chained` | `Input` | Keyboard and mouse input queries |
+| `Chained` | `Scene` | Find entities, load scenes, copy entities |
+| `Chained` | `Audio` | Play/stop sounds |
+| `Chained` | `Application` | Application lifecycle (close) |
+| `Chained` | `Time` | FPS and delta time |
+| `Chained` | `AppWindow` | Window size, fullscreen, vsync, AA |
+| `Chained` | `Physics` | Gravity query |
+| `Chained` | `UI` | Minimal in-game text rendering |
+| `Chained` | `Log` | Console logging (Info, Warn, Error) |
+
+**Key enums** (`Chained` namespace, defined in `Math.cs`):
+
+| Enum | Values |
+|---|---|
+| `Key` | `A`–`Z`, `D0`–`D9`, `Space`, `Escape`, `Enter`, `Tab`, `LeftShift`, `LeftControl`, `LeftAlt`, arrows, `F1`–`F12`, etc. |
+| `MouseButton` | `Left`, `Right`, `Middle` |
 
 ---
 
@@ -95,6 +121,7 @@ public bool HasComponent<T>() where T : Component, new();
 public T? GetComponent<T>() where T : Component, new();   // null if the entity lacks T
 public T AddComponent<T>() where T : Component, new();
 public static ulong[] FindAllWithComponent<T>() where T : Component, new();
+public void InvalidateComponentCache();  // clears cached component wrappers
 ```
 
 `GetComponent<T>()` returns `null` when the component is absent, so always null-check
@@ -138,6 +165,8 @@ public Vector3 Scale       { get; set; }
 public Vector3 Velocity    { get; set; }
 public bool    IsGrounded  { get; }        // read-only, driven by the physics world
 public bool    IsKinematic { get; set; }
+public float   Mass        { get; set; }
+public void    ForceSetVelocity(Vector3 velocity);  // bypasses Jolt's internal override
 ```
 
 ### CameraComponent
@@ -160,10 +189,11 @@ public void SetOrbit(float yaw, float pitch, float distance);
 | `ModelComponent` | `string ModelPath { get; set; }` |
 | `TagComponent` | `string Tag { get; }` |
 | `AudioComponent` | `float Volume { set; }`, `bool Loop { set; }`, `bool IsPlaying { get; }`, `string SoundPath { get; }`, `Play()`, `Stop()` |
-| `SpriteComponent` | `string TexturePath`, `Vector4 Tint`, `bool FlipX`, `bool FlipY`, `int ZOrder` |
-| `ShaderComponent` | `bool Enabled`, `SetFloat(name, value)`, `SetVector3(name, value)` |
-| `PlayerComponent` | `float MovementSpeed`, `float JumpForce`, `float LookSensitivity` |
-| `SpawnComponent` | `bool IsActive { get; }`, `Vector3 SpawnPoint { get; }`, `bool RenderSpawnZoneInScene { get; }`, `Vector3 ZoneSize { get; }` |
+| `SpriteComponent` | `string TexturePath { get; set; }`, `Vector4 Tint { get; set; }`, `bool FlipX { get; set; }`, `bool FlipY { get; set; }`, `int ZOrder { get; set; }` |
+| `ShaderComponent` | `bool Enabled { get; set; }`, `SetFloat(name, value)`, `SetVector3(name, value)` |
+| `PlayerComponent` | `float MovementSpeed { get; set; }`, `float JumpForce { get; set; }`, `float LookSensitivity { get; set; }` |
+| `SpawnComponent` | `bool IsActive { get; set; }`, `bool IsCheckpoint { get; set; }`, `Vector3 SpawnPoint { get; set; }`, `bool RenderSpawnZoneInScene { get; }`, `Vector3 ZoneSize { get; }` |
+| `AnimationComponent` | `int CurrentAnimationIndex { get; set; }`, `bool IsPlaying { get; set; }`, `bool IsLooping { get; set; }`, `bool IsFinished { get; }`, `float Duration { get; }`, `float NormalizedTime { get; }`, `float BlendDuration { get; set; }`, `Play()`, `Pause()`, `CrossFade(int index, float duration)`, `SetFloat(name, value)`, `SetBool(name, value)`, `GetFloat(name)` |
 
 ---
 
