@@ -612,7 +612,8 @@ Entities:
       Velocity: [0, 0, 0]
       IsGrounded: true
     AnimationComponent:
-      BlendDuration: 1.70000005
+      GraphPath: animations/new_graph.chag
+      BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true
   - Entity: 12716736420368799230

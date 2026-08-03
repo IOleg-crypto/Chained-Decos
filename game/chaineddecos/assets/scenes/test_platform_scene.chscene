@@ -625,6 +625,7 @@ Entities:
       ModelPath: ""
       IsColliding: false
     AnimationComponent:
+      GraphPath: animations/new_graph.chag
       BlendDuration: 0.25
       IsLooping: true
       PlayOnStart: true

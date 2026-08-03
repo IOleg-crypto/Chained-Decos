@@ -154,22 +154,31 @@ namespace ChainedDecos.Scripts
             }
         }
 
+        private int _animLogCounter = 0;
+
         private void UpdateAnimation(Vector3 movementDir)
         {
-            if (_anim == null) return;
+            if (_anim == null) { Log.Warn("[PlayerController] _anim is null!"); return; }
 
             bool isMoving = movementDir.LengthSquared() > 0.0001f;
             bool isSprinting = Input.IsKeyDown(Key.LeftShift);
             float speed = isMoving ? (isSprinting ? 1.0f : 0.5f) : 0.0f;
             bool isGrounded = _rb?.IsGrounded ?? true;
 
-            // Ensure animation system is active for Animation Graph evaluation
             _anim.IsPlaying = true;
 
-            // Feed parameters to Animation Graph
             _anim.SetFloat("speed", speed);
-            _anim.SetBool("IsMoving", isMoving);
-            _anim.SetBool("IsGrounded", isGrounded);
+            _anim.SetBool("isMoving", isMoving);
+            _anim.SetBool("isGrounded", isGrounded);
+
+            if (_animLogCounter < 10)
+            {
+                Log.Info($"[PlayerController] UpdateAnimation #{_animLogCounter}: " +
+                    $"movementDir={movementDir.X:F3},{movementDir.Y:F3},{movementDir.Z:F3} " +
+                    $"isMoving={isMoving} speed={speed:F2} isGrounded={isGrounded} " +
+                    $"isSprinting={isSprinting} rb={(_rb != null ? "ok" : "null")}");
+                _animLogCounter++;
+            }
         }
     }
 }
