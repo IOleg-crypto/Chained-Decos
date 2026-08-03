@@ -1,10 +1,7 @@
 AnimationGraph:
   EntryNodeID: 4
   NextNodeID: 5
-  Variables:
-    speed: 0
-    isMoving: 0
-    isGrounded: 1
+  NextLinkID: 1
   Nodes:
     - ID: 1
       Name: Walk
@@ -45,7 +42,7 @@ AnimationGraph:
       Conditions:
         - VariableName: speed
           Op: 4
-          Value: 0.9
+          Value: 0.899999976
     - ID: 2
       SourceNodeID: 2
       TargetNodeID: 1
@@ -94,3 +91,6 @@ AnimationGraph:
         - VariableName: isMoving
           Op: 0
           Value: 0
+  Variables:
+    speed: 0
+    isMoving: 0
