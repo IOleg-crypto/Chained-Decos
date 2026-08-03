@@ -5,8 +5,6 @@ Project:
   AssetDirectory: assets
   ActiveScene: assets/scenes/untitled.chscene
   Environment: ""
-  BuildScenes:
-    []
   Physics:
     Gravity: 20
     FixedTimestep: 0.0166666675

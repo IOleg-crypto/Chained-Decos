@@ -32,3 +32,8 @@ add_custom_command(TARGET ChainedDecosGameTarget POST_BUILD
 if(COMMAND ch_add_resource_sync)
     ch_add_resource_sync(ChainedDecosExe)
 endif()
+
+# Pass source game directory so runtime can load assets from source during development
+target_compile_definitions(ChainedDecosExe PRIVATE
+    CH_SOURCE_GAME_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
+)
