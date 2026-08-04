@@ -170,8 +170,8 @@ namespace Chained
 		}
 
 		const auto& cfg = project->GetConfig();
-		const fs::path projectDir = project->GetProjectDirectoryForProject();
-		const fs::path assetDir = project->GetAssetDirectoryForProject();
+		const fs::path projectDir = project->GetConfig().ProjectDirectory;
+		const fs::path assetDir = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory;
 		const fs::path exeDir = Platform::GetExecutableDirectory();
 
 		// ── 0. Prepare output directory ──────────────────────────────────────────
@@ -368,11 +368,11 @@ namespace Chained
 			}
 
 			// 5. Copy .chproject to output directory
-			auto chProjFile = project->GetProjectDirectoryForProject() / (cfg.Name + ".chproject");
+			auto chProjFile = project->GetConfig().ProjectDirectory / (cfg.Name + ".chproject");
 			if (!fs::exists(chProjFile))
 			{
 				// Fallback: find any .chproject in project dir
-				for (const auto& entry : fs::directory_iterator(project->GetProjectDirectoryForProject()))
+				for (const auto& entry : fs::directory_iterator(project->GetConfig().ProjectDirectory))
 				{
 					if (entry.is_regular_file() && entry.path().extension() == ".chproject")
 					{

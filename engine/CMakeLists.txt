@@ -22,7 +22,7 @@ add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
 add_subdirectory(project)
-
+add_subdirectory(networking)
 add_subdirectory(platform)
 add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
 add_subdirectory(app)

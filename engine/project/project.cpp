@@ -14,7 +14,14 @@ namespace Chained
 
 	std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
 
-	Project::~Project() = default;
+	Project::~Project()
+	{
+		if (s_ActiveProject.get() == this)
+		{
+			CH_CORE_WARN("Project destroyed while still active - calling SetActive(nullptr)");
+			s_ActiveProject = nullptr;
+		}
+	}
 
 	std::shared_ptr<Project> Project::Load(const std::filesystem::path& filepath)
 	{
@@ -136,9 +143,80 @@ namespace Chained
 			}
 		}
 
+		if (projectNode["Animation"])
+		{
+			if (projectNode["Animation"]["TargetFPS"])
+			{
+				config.Animation.TargetFPS = projectNode["Animation"]["TargetFPS"].as<float>();
+			}
+		}
+
+		if (projectNode["Render"])
+		{
+			if (projectNode["Render"]["ShadowResolution"])
+			{
+				config.Render.ShadowResolution = projectNode["Render"]["ShadowResolution"].as<int>();
+			}
+			if (projectNode["Render"]["EnableShadows"])
+			{
+				config.Render.EnableShadows = projectNode["Render"]["EnableShadows"].as<bool>();
+			}
+			if (projectNode["Render"]["AntiAliasingSamples"])
+			{
+				config.Render.AntiAliasingSamples = projectNode["Render"]["AntiAliasingSamples"].as<int>();
+			}
+		}
+
+		if (projectNode["Mesh"])
+		{
+			if (projectNode["Mesh"]["ImportMaterials"])
+			{
+				config.Mesh.ImportMaterials = projectNode["Mesh"]["ImportMaterials"].as<bool>();
+			}
+			if (projectNode["Mesh"]["CalculateTangents"])
+			{
+				config.Mesh.CalculateTangents = projectNode["Mesh"]["CalculateTangents"].as<bool>();
+			}
+			if (projectNode["Mesh"]["FlipUVs"])
+			{
+				config.Mesh.FlipUVs = projectNode["Mesh"]["FlipUVs"].as<bool>();
+			}
+		}
+
+		if (projectNode["Audio"])
+		{
+			if (projectNode["Audio"]["MasterVolume"])
+			{
+				config.Audio.MasterVolume = projectNode["Audio"]["MasterVolume"].as<float>();
+			}
+			if (projectNode["Audio"]["MusicVolume"])
+			{
+				config.Audio.MusicVolume = projectNode["Audio"]["MusicVolume"].as<float>();
+			}
+			if (projectNode["Audio"]["SFXVolume"])
+			{
+				config.Audio.SFXVolume = projectNode["Audio"]["SFXVolume"].as<float>();
+			}
+		}
+
+		if (projectNode["Export"])
+		{
+			if (projectNode["Export"]["Mode"])
+			{
+				config.Export.Mode = static_cast<PackMode>(projectNode["Export"]["Mode"].as<int>());
+			}
+			if (projectNode["Export"]["ZipThreshold"])
+			{
+				config.Export.ZipThreshold = projectNode["Export"]["ZipThreshold"].as<float>();
+			}
+			if (projectNode["Export"]["DataVersion"])
+			{
+				config.Export.DataVersion = projectNode["Export"]["DataVersion"].as<uint32_t>();
+			}
+		}
+
 		config.ProjectDirectory = filepath.parent_path();
 
-		SetActive(project);
 		return project;
 	}
 
@@ -154,34 +232,50 @@ namespace Chained
 
 	std::filesystem::path Project::GetAssetDirectory()
 	{
-		return s_ActiveProject ? s_ActiveProject->GetAssetDirectoryForProject() : std::filesystem::path();
+		if (!s_ActiveProject)
+		{
+			return {};
+		}
+		return s_ActiveProject->m_Config.ProjectDirectory / s_ActiveProject->m_Config.AssetDirectory;
 	}
 
 	std::filesystem::path Project::GetProjectDirectory()
 	{
-		return s_ActiveProject ? s_ActiveProject->GetProjectDirectoryForProject() : std::filesystem::path();
+		return s_ActiveProject ? s_ActiveProject->m_Config.ProjectDirectory : std::filesystem::path();
 	}
 
 	std::filesystem::path Project::GetAssetPath(const std::filesystem::path& relative)
 	{
-		return s_ActiveProject ? s_ActiveProject->GetAssetPathForProject(relative) : relative;
+		if (!s_ActiveProject)
+		{
+			return relative;
+		}
+		return s_ActiveProject->m_Config.ProjectDirectory / s_ActiveProject->m_Config.AssetDirectory / relative;
 	}
 
 	std::string Project::GetRelativePath(const std::filesystem::path& path)
 	{
-		return s_ActiveProject ? s_ActiveProject->GetRelativePathForProject(path) : path.generic_string();
+		if (!s_ActiveProject)
+		{
+			return path.generic_string();
+		}
+		return s_ActiveProject->GetRelativePathInternal(path);
 	}
 
 	std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path)
 	{
-		return s_ActiveProject ? s_ActiveProject->GetAbsolutePathForProject(path) : path;
+		if (!s_ActiveProject)
+		{
+			return path;
+		}
+		return s_ActiveProject->GetAbsolutePathInternal(path);
 	}
 
 	std::vector<std::string> Project::GetAvailableScenes() const
 	{
 		std::vector<std::string> scenes;
 
-		auto assetDir = GetAssetDirectoryForProject();
+		auto assetDir = m_Config.ProjectDirectory / m_Config.AssetDirectory;
 		auto scenesDir = assetDir / "scenes";
 
 		if (std::filesystem::exists(scenesDir))
@@ -204,7 +298,7 @@ namespace Chained
 		return scenes;
 	}
 
-	std::string Project::GetRelativePathForProject(const std::filesystem::path& path) const
+	std::string Project::GetRelativePathInternal(const std::filesystem::path& path) const
 	{
 		if (path.empty())
 		{
@@ -218,14 +312,17 @@ namespace Chained
 
 		auto absolutePath = NormalizePath(path);
 
+		auto assetDir = m_Config.ProjectDirectory / m_Config.AssetDirectory;
+		auto projectDir = m_Config.ProjectDirectory;
+
 		// 1. Try relative to Assets Directory
-		if (auto rel = TryMakeRelative(absolutePath, GetAssetDirectoryForProject()))
+		if (auto rel = TryMakeRelative(absolutePath, assetDir))
 		{
 			return *rel;
 		}
 
 		// 2. Try relative to Project Root
-		if (auto rel = TryMakeRelative(absolutePath, GetProjectDirectoryForProject()))
+		if (auto rel = TryMakeRelative(absolutePath, projectDir))
 		{
 			return *rel;
 		}
@@ -233,7 +330,7 @@ namespace Chained
 		return absolutePath.generic_string();
 	}
 
-	std::filesystem::path Project::GetAbsolutePathForProject(const std::filesystem::path& path) const
+	std::filesystem::path Project::GetAbsolutePathInternal(const std::filesystem::path& path) const
 	{
 		if (path.empty())
 		{
@@ -247,8 +344,10 @@ namespace Chained
 
 		std::string pathStr = path.generic_string();
 
+		auto assetDir = m_Config.ProjectDirectory / m_Config.AssetDirectory;
+		auto projectDir = m_Config.ProjectDirectory;
+
 		// For game assets, try asset directory first
-		std::filesystem::path assetDir = GetAssetDirectoryForProject();
 		if (!assetDir.empty())
 		{
 			std::filesystem::path candidate = assetDir / pathStr;
@@ -259,7 +358,6 @@ namespace Chained
 		}
 
 		// Try project root next
-		std::filesystem::path projectDir = GetProjectDirectoryForProject();
 		if (!projectDir.empty())
 		{
 			std::filesystem::path candidate = projectDir / pathStr;
@@ -269,10 +367,7 @@ namespace Chained
 			}
 		}
 
-		// Project is now just a data holder for project-specific paths.
-		// Engine root resolution is handled by AssetManager.
-
-		return NormalizePath(GetProjectDirectoryForProject() / pathStr);
+		return NormalizePath(projectDir / pathStr);
 	}
 
 	// -------------------------------------------------------------------------------------------------------------------

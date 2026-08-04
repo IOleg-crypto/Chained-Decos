@@ -141,6 +141,52 @@ namespace Chained
 			m_Config.Scripting.AutoLoad = autoLoad;
 		}
 
+		// Validation setters — prefer these over direct GetConfig() mutation
+		void SetName(const std::string& name)
+		{
+			m_Config.Name = name;
+		}
+		void SetStartScene(const std::string& scene)
+		{
+			m_Config.StartScene = scene;
+		}
+		void SetIconPath(const std::string& path)
+		{
+			m_Config.IconPath = path;
+		}
+		void SetPhysicsGravity(float gravity)
+		{
+			m_Config.Physics.Gravity = std::max(0.0f, gravity);
+		}
+		void SetPhysicsFixedTimestep(float timestep)
+		{
+			m_Config.Physics.FixedTimestep = std::max(0.001f, timestep);
+		}
+		void SetShadowResolution(int resolution)
+		{
+			m_Config.Render.ShadowResolution = std::clamp(resolution, 256, 8192);
+		}
+		void SetAntiAliasingSamples(int samples)
+		{
+			m_Config.Render.AntiAliasingSamples = std::clamp(samples, 0, 8);
+		}
+		void SetTargetFPS(int fps)
+		{
+			m_Config.Runtime.TargetFPS = std::max(0, fps);
+		}
+		void SetMasterVolume(float volume)
+		{
+			m_Config.Audio.MasterVolume = std::clamp(volume, 0.0f, 1.0f);
+		}
+		void SetMusicVolume(float volume)
+		{
+			m_Config.Audio.MusicVolume = std::clamp(volume, 0.0f, 1.0f);
+		}
+		void SetSFXVolume(float volume)
+		{
+			m_Config.Audio.SFXVolume = std::clamp(volume, 0.0f, 1.0f);
+		}
+
 		const std::string& GetName() const
 		{
 			return m_Config.Name;
@@ -162,34 +208,15 @@ namespace Chained
 			return m_Config.BuildConfig;
 		}
 
-		// Path helpers (now non-static, relative to this project)
-		std::filesystem::path GetAssetDirectoryForProject() const
-		{
-			return m_Config.ProjectDirectory / m_Config.AssetDirectory;
-		}
-
+		// Path helpers (static, relative to the active project)
 		static std::filesystem::path GetAssetDirectory();
-
-		std::filesystem::path GetProjectDirectoryForProject() const
-		{
-			return m_Config.ProjectDirectory;
-		}
-
 		static std::filesystem::path GetProjectDirectory();
-
-		std::filesystem::path GetAssetPathForProject(const std::filesystem::path& relative) const
-		{
-			return GetAssetDirectoryForProject() / relative;
-		}
-
 		static std::filesystem::path GetAssetPath(const std::filesystem::path& relative);
 
 		// Converts a path to a project-relative string when possible.
 		// NOTE: Engine root resolution is handled by AssetManager.
-		std::string GetRelativePathForProject(const std::filesystem::path& path) const;
 		static std::string GetRelativePath(const std::filesystem::path& path);
-		// Converts a path to an absolute path under this project.
-		std::filesystem::path GetAbsolutePathForProject(const std::filesystem::path& path) const;
+		// Converts a path to an absolute path under the active project.
 		static std::filesystem::path GetAbsolutePath(const std::filesystem::path& path);
 		std::vector<std::string> GetAvailableScenes() const;
 
@@ -205,6 +232,9 @@ namespace Chained
 		}
 
 	private:
+		std::string GetRelativePathInternal(const std::filesystem::path& path) const;
+		std::filesystem::path GetAbsolutePathInternal(const std::filesystem::path& path) const;
+
 		static std::shared_ptr<Project> s_ActiveProject;
 
 		ProjectConfig m_Config;

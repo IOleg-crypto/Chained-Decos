@@ -256,8 +256,8 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: scenes/map_selection.chscene
-      Triggered: true
+      TargetScenePath: scenes/game_mode_selection.chscene
+      Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
