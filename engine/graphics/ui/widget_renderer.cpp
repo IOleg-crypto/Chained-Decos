@@ -3,6 +3,7 @@
 // Draws WidgetComponent hierarchy, handles Z-order sorting, scissor clipping, and font management.
 
 #include "widget_renderer.h"
+#include "ui_font_registry.h"
 #include "engine/core/service_locator.h"
 #include <algorithm>
 
@@ -15,211 +16,183 @@
 namespace Chained
 {
 
-WidgetRenderer::WidgetRenderer()
-{
-}
+	void WidgetRenderer::Initialize()
+	{
+		CH_CORE_INFO("[UI] Initializing UI Renderer...");
+	}
 
-void WidgetRenderer::Initialize()
-{
-    CH_CORE_INFO("[UI] Initializing UI Renderer...");
-    m_Initialized = true;
-}
+	void WidgetRenderer::Shutdown()
+	{
+	}
 
-void WidgetRenderer::Shutdown()
-{
-}
+	UIFontRegistry& WidgetRenderer::GetFontRegistry()
+	{
+		return *ServiceLocator::TryGet<UIFontRegistry>();
+	}
 
-void WidgetRenderer::Update(Timestep ts)
-{
-}
+	void WidgetRenderer::LoadProjectFonts()
+	{
+		auto& fontRegistry = GetFontRegistry();
+		fontRegistry.LoadProjectFonts();
+		fontRegistry.EnsureDefaultProjectFont(18.0f, true);
+	}
 
-void WidgetRenderer::LoadProjectFonts()
-{
-    m_FontRegistry.LoadProjectFonts();
-    // Eagerly preload the default project font so it's baked into the atlas texture
-    // before the editor calls RefreshFontAtlasTexture.
-    // Pass 'true' for allowRuntimeMutation because the editor rebuilds the texture right after this.
-    m_FontRegistry.EnsureDefaultProjectFont(18.0f, true);
+	UIRect WidgetRenderer::GetEntityRect(Entity entity)
+	{
+		return m_LayoutSystem.GetEntityRect((entt::entity)entity);
+	}
 
-    // NOTE: atlas GPU rebuild is the caller's responsibility.
-    // See project_manager.cpp / EditorLayer::ReloadEditorFonts for the single-rebuild pattern.
-}
+	void WidgetRenderer::ResetButtonStates(Scene* scene)
+	{
+		if (!scene)
+		{
+			return;
+		}
 
-UIRect WidgetRenderer::GetEntityRect(Scene* scene, Entity entity, const ImVec2& viewportSize, const ImVec2& viewportPos)
-{
-    return m_LayoutSystem.GetEntityRect((entt::entity)entity);
-}
+		auto& registry = scene->GetRegistry();
+		auto view = registry.view<UIControlComponent>();
+		for (entt::entity id : view)
+		{
+			view.get<UIControlComponent>(id).PressedThisFrame = false;
+		}
+	}
 
-void WidgetRenderer::ResetButtonStates(Scene* scene)
-{
-    if (!scene)
-    {
-        return;
-    }
+	std::vector<entt::entity> WidgetRenderer::SortUIEntities(entt::registry& registry)
+	{
+		auto view = registry.view<ControlComponent>();
+		std::vector<entt::entity> sorted(view.begin(), view.end());
 
-    auto& registry = scene->GetRegistry();
-    auto view = registry.view<UIControlComponent>();
-    for (entt::entity id : view)
-    {
-        view.get<UIControlComponent>(id).PressedThisFrame = false;
-    }
+		// Sort by Z-order for correct back-to-front rendering sequence
+		std::sort(sorted.begin(), sorted.end(), [&](entt::entity a, entt::entity b) {
+			return view.get<ControlComponent>(a).ZOrder < view.get<ControlComponent>(b).ZOrder;
+		});
 
-    // We do NOT clear m_HasCanvasRect here anymore!
-    // The previous canvas rect from Edit mode is perfectly valid for evaluating
-    // hit-tests during the 1-frame suppress window. If we clear it, the hit-test
-    // fails, PrevIsDown becomes false, and the next frame registers a fake human click.
-}
+		return sorted;
+	}
 
-std::vector<entt::entity> WidgetRenderer::SortUIEntities(entt::registry& registry)
-{
-    auto view = registry.view<ControlComponent>();
-    std::vector<entt::entity> sorted(view.begin(), view.end());
+	void WidgetRenderer::ProcessInput(Scene* scene, bool suppressInput)
+	{
+		if (!scene)
+		{
+			return;
+		}
 
-    // Sort by Z-order for correct back-to-front rendering sequence
-    std::sort(sorted.begin(), sorted.end(), [&](entt::entity a, entt::entity b) {
-        return view.get<ControlComponent>(a).ZOrder < view.get<ControlComponent>(b).ZOrder;
-    });
+		auto& registry = scene->GetRegistry();
 
-    return sorted;
-}
+		if (!m_HasCanvasRect)
+		{
+			UpdateUIInput(registry, m_LayoutSystem, /*suppress=*/true);
+			return;
+		}
 
-bool WidgetRenderer::RenderUIComponent(Entity entity, const ImVec2& screenPos, const ImVec2& size, bool editMode)
-{
-    if (!entity.HasComponent<UIControlComponent>())
-    {
-        return false;
-    }
+		ImVec2 refSize = (m_CanvasSize.x > 0) ? m_CanvasSize : ImGui::GetIO().DisplaySize;
+		m_LayoutSystem.Update(scene, refSize, m_CanvasPos);
+		UpdateUIInput(registry, m_LayoutSystem, suppressInput);
+	}
 
-    auto& control = entity.GetComponent<UIControlComponent>();
-    // Delegate to the low-level ImDrawList-based control renderer
-    return RenderControl(m_FontRegistry, entity, control, screenPos, size);
-}
+	void WidgetRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize,
+									bool editMode)
+	{
+		CH_CORE_ASSERT(scene, "Scene is null!");
 
-void WidgetRenderer::ProcessInput(Scene* scene, bool suppressInput)
-{
-    if (!scene)
-    {
-        return;
-    }
+		ImVec2 refSize = (referenceSize.x > 0) ? referenceSize : ImGui::GetIO().DisplaySize;
+		if (refSize.x <= 0 || refSize.y <= 0)
+		{
+			return;
+		}
 
-    // Input hit-testing needs widget layout rects. Reuse the canvas geometry
-    // captured by the previous DrawCanvas; until the canvas has been drawn once
-    // there is nothing on screen to click, so just reset flags via suppress.
-    auto& registry = scene->GetRegistry();
+		auto& registry = scene->GetRegistry();
 
-    if (!m_HasCanvasRect)
-    {
-        // No canvas rect yet — reset flags only, skip hit-testing.
-        UpdateUIInput(registry, m_LayoutSystem, /*suppress=*/true);
-        return;
-    }
+		// Cache canvas geometry so next frame's ProcessInput can hit-test without
+		// depending on this render path executing.
+		m_CanvasPos = referencePosition;
+		m_CanvasSize = refSize;
+		m_HasCanvasRect = true;
 
-    ImVec2 refSize = (m_CanvasSize.x > 0) ? m_CanvasSize : ImGui::GetIO().DisplaySize;
-    m_LayoutSystem.Update(scene, refSize, m_CanvasPos);
-    UpdateUIInput(registry, m_LayoutSystem, suppressInput);
-}
+		// 1. Update layout, then render (input is handled separately in ProcessInput).
+		m_LayoutSystem.Update(scene, refSize, referencePosition);
+		m_AnimationSystem.Update(registry, ImGui::GetIO().DeltaTime);
 
-void WidgetRenderer::DrawCanvas(Scene* scene, const ImVec2& referencePosition, const ImVec2& referenceSize,
-                                bool editMode)
-{
-    CH_CORE_ASSERT(scene, "Scene is null!");
+		// 2. Render UI elements
+		auto uiEntities = SortUIEntities(registry);
 
-    ImVec2 refSize = (referenceSize.x > 0) ? referenceSize : ImGui::GetIO().DisplaySize;
-    if (refSize.x <= 0 || refSize.y <= 0)
-    {
-        return;
-    }
+		ImVec2 canvasClipMin = referencePosition;
+		ImVec2 canvasClipMax = {referencePosition.x + refSize.x, referencePosition.y + refSize.y};
+		ImGui::PushClipRect(canvasClipMin, canvasClipMax, true);
 
-    auto& registry = scene->GetRegistry();
+		auto& fontRegistry = GetFontRegistry();
 
-    // Cache canvas geometry so next frame's ProcessInput can hit-test without
-    // depending on this render path executing.
-    m_CanvasPos = referencePosition;
-    m_CanvasSize = refSize;
-    m_HasCanvasRect = true;
+		for (entt::entity id : uiEntities)
+		{
+			Entity entity(id, scene->GetRegistryPtr());
 
-    // 1. Update layout, then render (input is handled separately in ProcessInput).
-    m_LayoutSystem.Update(scene, refSize, referencePosition);
-    m_AnimationSystem.Update(registry, ImGui::GetIO().DeltaTime);
+			auto& control = registry.get<ControlComponent>(id);
+			if (!control.IsActive)
+			{
+				continue;
+			}
 
-    // 2. Render UI elements
-    auto uiEntities = SortUIEntities(registry);
+			UIRect rect = m_LayoutSystem.GetEntityRect(id);
+			ImVec2 screenPos = {rect.x, rect.y};
+			ImVec2 size = {rect.width, rect.height};
 
-    ImVec2 canvasClipMin = referencePosition;
-    ImVec2 canvasClipMax = {referencePosition.x + refSize.x, referencePosition.y + refSize.y};
-    ImGui::PushClipRect(canvasClipMin, canvasClipMax, true);
+			bool needsClipPop = false;
 
-    for (entt::entity id : uiEntities)
-    {
-        Entity entity(id, scene->GetRegistryPtr());
+			// Safely retrieve parent hierarchy for scissor clipping
+			if (entity.HasComponent<HierarchyComponent>())
+			{
+				auto& hierarchy = entity.GetComponent<HierarchyComponent>();
+				auto parentID = hierarchy.Parent;
 
-        auto& control = registry.get<ControlComponent>(id);
-        if (!control.IsActive)
-        {
-            continue;
-        }
+				if (parentID != entt::null && registry.valid(parentID))
+				{
+					UIRect parentRect = m_LayoutSystem.GetEntityRect(parentID);
+					if (parentRect.width > 1.0f && parentRect.height > 1.0f)
+					{
+						ImGui::PushClipRect({parentRect.x, parentRect.y},
+											{parentRect.x + parentRect.width, parentRect.y + parentRect.height}, true);
+						needsClipPop = true;
+					}
+				}
+			}
 
-        UIRect rect = m_LayoutSystem.GetEntityRect(id);
-        ImVec2 screenPos = {rect.x, rect.y};
-        ImVec2 size = {rect.width, rect.height};
+			if (size.x > 0.0f && size.y > 0.0f)
+			{
+				ImGui::SetCursorScreenPos(screenPos);
+				ImGui::BeginGroup();
+				ImGui::PushID((int)id);
 
-        bool needsClipPop = false;
+				// Render the control component
+				if (entity.HasComponent<UIControlComponent>())
+				{
+					auto& widget = entity.GetComponent<UIControlComponent>();
+					if (!RenderControl(fontRegistry, widget, screenPos, size))
+					{
+						if (std::holds_alternative<std::monostate>(widget.Data))
+						{
+							CH_CORE_WARN("[UI] Entity '{}' has UIControlComponent with empty ControlData",
+										 entity.GetComponent<TagComponent>().Tag);
+						}
+					}
+				}
 
-        // Safely retrieve parent hierarchy for scissor clipping
-        if (entity.HasComponent<HierarchyComponent>())
-        {
-            auto& hierarchy = entity.GetComponent<HierarchyComponent>();
-            auto parentID = hierarchy.Parent;
+				// In edit mode, overlay with an invisible button to prevent game logic from firing
+				if (editMode)
+				{
+					ImGui::SetCursorScreenPos(screenPos);
+					ImGui::InvisibleButton("##DragZone", size);
+				}
 
-            if (parentID != entt::null && registry.valid(parentID))
-            {
-                UIRect parentRect = m_LayoutSystem.GetEntityRect(parentID);
-                if (parentRect.width > 1.0f && parentRect.height > 1.0f)
-                {
-                    ImGui::PushClipRect({parentRect.x, parentRect.y},
-                                        {parentRect.x + parentRect.width, parentRect.y + parentRect.height}, true);
-                    needsClipPop = true;
-                }
-            }
-        }
+				ImGui::PopID();
+				ImGui::EndGroup();
+			}
 
-        if (size.x > 0.0f && size.y > 0.0f)
-        {
-            ImGui::SetCursorScreenPos(screenPos);
-            ImGui::BeginGroup();
-            ImGui::PushID((int)id);
+			if (needsClipPop)
+			{
+				ImGui::PopClipRect();
+			}
+		}
 
-            // Attempt to render the control component
-            if (!RenderUIComponent(entity, screenPos, size, editMode))
-            {
-                if (entity.HasComponent<UIControlComponent>())
-                {
-                    auto& widget = entity.GetComponent<UIControlComponent>();
-                    if (std::holds_alternative<std::monostate>(widget.Data))
-                    {
-                        CH_CORE_WARN("[UI] Entity '{}' has UIControlComponent with empty ControlData",
-                                     entity.GetComponent<TagComponent>().Tag);
-                    }
-                }
-            }
-
-            // In edit mode, overlay with an invisible button to prevent game logic from firing
-            if (editMode)
-            {
-                ImGui::SetCursorScreenPos(screenPos);
-                ImGui::InvisibleButton("##DragZone", size);
-            }
-
-            ImGui::PopID();
-            ImGui::EndGroup();
-        }
-
-        if (needsClipPop)
-        {
-            ImGui::PopClipRect();
-        }
-    }
-
-    ImGui::PopClipRect();
-}
+		ImGui::PopClipRect();
+	}
 } // namespace Chained

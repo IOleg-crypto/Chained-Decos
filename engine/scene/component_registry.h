@@ -15,241 +15,293 @@
 
 namespace Chained
 {
-/**
- * @brief Metadata required for a component to be integrated into Editor and Serialization.
- */
-struct ComponentMetadata
-{
-    std::string Name;
-    std::string SerializationKey;
-    const char* Icon = nullptr;
+	/**
+	 * @brief Metadata required for a component to be integrated into Editor and Serialization.
+	 */
+	struct ComponentMetadata
+	{
+		std::string Name;
+		std::string SerializationKey;
+		const char* Icon = nullptr;
 
-    // UI Drawing callback (Inspector)
-    std::function<void(Entity)> DrawUI;
+		// UI Drawing callback (Inspector)
+		std::function<void(Entity)> DrawUI;
 
-    // Serialization callbacks
-    std::function<void(YAML::Emitter&, Entity)> Serialize;
-    std::function<void(Entity, YAML::Node)> Deserialize;
+		// Serialization callbacks
+		std::function<void(YAML::Emitter&, Entity)> Serialize;
+		std::function<void(Entity, YAML::Node)> Deserialize;
 
-    // Lifecycle callbacks
-    std::function<bool(Entity)> Has;
-    std::function<std::vector<uint64_t>(Scene*)> GetAll;
-    std::function<void(Entity)> Add;
-    std::function<void(Entity)> Remove;
-    std::function<void(Entity, Entity)> Copy;
+		// Lifecycle callbacks
+		std::function<bool(Entity)> Has;
+		std::function<std::vector<uint64_t>(Scene*)> GetAll;
+		std::function<void(Entity)> Add;
+		std::function<void(Entity)> Remove;
+		std::function<void(Entity, Entity)> Copy;
 
-    // Visibility and filters
-    std::string Category = "Other";
-    bool Visible = true;
-    bool AllowAdd = true;
-    bool IsWidget = false;
-    bool IsReflective = false;
+		// Visibility and filters
+		std::string Category = "Other";
+		bool Visible = true;
+		bool AllowAdd = true;
+		bool IsWidget = false;
+		bool IsReflective = false;
 
-    // Type-erased reflection caller.
-    // The void* is the archive pointer, and the second int is the reflection mode.
-    // This allows the Editor or Serializer to pass their specific archives.
-    std::function<void(Entity, void*, int)> ReflectInternal;
+		// Type-erased reflection caller.
+		// The void* is the archive pointer, and the second int is the reflection mode.
+		// This allows the Editor or Serializer to pass their specific archives.
+		std::function<void(Entity, void*, int)> ReflectInternal;
 
-    // Notifies EnTT that the component changed (triggers on_update observers).
-    // Called by the inspector after a reflected field is edited.
-    std::function<void(Entity)> NotifyUpdate;
+		// Notifies EnTT that the component changed (triggers on_update observers).
+		// Called by the inspector after a reflected field is edited.
+		std::function<void(Entity)> NotifyUpdate;
 
-    // Dynamic access to fields via C++ reflect-cpp (C# Interop).
-    // Entity, fieldName, void* dataBuffer, bool isSet
-    std::function<bool(Entity, const std::string&, void*, bool)> GetSetField;
-};
+		// Dynamic access to fields via C++ reflect-cpp (C# Interop).
+		// Entity, fieldName, void* dataBuffer, bool isSet
+		std::function<bool(Entity, const std::string&, void*, bool)> GetSetField;
+	};
 
-/**
- * @brief Centralized registry for all components (Engine & Game).
- */
-class ComponentRegistry
-{
-public:
-    static void Register(entt::id_type typeId, const ComponentMetadata& metadata);
-    static void RegisterEngineComponents();
+	/**
+	 * @brief Centralized registry for all components (Engine & Game).
+	 */
+	class ComponentRegistry
+	{
+	public:
+		static void Register(entt::id_type typeId, const ComponentMetadata& metadata);
+		static void RegisterEngineComponents();
 
-    static const std::unordered_map<entt::id_type, ComponentMetadata>& GetRegistry()
-    {
-        return s_Registry;
-    }
-    static bool Exists(entt::id_type typeId)
-    {
-        return s_Registry.contains(typeId);
-    }
-    static const ComponentMetadata& GetMetadata(::entt::id_type typeId)
-    {
-        auto it = s_Registry.find(typeId);
-        CH_CORE_ASSERT(it != s_Registry.end(), "ComponentRegistry::GetMetadata — type not registered!");
-        return it->second;
-    }
-    static ComponentMetadata& GetMetadataMutable(::entt::id_type typeId)
-    {
-        auto it = s_Registry.find(typeId);
-        CH_CORE_ASSERT(it != s_Registry.end(), "ComponentRegistry::GetMetadataMutable — type not registered!");
-        return it->second;
-    }
+		static const std::unordered_map<entt::id_type, ComponentMetadata>& GetRegistry()
+		{
+			return s_Registry;
+		}
+		static bool Exists(entt::id_type typeId)
+		{
+			return s_Registry.contains(typeId);
+		}
+		static const ComponentMetadata& GetMetadata(::entt::id_type typeId)
+		{
+			auto it = s_Registry.find(typeId);
+			CH_CORE_ASSERT(it != s_Registry.end(), "ComponentRegistry::GetMetadata — type not registered!");
+			return it->second;
+		}
+		static ComponentMetadata& GetMetadataMutable(::entt::id_type typeId)
+		{
+			auto it = s_Registry.find(typeId);
+			CH_CORE_ASSERT(it != s_Registry.end(), "ComponentRegistry::GetMetadataMutable — type not registered!");
+			return it->second;
+		}
 
-    static void SetAllowAdd(::entt::id_type typeId, bool allow)
-    {
-        s_Registry.at(typeId).AllowAdd = allow;
-    }
-    static void SetVisible(::entt::id_type typeId, bool visible)
-    {
-        s_Registry.at(typeId).Visible = visible;
-    }
-    static void SetIsWidget(::entt::id_type typeId, bool isWidget)
-    {
-        s_Registry.at(typeId).IsWidget = isWidget;
-    }
+		static void SetAllowAdd(::entt::id_type typeId, bool allow)
+		{
+			s_Registry.at(typeId).AllowAdd = allow;
+		}
+		static void SetVisible(::entt::id_type typeId, bool visible)
+		{
+			s_Registry.at(typeId).Visible = visible;
+		}
+		static void SetIsWidget(::entt::id_type typeId, bool isWidget)
+		{
+			s_Registry.at(typeId).IsWidget = isWidget;
+		}
 
-    /**
-     * @brief Registers a component that implements 'void Reflect(Properties& props)'.
-     * Automatically generates UI and Serialization handlers.
-     */
-    template <typename T>
-    static void RegisterReflective(const std::string& name, const char* icon = nullptr,
-                                   const std::string& category = "Game")
-    {
-        ComponentMetadata metadata;
-        metadata.Name = name;
-        metadata.SerializationKey = name + "Component";
-        metadata.Icon = icon;
-        metadata.Category = category;
+		// Editor-specific API: allows overriding metadata for editor-specific behavior
+		// (undo/redo, custom DrawUI, etc.) without exposing mutable access to the full struct.
+		static void OverrideMetadata(::entt::id_type typeId, const ComponentMetadata& override)
+		{
+			auto it = s_Registry.find(typeId);
+			CH_CORE_ASSERT(it != s_Registry.end(), "ComponentRegistry::OverrideMetadata — type not registered!");
+			auto& existing = it->second;
+			if (!override.Name.empty())
+			{
+				existing.Name = override.Name;
+			}
+			if (override.Icon)
+			{
+				existing.Icon = override.Icon;
+			}
+			if (override.DrawUI)
+			{
+				existing.DrawUI = override.DrawUI;
+			}
+			if (override.Add)
+			{
+				existing.Add = override.Add;
+			}
+			if (override.Remove)
+			{
+				existing.Remove = override.Remove;
+			}
+			if (override.Serialize)
+			{
+				existing.Serialize = override.Serialize;
+			}
+			if (override.Deserialize)
+			{
+				existing.Deserialize = override.Deserialize;
+			}
+			if (override.Copy)
+			{
+				existing.Copy = override.Copy;
+			}
+			if (override.NotifyUpdate)
+			{
+				existing.NotifyUpdate = override.NotifyUpdate;
+			}
+			if (override.GetSetField)
+			{
+				existing.GetSetField = override.GetSetField;
+			}
+			existing.IsWidget = override.IsWidget;
+			existing.Category = override.Category;
+			existing.AllowAdd = override.AllowAdd;
+		}
 
-        metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
-        metadata.NotifyUpdate = [](Entity e) {
-            if (e.HasComponent<T>())
-            {
-                e.GetRegistry().template patch<T>(e, [](T&) {});
-            }
-        };
-        metadata.GetAll = [](class Scene* s) {
-            std::vector<uint64_t> ids;
-            for (auto ent : s->GetRegistry().view<T>())
-            {
-                ids.push_back((uint64_t)(uint32_t)ent);
-            }
-            return ids;
-        };
-        metadata.Add = [](Entity e) {
-            if (!e.HasComponent<T>())
-            {
-                e.AddComponent<T>();
-            }
-        };
-        metadata.Remove = [](Entity e) {
-            if (e.HasComponent<T>())
-            {
-                e.RemoveComponent<T>();
-            }
-        };
-        metadata.Copy = [](Entity src, Entity dst) {
-            if (src.HasComponent<T>())
-            {
-                dst.AddOrReplaceComponent<T>(src.GetComponent<T>());
-            }
-        };
+		/**
+		 * @brief Registers a component that implements 'void Reflect(Properties& props)'.
+		 * Automatically generates UI and Serialization handlers.
+		 */
+		template <typename T>
+		static void RegisterReflective(const std::string& name, const char* icon = nullptr,
+									   const std::string& category = "Game")
+		{
+			ComponentMetadata metadata;
+			metadata.Name = name;
+			metadata.SerializationKey = name + "Component";
+			metadata.Icon = icon;
+			metadata.Category = category;
 
-        metadata.IsReflective = true;
-        metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
-            IPropertyArchiveBase* archive = static_cast<IPropertyArchiveBase*>(archivePtr);
-            const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
+			metadata.Has = [](Entity e) { return e.HasComponent<T>(); };
+			metadata.NotifyUpdate = [](Entity e) {
+				if (e.HasComponent<T>())
+				{
+					e.GetRegistry().template patch<T>(e, [](T&) {});
+				}
+			};
+			metadata.GetAll = [](class Scene* s) {
+				std::vector<uint64_t> ids;
+				for (auto ent : s->GetRegistry().view<T>())
+				{
+					ids.push_back((uint64_t)(uint32_t)ent);
+				}
+				return ids;
+			};
+			metadata.Add = [](Entity e) {
+				if (!e.HasComponent<T>())
+				{
+					e.AddComponent<T>();
+				}
+			};
+			metadata.Remove = [](Entity e) {
+				if (e.HasComponent<T>())
+				{
+					e.RemoveComponent<T>();
+				}
+			};
+			metadata.Copy = [](Entity src, Entity dst) {
+				if (src.HasComponent<T>())
+				{
+					dst.AddOrReplaceComponent<T>(src.GetComponent<T>());
+				}
+			};
 
-            if (reflMode == ReflectionMode::Deserialize)
-            {
-                // Add component if it doesn't exist yet (it won't during scene loading)
-                auto& comp = e.AddOrReplaceComponent<T>();
-                GenericProperties props(*archive);
-                if constexpr (is_rfl_component<T>::value)
-                {
-                    ReflectFromRfl(comp, props);
-                }
-                else
-                {
-                    comp.Reflect(props);
-                }
-            }
-            else if (e.HasComponent<T>())
-            {
-                GenericProperties props(*archive);
-                auto& comp = e.GetComponent<T>();
-                if constexpr (is_rfl_component<T>::value)
-                {
-                    ReflectFromRfl(comp, props);
-                }
-                else
-                {
-                    comp.Reflect(props);
-                }
-            }
-        };
+			metadata.IsReflective = true;
+			metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
+				IPropertyArchiveBase* archive = static_cast<IPropertyArchiveBase*>(archivePtr);
+				const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
 
-        metadata.GetSetField = [](Entity e, const std::string& fieldName, void* data, bool isSet) -> bool {
-            if constexpr (is_rfl_component<T>::value)
-            {
-                bool found = false;
-                auto& comp = e.GetComponent<T>();
-                rfl::to_view(comp).apply([&](auto... field_pack) {
-                    (
-                        [&](auto& field) {
-                            if (found)
-                            {
-                                return;
-                            }
-                            std::string name(field.name());
-                            using FieldType = std::decay_t<decltype(*field.get())>;
-                            if (name == fieldName)
-                            {
-                                if (isSet)
-                                {
-                                    *field.get() = *static_cast<FieldType*>(data);
-                                }
-                                else
-                                {
-                                    *static_cast<FieldType*>(data) = *field.get();
-                                }
-                                found = true;
-                            }
-                            else if constexpr (is_rfl_component<FieldType>::value)
-                            {
-                                rfl::to_view(*field.get()).apply([&](auto... sub_pack) {
-                                    (
-                                        [&](auto& sub) {
-                                            if (found)
-                                            {
-                                                return;
-                                            }
-                                            if (std::string(sub.name()) == fieldName)
-                                            {
-                                                using SubType = std::decay_t<decltype(*sub.get())>;
-                                                if (isSet)
-                                                {
-                                                    *sub.get() = *static_cast<SubType*>(data);
-                                                }
-                                                else
-                                                {
-                                                    *static_cast<SubType*>(data) = *sub.get();
-                                                }
-                                                found = true;
-                                            }
-                                        }(sub_pack),
-                                        ...);
-                                });
-                            }
-                        }(field_pack),
-                        ...);
-                });
-                return found;
-            }
-            return false;
-        };
+				if (reflMode == ReflectionMode::Deserialize)
+				{
+					// Add component if it doesn't exist yet (it won't during scene loading)
+					auto& comp = e.AddOrReplaceComponent<T>();
+					GenericProperties props(*archive);
+					if constexpr (is_rfl_component<T>::value)
+					{
+						ReflectFromRfl(comp, props);
+					}
+					else
+					{
+						comp.Reflect(props);
+					}
+				}
+				else if (e.HasComponent<T>())
+				{
+					GenericProperties props(*archive);
+					auto& comp = e.GetComponent<T>();
+					if constexpr (is_rfl_component<T>::value)
+					{
+						ReflectFromRfl(comp, props);
+					}
+					else
+					{
+						comp.Reflect(props);
+					}
+				}
+			};
 
-        Register(entt::type_hash<T>::value(), metadata);
-    }
+			metadata.GetSetField = [](Entity e, const std::string& fieldName, void* data, bool isSet) -> bool {
+				if constexpr (is_rfl_component<T>::value)
+				{
+					bool found = false;
+					auto& comp = e.GetComponent<T>();
+					rfl::to_view(comp).apply([&](auto... field_pack) {
+						(
+							[&](auto& field) {
+								if (found)
+								{
+									return;
+								}
+								std::string name(field.name());
+								using FieldType = std::decay_t<decltype(*field.get())>;
+								if (name == fieldName)
+								{
+									if (isSet)
+									{
+										*field.get() = *static_cast<FieldType*>(data);
+									}
+									else
+									{
+										*static_cast<FieldType*>(data) = *field.get();
+									}
+									found = true;
+								}
+								else if constexpr (is_rfl_component<FieldType>::value)
+								{
+									rfl::to_view(*field.get()).apply([&](auto... sub_pack) {
+										(
+											[&](auto& sub) {
+												if (found)
+												{
+													return;
+												}
+												if (std::string(sub.name()) == fieldName)
+												{
+													using SubType = std::decay_t<decltype(*sub.get())>;
+													if (isSet)
+													{
+														*sub.get() = *static_cast<SubType*>(data);
+													}
+													else
+													{
+														*static_cast<SubType*>(data) = *sub.get();
+													}
+													found = true;
+												}
+											}(sub_pack),
+											...);
+									});
+								}
+							}(field_pack),
+							...);
+					});
+					return found;
+				}
+				return false;
+			};
 
-private:
-    static std::unordered_map<entt::id_type, ComponentMetadata> s_Registry;
-};
+			Register(entt::type_hash<T>::value(), metadata);
+		}
+
+	private:
+		static std::unordered_map<entt::id_type, ComponentMetadata> s_Registry;
+	};
 
 /**
  * @brief Macro for automatic static registration of components.
@@ -258,10 +310,10 @@ private:
 #define CH_CONCAT_(a, b) a##b
 #define CH_CONCAT(a, b) CH_CONCAT_(a, b)
 #define CH_REGISTER_COMPONENT(type, name, icon, category)                                                              \
-    static bool CH_CONCAT(s_CompReg_, __LINE__) = []() {                                                               \
-        ::Chained::ComponentRegistry::RegisterReflective<type>(name, icon, category);                                  \
-        return true;                                                                                                   \
-    }()
+	static bool CH_CONCAT(s_CompReg_, __LINE__) = []() {                                                               \
+		::Chained::ComponentRegistry::RegisterReflective<type>(name, icon, category);                                  \
+		return true;                                                                                                   \
+	}()
 
 } // namespace Chained
 

@@ -30,6 +30,8 @@ add_library(editor_core STATIC
     panels/inspector_panel.cpp
     panels/material_panel.h
     panels/material_panel.cpp
+    panels/network_panel.h
+    panels/network_panel.cpp
     panels/panel.h
     panels/profiler_panel.h
     panels/profiler_panel.cpp
