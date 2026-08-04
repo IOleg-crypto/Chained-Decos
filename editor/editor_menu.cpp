@@ -170,7 +170,7 @@ namespace Chained
 				if (project)
 				{
 					auto assemblyPath = ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting,
-																		  project->GetProjectDirectoryForProject());
+																		  project->GetConfig().ProjectDirectory);
 					if (auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>())
 					{
 						scriptEngine->RequestAssemblyReload(assemblyPath.string(), "EditorGUI");

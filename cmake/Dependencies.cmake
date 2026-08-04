@@ -31,8 +31,7 @@ include(coral)
 include(external_gtest)
 include(pack)
 include(portable-file-dialogs)
-# No time for networking right now
-
+include(enet)
 include(reflect-cpp)
 
 # Disable unity builds for third-party libraries to avoid symbol redefinitions

@@ -1,6 +1,7 @@
 #ifndef CH_UI_FONT_REGISTRY_H
 #define CH_UI_FONT_REGISTRY_H
 
+#include "engine/core/service.h"
 #include "imgui.h"
 #include <string>
 #include <utility>
@@ -10,95 +11,102 @@
 namespace Chained
 {
 
-// Manages ImGui font atlas entries for UI rendering.
-// Fonts must be registered before BuildAtlas() is called (before the first frame).
-// Typical usage: call LoadProjectFonts() between ImGui::CreateContext() and the first frame.
-class UIFontRegistry
-{
-public:
-    UIFontRegistry() = default;
-    ~UIFontRegistry() = default;
+	// Manages ImGui font atlas entries for UI rendering.
+	// Fonts must be registered before BuildAtlas() is called (before the first frame).
+	// Typical usage: call LoadProjectFonts() between ImGui::CreateContext() and the first frame.
+	class UIFontRegistry : public Service
+	{
+	public:
+		UIFontRegistry() = default;
+		~UIFontRegistry() override = default;
 
-    // Scans <ProjectAssetDir>/fonts/ for all TTF/OTF files and discovers paths.
-    // FontName key = relative path from assets/, e.g. "fonts/Roboto-Regular.ttf".
-    // Multiple sizes are loaded explicitly via PreloadFonts().
-    void LoadProjectFonts();
+		void Initialize() override
+		{
+		}
+		void Shutdown() override
+		{
+		}
 
-    // Preloads explicit font tuples into ImGui atlas.
-    // Returns number of newly registered tuples.
-    int PreloadFonts(const std::vector<std::pair<std::string, float>>& requests, bool allowRuntimeMutation);
+		// Scans <ProjectAssetDir>/fonts/ for all TTF/OTF files and discovers paths.
+		// FontName key = relative path from assets/, e.g. "fonts/Roboto-Regular.ttf".
+		// Multiple sizes are loaded explicitly via PreloadFonts().
+		void LoadProjectFonts();
 
-    // Ensures project default font is available and returns it.
-    // Falls back to nullptr if no project font files are found.
-    ImFont* EnsureDefaultProjectFont(float pixelSize, bool allowRuntimeMutation);
+		// Preloads explicit font tuples into ImGui atlas.
+		// Returns number of newly registered tuples.
+		int PreloadFonts(const std::vector<std::pair<std::string, float>>& requests, bool allowRuntimeMutation);
 
-    // Returns the ImFont* for the given relative font name and pixel size.
-    // If not found or not loaded, returns nullptr (ImGui will use its default font).
-    // Non-const version allows lazy registration of fonts discovered but not yet loaded.
-    ImFont* GetFont(const std::string& relativeName, float pixelSize);
+		// Ensures project default font is available and returns it.
+		// Falls back to nullptr if no project font files are found.
+		ImFont* EnsureDefaultProjectFont(float pixelSize, bool allowRuntimeMutation);
 
-    // Const version — returns nullptr if font is not yet loaded (no lazy registration).
-    const ImFont* GetFont(const std::string& relativeName, float pixelSize) const;
+		// Returns the ImFont* for the given relative font name and pixel size.
+		// If not found or not loaded, returns nullptr (ImGui will use its default font).
+		// Non-const version allows lazy registration of fonts discovered but not yet loaded.
+		ImFont* GetFont(const std::string& relativeName, float pixelSize);
 
-    // Returns the default font (first registered, or ImGui built-in default).
-    ImFont* GetDefaultFont() const
-    {
-        return m_DefaultFont;
-    }
+		// Const version — returns nullptr if font is not yet loaded (no lazy registration).
+		const ImFont* GetFont(const std::string& relativeName, float pixelSize) const;
 
-    // True if any fonts were successfully loaded.
-    bool HasFonts() const
-    {
-        return !m_Fonts.empty();
-    }
+		// Returns the default font (first registered, or ImGui built-in default).
+		ImFont* GetDefaultFont() const
+		{
+			return m_DefaultFont;
+		}
 
-    // Returns all discovered font names (relative paths from assets/).
-    std::vector<std::string> GetKnownFontNames() const;
+		// True if any fonts were successfully loaded.
+		bool HasFonts() const
+		{
+			return !m_Fonts.empty();
+		}
 
-    // Clears all registered fonts (call before re-loading a new project).
-    void Clear();
+		// Returns all discovered font names (relative paths from assets/).
+		std::vector<std::string> GetKnownFontNames() const;
 
-    // Returns true if fonts were registered after the first frame and the GPU
-    // atlas texture must be rebuilt via ImGuiLayer::RefreshFontAtlasTexture().
-    bool NeedsAtlasRebuild() const
-    {
-        return m_NeedsRebuild;
-    }
+		// Clears all registered fonts (call before re-loading a new project).
+		void Clear();
 
-    // Clears the rebuild flag (call after the atlas GPU texture has been refreshed).
-    void ClearRebuildFlag()
-    {
-        m_NeedsRebuild = false;
-    }
+		// Returns true if fonts were registered after the first frame and the GPU
+		// atlas texture must be rebuilt via ImGuiLayer::RefreshFontAtlasTexture().
+		bool NeedsAtlasRebuild() const
+		{
+			return m_NeedsRebuild;
+		}
 
-private:
-    // Registers a single TTF/OTF file at the given absolute path under a relative name key.
-    // Returns the loaded ImFont* or nullptr on failure (failures are cached as nullptr).
-    ImFont* RegisterFont(const std::string& relativeName, const std::string& absolutePath, float pixelSize);
+		// Clears the rebuild flag (call after the atlas GPU texture has been refreshed).
+		void ClearRebuildFlag()
+		{
+			m_NeedsRebuild = false;
+		}
 
-    // Finalises font registration: stores in m_Fonts, sets m_DefaultFont, flags atlas rebuild.
-    ImFont* CommitFont(const std::string& normalizedName, ImFont* font);
+	private:
+		// Registers a single TTF/OTF file at the given absolute path under a relative name key.
+		// Returns the loaded ImFont* or nullptr on failure (failures are cached as nullptr).
+		ImFont* RegisterFont(const std::string& relativeName, const std::string& absolutePath, float pixelSize);
 
-    // Registers relKey → path in m_KnownPaths, increments discovered, and adds font/↔fonts/ alias.
-    void RegisterKnownFont(const std::string& relKey, const std::string& path, int& discovered);
+		// Finalises font registration: stores in m_Fonts, sets m_DefaultFont, flags atlas rebuild.
+		ImFont* CommitFont(const std::string& normalizedName, ImFont* font);
 
-    static std::string NormalizeFontName(std::string name);
+		// Registers relKey → path in m_KnownPaths, increments discovered, and adds font/↔fonts/ alias.
+		void RegisterKnownFont(const std::string& relKey, const std::string& path, int& discovered);
 
-    // Keyed by normalized relative name, e.g. "fonts/Roboto.ttf". One ImFont* per
-    // file — with ImGui 1.92 dynamic fonts any render size works from a single entry
-    // (pass the size to PushFont()/ImDrawList::AddText()). nullptr = cached failure.
-    std::unordered_map<std::string, ImFont*> m_Fonts;
+		static std::string NormalizeFontName(std::string name);
 
-    // Tracks which relative paths have been discovered (name -> absolute path)
-    std::unordered_map<std::string, std::string> m_KnownPaths;
+		// Keyed by normalized relative name, e.g. "fonts/Roboto.ttf". One ImFont* per
+		// file — with ImGui 1.92 dynamic fonts any render size works from a single entry
+		// (pass the size to PushFont()/ImDrawList::AddText()). nullptr = cached failure.
+		std::unordered_map<std::string, ImFont*> m_Fonts;
 
-    ImFont* m_DefaultFont = nullptr;
-    bool m_NeedsRebuild = false;
+		// Tracks which relative paths have been discovered (name -> absolute path)
+		std::unordered_map<std::string, std::string> m_KnownPaths;
 
-    // Raw TTF/OTF byte buffers for fonts read from pack.
-    // FontDataOwnedByAtlas = false, so these must outlive the atlas build.
-    std::unordered_map<std::string, std::vector<uint8_t>> m_PackFontData;
-};
+		ImFont* m_DefaultFont = nullptr;
+		bool m_NeedsRebuild = false;
+
+		// Raw TTF/OTF byte buffers for fonts read from pack.
+		// FontDataOwnedByAtlas = false, so these must outlive the atlas build.
+		std::unordered_map<std::string, std::vector<uint8_t>> m_PackFontData;
+	};
 
 } // namespace Chained
 

@@ -23,6 +23,7 @@ target_link_libraries(engine_app PUBLIC
     engine_core
     engine_imgui
     engine_platform
+    engine_network
 )
 
 target_include_directories(engine_app PRIVATE ${CMAKE_SOURCE_DIR})

@@ -41,12 +41,12 @@ add_library(engine_scene STATIC
     component_registry_rendering.cpp
     component_registry_scripting.cpp
     component_registry_ui.cpp
+    component_ui_control.cpp
     component_serializer.cpp
     hierarchy_serializer.cpp
     prefab_serializer.cpp
     scene.cpp
     scene_serializer.cpp
-    ui_control_registry.cpp
     systems/hierarchy_system.h
     systems/hierarchy_system.cpp
     systems/animation_system.h
@@ -59,6 +59,8 @@ add_library(engine_scene STATIC
     systems/asset_resolution_system.cpp
     systems/scene_transition_system.h
     systems/scene_transition_system.cpp
+    systems/network_system.h
+    systems/network_system.cpp
 )
 
 target_include_directories(engine_scene PUBLIC
@@ -75,6 +77,7 @@ target_link_libraries(engine_scene PUBLIC
     engine_physics
     engine_audio
     engine_scripting
+    engine_network
     engine_external_entt
     glm
     engine_external_imgui

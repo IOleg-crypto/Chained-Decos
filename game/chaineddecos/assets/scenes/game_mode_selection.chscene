@@ -45,7 +45,7 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: ""
+      TargetScenePath: scenes/start_menu.chscene
       Triggered: false
     ControlComponent:
       Transform:
@@ -97,6 +97,9 @@ Entities:
       Tag: btn_multiplayer
     IDComponent:
       {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/multiplayer_lobby.chscene
+      Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
@@ -111,22 +114,22 @@ Entities:
       HiddenInHierarchy: false
     WidgetComponent:
       Box Style:
-        BG Color: [22, 24, 29, 255]
-        Hover Color: [22, 24, 29, 255]
-        Pressed Color: [22, 24, 29, 255]
+        BG Color: [56, 178, 166, 255]
+        Hover Color: [82, 204, 191, 255]
+        Pressed Color: [40, 130, 122, 255]
         Rounding: 8
-        Border Size: 1
-        Border Color: [255, 255, 255, 14]
+        Border Size: 0
+        Border Color: [255, 255, 255, 100]
         Gradient: false
         Gradient Color: [20, 20, 20, 255]
         Padding: 4
-        Hover Scale: 1
-        Pressed Scale: 1
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
         Font Name: font/gantari/static/gantari-black.ttf
         Font Size: 18
-        Text Color: [110, 116, 126, 255]
+        Text Color: [15, 24, 26, 255]
         Shadow: false
         Shadow Offset: 2
         Shadow Color: [0, 0, 0, 255]
@@ -135,8 +138,8 @@ Entities:
         H Align: 1
         V Align: 1
       Widget Type: 1
-      Label: Multiplayer (Coming Soon)
-      Interactable: false
+      Label: Multiplayer
+      Interactable: true
       Auto Size: false
   - Entity: 8794121719671112016
     TransformComponent:
