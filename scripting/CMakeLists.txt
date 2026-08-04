@@ -23,6 +23,8 @@ add_library(engine_scripting STATIC
     script_glue_ui.cpp
     script_glue_audio.h
     script_glue_audio.cpp
+    script_glue_network.h
+    script_glue_network.cpp
 )
 
 target_include_directories(engine_scripting PUBLIC
@@ -36,6 +38,7 @@ target_link_libraries(engine_scripting PUBLIC
     engine_physics
     engine_imgui
     engine_graphics
+    engine_network
     Coral.Native
 )
 

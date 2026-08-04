@@ -15,6 +15,7 @@
 #include "engine/scene/systems/physics_body_system.h"
 #include "engine/scene/systems/asset_resolution_system.h"
 #include "engine/scene/systems/scene_transition_system.h"
+#include "engine/scene/systems/network_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
@@ -48,6 +49,12 @@ namespace Chained
 
 	Scene::~Scene()
 	{
+		auto& reg = *m_Registry;
+		reg.on_destroy<IDComponent>().disconnect();
+		reg.on_destroy<HierarchyComponent>().disconnect();
+		reg.on_construct<IDComponent>().disconnect();
+		reg.on_construct<HierarchyComponent>().disconnect();
+		reg.ctx().erase<Scene*>();
 		GetRegistry().clear();
 	}
 
@@ -129,7 +136,7 @@ namespace Chained
 		return newScene;
 	}
 
-	void Scene::OnHierarchyConstruct(entt::registry& reg, entt::entity entity)
+	void Scene::OnHierarchyConstruct()
 	{
 		m_RootsDirty = true;
 	}
@@ -258,6 +265,9 @@ namespace Chained
 		AssetResolutionSystem::Update(*m_Registry);
 		AnimationSystem::Update(*m_Registry, ts);
 		AudioSystem::Update(*m_Registry);
+
+		NetworkSystem::ApplyHostInputs(*m_Registry, ts);
+
 		PhysicsBodySystem::Update(*m_Registry);
 
 		if (runPhysics)
@@ -267,6 +277,8 @@ namespace Chained
 				physics->Update(this, ts, true);
 			}
 		}
+
+		NetworkSystem::Update(*m_Registry, ts);
 
 		if (runTransitions)
 		{
