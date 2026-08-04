@@ -176,4 +176,31 @@ public class ComboBoxControl : WidgetControl
     public void   ClearItems()         => ClearItems(Entity.ID);
 }
 
+/// <summary>Input text field wrapper.</summary>
+public class InputTextControl : WidgetControl
+{
+#pragma warning disable 0649
+    internal static unsafe delegate* unmanaged<ulong, char*> InputTextControl_GetText_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, char*, void> InputTextControl_SetText_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte> InputTextControl_HasChanged_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, void> InputTextControl_ClearChanged_Ptr;
+#pragma warning restore 0649
+
+    public string Text
+    {
+        get { unsafe { return Marshal.PtrToStringUni(new IntPtr(InputTextControl_GetText_Ptr(Entity.ID))) ?? string.Empty; } }
+        set { unsafe { fixed (char* ptr = value) InputTextControl_SetText_Ptr(Entity.ID, ptr); } }
+    }
+
+    public bool HasChanged
+    {
+        get { unsafe { return InputTextControl_HasChanged_Ptr(Entity.ID) != 0; } }
+    }
+
+    public void ClearChanged()
+    {
+        unsafe { InputTextControl_ClearChanged_Ptr(Entity.ID); }
+    }
+}
+
 }

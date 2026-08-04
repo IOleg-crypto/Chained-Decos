@@ -12,6 +12,7 @@
 #include "engine/core/window.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
+#include "engine/graphics/ui/ui_font_registry.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/imgui/imgui_layer.h"
 #include "engine/physics/physics.h"
@@ -60,9 +61,9 @@ namespace Chained
 
 		InitProject(m_ProjectPath);
 
-		if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+		if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
 		{
-			if (ImFont* projectDefaultFont = wr->GetFontRegistry().EnsureDefaultProjectFont(18.0f, false))
+			if (ImFont* projectDefaultFont = fontRegistry->EnsureDefaultProjectFont(18.0f, false))
 			{
 				io.FontDefault = projectDefaultFont;
 				CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
@@ -104,16 +105,16 @@ namespace Chained
 			return;
 		}
 
-		if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+		if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
 		{
-			if (uiRenderer->GetFontRegistry().NeedsAtlasRebuild())
+			if (fontRegistry->NeedsAtlasRebuild())
 			{
 				auto* imguiLayer = Application::Get().GetImGuiLayer();
 				if (imguiLayer)
 				{
 					imguiLayer->ExecuteNextFrame([imguiLayer]() { imguiLayer->RefreshFontAtlasTexture(); });
 				}
-				uiRenderer->GetFontRegistry().ClearRebuildFlag();
+				fontRegistry->ClearRebuildFlag();
 			}
 		}
 
@@ -328,7 +329,7 @@ namespace Chained
 			return false;
 		}
 		auto assemblyPath =
-			ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting, project->GetProjectDirectoryForProject());
+			ScriptEngine::ResolveAssemblyPath(project->GetConfig().Scripting, project->GetConfig().ProjectDirectory);
 
 		CH_CORE_INFO("RuntimeSystem: Loading project assembly: {}", assemblyPath.string());
 
@@ -392,11 +393,13 @@ namespace Chained
 			return false;
 		}
 
+		Project::SetActive(project);
+
 		CH_CORE_INFO("RuntimeSystem: Project loaded: {}", project->GetName());
-		CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetProjectDirectoryForProject().string());
+		CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetConfig().ProjectDirectory.string());
 		CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
 
-		m_AssetManager->SetProjectDirectory(project->GetProjectDirectoryForProject());
+		m_AssetManager->SetProjectDirectory(project->GetConfig().ProjectDirectory);
 		m_AssetManager->SetAssetDirectory(Project::GetAssetDirectory());
 
 #ifdef CH_SOURCE_GAME_DIR
@@ -489,7 +492,7 @@ namespace Chained
 		}
 
 		// Try resolving via project path first (disk)
-		std::string resolvedIconPath = project->GetAbsolutePathForProject(config.IconPath).string();
+		std::string resolvedIconPath = Project::GetAbsolutePath(config.IconPath).string();
 		if (std::filesystem::exists(resolvedIconPath))
 		{
 			CH_CORE_INFO("RuntimeSystem: Setting window icon: {}", resolvedIconPath);
@@ -637,9 +640,9 @@ namespace Chained
 		}
 
 		const int loadedCount = [&]() {
-			if (auto* wr = ServiceLocator::TryGet<WidgetRenderer>())
+			if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
 			{
-				return wr->GetFontRegistry().PreloadFonts(requests, allowRuntimeMutation);
+				return fontRegistry->PreloadFonts(requests, allowRuntimeMutation);
 			}
 			return 0;
 		}();

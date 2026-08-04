@@ -23,5 +23,6 @@
 #include "components/ui_action_component.h"
 #include "components/player_component.h"
 #include "components/spawn_component.h"
+#include "components/network_identity_component.h"
 
 #endif // CH_COMPONENTS_H
