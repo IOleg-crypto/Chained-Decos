@@ -52,10 +52,7 @@ target_include_directories(engine_scripting PRIVATE
 )
 
 
-if(MSVC)
-    target_compile_options(engine_scripting PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_scripting PRIVATE -Wa,-mbig-obj)
+if(MINGW)
     # See cmake/external/coral.cmake: MinGW -O0 codegen can misalign the stack
     # on the call path into CoreCLR, causing Debug-only access violations on
     # CI. -Og overrides the global Debug -O0 for this bridge module only.
@@ -80,7 +77,6 @@ set(MANAGED_PROJECT_PATH "${MANAGED_PROJECT_DIR}/Chained.Managed.csproj")
 set(MANAGED_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>")
 set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
 
-find_package(Python3 REQUIRED COMPONENTS Interpreter)
 set(BUILD_MANAGED_SCRIPT "${CMAKE_SOURCE_DIR}/tools/build_managed.py")
 
 file(GLOB_RECURSE MANAGED_SOURCES "${MANAGED_PROJECT_DIR}/src/*.cs")

@@ -5,7 +5,7 @@ if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/assimp/CMakeLists.txt")
     set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
     set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
     set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE) # Build as shared to reduce dev link times
+    set(BUILD_SHARED_LIBS ON CACHE BOOL "" FORCE) # Build as shared to reduce dev link times (overrides project default for assimp only)
 
     # Set model importer formats
     set(ASSIMP_BUILD_ALL_IMPORTERS_BY_DEFAULT OFF CACHE INTERNAL "")

@@ -178,6 +178,18 @@ namespace Chained
 					uiRenderer->ResetButtonStates(m_RuntimeScene.get());
 				}
 
+				// Map SelectedEntity to the play/simulate scene so the Inspector shows and modifies running state!
+				auto& editorState = EditorLayer::Get().GetEditorState();
+				if (editorState.SelectedEntity)
+				{
+					UUID uuid = editorState.SelectedEntity.GetUUID();
+					Entity playEntity = m_RuntimeScene->GetEntityByUUID(uuid);
+					if (playEntity)
+					{
+						editorState.SelectedEntity = playEntity;
+					}
+				}
+
 				m_Transition.state = TransitionState::Finalizing;
 				m_Transition.targetState = state;
 				m_Transition.forPlayMode = true;
@@ -202,7 +214,14 @@ namespace Chained
 				return;
 			}
 
-			EditorLayer::Get().GetEditorState().SelectedEntity = {};
+			// Map SelectedEntity back to the editor scene
+			auto& editorState = EditorLayer::Get().GetEditorState();
+			if (editorState.SelectedEntity)
+			{
+				UUID uuid = editorState.SelectedEntity.GetUUID();
+				Entity editorEntity = m_EditorScene ? m_EditorScene->GetEntityByUUID(uuid) : Entity{};
+				editorState.SelectedEntity = editorEntity;
+			}
 
 			CH_CORE_INFO("Editor: Play Mode Stopped");
 			if (m_RuntimeScene)

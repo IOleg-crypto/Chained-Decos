@@ -19,12 +19,6 @@ if(WIN32)
     target_link_libraries(engine_audio PUBLIC winmm ole32)
 endif()
 
-if(MSVC)
-    target_compile_options(engine_audio PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_audio PRIVATE -Wa,-mbig-obj)
-endif()
-
 if(TARGET engine_pch)
     target_link_libraries(engine_audio PRIVATE engine_pch)
 endif()

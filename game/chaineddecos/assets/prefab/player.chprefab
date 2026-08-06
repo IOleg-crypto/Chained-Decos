@@ -29,6 +29,10 @@ Entities:
       Roughness: 0.5
       Transparent: false
       Alpha: 1
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.PlayerController
+          Fields: []
     PlayerComponent:
       MovementSpeed: 15
       JumpForce: 10

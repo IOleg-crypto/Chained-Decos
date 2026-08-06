@@ -74,7 +74,7 @@ Entities:
         Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
+        Font Name: font/static/Figtree-Regular.ttf
         Font Size: 18
         Text Color: [235, 238, 242, 255]
         Shadow: false
@@ -127,7 +127,7 @@ Entities:
         Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
+        Font Name: font/static/Figtree-Regular.ttf
         Font Size: 22
         Text Color: [235, 238, 242, 255]
         Shadow: false
@@ -180,7 +180,7 @@ Entities:
         Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
+        Font Name: font/static/Figtree-Regular.ttf
         Font Size: 22
         Text Color: [235, 238, 242, 255]
         Shadow: false
@@ -230,7 +230,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.100000001
       Text Style:
-        Font Name: font/gantari/static/gantari-black.ttf
+        Font Name: font/static/Figtree-Regular.ttf
         Font Size: 40
         Text Color: [110, 231, 211, 255]
         Shadow: true

@@ -278,12 +278,24 @@ namespace Chained
 			}
 		}
 
-		NetworkSystem::Update(*m_Registry, ts);
+		NetworkSystem::Update(this, ts);
 
 		if (runTransitions)
 		{
 			SceneTransitionSystem::Update(*m_Registry, m_EventCallback);
 		}
+	}
+
+	void Scene::InitializePhysicsStartup()
+	{
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			physics->ResetWorld(this);
+			physics->ResetAccumulator(this);
+			physics->InitializeBodies(this);
+		}
+		m_IsStartingUp = false;
+		FinishRuntimeStart();
 	}
 
 	void Scene::OnUpdateRuntime(Timestep ts)
@@ -292,15 +304,7 @@ namespace Chained
 
 		if (m_IsStartingUp)
 		{
-			if (auto* physics = ServiceLocator::TryGet<Physics>())
-			{
-				physics->ResetWorld(this);
-				physics->ResetAccumulator(this);
-				physics->InitializeBodies(this);
-			}
-
-			m_IsStartingUp = false;
-			FinishRuntimeStart();
+			InitializePhysicsStartup();
 			return;
 		}
 
@@ -313,15 +317,7 @@ namespace Chained
 
 		if (m_IsStartingUp)
 		{
-			if (auto* physics = ServiceLocator::TryGet<Physics>())
-			{
-				physics->ResetWorld(this);
-				physics->ResetAccumulator(this);
-				physics->InitializeBodies(this);
-			}
-
-			m_IsStartingUp = false;
-			FinishRuntimeStart();
+			InitializePhysicsStartup();
 			return;
 		}
 

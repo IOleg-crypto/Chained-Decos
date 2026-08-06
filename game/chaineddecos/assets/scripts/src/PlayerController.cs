@@ -60,23 +60,7 @@ namespace ChainedDecos.Scripts
                 return;
             }
 
-            // If we're a pure client (not host), input goes via C++ CollectAndSendInput.
-            // We still handle animation locally.
-            if (Network.IsClient)
-            {
-                if (_anim != null)
-                {
-                    bool isMoving = _rb.Velocity.LengthSquared() > 0.1f;
-                    _anim.SetBool("isMoving", isMoving);
-                    _anim.SetBool("isGrounded", _rb.IsGrounded);
-                    _anim.SetFloat("speed", isMoving ? 0.5f : 0.0f);
-                }
-                return;
-            }
-
-            // ── Local input (host or offline) ──
-            // Avatars spawned for remote peers come from player.chprefab, which carries no
-            // script — so this only ever runs on the locally controlled player.
+            // ── Local input (owner or offline) ──
             float speed = MovementSpeed;
             if (Input.IsKeyDown(Key.LeftShift)) speed *= 2.0f;
 
