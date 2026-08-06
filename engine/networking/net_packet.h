@@ -1,7 +1,6 @@
 #ifndef CH_NET_PACKET_H
 #define CH_NET_PACKET_H
 
-#include <enet.h>
 #include <cstdint>
 #include <cstring>
 
@@ -17,16 +16,17 @@ namespace Chained
 		EntityDestroy,
 		SceneChange,
 		PlayerAssign,
-		RPC
+		RPC,
+		PlayerInfo,
+		PlayerList,
+		ChatMessage
 	};
 
-	enum class PacketFlags : enet_uint32
+	enum class PacketFlags : uint32_t
 	{
 		Unreliable = 0,
-		Reliable = ENET_PACKET_FLAG_RELIABLE,
-		Unsequenced = ENET_PACKET_FLAG_UNSEQUENCED,
-		NoAllocate = ENET_PACKET_FLAG_NO_ALLOCATE,
-		UnreliableFragment = ENET_PACKET_FLAG_UNRELIABLE_FRAGMENT
+		Reliable = 1,
+		Unsequenced = 2,
 	};
 
 	// ActionFlags bitmask for InputStatePacket
@@ -38,7 +38,7 @@ namespace Chained
 		InputAction_Interact = 1 << 2,
 	};
 
-	// Sent from client → server every frame (unreliable)
+	// Sent from client -> server every frame (unreliable)
 	struct InputStatePacket
 	{
 		uint32_t Tick = 0;
@@ -73,6 +73,184 @@ namespace Chained
 		uint64_t NetworkID = 0;
 		uint32_t Ping = 0;
 		char Name[32] = {};
+		uint8_t SkinIndex = 0;
+		uint8_t IsHost = 0;
+	};
+
+	// Sent from host -> all clients when starting the game
+	struct SceneChangePacket
+	{
+		char ScenePath[256] = {};
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(SceneChangePacket);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(SceneChangePacket));
+		}
+
+		static SceneChangePacket Deserialize(const uint8_t* in)
+		{
+			SceneChangePacket pkt;
+			std::memcpy(&pkt, in, sizeof(SceneChangePacket));
+			return pkt;
+		}
+	};
+
+	// Sent from client -> host when connecting (reliable)
+	struct PlayerInfoPacket
+	{
+		char Name[32] = {};
+		uint8_t SkinIndex = 0;
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(PlayerInfoPacket);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(PlayerInfoPacket));
+		}
+
+		static PlayerInfoPacket Deserialize(const uint8_t* in)
+		{
+			PlayerInfoPacket pkt;
+			std::memcpy(&pkt, in, sizeof(PlayerInfoPacket));
+			return pkt;
+		}
+	};
+
+	// Per-entry in a PlayerListPacket (variable-length array follows the header)
+	struct PlayerListEntry
+	{
+		uint64_t NetworkID = 0;
+		char Name[32] = {};
+		uint8_t SkinIndex = 0;
+		uint8_t IsHost = 0;
+	};
+
+	// Sent from host -> all clients with the full player list (reliable)
+	struct PlayerListPacket
+	{
+		uint8_t Count = 0;
+		// Followed by Count × PlayerListEntry (not included in sizeof — wire format)
+
+		static constexpr size_t HeaderSize()
+		{
+			return sizeof(uint8_t);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, HeaderSize());
+		}
+
+		static void DeserializeHeader(const uint8_t* in, uint8_t& outCount)
+		{
+			std::memcpy(&outCount, in, sizeof(uint8_t));
+		}
+	};
+
+	// Sent from host -> clients when a networked entity appears. PrefabPath is
+	// relative to the assets directory; the client instantiates it and tags the
+	// result with NetworkID so world state updates can find it.
+	struct EntitySpawnPacket
+	{
+		uint64_t NetworkID = 0;
+		char PrefabPath[128] = {};
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(EntitySpawnPacket);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(EntitySpawnPacket));
+		}
+
+		static EntitySpawnPacket Deserialize(const uint8_t* in)
+		{
+			EntitySpawnPacket pkt;
+			std::memcpy(&pkt, in, sizeof(EntitySpawnPacket));
+			return pkt;
+		}
+	};
+
+	// Sent from host -> clients when a networked entity goes away.
+	struct EntityDestroyPacket
+	{
+		uint64_t NetworkID = 0;
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(EntityDestroyPacket);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(EntityDestroyPacket));
+		}
+
+		static EntityDestroyPacket Deserialize(const uint8_t* in)
+		{
+			EntityDestroyPacket pkt;
+			std::memcpy(&pkt, in, sizeof(EntityDestroyPacket));
+			return pkt;
+		}
+	};
+
+	// Sent from host -> a single client, telling it which NetworkID is its own.
+	// Without this a client cannot tell its own avatar from everyone else's.
+	struct PlayerAssignPacket
+	{
+		uint64_t NetworkID = 0;
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(PlayerAssignPacket);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(PlayerAssignPacket));
+		}
+
+		static PlayerAssignPacket Deserialize(const uint8_t* in)
+		{
+			PlayerAssignPacket pkt;
+			std::memcpy(&pkt, in, sizeof(PlayerAssignPacket));
+			return pkt;
+		}
+	};
+
+	// Sent from any participant -> all (reliable)
+	struct ChatMessagePacket
+	{
+		uint64_t SenderNetworkID = 0;
+		char SenderName[32] = {};
+		char Message[256] = {};
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(ChatMessagePacket);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(ChatMessagePacket));
+		}
+
+		static ChatMessagePacket Deserialize(const uint8_t* in)
+		{
+			ChatMessagePacket pkt;
+			std::memcpy(&pkt, in, sizeof(ChatMessagePacket));
+			return pkt;
+		}
 	};
 
 	inline PacketFlags operator|(PacketFlags lhs, PacketFlags rhs)

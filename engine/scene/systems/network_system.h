@@ -2,18 +2,20 @@
 #define CH_NETWORK_SYSTEM_H
 
 #include "engine/common/timestep.h"
+#include "engine/networking/net_packet.h"
 #include <entt/entt.hpp>
 #include <glm/glm.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <unordered_map>
 #include <vector>
+#include <string>
 #include <cstdint>
 
-struct _ENetPeer;
-typedef struct _ENetPeer ENetPeer;
+#include <steam/steamnetworkingsockets.h>
 
 namespace Chained
 {
+	class Scene;
 
 	struct PendingNetworkState
 	{
@@ -34,14 +36,23 @@ namespace Chained
 
 	namespace NetworkSystem
 	{
-		void Update(entt::registry& reg, Timestep ts);
+		void Update(Scene* scene, Timestep ts);
 		void ApplyHostInputs(entt::registry& reg, Timestep ts);
 
 		const std::vector<ProcessedInput>& GetPendingInputs();
 		void ClearPendingInputs();
 
-		void RegisterPeerEntity(ENetPeer* peer, uint64_t networkID);
-		void UnregisterPeer(ENetPeer* peer);
+		void RegisterPeerEntity(HSteamNetConnection peer, uint64_t networkID);
+		void UnregisterPeer(HSteamNetConnection peer);
+
+		// Prefab instantiated for each connecting client. Relative to the assets
+		// directory. Empty by default — clients get no avatar until this is set.
+		void SetPlayerPrefab(const std::string& path);
+		const std::string& GetPlayerPrefab();
+
+		// Chat messages received from the network (for C# consumption).
+		const std::vector<ChatMessagePacket>& GetPendingChatMessages();
+		void ClearPendingChatMessages();
 	} // namespace NetworkSystem
 
 } // namespace Chained

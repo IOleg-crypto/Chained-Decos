@@ -2,6 +2,8 @@ add_library(engine_network STATIC
     network_service.h
     network_service.cpp
     net_packet.h
+    upnp_port_mapper.h
+    upnp_port_mapper.cpp
 )
 
 target_include_directories(engine_network PUBLIC
@@ -13,16 +15,15 @@ target_link_libraries(engine_network PUBLIC
     engine_core
     engine_project
     engine_external_entt
-    engine_external_network
+    GameNetworkingSockets::static
     glm
     assimp
     Jolt
+    engine_external_miniupnpc
 )
 
-if(MSVC)
-    target_compile_options(engine_network PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_network PRIVATE -Wa,-mbig-obj)
+if(WIN32)
+    target_link_libraries(engine_network PUBLIC ws2_32)
 endif()
 
 if(TARGET engine_pch)
