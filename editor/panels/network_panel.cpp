@@ -5,9 +5,91 @@
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
+#include <future>
+#include <chrono>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winhttp.h>
+#pragma comment(lib, "winhttp.lib")
+#endif
 
 namespace Chained
 {
+
+	/// Performs a blocking HTTP GET to api.ipify.org and returns the plain-text
+	/// public IP. Called from a background thread via std::async — must not touch
+	/// ImGui or any engine state.
+	static std::string FetchPublicIPBlocking()
+	{
+#ifdef _WIN32
+		HINTERNET hSession = WinHttpOpen(L"ChainedEditor/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+										 WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+		if (!hSession)
+		{
+			return "(error: WinHttpOpen)";
+		}
+
+		HINTERNET hConnect = WinHttpConnect(hSession, L"api.ipify.org", INTERNET_DEFAULT_HTTP_PORT, 0);
+		if (!hConnect)
+		{
+			WinHttpCloseHandle(hSession);
+			return "(error: WinHttpConnect)";
+		}
+
+		HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", L"/?format=text", nullptr, WINHTTP_NO_REFERER,
+												WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+		if (!hRequest)
+		{
+			WinHttpCloseHandle(hConnect);
+			WinHttpCloseHandle(hSession);
+			return "(error: WinHttpOpenRequest)";
+		}
+
+		BOOL sent = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+		if (!sent || !WinHttpReceiveResponse(hRequest, nullptr))
+		{
+			WinHttpCloseHandle(hRequest);
+			WinHttpCloseHandle(hConnect);
+			WinHttpCloseHandle(hSession);
+			return "(error: send/receive)";
+		}
+
+		std::string result;
+		DWORD bytesAvail = 0;
+		while (WinHttpQueryDataAvailable(hRequest, &bytesAvail) && bytesAvail > 0)
+		{
+			std::string chunk(bytesAvail, '\0');
+			DWORD bytesRead = 0;
+			if (WinHttpReadData(hRequest, chunk.data(), bytesAvail, &bytesRead))
+			{
+				result.append(chunk.data(), bytesRead);
+			}
+		}
+
+		WinHttpCloseHandle(hRequest);
+		WinHttpCloseHandle(hConnect);
+		WinHttpCloseHandle(hSession);
+		return result.empty() ? "(empty response)" : result;
+#else
+		// On Linux use curl if available, otherwise return a hint.
+		FILE* pipe = popen("curl -s --max-time 5 https://api.ipify.org 2>/dev/null", "r");
+		if (!pipe)
+		{
+			return "(install curl)";
+		}
+		char buf[64] = {};
+		fgets(buf, sizeof(buf), pipe);
+		pclose(pipe);
+		std::string r(buf);
+		while (!r.empty() && (r.back() == '\n' || r.back() == '\r'))
+		{
+			r.pop_back();
+		}
+		return r.empty() ? "(empty response)" : r;
+#endif
+	}
 
 	NetworkPanel::NetworkPanel()
 	{
@@ -90,20 +172,75 @@ namespace Chained
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 
+		// --- Poll async public IP result ---
+		if (m_FetchingIP && m_IpFuture.valid())
+		{
+			if (m_IpFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+			{
+				m_PublicIP = m_IpFuture.get();
+				m_FetchingIP = false;
+			}
+		}
+
 		if (net && net->IsHost())
 		{
 			ImGui::Text("Server is running.");
 			ImGui::Separator();
 
-			ImGui::Text("Port: %s", m_HostPort);
+			ImGui::Text("Port: %u", net->GetPort());
 			ImGui::Text("Max clients: %d", m_MaxClients);
 			ImGui::Text("Connected: %zu", net->GetClientCount());
 
 			ImGui::Separator();
 
-			ImGui::BeginDisabled();
-			ImGui::Button("Stop Server");
-			ImGui::EndDisabled();
+			// ── Public IP block ───────────────────────────────────────────────
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "Public IP (for internet play):");
+			ImGui::SameLine();
+			if (m_FetchingIP)
+			{
+				ImGui::TextDisabled("fetching...");
+			}
+			else if (m_PublicIP.empty())
+			{
+				ImGui::TextDisabled("(not fetched)");
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Fetch##ip"))
+				{
+					m_FetchingIP = true;
+					m_IpFuture = std::async(std::launch::async, FetchPublicIPBlocking);
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "%s:%u", m_PublicIP.c_str(), net->GetPort());
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Copy##ip"))
+				{
+					std::string full = m_PublicIP + ":" + std::to_string(net->GetPort());
+					ImGui::SetClipboardText(full.c_str());
+					m_StatusMessage = "Copied: " + full;
+					m_StatusIsError = false;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Refresh##ip"))
+				{
+					m_PublicIP.clear();
+					m_FetchingIP = true;
+					m_IpFuture = std::async(std::launch::async, FetchPublicIPBlocking);
+				}
+			}
+			ImGui::TextDisabled("Forward UDP port %u on your router to play over the internet.", net->GetPort());
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Stop Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				net->Shutdown();
+				m_StatusMessage = "Server stopped.";
+				m_StatusIsError = false;
+				m_PublicIP.clear();
+				m_FetchingIP = false;
+			}
 		}
 		else
 		{
@@ -126,17 +263,27 @@ namespace Chained
 
 			ImGui::Separator();
 
+			ImGui::TextDisabled("Direct IP connection — no NAT traversal.");
+			ImGui::TextDisabled("Forward this UDP port on your router to host over the internet.");
+
+			ImGui::Separator();
+
 			if (ImGui::Button("Start Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
 			{
 				uint16_t port = static_cast<uint16_t>(std::atoi(m_HostPort));
 				if (port == 0)
 				{
-					port = 27886;
+					port = 7777;
 				}
 
 				if (net)
 				{
 					net->HostGame(port, m_MaxClients);
+					// Auto-fetch public IP when server starts
+					m_PublicIP.clear();
+					m_FetchingIP = true;
+					m_IpFuture = std::async(std::launch::async, FetchPublicIPBlocking);
+
 					m_StatusMessage = "Server started on port " + std::string(m_HostPort);
 					m_StatusIsError = false;
 				}
@@ -187,7 +334,7 @@ namespace Chained
 				uint16_t port = static_cast<uint16_t>(std::atoi(m_ConnectPort));
 				if (port == 0)
 				{
-					port = 27886;
+					port = 7777;
 				}
 
 				if (net)

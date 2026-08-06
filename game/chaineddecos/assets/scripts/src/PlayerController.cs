@@ -19,8 +19,6 @@ namespace ChainedDecos.Scripts
         private TransformComponent? _transform;
         private AnimationComponent? _anim;
 
-
-
         public override void OnCreate()
         {
             Gravity = Physics.GetGravity();
@@ -35,12 +33,50 @@ namespace ChainedDecos.Scripts
             if (Input.IsKeyPressed(Key.Escape))
             {
                 Log.Info($"Returning to menu: {MenuScene}");
+                if (Network.IsConnected)
+                {
+                    Network.Disconnect();
+                }
                 Scene.LoadScene(MenuScene);
                 return;
             }
 
             if (_rb == null || _transform == null) return;
 
+            // ── Network awareness ──
+            // If connected, check if we own this entity before processing input.
+            // Non-owners are driven by the host via ApplyHostInputs (C++) + InterpolateEntities.
+            var netId = Entity.GetComponent<NetworkIdentityComponent>();
+            if (Network.IsConnected && netId != null && !netId.IsOwner)
+            {
+                // Not our avatar — just update animation from replicated velocity
+                if (_anim != null)
+                {
+                    bool isMoving = _rb.Velocity.LengthSquared() > 0.1f;
+                    _anim.SetBool("isMoving", isMoving);
+                    _anim.SetBool("isGrounded", _rb.IsGrounded);
+                    _anim.SetFloat("speed", isMoving ? 0.5f : 0.0f);
+                }
+                return;
+            }
+
+            // If we're a pure client (not host), input goes via C++ CollectAndSendInput.
+            // We still handle animation locally.
+            if (Network.IsClient)
+            {
+                if (_anim != null)
+                {
+                    bool isMoving = _rb.Velocity.LengthSquared() > 0.1f;
+                    _anim.SetBool("isMoving", isMoving);
+                    _anim.SetBool("isGrounded", _rb.IsGrounded);
+                    _anim.SetFloat("speed", isMoving ? 0.5f : 0.0f);
+                }
+                return;
+            }
+
+            // ── Local input (host or offline) ──
+            // Avatars spawned for remote peers come from player.chprefab, which carries no
+            // script — so this only ever runs on the locally controlled player.
             float speed = MovementSpeed;
             if (Input.IsKeyDown(Key.LeftShift)) speed *= 2.0f;
 
@@ -70,7 +106,6 @@ namespace ChainedDecos.Scripts
 
         private (Vector3 forward, Vector3 right) GetCameraBasis()
         {
-            // Default: camera behind player along +Z axis, looking along -Z
             var forward = new Vector3(0.0f, 0.0f, -1.0f);
             var right   = new Vector3(1.0f, 0.0f, 0.0f);
 
@@ -80,14 +115,10 @@ namespace ChainedDecos.Scripts
                 var camera = camEntity.GetComponent<CameraComponent>();
                 if (camera != null)
                 {
-                    // Camera.Forward = direction camera looks (towards player) = rotation*(0,0,-1)
-                    // Flatten to XZ plane to get movement-relative forward
                     var camFwd = new Vector3(camera.Forward.X, 0.0f, camera.Forward.Z);
                     if (camFwd.LengthSquared() > 0.0001f)
                     {
                         forward = Vector3.Normalize(camFwd);
-                        // Rotate forward 90° clockwise in XZ to get right: (-fwd.Z, 0, fwd.X)
-                        // Verified: fwd=(0,0,-1) -> right=(1,0,0) ✓
                         right = Vector3.Normalize(new Vector3(-forward.Z, 0.0f, forward.X));
                     }
                 }
@@ -138,19 +169,17 @@ namespace ChainedDecos.Scripts
                 if (!_rb.IsGrounded) _rb.Velocity = new Vector3(_rb.Velocity.X, _rb.Velocity.Y - Gravity * deltaTime, _rb.Velocity.Z);
                 if (_rb.Velocity.Y < terminalVelocity) _rb.Velocity = new Vector3(_rb.Velocity.X, terminalVelocity, _rb.Velocity.Z);
                 if (_rb.IsGrounded && _rb.Velocity.Y < 0) _rb.Velocity = new Vector3(_rb.Velocity.X, 0, _rb.Velocity.Z);
-
                 _transform.Translation += _rb.Velocity * deltaTime;
             }
             else
             {
+                // Non-kinematic: physics engine handles gravity automatically.
+                // We only apply jump impulse — don't touch Y velocity otherwise!
                 if (Input.IsKeyPressed(Key.Space) && _rb.IsGrounded)
                 {
                     _rb.Velocity = new Vector3(_rb.Velocity.X, JumpForce, _rb.Velocity.Z);
                 }
-                else
-                {
-                    _rb.Velocity = new Vector3(_rb.Velocity.X, 0, _rb.Velocity.Z);
-                }
+                // NOTE: do NOT set Velocity.Y = 0 here — that kills gravity!
             }
         }
 

@@ -1,0 +1,49 @@
+Prefab: Player
+RootEntity: 3000000000000000001
+Entities:
+  - Entity: 3000000000000000001
+    TagComponent:
+      Tag: Player
+    IDComponent:
+      {}
+    TransformComponent:
+      Translation: [0, 0.5, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    PrimitiveComponent:
+      Type: 1
+      Radius: 0.5
+      InnerRadius: 0.2
+      Height: 1
+      Slices: 16
+      Stacks: 16
+      Dimensions: [1, 1, 1]
+      AlbedoPath: ""
+      AlbedoColor: [1, 1, 1, 1]
+      NormalPath: ""
+      MetallicRoughnessPath: ""
+      EmissivePath: ""
+      EmissiveColor: [0, 0, 0, 1]
+      EmissiveIntensity: 0
+      Metalness: 0
+      Roughness: 0.5
+      Transparent: false
+      Alpha: 1
+    PlayerComponent:
+      MovementSpeed: 15
+      JumpForce: 10
+      LookSensitivity: 0.9
+    RigidBodyComponent:
+      Mass: 1
+      UseGravity: true
+      IsKinematic: false
+      FreezeRotation: false
+      LinearDamping: 0
+      AngularDamping: 0.0500000007
+      Velocity: [0, 0, 0]
+    ColliderComponent:
+      Type: 0
+      Offset: [0, 0, 0]
+      Size: [1, 1, 1]
+      Radius: 0.5
+      IsTrigger: false
