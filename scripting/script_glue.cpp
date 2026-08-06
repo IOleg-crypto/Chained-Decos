@@ -141,6 +141,12 @@ namespace Chained
 		assembly.AddInternalCall("Chained.SpriteComponent", "SpriteComponent_SetZOrder_Ptr",
 								 (void*)&SpriteComponent_SetZOrder);
 
+		// ── PrimitiveComponent ─────────────────────────────────────────────
+		assembly.AddInternalCall("Chained.PrimitiveComponent", "PrimitiveComponent_GetAlbedoColor_Ptr",
+								 (void*)&PrimitiveComponent_GetAlbedoColor);
+		assembly.AddInternalCall("Chained.PrimitiveComponent", "PrimitiveComponent_SetAlbedoColor_Ptr",
+								 (void*)&PrimitiveComponent_SetAlbedoColor);
+
 		// ── UI Controls ───────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.ButtonControl", "ButtonControl_IsClicked_Ptr",
 								 (void*)&ButtonControl_IsClicked);
@@ -326,9 +332,43 @@ namespace Chained
 		assembly.AddInternalCall("Chained.Network", "Network_IsConnected_Ptr", (void*)&Network_IsConnected);
 		assembly.AddInternalCall("Chained.Network", "Network_GetClientCount_Ptr", (void*)&Network_GetClientCount);
 		assembly.AddInternalCall("Chained.Network", "Network_GetRole_Ptr", (void*)&Network_GetRole);
+		assembly.AddInternalCall("Chained.Network", "Network_GetListenAddress_Ptr", (void*)&Network_GetListenAddress);
+		assembly.AddInternalCall("Chained.Network", "Network_GetPublicAddress_Ptr", (void*)&Network_GetPublicAddress);
+		assembly.AddInternalCall("Chained.Network", "Network_BroadcastSceneChange_Ptr",
+								 (void*)&Network_BroadcastSceneChange);
+		assembly.AddInternalCall("Chained.Network", "Network_HasPendingSceneChange_Ptr",
+								 (void*)&Network_HasPendingSceneChange);
+		assembly.AddInternalCall("Chained.Network", "Network_GetPendingSceneChange_Ptr",
+								 (void*)&Network_GetPendingSceneChange);
+		assembly.AddInternalCall("Chained.Network", "Network_ClearPendingSceneChange_Ptr",
+								 (void*)&Network_ClearPendingSceneChange);
+
+		// New: Player list
+		assembly.AddInternalCall("Chained.Network", "Network_SetLocalPlayerInfo_Ptr",
+								 (void*)&Network_SetLocalPlayerInfo);
+		assembly.AddInternalCall("Chained.Network", "Network_SendPlayerInfo_Ptr", (void*)&Network_SendPlayerInfo);
+		assembly.AddInternalCall("Chained.Network", "Network_GetPlayerCount_Ptr", (void*)&Network_GetPlayerCount);
+		assembly.AddInternalCall("Chained.Network", "Network_GetPlayerListJSON_Ptr", (void*)&Network_GetPlayerListJSON);
+		assembly.AddInternalCall("Chained.Network", "Network_GetLocalNetworkID_Ptr", (void*)&Network_GetLocalNetworkID);
+
+		// New: Chat
+		assembly.AddInternalCall("Chained.Network", "Network_SendChatMessage_Ptr", (void*)&Network_SendChatMessage);
+		assembly.AddInternalCall("Chained.Network", "Network_HasPendingChat_Ptr", (void*)&Network_HasPendingChat);
+		assembly.AddInternalCall("Chained.Network", "Network_GetPendingChatJSON_Ptr",
+								 (void*)&Network_GetPendingChatJSON);
+		assembly.AddInternalCall("Chained.Network", "Network_ClearPendingChat_Ptr", (void*)&Network_ClearPendingChat);
+
+		// New: Prefab
+		assembly.AddInternalCall("Chained.Network", "Network_SetPlayerPrefab_Ptr", (void*)&Network_SetPlayerPrefab);
+
+		// ── NetworkIdentityComponent ──────────────────────────────────────
+		assembly.AddInternalCall("Chained.NetworkIdentityComponent", "NetworkIdentityComponent_GetNetworkID_Ptr",
+								 (void*)&NetworkIdentityComponent_GetNetworkID);
+		assembly.AddInternalCall("Chained.NetworkIdentityComponent", "NetworkIdentityComponent_GetIsOwner_Ptr",
+								 (void*)&NetworkIdentityComponent_GetIsOwner);
 
 		assembly.UploadInternalCalls();
-		CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.", 121, (std::string)assembly.GetName());
+		CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.", 130, (std::string)assembly.GetName());
 	}
 
 } // namespace Chained

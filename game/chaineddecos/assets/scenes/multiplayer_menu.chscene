@@ -1,0 +1,266 @@
+Scene: Multiplayer Menu
+SceneType: 1
+Background:
+  Mode: 0
+  Color: [0, 0, 0, 255]
+  TexturePath: ""
+Canvas:
+  ReferenceResolution: [1920, 1080]
+  ScaleMode: 1
+  MatchWidthOrHeight: 0.5
+EnvironmentPath: ""
+Lighting:
+  Direction: [-1, -1, -1]
+  LightColor: [255, 255, 255, 255]
+  Ambient: 0.300000012
+Skybox:
+  TexturePath: ""
+  Mode: 0
+  Exposure: 1
+  Brightness: 0
+  Contrast: 1
+Fog:
+  Enabled: false
+  Color: [130, 130, 130, 255]
+  Density: 0.00999999978
+  Start: 10
+  End: 100
+DebugSettings:
+  DiagnosticMode: 0
+  DrawColliders: false
+  DrawHierarchy: false
+  DrawGrid: false
+  DrawSelection: true
+  DrawLights: true
+  DrawSpawnZones: true
+  CollisionWireframeMode: 0
+Entities:
+  - Entity: 10000000000000000001
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: title_multiplayer
+    IDComponent:
+      {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-300, -340]
+        OffsetMax: [300, -280]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [0, 0, 0, 0]
+        Hover Color: [0, 0, 0, 0]
+        Pressed Color: [0, 0, 0, 0]
+        Rounding: 0
+        Border Size: 0
+        Border Color: [255, 255, 255, 255]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.100000001
+      Text Style:
+        Font Name: font/static/Figtree-Regular.ttf
+        Font Size: 40
+        Text Color: [110, 231, 211, 255]
+        Shadow: true
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 2
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 3
+      Text: Multiplayer
+      Auto Size: false
+  - Entity: 10000000000000000002
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: btn_host_game
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/host_setup.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-180, -140]
+        OffsetMax: [180, -76]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [56, 178, 166, 255]
+        Hover Color: [82, 204, 191, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 10
+        Border Size: 0
+        Border Color: [255, 255, 255, 100]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/static/Figtree-Regular.ttf
+        Font Size: 26
+        Text Color: [15, 24, 26, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1.5
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Host Game
+      Interactable: true
+      Auto Size: false
+  - Entity: 10000000000000000003
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: btn_join_game
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/join_setup.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-180, -120]
+        OffsetMax: [180, -56]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [66, 135, 245, 255]
+        Hover Color: [96, 160, 255, 255]
+        Pressed Color: [46, 110, 210, 255]
+        Rounding: 10
+        Border Size: 0
+        Border Color: [255, 255, 255, 100]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/static/Figtree-Regular.ttf
+        Font Size: 26
+        Text Color: [255, 255, 255, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1.5
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Join Game
+      Interactable: true
+      Auto Size: false
+  - Entity: 10000000000000000004
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: btn_back
+    IDComponent:
+      {}
+    Scene TransitionComponent:
+      TargetScenePath: scenes/game_mode_selection.chscene
+      Triggered: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-703.046265, 458.698608]
+        OffsetMax: [-573.430542, 498.698669]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [56, 178, 166, 255]
+        Pressed Color: [40, 130, 122, 255]
+        Rounding: 8
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 4
+        Hover Scale: 1.03000009
+        Pressed Scale: 0.970000029
+        Transition Speed: 0.150000006
+      Text Style:
+        Font Name: font/static/Figtree-Regular.ttf
+        Font Size: 18
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 1
+        Line Height: 1.20000005
+        H Align: 1
+        V Align: 1
+      Widget Type: 1
+      Label: Back
+      Interactable: true
+      Auto Size: false
+  - Entity: 10000000000000000005
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: multiplayer_menu_root
+    IDComponent:
+      {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0, 0]
+        AnchorMax: [1, 1]
+        OffsetMin: [0, 0]
+        OffsetMax: [0, 0]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false

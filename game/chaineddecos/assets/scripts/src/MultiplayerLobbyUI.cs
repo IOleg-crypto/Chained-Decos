@@ -51,6 +51,18 @@ namespace ChainedDecos.Scripts
         {
             Log.Info($"Hosting game on port {m_Port}, loading {m_SelectedMap}");
             Network.HostGame(m_Port);
+
+            // Attempt UPnP port forwarding (automatic if available)
+            if (Network.IsPortForwardAvailable)
+            {
+                Log.Info($"Port forwarding via UPnP for port {m_Port}");
+                Network.TryPortForward(m_Port);
+            }
+            else
+            {
+                Log.Info("UPnP not available — manual port forwarding required");
+            }
+
             Scene.LoadScene(m_SelectedMap);
         }
 

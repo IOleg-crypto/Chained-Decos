@@ -43,11 +43,6 @@
     path = thirdparty/coral
     url = https://github.com/StudioCherno/Coral.git
 
-[submodule "thirdparty/enet"]
-    path = thirdparty/enet
-    url = https://github.com/zpl-c/enet.git
-    branch = master
-
 [submodule "thirdparty/miniaudio"]
     path = thirdparty/miniaudio
     url = https://github.com/mackron/miniaudio.git
@@ -92,3 +87,12 @@
 	path = thirdparty/pack
 	url = https://github.com/cfnptr/pack.git
 
+[submodule "thirdparty/miniupnp"]
+	path = thirdparty/miniupnp
+	url = https://github.com/miniupnp/miniupnp.git
+[submodule "thirdparty/GameNetworkingSockets"]
+	path = thirdparty/GameNetworkingSockets
+	url = https://github.com/ValveSoftware/GameNetworkingSockets.git
+[submodule "thirdparty/protobuf"]
+	path = thirdparty/protobuf
+	url = https://github.com/protocolbuffers/protobuf.git
