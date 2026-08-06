@@ -2,8 +2,12 @@
 #define CH_NETWORK_SERVICE_H
 
 #include "net_packet.h"
+#include "upnp_port_mapper.h"
 #include "engine/core/service.h"
+#include <steam/steamnetworkingsockets.h>
+#include <functional>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
 namespace Chained
@@ -19,6 +23,8 @@ namespace Chained
 	class Network : public Service
 	{
 	public:
+		using PacketCallback = std::function<void(PacketType, const uint8_t*, size_t, HSteamNetConnection)>;
+
 		Network() = default;
 		~Network() override;
 
@@ -31,9 +37,78 @@ namespace Chained
 
 		void Update(float dt);
 
-		void SendPacket(ENetPeer* peer, PacketType type, const void* data, size_t size);
-		void BroadcastPacket(PacketType type, const void* data, size_t size);
-		void SendToServer(PacketType type, const void* data, size_t size);
+		void SendPacket(HSteamNetConnection conn, PacketType type, const void* data, size_t size, bool reliable = true);
+		void BroadcastPacket(PacketType type, const void* data, size_t size, bool reliable = true);
+		void SendToServer(PacketType type, const void* data, size_t size, bool reliable = true);
+		void BroadcastSceneChange(const char* scenePath);
+
+		// Packet callback — set by NetworkSystem to receive dispatched packets.
+		void SetPacketCallback(PacketCallback callback);
+		void ClearPacketCallback();
+
+		// Address of the local listen socket (LAN). NOT the public IP.
+		std::string GetListenAddress();
+		// Public IP:PORT for internet hosting. Fetched asynchronously once after HostGame().
+		// Returns "Fetching..." until ready, then e.g. "203.0.113.5:7777".
+		std::string GetPublicAddress();
+
+		// Scene change (received from host, client-side).
+		bool HasPendingSceneChange() const
+		{
+			return !m_PendingSceneChange.empty();
+		}
+		const std::string& GetPendingSceneChange() const
+		{
+			return m_PendingSceneChange;
+		}
+		void ClearPendingSceneChange()
+		{
+			m_PendingSceneChange.clear();
+		}
+		void SetPendingSceneChange(const std::string& path)
+		{
+			m_PendingSceneChange = path;
+		}
+
+		// Player list management.
+		void SendPlayerInfoToHost(const char* name, uint8_t skinIndex);
+		void BroadcastPlayerList();
+		const std::vector<PlayerNetInfo>& GetPlayerList() const
+		{
+			return m_PlayerList;
+		}
+		std::vector<PlayerNetInfo>& GetPlayerListMutable()
+		{
+			return m_PlayerList;
+		}
+		void SetLocalPlayerInfo(const char* name, uint8_t skinIndex);
+		uint64_t GetLocalNetworkID() const
+		{
+			return m_LocalNetworkID;
+		}
+		void SetLocalNetworkID(uint64_t id)
+		{
+			m_LocalNetworkID = id;
+		}
+
+		// NetworkID assigned to a peer at accept time. Returns 0 when unknown.
+		uint64_t GetNetworkIDForConnection(HSteamNetConnection conn) const;
+
+		// Chat.
+		void SendChatMessage(const char* message);
+		void StorePendingChatMessage(const ChatMessagePacket& pkt);
+		bool HasPendingChatMessages() const
+		{
+			return !m_PendingChatMessages.empty();
+		}
+		const std::vector<ChatMessagePacket>& GetPendingChatMessages() const
+		{
+			return m_PendingChatMessages;
+		}
+		void ClearPendingChatMessages()
+		{
+			m_PendingChatMessages.clear();
+		}
 
 		Role GetRole() const
 		{
@@ -49,23 +124,69 @@ namespace Chained
 		}
 		bool IsConnected() const
 		{
-			return m_Role != Role::Offline && m_Host != nullptr;
+			return m_Role != Role::Offline;
 		}
 
 		size_t GetClientCount() const
 		{
 			return m_Clients.size();
 		}
-		ENetPeer* GetServerPeer() const
+		const std::vector<HSteamNetConnection>& GetClients() const
 		{
-			return m_ServerPeer;
+			return m_Clients;
+		}
+		HSteamNetConnection GetServerConnection() const
+		{
+			return m_ServerConnection;
+		}
+		uint16_t GetPort() const
+		{
+			return m_Port;
 		}
 
 	private:
+		void ReceiveMessages();
+
+		// GNS callback — dispatched when connection state changes
+		void OnConnectionStatusChanged(SteamNetConnectionStatusChangedCallback_t* pInfo);
+		static void SteamNetConnectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* pInfo);
+
 		Role m_Role = Role::Offline;
-		ENetHost* m_Host = nullptr;
-		ENetPeer* m_ServerPeer = nullptr;
-		std::vector<ENetPeer*> m_Clients;
+		ISteamNetworkingSockets* m_Interface = nullptr;
+		HSteamListenSocket m_hListenSocket = k_HSteamListenSocket_Invalid;
+		HSteamNetPollGroup m_hPollGroup = k_HSteamNetPollGroup_Invalid;
+		HSteamNetConnection m_ServerConnection = k_HSteamNetConnection_Invalid;
+		uint16_t m_Port = 0;
+
+		// Cached public IP (fetched asynchronously after HostGame).
+		std::string m_CachedPublicAddress;
+		bool m_PublicAddressFetched = false;
+
+		std::vector<HSteamNetConnection> m_Clients;
+
+		PacketCallback m_PacketCallback;
+		std::string m_PendingSceneChange;
+
+		// Player list and chat.
+		std::vector<PlayerNetInfo> m_PlayerList;
+		std::vector<ChatMessagePacket> m_PendingChatMessages;
+		// Authoritative peer -> NetworkID mapping (host-side). Assigned at accept
+		// time so player info, avatars and disconnects all agree on one identity
+		// instead of correlating by list position.
+		std::unordered_map<HSteamNetConnection, uint64_t> m_ConnToNetworkID;
+		uint64_t m_LocalNetworkID = 0;
+		std::string m_LocalPlayerName;
+		uint8_t m_LocalSkinIndex = 0;
+		// NetworkID 1 is reserved for the host, so peers start at 2.
+		static constexpr uint64_t HostNetworkID = 1;
+		uint64_t m_NextNetworkID = 2;
+
+		// The GNS library is process-wide, so instances are tracked as a list and the
+		// library itself is refcounted across them.
+		static std::vector<Network*> s_Instances;
+		static int s_LibRefCount;
+
+		UpnpPortMapper m_UpnpMapper;
 	};
 
 } // namespace Chained

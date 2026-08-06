@@ -26,5 +26,33 @@ namespace Chained
 
 	CH_SCRIPT_FUNC int Network_GetRole();
 
+	CH_SCRIPT_FUNC void Network_GetListenAddress(char* outBuffer, int bufferSize);
+
+	CH_SCRIPT_FUNC void Network_GetPublicAddress(char* outBuffer, int bufferSize);
+
+	CH_SCRIPT_FUNC void Network_BroadcastSceneChange(const Coral::UCChar* scenePath);
+
+	CH_SCRIPT_FUNC bool Network_HasPendingSceneChange();
+
+	CH_SCRIPT_FUNC void Network_GetPendingSceneChange(char* outBuffer, int bufferSize);
+
+	CH_SCRIPT_FUNC void Network_ClearPendingSceneChange();
+
+	// Player list
+	CH_SCRIPT_FUNC void Network_SetLocalPlayerInfo(const Coral::UCChar* name, uint8_t skinIndex);
+	CH_SCRIPT_FUNC void Network_SendPlayerInfo(const Coral::UCChar* name, uint8_t skinIndex);
+	CH_SCRIPT_FUNC int Network_GetPlayerCount();
+	CH_SCRIPT_FUNC void Network_GetPlayerListJSON(char* outBuffer, int bufferSize);
+	CH_SCRIPT_FUNC uint64_t Network_GetLocalNetworkID();
+
+	// Chat
+	CH_SCRIPT_FUNC void Network_SendChatMessage(const Coral::UCChar* message);
+	CH_SCRIPT_FUNC bool Network_HasPendingChat();
+	CH_SCRIPT_FUNC void Network_GetPendingChatJSON(char* outBuffer, int bufferSize);
+	CH_SCRIPT_FUNC void Network_ClearPendingChat();
+
+	// Prefab
+	CH_SCRIPT_FUNC void Network_SetPlayerPrefab(const Coral::UCChar* path);
+
 } // namespace Chained
 #endif

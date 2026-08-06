@@ -31,8 +31,9 @@ include(coral)
 include(external_gtest)
 include(pack)
 include(portable-file-dialogs)
-include(enet)
+# GameNetworkingSockets replaces enet (transport, encryption; NAT traversal is not wired up)
 include(reflect-cpp)
+include(miniupnpc)
 
 # Disable unity builds for third-party libraries to avoid symbol redefinitions
 # (e.g., zstd cover.h has no include guard, causing redefinition under unity build)
@@ -47,6 +48,7 @@ foreach(_ext_target
     GTest gmock
     Coral.Native
     assimp
+
 
 )
     if(TARGET ${_ext_target})
