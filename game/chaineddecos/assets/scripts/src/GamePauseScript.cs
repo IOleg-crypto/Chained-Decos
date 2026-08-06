@@ -12,6 +12,10 @@ namespace ChainedDecos.Scripts
             if (Input.IsKeyPressed(Key.Escape))
             {
                 Log.Info("Returning to main menu...");
+                if (Network.IsConnected)
+                {
+                    Network.Disconnect();
+                }
                 Scene.LoadScene(MenuScene);
             }
         }

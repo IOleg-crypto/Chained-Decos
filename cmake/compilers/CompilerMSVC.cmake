@@ -2,8 +2,8 @@
 
 # MSVC-specific settings
     add_compile_options(
-        $<$<CONFIG:Debug>:/Od> $<$<CONFIG:Debug>:/MTd>
-        $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/MT> $<$<CONFIG:Release>:/DNDEBUG>
+        $<$<CONFIG:Debug>:/Od>
+        $<$<CONFIG:Release>:/O2> $<$<CONFIG:Release>:/DNDEBUG>
         /Zi /EHsc
         /MP                  # Multi-processor compilation
         /Zc:preprocessor     # Modern preprocessor

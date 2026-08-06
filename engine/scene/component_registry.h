@@ -46,17 +46,12 @@ namespace Chained
 		bool IsReflective = false;
 
 		// Type-erased reflection caller.
-		// The void* is the archive pointer, and the second int is the reflection mode.
-		// This allows the Editor or Serializer to pass their specific archives.
-		std::function<void(Entity, void*, int)> ReflectInternal;
+		// Used by the Editor (UI mode) and Serializer (Serialize/Deserialize mode).
+		std::function<void(Entity, IPropertyArchiveBase&, ReflectionMode)> ReflectInternal;
 
 		// Notifies EnTT that the component changed (triggers on_update observers).
 		// Called by the inspector after a reflected field is edited.
 		std::function<void(Entity)> NotifyUpdate;
-
-		// Dynamic access to fields via C++ reflect-cpp (C# Interop).
-		// Entity, fieldName, void* dataBuffer, bool isSet
-		std::function<bool(Entity, const std::string&, void*, bool)> GetSetField;
 	};
 
 	/**
@@ -145,10 +140,6 @@ namespace Chained
 			{
 				existing.NotifyUpdate = override.NotifyUpdate;
 			}
-			if (override.GetSetField)
-			{
-				existing.GetSetField = override.GetSetField;
-			}
 			existing.IsWidget = override.IsWidget;
 			existing.Category = override.Category;
 			existing.AllowAdd = override.AllowAdd;
@@ -203,15 +194,11 @@ namespace Chained
 			};
 
 			metadata.IsReflective = true;
-			metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
-				IPropertyArchiveBase* archive = static_cast<IPropertyArchiveBase*>(archivePtr);
-				const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
-
-				if (reflMode == ReflectionMode::Deserialize)
+			metadata.ReflectInternal = [](Entity e, IPropertyArchiveBase& archive, ReflectionMode mode) {
+				if (mode == ReflectionMode::Deserialize)
 				{
-					// Add component if it doesn't exist yet (it won't during scene loading)
 					auto& comp = e.AddOrReplaceComponent<T>();
-					GenericProperties props(*archive);
+					GenericProperties props(archive);
 					if constexpr (is_rfl_component<T>::value)
 					{
 						ReflectFromRfl(comp, props);
@@ -223,7 +210,7 @@ namespace Chained
 				}
 				else if (e.HasComponent<T>())
 				{
-					GenericProperties props(*archive);
+					GenericProperties props(archive);
 					auto& comp = e.GetComponent<T>();
 					if constexpr (is_rfl_component<T>::value)
 					{
@@ -234,66 +221,6 @@ namespace Chained
 						comp.Reflect(props);
 					}
 				}
-			};
-
-			metadata.GetSetField = [](Entity e, const std::string& fieldName, void* data, bool isSet) -> bool {
-				if constexpr (is_rfl_component<T>::value)
-				{
-					bool found = false;
-					auto& comp = e.GetComponent<T>();
-					rfl::to_view(comp).apply([&](auto... field_pack) {
-						(
-							[&](auto& field) {
-								if (found)
-								{
-									return;
-								}
-								std::string name(field.name());
-								using FieldType = std::decay_t<decltype(*field.get())>;
-								if (name == fieldName)
-								{
-									if (isSet)
-									{
-										*field.get() = *static_cast<FieldType*>(data);
-									}
-									else
-									{
-										*static_cast<FieldType*>(data) = *field.get();
-									}
-									found = true;
-								}
-								else if constexpr (is_rfl_component<FieldType>::value)
-								{
-									rfl::to_view(*field.get()).apply([&](auto... sub_pack) {
-										(
-											[&](auto& sub) {
-												if (found)
-												{
-													return;
-												}
-												if (std::string(sub.name()) == fieldName)
-												{
-													using SubType = std::decay_t<decltype(*sub.get())>;
-													if (isSet)
-													{
-														*sub.get() = *static_cast<SubType*>(data);
-													}
-													else
-													{
-														*static_cast<SubType*>(data) = *sub.get();
-													}
-													found = true;
-												}
-											}(sub_pack),
-											...);
-									});
-								}
-							}(field_pack),
-							...);
-					});
-					return found;
-				}
-				return false;
 			};
 
 			Register(entt::type_hash<T>::value(), metadata);

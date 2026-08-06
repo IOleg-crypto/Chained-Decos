@@ -36,7 +36,6 @@ namespace Chained
 		s_Instance = this;
 
 		Log::Init();
-		Core::Input::Init();
 		ComponentRegistry::RegisterEngineComponents();
 
 		unsigned int threads = std::thread::hardware_concurrency();
@@ -52,13 +51,15 @@ namespace Chained
 		}
 
 		// --- 1. Create Window ---
+		// Input must be available before window creation (event callbacks may fire)
+		ServiceLocator::Provide(std::make_unique<Core::Input>());
+
 		if (!m_Specification.Headless)
 		{
 			m_Window = Window::Create(m_Specification.Window);
 			m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
 		}
 
-		ServiceLocator::Provide(std::make_unique<Core::Input>());
 		ServiceLocator::Provide(std::make_unique<ThreadPool>(workerCount));
 		ServiceLocator::Provide(std::make_unique<AssetManager>());
 

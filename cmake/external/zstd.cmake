@@ -25,6 +25,3 @@ endif()
 
 set(ZSTD_INCLUDE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty/zstd/lib CACHE PATH "Zstd include directory" FORCE)
 set(ZSTD_LIBRARY libzstd_static CACHE STRING "Zstd library target" FORCE)
-
-if(TARGET libzstd_static)
-endif()
