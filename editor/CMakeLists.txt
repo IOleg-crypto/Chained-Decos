@@ -85,19 +85,19 @@ if(TARGET pack-static)
     target_link_libraries(editor_core PUBLIC pack-static)
 endif()
 
+# WinHTTP — used by NetworkPanel to fetch the public IP from api.ipify.org
+if(WIN32)
+    target_link_libraries(editor_core PUBLIC winhttp)
+endif()
+
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
 # Define the Editor executable
-add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp
-        icons.h)
+add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
         
 target_link_libraries(ChainedEditor PRIVATE editor_core)
-target_include_directories(ChainedEditor PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
-)
 
 # Packer utility — build-time tool, not linked to the editor
 if(TARGET packer)

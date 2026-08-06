@@ -78,7 +78,7 @@ Grid:
 2. Choose a **Pack Mode**:
    - **Fast (LZ4)** — Quick export, larger file.
    - **Balanced (ZSTD)** — Slower export, smaller file.
-   - **Raw** — No compression.
+   - **Raw** — No packing. Game files are copied directly into `assets/` and `resources/` subfolders.
 3. Adjust **Compression Threshold** if needed.
 4. Click **Browse Output Folder** and select a destination.
 5. The export starts automatically. Progress is shown in the overlay.
@@ -89,7 +89,7 @@ The exporter packages `.chproject`, `assets/`, and `resources/` into `resources.
 
 | Setting | Default | Description |
 | :--- | :--- | :--- |
-| `Pack Mode` | Balanced | Compression algorithm: Fast (LZ4), Balanced (ZSTD), or Raw (none) |
+| `Pack Mode` | Balanced | Compression algorithm: **Fast** (LZ4 HC), **Balanced** (ZSTD), or **Raw** (no pack — files copied directly) |
 | `ZipThreshold` | 0.05 | Files above this ratio of compressed/original size are stored uncompressed |
 | `DataVersion` | 0 | Increment to invalidate cached packs at runtime |
 
@@ -97,11 +97,27 @@ The exporter packages `.chproject`, `assets/`, and `resources/` into `resources.
 
 At startup, `AssetManager::OpenPack()` automatically looks for `resources.pack` next to the executable. When found, all asset loading (textures, shaders, fonts) reads from the pack first, falling back to the filesystem if not found.
 
+In **Raw** mode no pack file is created. The runtime detects the absence of `resources.pack` and reads files directly from the `assets/` and `resources/` folders. This makes Raw mode ideal for rapid iteration and debugging.
+
 ```
-# The exported output structure looks like:
+# Fast / Balanced output structure:
 MyGame/
   MyGame.exe
   resources.pack
+  engine.dll
+  ...
+
+# Raw output structure:
+MyGame/
+  MyGame.exe
+  assets/
+    scenes/
+    textures/
+    ...
+  resources/
+    shaders/
+    fonts/
+    ...
   engine.dll
   ...
 ```

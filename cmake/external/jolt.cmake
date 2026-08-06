@@ -16,7 +16,4 @@ else()
     message(FATAL_ERROR "JoltPhysics submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/JoltPhysics")
 endif()
 
-# Jolt doesn't provide a clean target for some configurations, 
-# so we might need to manually link if it fails.
-if(TARGET Jolt)
-endif()
+

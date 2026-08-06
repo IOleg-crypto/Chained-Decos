@@ -1,7 +1,0 @@
-# ENet dependency (Header-only, single-header variant)
-if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/enet")
-    add_library(engine_external_network INTERFACE)
-    target_include_directories(engine_external_network INTERFACE "${CMAKE_SOURCE_DIR}/thirdparty/enet/include")
-else()
-    message(FATAL_ERROR "ENet submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/enet")
-endif()

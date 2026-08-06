@@ -13,6 +13,7 @@ set(INTEGRATION_SOURCES
     material_tests.cpp
     hierarchy_tests.cpp
     serialization_tests.cpp
+    network_tests.cpp
     smoke_tests.cpp
     regression_tests.cpp
     test_environment.cpp
@@ -31,6 +32,7 @@ target_link_libraries(engine_tests_integration PRIVATE
     engine_scripting
     engine_project
     engine_assets
+    engine_network
     engine_external_imgui
     engine_external_entt
     engine_reflection

@@ -104,6 +104,33 @@ namespace Chained
 				AppSaveLayoutEvent e;
 				Application::Get().OnEvent(e);
 			}
+
+			// Presets submenu
+			auto* layout = EditorLayer::Get().GetLayout();
+			if (layout)
+			{
+				ImGui::Separator();
+				if (ImGui::BeginMenu(ICON_FA_FOLDER " Presets"))
+				{
+					auto presets = layout->GetPresetNames();
+					for (const auto& name : presets)
+					{
+						bool isActive = (layout->GetActivePreset() == name);
+						if (ImGui::MenuItem(name.c_str(), nullptr, isActive))
+						{
+							layout->LoadPresetByName(name);
+						}
+					}
+					ImGui::Separator();
+					if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save As..."))
+					{
+						// Use a static buffer for the input popup
+						static char presetNameBuf[128] = "";
+						ImGui::OpenPopup("Save Preset");
+					}
+					ImGui::EndMenu();
+				}
+			}
 			ImGui::EndMenu();
 		}
 
@@ -325,6 +352,39 @@ namespace Chained
 					ImGui::CloseCurrentPopup();
 				}
 				ImGui::EndPopup();
+			}
+		}
+
+		// --- Save Preset Popup ---
+		{
+			auto* layout = EditorLayer::Get().GetLayout();
+			if (layout)
+			{
+				static char presetNameBuf[128] = "";
+				if (ImGui::BeginPopupModal("Save Preset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
+				{
+					ImGui::Text("Enter preset name:");
+					ImGui::Spacing();
+					ImGui::SetNextItemWidth(250.f);
+					ImGui::InputText("##PresetName", presetNameBuf, sizeof(presetNameBuf));
+					ImGui::Spacing();
+					ImGui::Separator();
+
+					bool canSave = presetNameBuf[0] != '\0';
+					if (ImGui::Button("Save", ImVec2(120.f, 0.f)) && canSave)
+					{
+						layout->SavePreset(presetNameBuf);
+						presetNameBuf[0] = '\0';
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::SameLine();
+					if (ImGui::Button("Cancel", ImVec2(120.f, 0.f)))
+					{
+						presetNameBuf[0] = '\0';
+						ImGui::CloseCurrentPopup();
+					}
+					ImGui::EndPopup();
+				}
 			}
 		}
 

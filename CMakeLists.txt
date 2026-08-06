@@ -66,8 +66,6 @@ if(UNIX AND NOT APPLE)
 endif()
 
 if(MINGW)
-    add_compile_options(-Wa,-mbig-obj)
-
     # Serialize link steps under MinGW. Ninja otherwise links several heavy
     # Debug targets concurrently, and each linker process holds large archives
     # in memory at once — the combined footprint is what exhausts RAM. A
@@ -95,19 +93,7 @@ add_subdirectory(editor)
 enable_testing()
 add_subdirectory(tests)
 
-# ── Resource Sync Macros & Targets ───────────────────────────────────────────
-macro(ch_add_resource_sync TARGET)
-    add_custom_command(TARGET ${TARGET} POST_BUILD
-        COMMAND ${CH_PYTHON_EXECUTABLE}
-                "${CMAKE_SOURCE_DIR}/tools/sync_resources.py"
-                sync-resources
-                --root "${CMAKE_SOURCE_DIR}"
-                --bin  "$<TARGET_FILE_DIR:${TARGET}>"
-        COMMENT "Syncing resources for ${TARGET} ($<CONFIG>)"
-        VERBATIM
-    )
-endmacro()
-
+# ── Resource Sync Targets ────────────────────────────────────────────────────
 add_custom_target(sync-resources
     COMMAND ${CH_PYTHON_EXECUTABLE}
             "${CMAKE_SOURCE_DIR}/tools/sync_resources.py"
