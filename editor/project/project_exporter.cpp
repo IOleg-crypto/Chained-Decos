@@ -89,7 +89,7 @@ namespace Chained
 			outError = "Failed to create directory '" + dst.parent_path().string() + "': " + ec.message();
 			return false;
 		}
-		fs::copy_file(src, dst, fs::copy_options::overwrite_existing, ec);
+		fs::copy_file(src, dst, fs::copy_options::update_existing, ec);
 		if (ec)
 		{
 			outError = "Failed to copy '" + src.string() + "': " + ec.message();
@@ -238,9 +238,13 @@ namespace Chained
 						 resourcesDir.string());
 		}
 
+		const auto& exp = project->GetConfig().Export;
+		const bool isRawMode = (exp.Mode == PackMode::Raw);
+
 		if (fileItemPaths.size() <= 2)
 		{
-			result.Error = "No files to pack (no assets or resources found).";
+			result.Error = isRawMode ? "No files to copy (no assets or resources found)."
+									 : "No files to pack (no assets or resources found).";
 			CH_CORE_ERROR("ProjectExporter: {}", result.Error);
 			return result;
 		}
@@ -341,7 +345,7 @@ namespace Chained
 				{
 					fs::path subDst = outputDir / subDirName;
 					std::error_code subEc;
-					fs::copy(subSrc, subDst, fs::copy_options::overwrite_existing | fs::copy_options::recursive, subEc);
+					fs::copy(subSrc, subDst, fs::copy_options::update_existing | fs::copy_options::recursive, subEc);
 				}
 			}
 
@@ -393,11 +397,45 @@ namespace Chained
 			return true;
 		});
 
-		// --- TASK A: Пакування ресурсів у головному потоці ---
+		// --- TASK A: Пакування або копіювання ресурсів у головному потоці ---
 		const fs::path packPath = outputDir / "resources.pack";
 		bool packSuccess = false;
 
-		if (!forceRepack && !IsPackStale(packPath, fileItemPaths, fileCount))
+		if (isRawMode)
+		{
+			// Raw mode: copy files directly into outputDir, preserving assets/ and resources/ structure.
+			// resources.pack is not created; the runtime falls back to the filesystem automatically.
+			CH_CORE_INFO("ProjectExporter: Raw mode — copying {} files to '{}'.", fileCount, outputDir.string());
+			for (size_t i = 0; i < fileItemPaths.size(); i += 2)
+			{
+				if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
+				{
+					copyBinariesTask.wait();
+					return CleanupAndCancel("during raw copy");
+				}
+
+				const fs::path srcFile(fileItemPaths[i]);
+				const fs::path dstFile = outputDir / fileItemPaths[i + 1];
+				std::string copyErr;
+				if (!CopyFile(srcFile, dstFile, copyErr))
+				{
+					CH_CORE_ERROR("ProjectExporter: Raw copy failed: {}", copyErr);
+					copyBinariesTask.wait();
+					CleanupAndCancel("due to raw copy error");
+					result.Error = copyErr;
+					return result;
+				}
+
+				if (onProgress)
+				{
+					onProgress((i / 2) + 1, fileCount, fileItemPaths[i + 1]);
+				}
+			}
+			result.PackSkipped = true; // no .pack file produced
+			result.PackFileSize = 0;
+			packSuccess = true;
+		}
+		else if (!forceRepack && !IsPackStale(packPath, fileItemPaths, fileCount))
 		{
 			CH_CORE_INFO("ProjectExporter: resources.pack is up to date ({} items) — skipping repack.", fileCount);
 			result.PackSkipped = true;
@@ -414,10 +452,8 @@ namespace Chained
 					rawPaths.push_back(s.c_str());
 				}
 
-				const auto& exp = project->GetConfig().Export;
-
 				bool preferSpeed = (exp.Mode == PackMode::Fast);
-				float threshold = (exp.Mode == PackMode::Raw) ? 0.99f : exp.ZipThreshold;
+				float threshold = exp.ZipThreshold;
 
 				struct PackCtx
 				{
@@ -477,17 +513,28 @@ namespace Chained
 		}
 
 		// ── 5. Get Pack File Size ────────────────────────────────────────────────
-		std::error_code sizeEc;
-		result.PackFileSize = static_cast<uint64_t>(fs::file_size(packPath, sizeEc));
-		if (sizeEc)
+		if (!isRawMode)
 		{
-			result.PackFileSize = 0;
+			std::error_code sizeEc;
+			result.PackFileSize = static_cast<uint64_t>(fs::file_size(packPath, sizeEc));
+			if (sizeEc)
+			{
+				result.PackFileSize = 0;
+			}
 		}
 
 		result.Success = true;
-		CH_CORE_INFO("ProjectExporter: Export complete → '{}' ({} {}, {} MB pack)", outputDir.string(),
-					 result.PackedFileCount, result.PackSkipped ? "reused" : "packed",
-					 result.PackFileSize / (1024 * 1024));
+		if (isRawMode)
+		{
+			CH_CORE_INFO("ProjectExporter: Export complete (Raw) → '{}' ({} files copied)", outputDir.string(),
+						 result.PackedFileCount);
+		}
+		else
+		{
+			CH_CORE_INFO("ProjectExporter: Export complete → '{}' ({} {}, {} MB pack)", outputDir.string(),
+						 result.PackedFileCount, result.PackSkipped ? "reused" : "packed",
+						 result.PackFileSize / (1024 * 1024));
+		}
 		return result;
 	}
 
