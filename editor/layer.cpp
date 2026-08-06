@@ -105,6 +105,34 @@ namespace Chained
 		}
 	}
 
+	// Single source of truth for all YAML fields — used by both LoadConfig and SaveConfig.
+	// Each macro expansion: (YAML_KEY, STRUCT_FIELD)
+#define EDITOR_CONFIG_FIELDS(X)                                                                                        \
+	X("LastScenePath", LastScenePath)                                                                                  \
+	X("LoadLastProjectOnStartup", LoadLastProjectOnStartup)                                                            \
+	X("AutoSaveEnabled", AutoSaveEnabled)                                                                              \
+	X("AutoSaveInterval", AutoSaveInterval)                                                                            \
+	X("FontPath", FontPath)                                                                                            \
+	X("FontSize", FontSize)                                                                                            \
+	X("IconSizeScale", IconSizeScale)                                                                                  \
+	X("IconSizeMin", IconSizeMin)                                                                                      \
+	X("IconSizeMax", IconSizeMax)                                                                                      \
+	X("CameraMoveSpeed", CameraMoveSpeed)                                                                              \
+	X("CameraBoostMultiplier", CameraBoostMultiplier)                                                                  \
+	X("DisableCameraZoom", DisableCameraZoom)                                                                          \
+	X("CameraRotationSpeed", CameraRotationSpeed)                                                                      \
+	X("CameraZoomSpeedMultiplier", CameraZoomSpeedMultiplier)                                                          \
+	X("CameraFovDegrees", CameraFovDegrees)                                                                            \
+	X("CameraNearClip", CameraNearClip)                                                                                \
+	X("CameraFarClip", CameraFarClip)                                                                                  \
+	X("ShowEditorIcons", ShowEditorIcons)                                                                              \
+	X("GizmoScale", GizmoScale)                                                                                        \
+	X("DefaultThumbnailSize", DefaultThumbnailSize)                                                                    \
+	X("DefaultSortOrder", DefaultSortOrder)                                                                            \
+	X("ShowFileExtensions", ShowFileExtensions)                                                                        \
+	X("ConfirmOnSceneClose", ConfirmOnSceneClose)                                                                      \
+	X("MaxRecentProjects", MaxRecentProjects)
+
 	void EditorLayer::LoadConfig()
 	{
 		std::filesystem::path configPath = std::filesystem::current_path() / "editor_settings.yaml";
@@ -125,10 +153,10 @@ namespace Chained
 					m_ProjectManager->RestoreLastProjectPath(lastProj);
 					m_Config.LastProjectPath = lastProj;
 				}
-				LoadYAMLField(node, "LastScenePath", m_Config.LastScenePath);
-				LoadYAMLField(node, "LoadLastProjectOnStartup", m_Config.LoadLastProjectOnStartup);
-				LoadYAMLField(node, "AutoSaveEnabled", m_Config.AutoSaveEnabled);
-				LoadYAMLField(node, "AutoSaveInterval", m_Config.AutoSaveInterval);
+#define LOAD_FIELD(yamlKey, field) LoadYAMLField(node, yamlKey, m_Config.field);
+				EDITOR_CONFIG_FIELDS(LOAD_FIELD)
+#undef LOAD_FIELD
+
 				if (node["RecentProjects"])
 				{
 					m_Config.RecentProjects.clear();
@@ -137,26 +165,6 @@ namespace Chained
 						m_Config.RecentProjects.push_back(entry.as<std::string>());
 					}
 				}
-				LoadYAMLField(node, "FontPath", m_Config.FontPath);
-				LoadYAMLField(node, "FontSize", m_Config.FontSize);
-				LoadYAMLField(node, "IconSizeScale", m_Config.IconSizeScale);
-				LoadYAMLField(node, "IconSizeMin", m_Config.IconSizeMin);
-				LoadYAMLField(node, "IconSizeMax", m_Config.IconSizeMax);
-				LoadYAMLField(node, "CameraMoveSpeed", m_Config.CameraMoveSpeed);
-				LoadYAMLField(node, "CameraBoostMultiplier", m_Config.CameraBoostMultiplier);
-				LoadYAMLField(node, "DisableCameraZoom", m_Config.DisableCameraZoom);
-				LoadYAMLField(node, "CameraRotationSpeed", m_Config.CameraRotationSpeed);
-				LoadYAMLField(node, "CameraZoomSpeedMultiplier", m_Config.CameraZoomSpeedMultiplier);
-				LoadYAMLField(node, "CameraFovDegrees", m_Config.CameraFovDegrees);
-				LoadYAMLField(node, "CameraNearClip", m_Config.CameraNearClip);
-				LoadYAMLField(node, "CameraFarClip", m_Config.CameraFarClip);
-				LoadYAMLField(node, "ShowEditorIcons", m_Config.ShowEditorIcons);
-				LoadYAMLField(node, "GizmoScale", m_Config.GizmoScale);
-				LoadYAMLField(node, "DefaultThumbnailSize", m_Config.DefaultThumbnailSize);
-				LoadYAMLField(node, "DefaultSortOrder", m_Config.DefaultSortOrder);
-				LoadYAMLField(node, "ShowFileExtensions", m_Config.ShowFileExtensions);
-				LoadYAMLField(node, "ConfirmOnSceneClose", m_Config.ConfirmOnSceneClose);
-				LoadYAMLField(node, "MaxRecentProjects", m_Config.MaxRecentProjects);
 			}
 		} catch (const std::exception& e)
 		{
@@ -171,10 +179,10 @@ namespace Chained
 		out << YAML::Key << "Editor" << YAML::Value << YAML::BeginMap;
 		out << YAML::Key << "LastProjectPath" << YAML::Value << m_ProjectManager->GetLastProjectPath();
 		m_Config.LastProjectPath = m_ProjectManager->GetLastProjectPath();
-		out << YAML::Key << "LastScenePath" << YAML::Value << m_Config.LastScenePath;
-		out << YAML::Key << "LoadLastProjectOnStartup" << YAML::Value << m_Config.LoadLastProjectOnStartup;
-		out << YAML::Key << "AutoSaveEnabled" << YAML::Value << m_Config.AutoSaveEnabled;
-		out << YAML::Key << "AutoSaveInterval" << YAML::Value << m_Config.AutoSaveInterval;
+
+#define SAVE_FIELD(yamlKey, field) out << YAML::Key << yamlKey << YAML::Value << m_Config.field;
+		EDITOR_CONFIG_FIELDS(SAVE_FIELD)
+#undef SAVE_FIELD
 
 		out << YAML::Key << "RecentProjects" << YAML::Value << YAML::BeginSeq;
 		for (const auto& path : m_Config.RecentProjects)
@@ -182,27 +190,6 @@ namespace Chained
 			out << path;
 		}
 		out << YAML::EndSeq;
-
-		out << YAML::Key << "FontPath" << YAML::Value << m_Config.FontPath;
-		out << YAML::Key << "FontSize" << YAML::Value << m_Config.FontSize;
-		out << YAML::Key << "IconSizeScale" << YAML::Value << m_Config.IconSizeScale;
-		out << YAML::Key << "IconSizeMin" << YAML::Value << m_Config.IconSizeMin;
-		out << YAML::Key << "IconSizeMax" << YAML::Value << m_Config.IconSizeMax;
-		out << YAML::Key << "CameraMoveSpeed" << YAML::Value << m_Config.CameraMoveSpeed;
-		out << YAML::Key << "CameraBoostMultiplier" << YAML::Value << m_Config.CameraBoostMultiplier;
-		out << YAML::Key << "DisableCameraZoom" << YAML::Value << m_Config.DisableCameraZoom;
-		out << YAML::Key << "CameraRotationSpeed" << YAML::Value << m_Config.CameraRotationSpeed;
-		out << YAML::Key << "CameraZoomSpeedMultiplier" << YAML::Value << m_Config.CameraZoomSpeedMultiplier;
-		out << YAML::Key << "CameraFovDegrees" << YAML::Value << m_Config.CameraFovDegrees;
-		out << YAML::Key << "CameraNearClip" << YAML::Value << m_Config.CameraNearClip;
-		out << YAML::Key << "CameraFarClip" << YAML::Value << m_Config.CameraFarClip;
-		out << YAML::Key << "ShowEditorIcons" << YAML::Value << m_Config.ShowEditorIcons;
-		out << YAML::Key << "GizmoScale" << YAML::Value << m_Config.GizmoScale;
-		out << YAML::Key << "DefaultThumbnailSize" << YAML::Value << m_Config.DefaultThumbnailSize;
-		out << YAML::Key << "DefaultSortOrder" << YAML::Value << m_Config.DefaultSortOrder;
-		out << YAML::Key << "ShowFileExtensions" << YAML::Value << m_Config.ShowFileExtensions;
-		out << YAML::Key << "ConfirmOnSceneClose" << YAML::Value << m_Config.ConfirmOnSceneClose;
-		out << YAML::Key << "MaxRecentProjects" << YAML::Value << m_Config.MaxRecentProjects;
 
 		out << YAML::EndMap;
 		out << YAML::EndMap;

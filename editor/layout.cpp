@@ -12,154 +12,233 @@
 namespace Chained
 {
 
-EditorLayout::EditorLayout(EditorPanels& panels)
-    : m_Panels(panels)
-{
-}
+	EditorLayout::EditorLayout(EditorPanels& panels)
+		: m_Panels(panels)
+	{
+	}
 
-void EditorLayout::ResetLayout()
-{
-    if (std::filesystem::exists("imgui.ini"))
-    {
-        // Restore saved panel arrangement — do NOT rebuild via DockBuilder,
-        // that would wipe the positions that LoadIniSettingsFromMemory just restored.
-        LoadPreset("imgui.ini");
-        m_NeedsRebuild = false;
-    }
-    else
-    {
-        // First launch: no saved layout — build the default arrangement.
-        m_NeedsRebuild = true;
-    }
-}
+	void EditorLayout::ResetLayout()
+	{
+		// Delete saved layout and rebuild the default DockBuilder arrangement
+		if (std::filesystem::exists("imgui.ini"))
+		{
+			std::filesystem::remove("imgui.ini");
+		}
+		m_NeedsRebuild = true;
+	}
 
-void EditorLayout::SaveDefaultLayout()
-{
-    SaveCurrent("imgui.ini");
-}
+	void EditorLayout::SaveDefaultLayout()
+	{
+		SaveCurrent("imgui.ini");
+	}
 
-void EditorLayout::LoadPreset(const std::string& filepath)
-{
-    if (std::filesystem::exists(filepath))
-    {
-        CH_CORE_INFO("EditorLayout: Loading from preset: {}", filepath);
-        std::ifstream f(filepath);
-        if (f.is_open())
-        {
-            std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-            ImGui::LoadIniSettingsFromMemory(content.c_str(), content.size());
-            return;
-        }
-    }
-    else
-    {
-        CH_CORE_WARN("EditorLayout: Preset not found at {}", filepath);
-    }
-}
+	void EditorLayout::LoadPreset(const std::string& filepath)
+	{
+		if (std::filesystem::exists(filepath))
+		{
+			CH_CORE_INFO("EditorLayout: Loading from preset: {}", filepath);
+			std::ifstream f(filepath);
+			if (f.is_open())
+			{
+				std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+				ImGui::LoadIniSettingsFromMemory(content.c_str(), content.size());
+				return;
+			}
+		}
+		else
+		{
+			CH_CORE_WARN("EditorLayout: Preset not found at {}", filepath);
+		}
+	}
 
-void EditorLayout::SaveCurrent(const std::string& filepath)
-{
-    size_t size = 0;
-    const char* settings = ImGui::SaveIniSettingsToMemory(&size);
-    if (settings)
-    {
-        std::ofstream file(filepath);
-        if (file.is_open())
-        {
-            file.write(settings, size);
-            CH_CORE_INFO("EditorLayout: Saved current layout to: {}", filepath);
-        }
-        else
-        {
-            CH_CORE_ERROR("EditorLayout: Failed to open {} for writing!", filepath);
-        }
-    }
-}
+	void EditorLayout::SaveCurrent(const std::string& filepath)
+	{
+		size_t size = 0;
+		const char* settings = ImGui::SaveIniSettingsToMemory(&size);
+		if (settings)
+		{
+			std::ofstream file(filepath);
+			if (file.is_open())
+			{
+				file.write(settings, size);
+				CH_CORE_INFO("EditorLayout: Saved current layout to: {}", filepath);
+			}
+			else
+			{
+				CH_CORE_ERROR("EditorLayout: Failed to open {} for writing!", filepath);
+			}
+		}
+	}
 
-void EditorLayout::OnImGuiRender()
-{
-    static bool dockspaceOpen = true;
-    static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
-    ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
+	std::string EditorLayout::GetPresetDirectory() const
+	{
+		return "presets";
+	}
 
-    ImGuiViewport* viewport = ImGui::GetMainViewport();
-    ImGui::SetNextWindowPos(viewport->WorkPos);
-    ImGui::SetNextWindowSize(viewport->WorkSize);
-    ImGui::SetNextWindowViewport(viewport->ID);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
-    window_flags |=
-        ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove;
-    window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
+	std::string EditorLayout::GetPresetPath(const std::string& name) const
+	{
+		return GetPresetDirectory() + "/" + name + ".ini";
+	}
 
-    if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
-    {
-        window_flags |= ImGuiWindowFlags_NoBackground;
-    }
+	void EditorLayout::SavePreset(const std::string& name)
+	{
+		std::string dir = GetPresetDirectory();
+		if (!std::filesystem::exists(dir))
+		{
+			std::filesystem::create_directories(dir);
+		}
 
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
-    ImGui::Begin("MainDockSpaceWindow", &dockspaceOpen, window_flags);
-    ImGui::PopStyleVar();
-    ImGui::PopStyleVar(2);
+		std::string path = GetPresetPath(name);
+		SaveCurrent(path);
+		m_ActivePreset = name;
+		CH_CORE_INFO("EditorLayout: Saved preset '{}' to {}", name, path);
+	}
 
-    ImGuiIO& io = ImGui::GetIO();
-    if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
-    {
-        m_DockSpaceID = ImGui::GetID("MyDockSpace");
+	void EditorLayout::LoadPresetByName(const std::string& name)
+	{
+		std::string path = GetPresetPath(name);
+		if (std::filesystem::exists(path))
+		{
+			LoadPreset(path);
+			m_ActivePreset = name;
+			// Apply loaded settings on next frame
+			m_NeedsRebuild = false;
+			CH_CORE_INFO("EditorLayout: Loaded preset '{}'", name);
+		}
+		else
+		{
+			CH_CORE_WARN("EditorLayout: Preset '{}' not found at {}", name, path);
+		}
+	}
 
-        if (m_NeedsRebuild)
-        {
-            m_NeedsRebuild = false;
+	void EditorLayout::DeletePreset(const std::string& name)
+	{
+		std::string path = GetPresetPath(name);
+		if (std::filesystem::exists(path))
+		{
+			std::filesystem::remove(path);
+			CH_CORE_INFO("EditorLayout: Deleted preset '{}'", name);
+			if (m_ActivePreset == name)
+			{
+				m_ActivePreset = "Default";
+			}
+		}
+	}
 
-            ImGui::DockBuilderRemoveNode(m_DockSpaceID);
-            ImGui::DockBuilderAddNode(m_DockSpaceID, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
-            ImGui::DockBuilderSetNodeSize(m_DockSpaceID, viewport->WorkSize);
+	std::vector<std::string> EditorLayout::GetPresetNames() const
+	{
+		std::vector<std::string> names;
+		std::string dir = GetPresetDirectory();
+		if (std::filesystem::exists(dir))
+		{
+			for (const auto& entry : std::filesystem::directory_iterator(dir))
+			{
+				if (entry.is_regular_file() && entry.path().extension() == ".ini")
+				{
+					names.push_back(entry.path().stem().string());
+				}
+			}
+		}
+		// Always include Default
+		if (std::find(names.begin(), names.end(), "Default") == names.end())
+		{
+			names.insert(names.begin(), "Default");
+		}
+		return names;
+	}
 
-            ImGuiID dock_main_id = m_DockSpaceID;
+	void EditorLayout::OnImGuiRender()
+	{
+		static bool dockspaceOpen = true;
+		static ImGuiDockNodeFlags dockspace_flags = ImGuiDockNodeFlags_PassthruCentralNode;
+		ImGuiWindowFlags window_flags = ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoDocking;
 
-            // Layout:
-            // dock_left: Scene Hierarchy, World Settings below it
-            // dock_right: Inspector, Material Editor
-            // dock_bottom: Content Browser, Console
-            // Center: Viewport
+		ImGuiViewport* viewport = ImGui::GetMainViewport();
+		ImGui::SetNextWindowPos(viewport->WorkPos);
+		ImGui::SetNextWindowSize(viewport->WorkSize);
+		ImGui::SetNextWindowViewport(viewport->ID);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowRounding, 0.0f);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+		window_flags |= ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoResize |
+						ImGuiWindowFlags_NoMove;
+		window_flags |= ImGuiWindowFlags_NoBringToFrontOnFocus | ImGuiWindowFlags_NoNavFocus;
 
-            // Build the layout splits
-            ImGuiID dock_left = ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, nullptr, &dock_main_id);
-            ImGuiID dock_right =
-                ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
-            ImGuiID dock_bottom =
-                ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.25f, nullptr, &dock_main_id);
-            ImGuiID dock_left_bottom = ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Down, 0.5f, nullptr, &dock_left);
+		if (dockspace_flags & ImGuiDockNodeFlags_PassthruCentralNode)
+		{
+			window_flags |= ImGuiWindowFlags_NoBackground;
+		}
 
-            // Assign windows to locations
-            ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_left);
-            ImGui::DockBuilderDockWindow("World Settings", dock_left_bottom);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0.0f, 0.0f));
+		ImGui::Begin("MainDockSpaceWindow", &dockspaceOpen, window_flags);
+		ImGui::PopStyleVar();
+		ImGui::PopStyleVar(2);
 
-            ImGui::DockBuilderDockWindow("Inspector", dock_right);
-            ImGui::DockBuilderDockWindow("Material Editor", dock_right); // grouped with Inspector
+		ImGuiIO& io = ImGui::GetIO();
+		if (io.ConfigFlags & ImGuiConfigFlags_DockingEnable)
+		{
+			m_DockSpaceID = ImGui::GetID("MyDockSpace");
 
-            ImGui::DockBuilderDockWindow("Content Browser", dock_bottom);
-            ImGui::DockBuilderDockWindow("Console", dock_bottom); // grouped with Content Browser
+			if (m_NeedsRebuild)
+			{
+				m_NeedsRebuild = false;
 
-            ImGui::DockBuilderDockWindow("Viewport", dock_main_id); // remainder
+				ImGui::DockBuilderRemoveNode(m_DockSpaceID);
+				ImGui::DockBuilderAddNode(m_DockSpaceID, dockspace_flags | ImGuiDockNodeFlags_DockSpace);
+				ImGui::DockBuilderSetNodeSize(m_DockSpaceID, viewport->WorkSize);
 
-            ImGui::DockBuilderFinish(m_DockSpaceID);
-        }
+				ImGuiID dock_main_id = m_DockSpaceID;
 
-        ImGui::DockSpace(m_DockSpaceID, ImVec2(0.0f, 0.0f), dockspace_flags);
-    }
+				// Layout:
+				// dock_left: Scene Hierarchy, World Settings below it
+				// dock_right: Inspector, Material Editor
+				// dock_bottom: Content Browser, Console
+				// Center: Viewport
 
-    auto& menu = EditorLayer::Get().GetMenu();
-    menu.DrawMenuBar(m_Panels);
+				// Build the layout splits
+				ImGuiID dock_left =
+					ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, nullptr, &dock_main_id);
+				ImGuiID dock_right =
+					ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
+				ImGuiID dock_bottom =
+					ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Down, 0.25f, nullptr, &dock_main_id);
+				ImGuiID dock_left_bottom =
+					ImGui::DockBuilderSplitNode(dock_left, ImGuiDir_Down, 0.5f, nullptr, &dock_left);
 
-    bool readOnly = EditorLayer::Get().GetSceneState() == SceneState::Play;
-    m_Panels.OnImGuiRender(readOnly);
+				// Assign windows to locations
+				ImGui::DockBuilderDockWindow("Scene Hierarchy", dock_left);
+				ImGui::DockBuilderDockWindow("World Settings", dock_left_bottom);
 
-    menu.DrawEditorSettings();
-    menu.DrawExportDialog();
-    menu.DrawExportProgressOverlay();
+				ImGui::DockBuilderDockWindow("Inspector", dock_right);
+				ImGui::DockBuilderDockWindow("Material Editor", dock_right); // grouped with Inspector
+				ImGui::DockBuilderDockWindow("Network", dock_right);		 // grouped with Inspector
 
-    ImGui::End();
-}
+				ImGui::DockBuilderDockWindow("Content Browser", dock_bottom);
+				ImGui::DockBuilderDockWindow("Console", dock_bottom);		  // grouped with Content Browser
+				ImGui::DockBuilderDockWindow("Animation Graph", dock_bottom); // grouped with Content Browser
+				ImGui::DockBuilderDockWindow("Effects & Debug", dock_bottom); // grouped with Content Browser
+				ImGui::DockBuilderDockWindow("Profiler", dock_bottom);		  // grouped with Content Browser
+
+				ImGui::DockBuilderDockWindow("Project Settings", dock_left_bottom); // grouped with World Settings
+
+				ImGui::DockBuilderDockWindow("Viewport", dock_main_id); // remainder
+
+				ImGui::DockBuilderFinish(m_DockSpaceID);
+			}
+
+			ImGui::DockSpace(m_DockSpaceID, ImVec2(0.0f, 0.0f), dockspace_flags);
+		}
+
+		auto& menu = EditorLayer::Get().GetMenu();
+		menu.DrawMenuBar(m_Panels);
+
+		bool readOnly = EditorLayer::Get().GetSceneState() == SceneState::Play;
+		m_Panels.OnImGuiRender(readOnly);
+
+		menu.DrawEditorSettings();
+		menu.DrawExportDialog();
+		menu.DrawExportProgressOverlay();
+
+		ImGui::End();
+	}
 
 } // namespace Chained

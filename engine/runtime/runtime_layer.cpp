@@ -68,6 +68,11 @@ namespace Chained
 				io.FontDefault = projectDefaultFont;
 				CH_CORE_INFO("RuntimeSystem: Switched default UI font to project font.");
 			}
+			else
+			{
+				CH_CORE_WARN(
+					"RuntimeSystem: EnsureDefaultProjectFont returned nullptr — staying with ImGui default font.");
+			}
 		}
 
 		if (imguiLayer)
@@ -851,6 +856,14 @@ namespace Chained
 
 		if (ImGui::Begin("##RuntimeLoadingOverlay", nullptr, flags))
 		{
+			if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
+			{
+				if (ImFont* font = fontRegistry->GetDefaultFont())
+				{
+					ImGui::PushFont(font);
+				}
+			}
+
 			const size_t totalPending = m_AssetManager->GetLoadingAssetCount();
 
 			int dotsCount = (static_cast<int>(ImGui::GetTime() * 2.5f) % 3) + 1;
@@ -872,6 +885,14 @@ namespace Chained
 			ImVec2 pendingSize = ImGui::CalcTextSize(pendingLine.c_str());
 			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
 			ImGui::TextUnformatted(pendingLine.c_str());
+
+			if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
+			{
+				if (ImFont* font = fontRegistry->GetDefaultFont())
+				{
+					ImGui::PopFont();
+				}
+			}
 		}
 
 		ImGui::End();

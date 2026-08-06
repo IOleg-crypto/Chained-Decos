@@ -116,7 +116,7 @@ namespace Chained
 			stableId, metadata.Name, metadata.Icon, entity,
 			[&]() {
 				UIProperties ui;
-				metadata.ReflectInternal(entity, &ui, (int)ReflectionMode::UI);
+				metadata.ReflectInternal(entity, ui, ReflectionMode::UI);
 				bool changed = ui.HasChanged();
 				if (changed && metadata.NotifyUpdate)
 				{
@@ -759,6 +759,106 @@ namespace Chained
 								data.Items.push_back("");
 								changed = true;
 							}
+						}
+						else if constexpr (std::is_same_v<T, InputTextData>)
+						{
+							if (ui.Property("Text", data.Text))
+							{
+								data.InputBuffer.clear();
+								changed = true;
+							}
+							if (ui.Property("Placeholder", data.Placeholder))
+							{
+								changed = true;
+							}
+							if (ui.Property("Max Length", data.MaxLength, PropertyMeta(1, 1024, 1)))
+							{
+								changed = true;
+							}
+							if (ui.Property("Multiline", data.Multiline))
+							{
+								changed = true;
+							}
+							if (ui.Property("Read Only", data.ReadOnly))
+							{
+								changed = true;
+							}
+							if (ui.Property("Password", data.Password))
+							{
+								changed = true;
+							}
+						}
+						else if constexpr (std::is_same_v<T, ImageButtonData>)
+						{
+							if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
+							{
+								changed = true;
+							}
+							if (ui.Property("Label", data.Label))
+							{
+								changed = true;
+							}
+						}
+						else if constexpr (std::is_same_v<T, RadioButtonData>)
+						{
+							if (ui.Property("Label", data.Label))
+							{
+								changed = true;
+							}
+							if (!data.Options.empty())
+							{
+								if (ui.Property("Selected", data.SelectedIndex,
+												PropertyMeta(0, (int)data.Options.size() - 1, 1)))
+								{
+									changed = true;
+								}
+							}
+							if (ui.Property("Horizontal", data.Horizontal))
+							{
+								changed = true;
+							}
+						}
+						else if constexpr (std::is_same_v<T, DragFloatData>)
+						{
+							if (ui.Property("Label", data.Label))
+							{
+								changed = true;
+							}
+							if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, data.Speed)))
+							{
+								changed = true;
+							}
+							if (ui.Property("Min", data.Min))
+							{
+								changed = true;
+							}
+							if (ui.Property("Max", data.Max))
+							{
+								changed = true;
+							}
+						}
+						else if constexpr (std::is_same_v<T, DragIntData>)
+						{
+							if (ui.Property("Label", data.Label))
+							{
+								changed = true;
+							}
+							if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 1)))
+							{
+								changed = true;
+							}
+							if (ui.Property("Min", data.Min))
+							{
+								changed = true;
+							}
+							if (ui.Property("Max", data.Max))
+							{
+								changed = true;
+							}
+						}
+						else
+						{
+							// Default fallback for other/future widget data types
 						}
 					},
 					comp.Data);

@@ -7,7 +7,6 @@ add_library(engine_common STATIC
     timestep.h
     uuid.h
     uuid.cpp
-    zstd_compression.h
 )
 
 target_include_directories(engine_common PUBLIC

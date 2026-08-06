@@ -213,51 +213,19 @@ namespace Chained
 
 		// Keep ReflectInternal for editor UI (property panel)
 		metadata.IsReflective = true;
-		metadata.ReflectInternal = [](Entity e, void* archivePtr, int mode) {
-			IPropertyArchiveBase* archive = static_cast<IPropertyArchiveBase*>(archivePtr);
-			const ReflectionMode reflMode = static_cast<ReflectionMode>(mode);
-			if (reflMode == ReflectionMode::Deserialize)
+		metadata.ReflectInternal = [](Entity e, IPropertyArchiveBase& archive, ReflectionMode mode) {
+			if (mode == ReflectionMode::Deserialize)
 			{
 				auto& comp = e.AddOrReplaceComponent<UIControlComponent>();
-				GenericProperties props(*archive);
+				GenericProperties props(archive);
 				ReflectFromRfl(comp, props);
 			}
 			else if (e.HasComponent<UIControlComponent>())
 			{
-				GenericProperties props(*archive);
+				GenericProperties props(archive);
 				auto& comp = e.GetComponent<UIControlComponent>();
 				ReflectFromRfl(comp, props);
 			}
-		};
-
-		metadata.GetSetField = [](Entity e, const std::string& fieldName, void* data, bool isSet) -> bool {
-			bool found = false;
-			auto& comp = e.GetComponent<UIControlComponent>();
-			rfl::to_view(comp).apply([&](auto... field_pack) {
-				(
-					[&](auto& field) {
-						if (found)
-						{
-							return;
-						}
-						std::string name(field.name());
-						if (name == fieldName)
-						{
-							using FieldType = std::decay_t<decltype(*field.get())>;
-							if (isSet)
-							{
-								*field.get() = *static_cast<FieldType*>(data);
-							}
-							else
-							{
-								*static_cast<FieldType*>(data) = *field.get();
-							}
-							found = true;
-						}
-					}(field_pack),
-					...);
-			});
-			return found;
 		};
 
 		ComponentRegistry::Register(entt::type_hash<UIControlComponent>::value(), metadata);

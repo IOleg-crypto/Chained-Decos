@@ -22,12 +22,6 @@ target_link_libraries(engine_physics PUBLIC
     Jolt
 )
 
-if(MSVC)
-    target_compile_options(engine_physics PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_physics PRIVATE -Wa,-mbig-obj)
-endif()
-
 if(TARGET engine_pch)
     target_link_libraries(engine_physics PRIVATE engine_pch)
 endif()

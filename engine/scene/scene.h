@@ -125,6 +125,7 @@ namespace Chained
 
 	private:
 		void UpdateCommon(Timestep ts, bool runScripting, bool runPhysics, bool runTransitions);
+		void InitializePhysicsStartup();
 		void RebuildRootCache() const;
 
 	private:
