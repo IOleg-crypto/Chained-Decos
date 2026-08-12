@@ -22,7 +22,6 @@
 
 namespace Chained
 {
-
 	void EditorMenu::DrawMenuBar(EditorPanels& panels)
 	{
 		if (!ImGui::BeginMenuBar())

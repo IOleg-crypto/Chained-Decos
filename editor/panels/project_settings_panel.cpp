@@ -100,7 +100,7 @@ namespace Chained
 					auto result = Chained::Dialogs::OpenFile(filters);
 					if (result)
 					{
-						config.IconPath = Project::GetRelativePath(result->string());
+						config.IconPath = project->GetRelativePath(result->string());
 					}
 				}
 
@@ -150,7 +150,7 @@ namespace Chained
 					auto result = Chained::Dialogs::PickFolder();
 					if (result)
 					{
-						config.Scripting.ModuleDirectory = Project::GetRelativePath(result->string());
+						config.Scripting.ModuleDirectory = project->GetRelativePath(result->string());
 					}
 				}
 

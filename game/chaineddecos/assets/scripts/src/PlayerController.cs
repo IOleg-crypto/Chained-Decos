@@ -15,6 +15,12 @@ namespace ChainedDecos.Scripts
         public int JumpAnim = 2;
         public float CrossFadeTime = 8.5f;
 
+        private bool m_DebugLogged = false;
+        // NetworkIdentityComponent is injected by C++ after the first OnUpdate,
+        // so we allow a short grace period before enforcing the "no netId = skip" rule.
+        private int m_NetIdWaitFrames = 0;
+        private const int NetIdGraceFrames = 10;
+
         private RigidBodyComponent? _rb;
         private TransformComponent? _transform;
         private AnimationComponent? _anim;
@@ -30,6 +36,17 @@ namespace ChainedDecos.Scripts
 
         public override void OnUpdate(float deltaTime)
         {
+            if (!m_DebugLogged)
+            {
+                Log.Info("[PlayerController] OnUpdate FIRST CALL — IsConnected=" + Network.IsConnected +
+                         " IsHost=" + Network.IsHost + " HasNetId=" + (Entity.HasComponent<NetworkIdentityComponent>()));
+                if (Entity.HasComponent<NetworkIdentityComponent>())
+                {
+                    var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+                    Log.Info("[PlayerController] NetID=" + netComp.NetworkID + " IsOwner=" + netComp.IsOwner);
+                }
+                m_DebugLogged = true;
+            }
             if (Input.IsKeyPressed(Key.Escape))
             {
                 Log.Info($"Returning to menu: {MenuScene}");
@@ -41,12 +58,31 @@ namespace ChainedDecos.Scripts
                 return;
             }
 
+            // Retry every frame: physics body (Jolt) may not be ready immediately after prefab spawn
+            _rb        = Entity.GetComponent<RigidBodyComponent>();
+            _transform = Entity.GetComponent<TransformComponent>();
+            _anim    ??= Entity.GetComponent<AnimationComponent>();
+
             if (_rb == null || _transform == null) return;
 
             // ── Network awareness ──
-            // If connected, check if we own this entity before processing input.
-            // Non-owners are driven by the host via ApplyHostInputs (C++) + InterpolateEntities.
             var netId = Entity.GetComponent<NetworkIdentityComponent>();
+
+            // Scene-authored Player in a networked session: skip entirely.
+            // NetworkIdentityComponent is added by C++ *after* the first OnUpdate, so we
+            // give it up to NetIdGraceFrames frames to appear before enforcing this check.
+            if (Network.IsConnected && netId == null)
+            {
+                m_NetIdWaitFrames++;
+                if (m_NetIdWaitFrames > NetIdGraceFrames)
+                {
+                    return; // confirmed scene-authored entity with no network role
+                }
+                // Still waiting for C++ to attach NetworkIdentityComponent — continue as owner
+            }
+
+            // Non-owner avatars (host-driven): skip local input entirely.
+            // The host simulates physics for them; InterpolateEntities handles position.
             if (Network.IsConnected && netId != null && !netId.IsOwner)
             {
                 // Not our avatar — just update animation from replicated velocity
@@ -76,6 +112,13 @@ namespace ChainedDecos.Scripts
                 movementDir = Vector3.Normalize(movementDir);
                 ApplyHorizontalMovement(movementDir, speed);
                 RotateTowardsMovement(movementDir);
+                if (m_DebugVelCounter < 30)
+                {
+                    var pos = _transform!.Translation;
+                    Log.Info("[PlayerController] Moving vel=(" + _rb.Velocity.X + "," + _rb.Velocity.Y + "," + _rb.Velocity.Z + ")" +
+                             " pos=(" + pos.X.ToString("F2") + "," + pos.Y.ToString("F2") + "," + pos.Z.ToString("F2") + ")");
+                    m_DebugVelCounter++;
+                }
             }
             else
             {
@@ -147,6 +190,11 @@ namespace ChainedDecos.Scripts
         {
             if (_rb == null || _transform == null) return;
 
+            if (Input.IsKeyPressed(Key.Space) && _rb.IsGrounded)
+            {
+                _rb.Velocity = new Vector3(_rb.Velocity.X, JumpForce, _rb.Velocity.Z);
+            }
+
             if (_rb.IsKinematic)
             {
                 const float terminalVelocity = -50.0f;
@@ -155,19 +203,10 @@ namespace ChainedDecos.Scripts
                 if (_rb.IsGrounded && _rb.Velocity.Y < 0) _rb.Velocity = new Vector3(_rb.Velocity.X, 0, _rb.Velocity.Z);
                 _transform.Translation += _rb.Velocity * deltaTime;
             }
-            else
-            {
-                // Non-kinematic: physics engine handles gravity automatically.
-                // We only apply jump impulse — don't touch Y velocity otherwise!
-                if (Input.IsKeyPressed(Key.Space) && _rb.IsGrounded)
-                {
-                    _rb.Velocity = new Vector3(_rb.Velocity.X, JumpForce, _rb.Velocity.Z);
-                }
-                // NOTE: do NOT set Velocity.Y = 0 here — that kills gravity!
-            }
         }
 
         private int _animLogCounter = 0;
+        private int m_DebugVelCounter = 0;
 
         private void UpdateAnimation(Vector3 movementDir)
         {

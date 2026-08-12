@@ -1,5 +1,9 @@
 add_library(engine_core STATIC
     service.h
+    service_registry.h
+    service_registry.cpp
+    service_locator.h
+    service_locator.cpp
     input.h
     input.cpp
     key_codes.h
@@ -11,7 +15,6 @@ add_library(engine_core STATIC
     platform.h
     platform.cpp
     profiler.h
-    service_locator.h
     window.h
     events/events.h
     events/input_events.h

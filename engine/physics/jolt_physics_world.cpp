@@ -114,6 +114,12 @@ namespace Chained
 	// ─────────────────────────────────────────────────────────────────────────────
 	JoltPhysicsWorld::JoltPhysicsWorld()
 	{
+		// Jolt factory + type registration (owned by this world instance)
+		JPH::RegisterDefaultAllocator();
+		m_Factory = std::make_unique<JPH::Factory>();
+		JPH::Factory::sInstance = m_Factory.get();
+		JPH::RegisterTypes();
+
 		m_TempAllocator = std::make_unique<JPH::TempAllocatorImpl>(32 * 1024 * 1024);
 		unsigned int hwThreads = std::thread::hardware_concurrency();
 		int numThreads = std::max(1, (int)hwThreads - 1);
@@ -130,7 +136,23 @@ namespace Chained
 		CH_CORE_INFO("Jolt Physics World Initialized with ContactListener.");
 	}
 
-	JoltPhysicsWorld::~JoltPhysicsWorld() = default;
+	JoltPhysicsWorld::~JoltPhysicsWorld()
+	{
+		// PhysicsSystem destroyed automatically (member variable).
+		// Factory is destroyed last due to declaration order.
+		JPH::Factory::sInstance = nullptr;
+	}
+
+	JPH::ShapeRefC JoltPhysicsWorld::FallbackUnitBox(const std::string& reason)
+	{
+		CH_CORE_WARN("Physics: {} — falling back to unit box.", reason);
+		auto shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
+		if (!shape)
+		{
+			CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
+		}
+		return shape;
+	}
 
 	void JoltPhysicsWorld::ClearShapeCache()
 	{
@@ -150,12 +172,7 @@ namespace Chained
 			shape = boxSettings.Create().Get();
 			if (!shape)
 			{
-				CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
-				shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-				if (!shape)
-				{
-					CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-				}
+				shape = FallbackUnitBox("Box shape creation failed");
 			}
 			break;
 		}
@@ -164,12 +181,7 @@ namespace Chained
 			shape = sphereSettings.Create().Get();
 			if (!shape)
 			{
-				CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
-				shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-				if (!shape)
-				{
-					CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-				}
+				shape = FallbackUnitBox("Sphere shape creation failed");
 			}
 			break;
 		}
@@ -178,24 +190,14 @@ namespace Chained
 			shape = capsuleSettings.Create().Get();
 			if (!shape)
 			{
-				CH_CORE_WARN("Physics: shape creation failed — falling back to unit box.");
-				shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-				if (!shape)
-				{
-					CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-				}
+				shape = FallbackUnitBox("Capsule shape creation failed");
 			}
 			break;
 		}
 		case ColliderType::Mesh: {
 			if (desc.Triangles.empty())
 			{
-				CH_CORE_WARN("Physics: MeshShape requested but no triangles provided — falling back to unit box.");
-				shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-				if (!shape)
-				{
-					CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-				}
+				shape = FallbackUnitBox("MeshShape requested but no triangles provided");
 				break;
 			}
 
@@ -275,13 +277,8 @@ namespace Chained
 				auto hullResult = hullSettings.Create();
 				if (hullResult.HasError())
 				{
-					CH_CORE_ERROR("Physics: ConvexHull build for dynamic mesh failed: {} — falling back to unit box.",
-								  hullResult.GetError().c_str());
-					shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-					if (!shape)
-					{
-						CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-					}
+					std::string err = hullResult.GetError().c_str();
+					shape = FallbackUnitBox("ConvexHull build for dynamic mesh failed: " + err);
 					break;
 				}
 
@@ -351,12 +348,7 @@ namespace Chained
 
 				if (joltTris.empty())
 				{
-					CH_CORE_WARN("Physics: All mesh triangles degenerate — falling back to unit box.");
-					shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-					if (!shape)
-					{
-						CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-					}
+					shape = FallbackUnitBox("All mesh triangles degenerate");
 					break;
 				}
 
@@ -367,13 +359,8 @@ namespace Chained
 				auto result = s.Create();
 				if (result.HasError())
 				{
-					CH_CORE_ERROR("Physics: MeshShape build failed: {} — falling back to unit box.",
-								  result.GetError().c_str());
-					shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-					if (!shape)
-					{
-						CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-					}
+					std::string err = result.GetError().c_str();
+					shape = FallbackUnitBox("MeshShape build failed: " + err);
 					break;
 				}
 
@@ -410,12 +397,7 @@ namespace Chained
 			break;
 		}
 		default: {
-			CH_CORE_WARN("Physics: Unknown ColliderType — falling back to unit box.");
-			shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-			if (!shape)
-			{
-				CH_CORE_ERROR("Physics: unit-box fallback shape creation failed.");
-			}
+			shape = FallbackUnitBox("Unknown ColliderType");
 			break;
 		}
 		}
@@ -553,53 +535,14 @@ namespace Chained
 
 		const auto buildStart = std::chrono::steady_clock::now();
 
-		// Phase 0: Build all shapes in parallel (BVH build is the bottleneck)
-		std::vector<JPH::ShapeRefC> prebuiltShapes(descs.size());
+		// Build all shapes
+		std::vector<JPH::ShapeRefC> shapes(descs.size());
+		for (size_t i = 0; i < descs.size(); ++i)
 		{
-			// Count mesh shapes that need building (non-trivial shapes)
-			size_t meshCount = 0;
-			for (const auto& desc : descs)
+			shapes[i] = BuildShape(descs[i]);
+			if (!shapes[i])
 			{
-				if (desc.Shape == ColliderType::Mesh && !desc.Triangles.empty())
-				{
-					++meshCount;
-				}
-			}
-
-			if (meshCount >= 2)
-			{
-				// Parallel path: build mesh shapes concurrently
-				std::vector<std::future<void>> futures;
-				futures.reserve(descs.size());
-
-				for (size_t i = 0; i < descs.size(); ++i)
-				{
-					futures.push_back(std::async(std::launch::async, [this, &descs, &prebuiltShapes, i]() {
-						auto shape = BuildShape(descs[i]);
-						if (!shape)
-						{
-							shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-						}
-						prebuiltShapes[i] = std::move(shape);
-					}));
-				}
-				for (auto& f : futures)
-				{
-					f.get();
-				}
-			}
-			else
-			{
-				// Sequential path: few shapes, no parallelism overhead
-				for (size_t i = 0; i < descs.size(); ++i)
-				{
-					auto shape = BuildShape(descs[i]);
-					if (!shape)
-					{
-						shape = JPH::BoxShapeSettings(JPH::Vec3(0.5f, 0.5f, 0.5f)).Create().Get();
-					}
-					prebuiltShapes[i] = std::move(shape);
-				}
+				shapes[i] = FallbackUnitBox("BuildShape returned null in batch");
 			}
 		}
 
@@ -610,14 +553,14 @@ namespace Chained
 			CH_CORE_INFO("Physics: Built {} shapes in {:.1f} ms", descs.size(), shapesMs);
 		}
 
-		// Phase 1: Create bodies using pre-built shapes (fast, no BVH work)
+		// Create bodies
 		JPH::BodyInterface& bi = m_PhysicsSystem.GetBodyInterface();
 		std::vector<JPH::BodyID> bodyIds;
 		bodyIds.reserve(descs.size());
 
 		for (size_t i = 0; i < descs.size(); ++i)
 		{
-			auto settings = BuildBodySettings(descs[i], prebuiltShapes[i]);
+			auto settings = BuildBodySettings(descs[i], shapes[i]);
 			JPH::Body* body = bi.CreateBody(settings);
 			if (!body)
 			{
@@ -628,8 +571,7 @@ namespace Chained
 			bodyIds.push_back(body->GetID());
 		}
 
-		// Phase 2: Batch add to physics system (avoids per-body broadphase rebuild)
-		// Filter out invalid BodyIDs that failed creation — passing them to Jolt is UB.
+		// Batch add to physics system
 		std::vector<JPH::BodyID> validIds;
 		validIds.reserve(bodyIds.size());
 		for (auto& id : bodyIds)
@@ -646,19 +588,12 @@ namespace Chained
 			bi.AddBodiesFinalize(validIds.data(), (int)validIds.size(), addState, JPH::EActivation::Activate);
 		}
 
-		// Phase 3: Convert to handles
+		// Convert to handles
 		std::vector<PhysicsBodyHandle> handles;
 		handles.reserve(bodyIds.size());
 		for (auto& id : bodyIds)
 		{
-			if (id.IsInvalid())
-			{
-				handles.push_back(kInvalidPhysicsBody);
-			}
-			else
-			{
-				handles.push_back((PhysicsBodyHandle)id.GetIndexAndSequenceNumber());
-			}
+			handles.push_back(id.IsInvalid() ? kInvalidPhysicsBody : (PhysicsBodyHandle)id.GetIndexAndSequenceNumber());
 		}
 
 		return handles;
@@ -674,7 +609,12 @@ namespace Chained
 
 	bool JoltPhysicsWorld::HasCachedMeshShape(const std::string& key) const
 	{
-		return !key.empty() && m_MeshShapeCache.count(key) > 0;
+		if (key.empty())
+		{
+			return false;
+		}
+		std::lock_guard lock(m_CacheMutex);
+		return m_MeshShapeCache.count(key) > 0;
 	}
 
 	void JoltPhysicsWorld::SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot)
@@ -703,16 +643,6 @@ namespace Chained
 		}
 	}
 
-	void JoltPhysicsWorld::SetVelocityForce(PhysicsBodyHandle handle, const glm::vec3& velocity)
-	{
-		m_PhysicsSystem.GetBodyInterface().SetLinearVelocity((JPH::BodyID)handle,
-															 JPH::Vec3(velocity.x, velocity.y, velocity.z));
-		if (glm::length2(velocity) > 0.0001f)
-		{
-			m_PhysicsSystem.GetBodyInterface().ActivateBody((JPH::BodyID)handle);
-		}
-	}
-
 	glm::vec3 JoltPhysicsWorld::GetVelocity(PhysicsBodyHandle handle) const
 	{
 		JPH::Vec3 v = m_PhysicsSystem.GetBodyInterface().GetLinearVelocity((JPH::BodyID)handle);
@@ -732,7 +662,6 @@ namespace Chained
 			out.Hit = true;
 			out.Distance = result.mFraction * maxDistance;
 			out.Position = {hitPos.GetX(), hitPos.GetY(), hitPos.GetZ()};
-			out.BodyHandle = (PhysicsBodyHandle)result.mBodyID.GetIndexAndSequenceNumber();
 			out.Entity = (entt::entity)m_PhysicsSystem.GetBodyInterface().GetUserData(result.mBodyID);
 			return out;
 		}

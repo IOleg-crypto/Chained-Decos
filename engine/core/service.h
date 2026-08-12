@@ -5,25 +5,26 @@
 
 namespace Chained
 {
-class CH_API Service
-{
-public:
-    virtual ~Service() = default;
-    virtual void Initialize() = 0;
-    virtual void Shutdown() = 0;
+	class CH_API Service
+	{
+	public:
+		virtual ~Service() = default;
+		virtual void Initialize() = 0;
+		virtual void Shutdown() = 0;
 
-    bool IsEnabled() const
-    {
-        return m_Enabled;
-    }
-    void SetEnabled(bool enabled)
-    {
-        m_Enabled = enabled;
-    }
+		bool IsEnabled() const
+		{
+			return m_Enabled;
+		}
+		void SetEnabled(bool enabled)
+		{
+			m_Enabled = enabled;
+		}
 
-protected:
-    bool m_Enabled = true;
-};
+	private:
+		bool m_Enabled = true;
+	};
+
 } // namespace Chained
 
 #endif

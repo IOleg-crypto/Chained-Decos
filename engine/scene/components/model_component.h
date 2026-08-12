@@ -2,7 +2,6 @@
 #define CH_MODEL_COMPONENT_H
 
 #include "engine/assets/asset.h"
-#include "engine/graphics/api/renderer_types.h"
 #include "engine/reflection/reflection.h"
 #include "engine/reflection/reflection_rfl.h"
 #include <string>
@@ -10,26 +9,27 @@
 
 namespace Chained
 {
-struct ModelComponent
-{
-    AssetHandle ModelHandle = AssetHandle(0);
-    std::string ModelPath;
-    uint64_t ModelUUID = 0;
-    std::vector<std::string> MaterialPaths;
+	struct ModelComponent
+	{
+		AssetHandle ModelHandle = AssetHandle(0);
+		std::string ModelPath;
+		uint64_t ModelUUID = 0;
+		std::vector<std::string> MaterialPaths;
 
-    static const char* GetStaticName()
-    {
-        return "ModelComponent";
-    }
+		static const char* GetStaticName()
+		{
+			return "ModelComponent";
+		}
 
-    struct UI
-    {
-        UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glb,.gltf,.obj"};
-        UIMeta ModelUUID = {.ReadOnly = true};
-    };
-};
+		struct UI
+		{
+			UIMeta ModelHandle = {.ReadOnly = true, .Transient = true};
+			UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glb,.gltf,.obj"};
+			UIMeta ModelUUID = {.ReadOnly = true};
+		};
+	};
 
-CH_MARK_RFL(ModelComponent);
+	CH_MARK_RFL(ModelComponent);
 
 } // namespace Chained
 

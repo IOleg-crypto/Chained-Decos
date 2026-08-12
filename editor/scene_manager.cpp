@@ -171,8 +171,6 @@ namespace Chained
 					return;
 				}
 
-				m_RuntimeScene->SetEventCallback([](Event& e) { EditorLayer::Get().OnEvent(e); });
-
 				if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
 				{
 					uiRenderer->ResetButtonStates(m_RuntimeScene.get());
@@ -286,7 +284,7 @@ namespace Chained
 		{
 			if (Project::GetActive())
 			{
-				scenePath = Project::GetAssetPath(scenePath);
+				scenePath = Project::GetActive()->GetAssetPath(scenePath);
 			}
 		}
 
@@ -376,7 +374,6 @@ namespace Chained
 				m_RuntimeScene->OnRuntimeStop();
 			}
 			m_RuntimeScene = loadResult.scene;
-			m_RuntimeScene->SetEventCallback([](Event& e) { EditorLayer::Get().OnEvent(e); });
 		}
 		else
 		{
@@ -435,9 +432,6 @@ namespace Chained
 		}
 
 		targetScene->GetSettings().ScenePath = m_Transition.targetPath.string();
-
-		// Set event callback so SceneTransitionComponent can dispatch SceneChangeRequestEvent
-		targetScene->SetEventCallback([](Event& e) { EditorLayer::Get().OnEvent(e); });
 
 		if (m_Transition.forPlayMode)
 		{

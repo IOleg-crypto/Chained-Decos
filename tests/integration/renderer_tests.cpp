@@ -57,7 +57,7 @@ TEST_F(RendererTest, SceneLifecycle)
 	camera.FovDegrees = 45.0f;
 	camera.Projection = ProjectionType::Perspective;
 
-	renderer->BeginScene(camera, 0.1f, 1000.0f);
+	renderer->BeginScene(camera);
 
 	EXPECT_FLOAT_EQ(renderer->GetFrame().CameraPosition.x, 10.0f);
 	EXPECT_FLOAT_EQ(renderer->GetFrame().CameraPosition.y, 5.0f);
@@ -72,24 +72,26 @@ TEST_F(RendererTest, LightManagement)
 	auto* renderer = GetRenderer();
 	ASSERT_NE(renderer, nullptr);
 
-	renderer->ClearLights();
-	EXPECT_EQ(renderer->GetLighting().LightCount, 0);
+	auto& lm = renderer->GetLightingManager();
+
+	lm.Clear();
+	EXPECT_EQ(lm.GetLighting().LightCount, 0);
 
 	RenderLight light;
 	light.color = {1.0f, 0.5f, 0.0f, 1.0f};
 	light.intensity = 5.0f;
 	light.position = {1.0f, 2.0f, 3.0f};
 
-	renderer->SetLight(0, light);
-	renderer->SetLightCount(1);
+	lm.SetLight(0, light);
+	lm.SetLightCount(1);
 
-	EXPECT_EQ(renderer->GetLighting().LightCount, 1);
-	EXPECT_FLOAT_EQ(renderer->GetLighting().Lights[0].intensity, 5.0f);
-	EXPECT_FLOAT_EQ(renderer->GetLighting().Lights[0].position.x, 1.0f);
-	EXPECT_FLOAT_EQ(renderer->GetLighting().Lights[0].color.g, 0.5f);
+	EXPECT_EQ(lm.GetLighting().LightCount, 1);
+	EXPECT_FLOAT_EQ(lm.GetLighting().Lights[0].intensity, 5.0f);
+	EXPECT_FLOAT_EQ(lm.GetLighting().Lights[0].position.x, 1.0f);
+	EXPECT_FLOAT_EQ(lm.GetLighting().Lights[0].color.g, 0.5f);
 
-	renderer->ClearLights();
-	EXPECT_EQ(renderer->GetLighting().LightCount, 0);
+	lm.Clear();
+	EXPECT_EQ(lm.GetLighting().LightCount, 0);
 }
 
 // Verifies that Frame.DiagnosticMode float can be pushed into the renderer's data block.
@@ -111,11 +113,13 @@ TEST_F(RendererTest, EnvironmentApplication)
 	auto* renderer = GetRenderer();
 	ASSERT_NE(renderer, nullptr);
 
+	auto& lm = renderer->GetLightingManager();
+
 	EnvironmentSettings env;
 	env.Lighting.Ambient = 0.75f;
 	env.Lighting.Exposure = 1.2f;
 
-	renderer->ApplyEnvironment(env);
-	EXPECT_FLOAT_EQ(renderer->GetLighting().CurrentLighting.Ambient, 0.75f);
-	EXPECT_FLOAT_EQ(renderer->GetLighting().CurrentLighting.Exposure, 1.2f);
+	lm.ApplyEnvironment(env);
+	EXPECT_FLOAT_EQ(lm.GetLighting().CurrentLighting.Ambient, 0.75f);
+	EXPECT_FLOAT_EQ(lm.GetLighting().CurrentLighting.Exposure, 1.2f);
 }

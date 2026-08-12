@@ -3,59 +3,59 @@
 
 #include "engine/assets/types/environment_asset.h"
 #include "engine/common/color.h"
-#include "engine/scene/components/control_component.h"
+#include "engine/graphics/ui/ui_style.h"
 #include <memory>
 #include <string>
 
 namespace Chained
 {
-struct DebugRenderFlags
-{
-    bool DrawColliders = false;
-    bool DrawHierarchy = false;
-    bool DrawGrid = false;
-    bool DrawSelection = true;
-    bool DrawLights = true;
-    bool DrawSpawnZones = true;
-    int SetCollisionWireframeMode = 0;
-};
+	struct DebugRenderFlags
+	{
+		bool DrawColliders = false;
+		bool DrawHierarchy = false;
+		bool DrawGrid = false;
+		bool DrawSelection = true;
+		bool DrawLights = true;
+		bool DrawSpawnZones = true;
+		int SetCollisionWireframeMode = 0;
+	};
 
-enum class BackgroundMode
-{
-    Color = 0,
-    Texture = 1,
-    Environment3D = 2
-};
+	enum class BackgroundMode
+	{
+		Color = 0,
+		Texture = 1,
+		Environment3D = 2
+	};
 
-struct GridSettings
-{
-    int Slices = 20;
-    float Spacing = 1.0f;
-};
+	struct GridSettings
+	{
+		int Slices = 20;
+		float Spacing = 1.0f;
+	};
 
-enum class SceneType
-{
-    Default = 0,
-    UI = 1
-};
+	enum class SceneType
+	{
+		Default = 0,
+		UI = 1
+	};
 
-struct SceneSettings
-{
-    std::string Name = "Untitled Scene";
-    std::string ScenePath;
-    std::shared_ptr<EnvironmentAsset> Environment;
+	struct SceneSettings
+	{
+		std::string Name = "Untitled Scene";
+		std::string ScenePath;
+		std::shared_ptr<EnvironmentAsset> Environment;
 
-    SceneType Type = SceneType::Default;
-    BackgroundMode Mode = BackgroundMode::Environment3D;
-    Color BackgroundColor = {30, 30, 30, 255};
-    std::string BackgroundTexturePath;
+		SceneType Type = SceneType::Default;
+		BackgroundMode Mode = BackgroundMode::Environment3D;
+		Color BackgroundColor = {30, 30, 30, 255};
+		std::string BackgroundTexturePath;
 
-    CanvasSettings Canvas;
-    GridSettings Grid;
+		CanvasSettings Canvas;
+		GridSettings Grid;
 
-    DebugRenderFlags DebugFlags;
-    float DiagnosticMode = 0.0f;
-};
+		DebugRenderFlags DebugFlags;
+		float DiagnosticMode = 0.0f;
+	};
 
 } // namespace Chained
 

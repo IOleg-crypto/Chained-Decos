@@ -9,334 +9,373 @@
 #include "engine/scene/components/model_component.h"
 #include "engine/scene/components/transform_component.h"
 #include <algorithm>
-#include <atomic>
-#include <future>
 
 namespace Chained::PhysicsBodySystem
 {
 
-void RegisterObservers(entt::registry& reg)
-{
-    reg.on_construct<RigidBodyComponent>().connect<&OnRigidBodyConstruct>();
-}
+	void ApplyAutoCalculate(entt::entity entity, entt::registry& registry, ColliderComponent& collider,
+							const glm::vec3& scale)
+	{
+		std::string modelPath = collider.ModelPath;
+		if (modelPath.empty())
+		{
+			if (auto* mc = registry.try_get<ModelComponent>(entity))
+			{
+				modelPath = mc->ModelPath;
+			}
+		}
 
-bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc)
-{
-    if (!reg.all_of<TransformComponent, RigidBodyComponent>(e))
-    {
-        return false;
-    }
+		if (modelPath.empty())
+		{
+			CH_CORE_WARN("PhysicsBodySystem::ApplyAutoCalculate: no model path found for entity={}", (uint32_t)entity);
+			return;
+		}
 
-    auto& transform = reg.get<TransformComponent>(e);
-    auto& rb = reg.get<RigidBodyComponent>(e);
+		auto* am = ServiceLocator::TryGet<AssetManager>();
+		if (!am)
+		{
+			return;
+		}
 
-    auto* collider = reg.try_get<ColliderComponent>(e);
-    if (!collider || !collider->Enabled)
-    {
-        return false;
-    }
+		auto handle = am->ResolveToHandle(modelPath);
+		if (handle == AssetHandle(0))
+		{
+			CH_CORE_WARN("PhysicsBodySystem::ApplyAutoCalculate: model '{}' not loaded.", modelPath);
+			return;
+		}
 
-    if (collider->AutoCalculate)
-    {
-        if (auto* physics = ServiceLocator::TryGet<Physics>())
-        {
-            physics->ApplyAutoCalculate(e, reg, *collider, transform.Scale);
-        }
-    }
+		auto asset = am->Get<ModelAsset>(handle);
+		if (!asset || asset->GetState() != AssetState::Ready)
+		{
+			CH_CORE_WARN("PhysicsBodySystem::ApplyAutoCalculate: model '{}' not ready.", modelPath);
+			return;
+		}
 
-    PhysicsBodyDesc desc;
-    desc.Position = transform.Translation;
-    desc.Rotation = transform.RotationQuat;
-    desc.IsKinematic = (rb.Type == RigidBodyComponent::BodyType::Kinematic);
-    desc.IsStatic = (rb.Type == RigidBodyComponent::BodyType::Static);
-    desc.Mass = rb.Mass;
-    desc.LinearDamping = rb.LinearDamping;
-    desc.AngularDamping = rb.AngularDamping;
-    desc.UseGravity = rb.UseGravity;
-    desc.IsFixedRotation = rb.IsFixedRotation;
-    desc.InitialVelocity = rb.Velocity;
-    desc.UserData = (uint64_t)e;
+		const auto& bbox = asset->GetBoundingBox();
+		glm::vec3 bMin = bbox.Min * scale;
+		glm::vec3 bMax = bbox.Max * scale;
 
-    desc.Shape = collider->Type;
-    desc.Friction = collider->Friction;
-    desc.Restitution = collider->Restitution;
-    desc.Offset = collider->Offset;
-    desc.UseFastBuildQuality = collider->UseFastBuildQuality;
+		glm::vec3 size = bMax - bMin;
+		glm::vec3 center = (bMax + bMin) * 0.5f;
 
-    switch (collider->Type)
-    {
-    case ColliderType::Box:
-        desc.Dimensions = (collider->Size * transform.Scale) * 0.5f;
-        break;
+		collider.Size = size;
+		collider.Radius = glm::compMax(size) * 0.5f;
+		collider.Height = size.y;
 
-    case ColliderType::Sphere:
-        desc.Dimensions.x = collider->Radius * std::max({transform.Scale.x, transform.Scale.y, transform.Scale.z});
-        break;
+		if (collider.Type != ColliderType::Mesh)
+		{
+			collider.Offset = center;
+		}
 
-    case ColliderType::Capsule:
-        desc.Dimensions.x = collider->Radius * std::max(transform.Scale.x, transform.Scale.z);
-        desc.Dimensions.y = (collider->Height * transform.Scale.y) * 0.5f;
-        break;
+		CH_CORE_INFO("PhysicsBodySystem::ApplyAutoCalculate: entity={} model='{}' → Size=({:.2f},{:.2f},{:.2f}) "
+					 "Offset=({:.2f},{:.2f},{:.2f}) Radius={:.2f} Height={:.2f}",
+					 (uint32_t)entity, modelPath, collider.Size.x, collider.Size.y, collider.Size.z, collider.Offset.x,
+					 collider.Offset.y, collider.Offset.z, collider.Radius, collider.Height);
+	}
 
-    case ColliderType::Mesh: {
-        std::string modelPath = collider->ModelPath;
-        if (modelPath.empty())
-        {
-            if (auto* modelComp = reg.try_get<ModelComponent>(e))
-            {
-                modelPath = modelComp->ModelPath;
-            }
-        }
+	bool BuildBodyDesc(entt::registry& reg, entt::entity e, PhysicsBodyDesc& outDesc)
+	{
+		if (!reg.all_of<TransformComponent, RigidBodyComponent>(e))
+		{
+			return false;
+		}
 
-        if (modelPath.empty())
-        {
-            return false;
-        }
+		auto& transform = reg.get<TransformComponent>(e);
+		auto& rb = reg.get<RigidBodyComponent>(e);
 
-        if (auto* worldPtr = reg.ctx().find<IPhysicsWorld*>())
-        {
-            if ((*worldPtr) && (*worldPtr)->HasCachedMeshShape(modelPath))
-            {
-                desc.CacheKey = modelPath;
-                desc.MeshScale = transform.Scale;
-                break;
-            }
-        }
+		auto* collider = reg.try_get<ColliderComponent>(e);
+		if (!collider || !collider->Enabled)
+		{
+			return false;
+		}
 
-        auto* assets = ServiceLocator::TryGet<AssetManager>();
-        if (!assets)
-        {
-            return false;
-        }
+		PhysicsBodyDesc desc;
+		desc.Position = transform.Translation;
+		desc.Rotation = transform.RotationQuat;
+		desc.IsKinematic = (rb.Type == RigidBodyComponent::BodyType::Kinematic);
+		desc.IsStatic = (rb.Type == RigidBodyComponent::BodyType::Static);
+		desc.Mass = rb.Mass;
+		desc.LinearDamping = rb.LinearDamping;
+		desc.AngularDamping = rb.AngularDamping;
+		desc.UseGravity = rb.UseGravity;
+		desc.IsFixedRotation = rb.IsFixedRotation;
+		desc.InitialVelocity = rb.Velocity;
+		desc.UserData = (uint64_t)e;
 
-        auto modelAsset = assets->Get<ModelAsset>(modelPath);
-        if (!modelAsset || !modelAsset->IsReady())
-        {
-            return false;
-        }
+		desc.Shape = collider->Type;
+		desc.Friction = collider->Friction;
+		desc.Restitution = collider->Restitution;
+		desc.Offset = collider->Offset;
+		desc.UseFastBuildQuality = collider->UseFastBuildQuality;
 
-        const auto& rawMeshes = modelAsset->GetMeshes();
-        const auto& instances = modelAsset->GetInstances();
+		switch (collider->Type)
+		{
+		case ColliderType::Box:
+			desc.Dimensions = (collider->Size * transform.Scale) * 0.5f;
+			break;
 
-        desc.MeshScale = transform.Scale;
-        desc.CacheKey = modelPath;
+		case ColliderType::Sphere:
+			desc.Dimensions.x = collider->Radius * std::max({transform.Scale.x, transform.Scale.y, transform.Scale.z});
+			break;
 
-        for (const auto& inst : instances)
-        {
-            if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size())
-            {
-                continue;
-            }
+		case ColliderType::Capsule:
+			desc.Dimensions.x = collider->Radius * std::max(transform.Scale.x, transform.Scale.z);
+			desc.Dimensions.y = (collider->Height * transform.Scale.y) * 0.5f;
+			break;
 
-            const MeshData& raw = rawMeshes[inst.meshIndex];
-            if (raw.indices.size() < 3)
-            {
-                continue;
-            }
+		case ColliderType::Mesh: {
+			std::string modelPath = collider->ModelPath;
+			if (modelPath.empty())
+			{
+				if (auto* modelComp = reg.try_get<ModelComponent>(e))
+				{
+					modelPath = modelComp->ModelPath;
+				}
+			}
 
-            const glm::mat4& meshToLocal = inst.localTransform;
+			if (modelPath.empty())
+			{
+				return false;
+			}
 
-            for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
-            {
-                uint32_t i0 = raw.indices[i];
-                uint32_t i1 = raw.indices[i + 1];
-                uint32_t i2 = raw.indices[i + 2];
+			if (auto* physicsPtr = reg.ctx().find<Physics*>())
+			{
+				if (*physicsPtr && (*physicsPtr)->GetWorld() &&
+					(*physicsPtr)->GetWorld()->HasCachedMeshShape(modelPath))
+				{
+					desc.CacheKey = modelPath;
+					desc.MeshScale = transform.Scale;
+					break;
+				}
+			}
 
-                size_t v0Idx = (size_t)i0 * 3;
-                size_t v1Idx = (size_t)i1 * 3;
-                size_t v2Idx = (size_t)i2 * 3;
+			auto* assets = ServiceLocator::TryGet<AssetManager>();
+			if (!assets)
+			{
+				return false;
+			}
 
-                if (v0Idx + 2 >= raw.vertices.size() || v1Idx + 2 >= raw.vertices.size() ||
-                    v2Idx + 2 >= raw.vertices.size())
-                {
-                    continue;
-                }
+			auto modelAsset = assets->Get<ModelAsset>(modelPath);
+			if (!modelAsset || !modelAsset->IsReady())
+			{
+				return false;
+			}
 
-                glm::vec3 v0 = {raw.vertices[v0Idx], raw.vertices[v0Idx + 1], raw.vertices[v0Idx + 2]};
-                glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
-                glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
+			const auto& rawMeshes = modelAsset->GetMeshes();
+			const auto& instances = modelAsset->GetInstances();
 
-                PhysicsTriangle tri;
-                tri.V0 = glm::vec3(meshToLocal * glm::vec4(v0, 1.0f));
-                tri.V1 = glm::vec3(meshToLocal * glm::vec4(v1, 1.0f));
-                tri.V2 = glm::vec3(meshToLocal * glm::vec4(v2, 1.0f));
+			desc.MeshScale = transform.Scale;
+			desc.CacheKey = modelPath;
 
-                desc.Triangles.push_back(tri);
-            }
-        }
-        break;
-    }
-    }
+			for (const auto& inst : instances)
+			{
+				if (inst.meshIndex < 0 || inst.meshIndex >= (int)rawMeshes.size())
+				{
+					continue;
+				}
 
-    outDesc = std::move(desc);
-    return true;
-}
+				const MeshData& raw = rawMeshes[inst.meshIndex];
+				if (raw.indices.size() < 3)
+				{
+					continue;
+				}
 
-void OnRigidBodyConstruct(entt::registry& reg, entt::entity e)
-{
-    if (!reg.ctx().contains<IPhysicsWorld*>())
-    {
-        return;
-    }
+				const glm::mat4& meshToLocal = inst.localTransform;
 
-    auto* worldPtr = reg.ctx().find<IPhysicsWorld*>();
-    if (!worldPtr || !(*worldPtr))
-    {
-        return;
-    }
+				for (size_t i = 0; i + 2 < raw.indices.size(); i += 3)
+				{
+					uint32_t i0 = raw.indices[i];
+					uint32_t i1 = raw.indices[i + 1];
+					uint32_t i2 = raw.indices[i + 2];
 
-    auto& rb = reg.get<RigidBodyComponent>(e);
+					size_t v0Idx = (size_t)i0 * 3;
+					size_t v1Idx = (size_t)i1 * 3;
+					size_t v2Idx = (size_t)i2 * 3;
 
-    if (rb.Handle != kInvalidPhysicsBody)
-    {
-        return;
-    }
+					if (v0Idx + 2 >= raw.vertices.size() || v1Idx + 2 >= raw.vertices.size() ||
+						v2Idx + 2 >= raw.vertices.size())
+					{
+						continue;
+					}
 
-    auto* collider = reg.try_get<ColliderComponent>(e);
-    if (!collider || !collider->Enabled)
-    {
-        return;
-    }
+					glm::vec3 v0 = {raw.vertices[v0Idx], raw.vertices[v0Idx + 1], raw.vertices[v0Idx + 2]};
+					glm::vec3 v1 = {raw.vertices[v1Idx], raw.vertices[v1Idx + 1], raw.vertices[v1Idx + 2]};
+					glm::vec3 v2 = {raw.vertices[v2Idx], raw.vertices[v2Idx + 1], raw.vertices[v2Idx + 2]};
 
-    PhysicsBodyDesc desc;
-    if (!BuildBodyDesc(reg, e, desc))
-    {
-        return;
-    }
+					PhysicsTriangle tri;
+					tri.V0 = glm::vec3(meshToLocal * glm::vec4(v0, 1.0f));
+					tri.V1 = glm::vec3(meshToLocal * glm::vec4(v1, 1.0f));
+					tri.V2 = glm::vec3(meshToLocal * glm::vec4(v2, 1.0f));
 
-    rb.Handle = (*worldPtr)->CreateBody(desc);
-}
+					desc.Triangles.push_back(tri);
+				}
+			}
+			break;
+		}
+		}
 
-void BatchInitializeBodies(entt::registry& reg, IPhysicsWorld* world)
-{
-    struct PendingBody
-    {
-        entt::entity entity;
-        PhysicsBodyDesc desc;
-        int sortOrder;
-    };
+		outDesc = std::move(desc);
+		return true;
+	}
 
-    std::vector<PendingBody> pending;
+	void TryCreateBody(entt::registry& reg, entt::entity e)
+	{
+		if (!reg.ctx().contains<Physics*>())
+		{
+			CH_CORE_WARN("Physics: TryCreateBody entity={} — no Physics* in context yet.", (uint32_t)e);
+			return;
+		}
 
-    auto view = reg.view<RigidBodyComponent, TransformComponent>();
-    for (auto entity : view)
-    {
-        auto& rb = view.get<RigidBodyComponent>(entity);
-        if (rb.Handle != kInvalidPhysicsBody)
-        {
-            continue;
-        }
+		auto* physicsPtr = reg.ctx().find<Physics*>();
+		if (!physicsPtr || !(*physicsPtr) || !(*physicsPtr)->GetWorld())
+		{
+			CH_CORE_WARN("Physics: TryCreateBody entity={} — Physics* is null or world not initialized.", (uint32_t)e);
+			return;
+		}
 
-        auto* collider = reg.try_get<ColliderComponent>(entity);
-        if (!collider || !collider->Enabled)
-        {
-            continue;
-        }
+		auto* world = (*physicsPtr)->GetWorld();
 
-        if (collider->AutoCalculate)
-        {
-            auto& transform = view.get<TransformComponent>(entity);
-            if (auto* physics = ServiceLocator::TryGet<Physics>())
-            {
-                physics->ApplyAutoCalculate(entity, reg, *collider, transform.Scale);
-            }
-        }
+		auto& rb = reg.get<RigidBodyComponent>(e);
 
-        pending.push_back({entity, {}, 0});
-    }
+		if (rb.Handle != kInvalidPhysicsBody)
+		{
+			return;
+		}
 
-    if (pending.empty())
-    {
-        return;
-    }
+		auto* collider = reg.try_get<ColliderComponent>(e);
+		if (!collider || !collider->Enabled)
+		{
+			CH_CORE_WARN("Physics: TryCreateBody entity={} — ColliderComponent missing or disabled (has={}).",
+						 (uint32_t)e, collider != nullptr);
+			return;
+		}
 
-    size_t parallelThreshold = 4;
-    if (pending.size() >= parallelThreshold)
-    {
-        std::atomic<bool> buildFailed{false};
-        std::vector<std::future<void>> futures;
-        futures.reserve(pending.size());
+		if (collider->AutoCalculate)
+		{
+			auto& transform = reg.get<TransformComponent>(e);
+			ApplyAutoCalculate(e, reg, *collider, transform.Scale);
+		}
 
-        for (size_t i = 0; i < pending.size(); ++i)
-        {
-            futures.push_back(std::async(std::launch::async, [&reg, &pending, i, &buildFailed]() {
-                if (!BuildBodyDesc(reg, pending[i].entity, pending[i].desc))
-                {
-                    buildFailed.store(true, std::memory_order_relaxed);
-                }
-            }));
-        }
-        for (auto& f : futures)
-        {
-            f.get();
-        }
+		PhysicsBodyDesc desc;
+		if (!BuildBodyDesc(reg, e, desc))
+		{
+			CH_CORE_WARN("Physics: TryCreateBody entity={} — BuildBodyDesc failed.", (uint32_t)e);
+			return;
+		}
 
-        if (buildFailed.load())
-        {
-            pending.erase(std::remove_if(pending.begin(), pending.end(),
-                                         [](const PendingBody& pb) {
-                                             return pb.desc.Triangles.empty() && pb.desc.Shape == ColliderType::Mesh;
-                                         }),
-                          pending.end());
-        }
-    }
-    else
-    {
-        auto it = pending.begin();
-        while (it != pending.end())
-        {
-            if (!BuildBodyDesc(reg, it->entity, it->desc))
-            {
-                it = pending.erase(it);
-            }
-            else
-            {
-                ++it;
-            }
-        }
-    }
+		rb.Handle = world->CreateBody(desc);
+		if (rb.Handle == kInvalidPhysicsBody)
+		{
+			CH_CORE_ERROR("Physics: TryCreateBody entity={} — CreateBody returned invalid handle.", (uint32_t)e);
+		}
+		else
+		{
+			CH_CORE_INFO("Physics: TryCreateBody entity={} — body created (handle={}, type={}, mass={})", (uint32_t)e,
+						 (uint64_t)rb.Handle, (int)rb.Type, rb.Mass);
+		}
+	}
 
-    for (auto& pb : pending)
-    {
-        pb.sortOrder = pb.desc.IsStatic ? 0 : (pb.desc.IsKinematic ? 1 : 2);
-    }
+	void BatchInitializeBodies(entt::registry& reg, IPhysicsWorld* world)
+	{
+		std::vector<PhysicsBodyDesc> descs;
+		std::vector<entt::entity> entities;
 
-    if (pending.empty())
-    {
-        return;
-    }
+		auto view = reg.view<RigidBodyComponent, TransformComponent>();
+		for (auto entity : view)
+		{
+			auto& rb = view.get<RigidBodyComponent>(entity);
+			if (rb.Handle != kInvalidPhysicsBody)
+			{
+				continue;
+			}
 
-    std::sort(pending.begin(), pending.end(),
-              [](const PendingBody& a, const PendingBody& b) { return a.sortOrder < b.sortOrder; });
+			auto* collider = reg.try_get<ColliderComponent>(entity);
+			if (!collider || !collider->Enabled)
+			{
+				CH_CORE_WARN("Physics: BatchInitializeBodies entity={} — ColliderComponent missing or disabled.",
+							 (uint32_t)entity);
+				continue;
+			}
 
-    std::vector<PhysicsBodyDesc> descs;
-    descs.reserve(pending.size());
-    for (auto& pb : pending)
-    {
-        descs.push_back(std::move(pb.desc));
-    }
+			CH_CORE_INFO("Physics: BatchInitializeBodies entity={} — Type={}, IsStatic={}, IsKinematic={}",
+						 (uint32_t)entity, (int)rb.Type, (rb.Type == RigidBodyComponent::BodyType::Static),
+						 (rb.Type == RigidBodyComponent::BodyType::Kinematic));
 
-    auto handles = world->CreateBodies(descs);
+			if (collider->AutoCalculate)
+			{
+				ApplyAutoCalculate(entity, reg, *collider, view.get<TransformComponent>(entity).Scale);
+			}
 
-    for (size_t i = 0; i < pending.size(); ++i)
-    {
-        auto& rb = reg.get<RigidBodyComponent>(pending[i].entity);
-        rb.Handle = handles[i];
-    }
+			PhysicsBodyDesc desc;
+			if (!BuildBodyDesc(reg, entity, desc))
+			{
+				continue;
+			}
 
-    CH_CORE_INFO("Physics: Batch-created {} bodies (static-first).", pending.size());
-}
+			entities.push_back(entity);
+			descs.push_back(std::move(desc));
+		}
 
-void Update(entt::registry& reg)
-{
-    CH_PROFILE_FUNCTION();
+		if (descs.empty())
+		{
+			return;
+		}
 
-    reg.view<RigidBodyComponent, TransformComponent>().each([&](auto entity, auto& rb, auto& transform) {
-        if (rb.Handle == kInvalidPhysicsBody && reg.ctx().contains<IPhysicsWorld*>())
-        {
-            OnRigidBodyConstruct(reg, entity);
-        }
-    });
-}
+		// Sort: static (0) first, then kinematic (1), then dynamic (2)
+		std::vector<size_t> indices(descs.size());
+		for (size_t i = 0; i < indices.size(); ++i)
+		{
+			indices[i] = i;
+		}
+		std::sort(indices.begin(), indices.end(), [&descs](size_t a, size_t b) {
+			int orderA = descs[a].IsStatic ? 0 : (descs[a].IsKinematic ? 1 : 2);
+			int orderB = descs[b].IsStatic ? 0 : (descs[b].IsKinematic ? 1 : 2);
+			return orderA < orderB;
+		});
+
+		// Reorder descs and entities by sort order
+		std::vector<PhysicsBodyDesc> sortedDescs;
+		std::vector<entt::entity> sortedEntities;
+		sortedDescs.reserve(descs.size());
+		sortedEntities.reserve(entities.size());
+		for (size_t i : indices)
+		{
+			sortedDescs.push_back(std::move(descs[i]));
+			sortedEntities.push_back(entities[i]);
+		}
+
+		auto handles = world->CreateBodies(sortedDescs);
+
+		for (size_t i = 0; i < sortedEntities.size(); ++i)
+		{
+			reg.get<RigidBodyComponent>(sortedEntities[i]).Handle = handles[i];
+		}
+
+		CH_CORE_INFO(
+			"Physics: Batch-created {} bodies (static={}, dynamic={}, kinematic={}).", sortedEntities.size(),
+			std::count_if(sortedDescs.begin(), sortedDescs.end(), [](const PhysicsBodyDesc& d) { return d.IsStatic; }),
+			std::count_if(sortedDescs.begin(), sortedDescs.end(),
+						  [](const PhysicsBodyDesc& d) { return !d.IsStatic && !d.IsKinematic; }),
+			std::count_if(sortedDescs.begin(), sortedDescs.end(),
+						  [](const PhysicsBodyDesc& d) { return d.IsKinematic; }));
+	}
+
+	void Update(entt::registry& reg)
+	{
+		CH_PROFILE_FUNCTION();
+
+		if (!reg.ctx().contains<Physics*>())
+		{
+			return;
+		}
+
+		auto* physics = *reg.ctx().find<Physics*>();
+		if (!physics || !physics->GetWorld())
+		{
+			return;
+		}
+
+		BatchInitializeBodies(reg, physics->GetWorld());
+	}
 
 } // namespace Chained::PhysicsBodySystem

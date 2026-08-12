@@ -98,7 +98,7 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: scenes/test_platform_scene.chscene
+      TargetScenePath: scenes/test_platform_scene_mp.chscene
       Triggered: false
     ControlComponent:
       Transform:
@@ -151,7 +151,7 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: scenes/rpg_strategy_scene.chscene
+      TargetScenePath: scenes/rpg_strategy_scene_mp.chscene
       Triggered: false
     ControlComponent:
       Transform:

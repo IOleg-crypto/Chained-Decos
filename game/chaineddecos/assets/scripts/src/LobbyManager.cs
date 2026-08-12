@@ -14,12 +14,12 @@ namespace ChainedDecos.Scripts
         private const string AvatarTagPrefix = "avatar_";
 
         public string PlayerPrefabPath = "prefab/player.chprefab";
-        public string GameScene = "scenes/test_rpg.chscene";
+        public string GameScene = "scenes/rpg_strategy_scene_mp.chscene";
 
         // Shared state from previous scenes
         public static ushort SelectedPort = 7777;
         public static int SelectedSkinIndex = 0;
-        public static string SelectedMap = "scenes/test_rpg.chscene";
+        public static string SelectedMap = "scenes/rpg_strategy_scene_mp.chscene";
 
         private float m_RefreshTimer = 0.0f;
 

@@ -523,10 +523,7 @@ Entities:
               Value: 11.8999996
         - ClassName: chaineddecos.scripts.gamehud
         - ClassName: chaineddecos.scripts.spawnzone
-        - ClassName: chaineddecos.scripts.gamehud
         - ClassName: chaineddecos.scripts.playerfall
-        - ClassName: chaineddecos.scripts.spawnzone
-        - ClassName: ""
     ModelComponent:
       ModelPath: models/player_low.glb
       ModelUUID: 6152005881347795059

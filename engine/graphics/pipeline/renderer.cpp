@@ -32,28 +32,14 @@ namespace Chained
 		GraphicsDevice::Set(GraphicsDevice::Create());
 		GraphicsDevice::Get().Init();
 
-		// Initialize SSBO for lights using abstraction
-		m_Data->Lighting.LightSSBO = StorageBuffer::Create(sizeof(RenderLight) * LightingData::MaxLights);
-		m_Data->Lighting.LightsDirty = true;
+		// Initialize lighting subsystem (SSBO + state)
+		m_LightingManager.Initialize();
 
 		// Initialize UBOs (must be before methods that reference them)
 		m_Data->CameraUBO = UniformBuffer::Create(sizeof(CameraData), 0);
 
-		// Initialize Engine static resources
-		if (!m_Data->Geometry.FullscreenQuadVAO)
-		{
-			float vertices[] = {-1.0f, -1.0f, 0.0f, 0.0f, 0.0f, 1.0f,  -1.0f, 0.0f, 1.0f, 0.0f,
-								1.0f,  1.0f,  0.0f, 1.0f, 1.0f, -1.0f, 1.0f,  0.0f, 0.0f, 1.0f};
-			uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-
-			m_Data->Geometry.FullscreenQuadVAO = VertexArray::Create();
-			auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-			vbo->SetLayout(
-				{{VertexAttributeType::Float3, "vertexPosition"}, {VertexAttributeType::Float2, "vertexTexCoord"}});
-			m_Data->Geometry.FullscreenQuadVAO->AddVertexBuffer(vbo);
-			auto ibo = IndexBuffer::Create(indices, 6);
-			m_Data->Geometry.FullscreenQuadVAO->SetIndexBuffer(ibo);
-		}
+		// Initialize shared GPU geometry (fullscreen quad, billboard/sprite quad)
+		m_GeometryFactory.Initialize();
 
 		InitializeSkybox();
 	}
@@ -90,11 +76,9 @@ namespace Chained
 
 		CleanupSkybox();
 
-		m_Data->Lighting.LightSSBO.reset();
+		m_LightingManager.Shutdown();
+		m_GeometryFactory.Shutdown();
 		m_Data->Shaders.reset();
-
-		m_Data->Geometry.FullscreenQuadVAO.reset();
-		m_Data->Geometry.QuadVAO.reset();
 		m_Data->CameraUBO.reset();
 
 		m_Data->Instancing.VAOCache.clear();
@@ -111,27 +95,14 @@ namespace Chained
 
 	Renderer::~Renderer() = default;
 
-	void Renderer::BeginScene(const Camera3D& camera, float nearClip, float farClip)
+	void Renderer::BeginScene(const Camera3D& camera)
 	{
-		UploadLights();
+		m_LightingManager.Upload();
 
-		// View matrix
+		// Use precomputed matrices from Camera3D
 		m_Data->Frame.CameraPosition = camera.Position;
-		m_Data->Frame.View = glm::lookAt(camera.Position, camera.Target, camera.Up);
-
-		// Projection matrix
-		float aspect =
-			(m_ViewportHeight > 0) ? static_cast<float>(m_ViewportWidth) / static_cast<float>(m_ViewportHeight) : 1.0f;
-		if (camera.Projection == ProjectionType::Perspective)
-		{
-			m_Data->Frame.Proj = glm::perspective(glm::radians(camera.FovDegrees), aspect, nearClip, farClip);
-		}
-		else
-		{
-			float top = camera.FovDegrees / 2.0f;
-			float right = top * aspect;
-			m_Data->Frame.Proj = glm::ortho(-right, right, -top, top, nearClip, farClip);
-		}
+		m_Data->Frame.View = camera.ViewMatrix;
+		m_Data->Frame.Proj = camera.ProjectionMatrix;
 
 		// Upload to UBO
 		if (m_Data->CameraUBO)
@@ -407,29 +378,10 @@ namespace Chained
 		PipelineStateGuard stateGuard;
 		stateGuard.WithBlend().WithCullNone();
 
-		if (!m_Data->Geometry.QuadVAO)
-		{
-			float vertices[] = {
-				// x,     y,     z,     u,    v,    nx,   ny,   nz
-				-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,	 -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-				0.5f,  0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -0.5f, 0.5f,	0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-			};
-			uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-
-			auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-			vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"},
-							{VertexAttributeType::Float2, "a_TexCoord"},
-							{VertexAttributeType::Float3, "a_Normal"}});
-
-			m_Data->Geometry.QuadVAO = VertexArray::Create();
-			m_Data->Geometry.QuadVAO->AddVertexBuffer(vbo);
-			auto ibo = IndexBuffer::Create(indices, 6);
-			m_Data->Geometry.QuadVAO->SetIndexBuffer(ibo);
-		}
-
-		m_Data->Geometry.QuadVAO->Bind();
-		GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.QuadVAO, 6);
-		m_Data->Geometry.QuadVAO->Unbind();
+		auto& quadVAO = m_GeometryFactory.GetQuad();
+		quadVAO->Bind();
+		GraphicsDevice::Get().DrawIndexed(quadVAO, 6);
+		quadVAO->Unbind();
 	}
 
 	void Renderer::ApplyPostProcessing(uint32_t screenTextureId, uint32_t depthTextureId, const Camera3D& camera,
@@ -485,8 +437,8 @@ namespace Chained
 			shader->SetFloat("uTimeF", currentSeconds);
 			shader->SetFloat("uTime", currentSeconds);
 			shader->SetFloat("time", currentSeconds);
-			shader->SetFloat("uExposure", m_Data->Lighting.CurrentLighting.Exposure);
-			shader->SetFloat("uGamma", m_Data->Lighting.CurrentLighting.Gamma);
+			shader->SetFloat("uExposure", m_LightingManager.GetLighting().CurrentLighting.Exposure);
+			shader->SetFloat("uGamma", m_LightingManager.GetLighting().CurrentLighting.Gamma);
 
 			// 2. Set Custom Uniforms using type-safe std::visit
 			ApplyShaderUniforms(shader.get(), uniforms);
@@ -500,12 +452,10 @@ namespace Chained
 
 			GraphicsDevice::Get().DisableDepthTest();
 
-			if (m_Data->Geometry.FullscreenQuadVAO)
-			{
-				m_Data->Geometry.FullscreenQuadVAO->Bind();
-				GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.FullscreenQuadVAO, 6);
-				m_Data->Geometry.FullscreenQuadVAO->Unbind();
-			}
+			auto& fsQuad = m_GeometryFactory.GetFullscreenQuad();
+			fsQuad->Bind();
+			GraphicsDevice::Get().DrawIndexed(fsQuad, 6);
+			fsQuad->Unbind();
 
 			GraphicsDevice::Get().EnableDepthTest();
 			GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::Back);
@@ -569,151 +519,10 @@ namespace Chained
 		PipelineStateGuard stateGuard;
 		stateGuard.WithBlend().WithCullNone();
 
-		if (!m_Data->Geometry.QuadVAO)
-		{
-			float vertices[] = {
-				// x,     y,     z,     u,    v,    nx,   ny,   nz
-				-0.5f, -0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.5f,	 -0.5f, 0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f,
-				0.5f,  0.5f,  0.0f, 1.0f, 1.0f, 0.0f, 0.0f, 1.0f, -0.5f, 0.5f,	0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f,
-			};
-			uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-
-			auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-			vbo->SetLayout({{VertexAttributeType::Float3, "a_Position"},
-							{VertexAttributeType::Float2, "a_TexCoord"},
-							{VertexAttributeType::Float3, "a_Normal"}});
-
-			m_Data->Geometry.QuadVAO = VertexArray::Create();
-			m_Data->Geometry.QuadVAO->AddVertexBuffer(vbo);
-			auto ibo = IndexBuffer::Create(indices, 6);
-			m_Data->Geometry.QuadVAO->SetIndexBuffer(ibo);
-		}
-
-		m_Data->Geometry.QuadVAO->Bind();
-		GraphicsDevice::Get().DrawIndexed(m_Data->Geometry.QuadVAO, 6);
-		m_Data->Geometry.QuadVAO->Unbind();
-	}
-
-	// --- Lighting methods (formerly in LightingManager) ---
-
-	void Renderer::SetLight(int index, const RenderLight& light)
-	{
-		if (index >= 0 && index < LightingData::MaxLights)
-		{
-			m_Data->Lighting.Lights[index] = light;
-			m_Data->Lighting.LightsDirty = true;
-		}
-	}
-
-	void Renderer::SetLightCount(int count)
-	{
-		m_Data->Lighting.LightCount = count;
-	}
-
-	void Renderer::ClearLights()
-	{
-		for (int i = 0; i < LightingData::MaxLights; i++)
-		{
-			m_Data->Lighting.Lights[i].enabled = 0;
-		}
-		m_Data->Lighting.LightCount = 0;
-		m_Data->Lighting.LightsDirty = true;
-	}
-
-	void Renderer::ApplyEnvironment(const EnvironmentSettings& settings)
-	{
-		m_Data->Lighting.CurrentLighting = settings.Lighting;
-		m_Data->Lighting.CurrentFog = settings.Fog;
-	}
-
-	void Renderer::SetMainLight(const LightingSettings& settings)
-	{
-		m_Data->Lighting.CurrentLighting = settings;
-	}
-
-	void Renderer::UploadLights()
-	{
-		if (m_Data->Lighting.LightsDirty && m_Data->Lighting.LightSSBO)
-		{
-			m_Data->Lighting.LightSSBO->SetData(m_Data->Lighting.Lights, sizeof(RenderLight) * LightingData::MaxLights);
-			m_Data->Lighting.LightsDirty = false;
-		}
-	}
-
-	void Renderer::SetShadowState(bool enabled, uint32_t mapTextureID, const glm::mat4& lightSpaceMatrix, float bias)
-	{
-		m_Data->Shadow.Enabled = enabled;
-		m_Data->Shadow.MapTextureID = mapTextureID;
-		m_Data->Shadow.LightSpaceMatrix = lightSpaceMatrix;
-		m_Data->Shadow.Bias = bias;
-	}
-
-	void Renderer::SetLightingUniforms(Shader* shader)
-	{
-		if (!shader)
-		{
-			return;
-		}
-
-		const auto& lighting = m_Data->Lighting.CurrentLighting;
-		shader->Bind();
-
-		glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
-								lighting.LightColor.b / 255.0f, lighting.LightColor.a / 255.0f};
-		glm::vec4 skyColor = lightColor;
-		skyColor.w = lighting.Ambient * 0.35f;
-
-		shader->SetVec3("viewPos", m_Data->Frame.CameraPosition);
-		shader->SetFloat("uTime", m_Data->Frame.Time);
-		shader->SetFloat("uMode", m_Data->Frame.DiagnosticMode);
-		glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f ? glm::normalize(lighting.Direction)
-																		   : glm::vec3(0.0f, -1.0f, 0.0f);
-		shader->SetVec3("lightDir", lightDirNorm);
-		shader->SetVec4("lightColor", lightColor);
-		shader->SetFloat("ambient", lighting.Ambient);
-		shader->SetVec4("skyAmbientColor", skyColor);
-		shader->SetInt("uLightCount", m_Data->Lighting.LightCount);
-		shader->SetFloat("uExposure", lighting.Exposure);
-		shader->SetFloat("uGamma", lighting.Gamma);
-
-		if (m_Data->Lighting.LightSSBO)
-		{
-			m_Data->Lighting.LightSSBO->BindBase(0);
-		}
-
-		// Shadow uniforms
-		shader->SetInt("u_ShadowsEnabled", m_Data->Shadow.Enabled ? 1 : 0);
-		shader->SetMatrix("u_LightSpaceMatrix", m_Data->Shadow.LightSpaceMatrix);
-		shader->SetFloat("u_ShadowBias", m_Data->Shadow.Bias);
-		if (m_Data->Shadow.Enabled && m_Data->Shadow.MapTextureID > 0)
-		{
-			GraphicsDevice::Get().SetTexture(6, m_Data->Shadow.MapTextureID);
-			shader->SetInt("u_ShadowMap", 6);
-		}
-
-		ApplyFogUniforms(shader);
-	}
-
-	void Renderer::ApplyFogUniforms(Shader* shader)
-	{
-		if (!shader)
-		{
-			return;
-		}
-
-		const auto& fog = m_Data->Lighting.CurrentFog;
-		int enabled = fog.Enabled ? 1 : 0;
-		int mode = (int)fog.Mode;
-		glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
-						   fog.FogColor.a / 255.0f};
-
-		shader->SetInt("fogEnabled", enabled);
-		shader->SetVec4("fogColor", color);
-		shader->SetFloat("fogDensity", fog.Density);
-		shader->SetFloat("fogStart", fog.Start);
-		shader->SetFloat("fogEnd", fog.End);
-		shader->SetInt("fogMode", mode);
-		shader->SetFloat("fogHeightFalloff", fog.HeightFalloff);
+		auto& quadVAO = m_GeometryFactory.GetQuad();
+		quadVAO->Bind();
+		GraphicsDevice::Get().DrawIndexed(quadVAO, 6);
+		quadVAO->Unbind();
 	}
 
 	// --- Frame methods (formerly in FrameManager) ---
