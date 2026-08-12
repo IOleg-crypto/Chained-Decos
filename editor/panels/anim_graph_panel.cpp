@@ -1,6 +1,6 @@
 #include <imgui.h>
 #include <GraphEditor.h>
-#include "engine/scene/animation_graph.h"
+#include "engine/assets/types/animation_graph_asset.h"
 #include "engine/scene/components/animation_component.h"
 #include "engine/scene/components/model_component.h"
 #include "engine/assets/asset_manager.h"

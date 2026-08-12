@@ -3,7 +3,6 @@
 
 #include "engine/core/service.h"
 #include "scriptengine_services.h"
-#include "engine/scene/scene.h"
 #include "engine/project/project.h"
 #include <Coral/Assembly.hpp>
 #include <atomic>
@@ -13,89 +12,91 @@
 namespace Chained
 {
 
-class ScriptEngine : public Service
-{
-public:
-    ScriptEngine(bool enableScripting);
-    virtual ~ScriptEngine() override;
+	class Scene;
 
-    void Initialize() override;
-    void Shutdown() override;
+	class ScriptEngine : public Service
+	{
+	public:
+		ScriptEngine(bool enableScripting);
+		virtual ~ScriptEngine() override;
 
-    bool LoadAppAssembly(const std::string& filepath);
-    bool ReloadAssembly(const std::string& assemblyPath);
-    bool RequestAssemblyReload(const std::string& assemblyPath, const char* requestSource);
+		void Initialize() override;
+		void Shutdown() override;
 
-    Coral::Type* GetScriptClass(const std::string& name);
-    const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
-    {
-        return m_Registry.GetScriptClasses();
-    }
+		bool LoadAppAssembly(const std::string& filepath);
+		bool ReloadAssembly(const std::string& assemblyPath);
+		bool RequestAssemblyReload(const std::string& assemblyPath, const char* requestSource);
 
-    ScriptHost& GetHost()
-    {
-        return m_Host;
-    }
-    const ScriptHost& GetHost() const
-    {
-        return m_Host;
-    }
+		Coral::Type* GetScriptClass(const std::string& name);
+		const std::unordered_map<std::string, Coral::Type>& GetScriptClasses() const
+		{
+			return m_Registry.GetScriptClasses();
+		}
 
-    ScriptRegistry& GetRegistry()
-    {
-        return m_Registry;
-    }
-    const ScriptRegistry& GetRegistry() const
-    {
-        return m_Registry;
-    }
+		ScriptHost& GetHost()
+		{
+			return m_Host;
+		}
+		const ScriptHost& GetHost() const
+		{
+			return m_Host;
+		}
 
-    bool IsHostInitialized() const
-    {
-        return m_Host.IsInitialized();
-    }
-    bool IsReloadInProgress() const
-    {
-        return m_Host.IsReloadInProgress();
-    }
-    bool CanExecuteFrameScripts() const
-    {
-        return m_Host.IsInitialized() && !m_Host.IsReloadInProgress();
-    }
+		ScriptRegistry& GetRegistry()
+		{
+			return m_Registry;
+		}
+		const ScriptRegistry& GetRegistry() const
+		{
+			return m_Registry;
+		}
 
-    void SetEnabled(bool enable)
-    {
-        m_EnableScripting = enable;
-    }
+		bool IsHostInitialized() const
+		{
+			return m_Host.IsInitialized();
+		}
+		bool IsReloadInProgress() const
+		{
+			return m_Host.IsReloadInProgress();
+		}
+		bool CanExecuteFrameScripts() const
+		{
+			return m_Host.IsInitialized() && !m_Host.IsReloadInProgress();
+		}
 
-    // Resolves the script assembly DLL path from project config.
-    // Checks assets/bin/, exe directory, and MinGW "lib" prefix variants.
-    static std::filesystem::path ResolveAssemblyPath(const ScriptingSettings& scripting,
-                                                     const std::filesystem::path& projectDir);
+		void SetEnabled(bool enable)
+		{
+			m_EnableScripting = enable;
+		}
 
-    // Attempts to auto-load the script assembly from project config.
-    // Returns true if the assembly was found and loaded.
-    bool TryAutoLoad(const ProjectConfig& config);
+		// Resolves the script assembly DLL path from project config.
+		// Checks assets/bin/, exe directory, and MinGW "lib" prefix variants.
+		static std::filesystem::path ResolveAssemblyPath(const ScriptingSettings& scripting,
+														 const std::filesystem::path& projectDir);
 
-    Scene* GetContextScene() const
-    {
-        return m_CurrentScene.load(std::memory_order_acquire);
-    }
-    void SetContextScene(Scene* scene)
-    {
-        m_CurrentScene.store(scene, std::memory_order_release);
-    }
+		// Attempts to auto-load the script assembly from project config.
+		// Returns true if the assembly was found and loaded.
+		bool TryAutoLoad(const ProjectConfig& config);
 
-private:
-    ScriptEngine(const ScriptEngine&) = delete;
-    ScriptEngine& operator=(const ScriptEngine&) = delete;
+		Scene* GetContextScene() const
+		{
+			return m_CurrentScene.load(std::memory_order_acquire);
+		}
+		void SetContextScene(Scene* scene)
+		{
+			m_CurrentScene.store(scene, std::memory_order_release);
+		}
 
-private:
-    ScriptHost m_Host;
-    ScriptRegistry m_Registry;
-    bool m_EnableScripting;
-    std::atomic<Scene*> m_CurrentScene{nullptr};
-};
+	private:
+		ScriptEngine(const ScriptEngine&) = delete;
+		ScriptEngine& operator=(const ScriptEngine&) = delete;
+
+	private:
+		ScriptHost m_Host;
+		ScriptRegistry m_Registry;
+		bool m_EnableScripting;
+		std::atomic<Scene*> m_CurrentScene{nullptr};
+	};
 
 } // namespace Chained
 #endif // CH_SCRIPT_ENGINE_H

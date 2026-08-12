@@ -11,14 +11,15 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/systems/hierarchy_system.h"
 #include "engine/scene/systems/animation_system.h"
-#include "engine/scene/systems/audio_system.h"
 #include "engine/scene/systems/physics_body_system.h"
 #include "engine/scene/systems/asset_resolution_system.h"
+#include "engine/scene/systems/audio_system.h"
 #include "engine/scene/systems/scene_transition_system.h"
 #include "engine/scene/systems/network_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
+#include "engine/scene/prefab_serializer.h"
 #include <entt/entt.hpp>
 
 namespace Chained
@@ -39,7 +40,6 @@ namespace Chained
 		reg.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
 
 		AssetResolutionSystem::RegisterObservers(reg);
-		PhysicsBodySystem::RegisterObservers(reg);
 
 		m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 		m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
@@ -251,11 +251,17 @@ namespace Chained
 		}
 	}
 
-	void Scene::UpdateCommon(Timestep ts, bool runScripting, bool runPhysics, bool runTransitions)
+	void Scene::OnUpdateRuntime(Timestep ts)
 	{
 		CH_PROFILE_FUNCTION();
 
-		if (runScripting && m_ScriptingManager)
+		if (m_IsStartingUp)
+		{
+			InitializePhysicsStartup();
+			return;
+		}
+
+		if (m_ScriptingManager)
 		{
 			m_ScriptingManager->OnUpdate(ts);
 		}
@@ -266,23 +272,45 @@ namespace Chained
 		AnimationSystem::Update(*m_Registry, ts);
 		AudioSystem::Update(*m_Registry);
 
-		NetworkSystem::ApplyHostInputs(*m_Registry, ts);
+		auto& netSys = NetworkSystem::GetInstance();
+		netSys.ApplyHostInputs(*m_Registry, ts);
 
 		PhysicsBodySystem::Update(*m_Registry);
 
-		if (runPhysics)
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{
-			if (auto* physics = ServiceLocator::TryGet<Physics>())
-			{
-				physics->Update(this, ts, true);
-			}
+			physics->Update(this, ts, true);
 		}
 
-		NetworkSystem::Update(this, ts);
+		netSys.Update(this, ts);
 
-		if (runTransitions)
+		if (auto target = SceneTransitionSystem::Update(*m_Registry))
 		{
-			SceneTransitionSystem::Update(*m_Registry, m_EventCallback);
+			m_PendingScenePath = *target;
+		}
+	}
+
+	void Scene::OnUpdateSimulation(Timestep ts)
+	{
+		CH_PROFILE_FUNCTION();
+
+		if (m_IsStartingUp)
+		{
+			InitializePhysicsStartup();
+			return;
+		}
+
+		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		AssetResolutionSystem::Update(*m_Registry);
+		AnimationSystem::Update(*m_Registry, ts);
+		AudioSystem::Update(*m_Registry);
+
+		PhysicsBodySystem::Update(*m_Registry);
+
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			physics->Update(this, ts, true);
 		}
 	}
 
@@ -296,32 +324,6 @@ namespace Chained
 		}
 		m_IsStartingUp = false;
 		FinishRuntimeStart();
-	}
-
-	void Scene::OnUpdateRuntime(Timestep ts)
-	{
-		CH_PROFILE_FUNCTION();
-
-		if (m_IsStartingUp)
-		{
-			InitializePhysicsStartup();
-			return;
-		}
-
-		UpdateCommon(ts, true, true, true);
-	}
-
-	void Scene::OnUpdateSimulation(Timestep ts)
-	{
-		CH_PROFILE_FUNCTION();
-
-		if (m_IsStartingUp)
-		{
-			InitializePhysicsStartup();
-			return;
-		}
-
-		UpdateCommon(ts, false, true, false);
 	}
 
 	void Scene::OnUpdateEditor(Timestep timestep)
@@ -603,6 +605,47 @@ namespace Chained
 			OnUpdateSimulation(timestep);
 			break;
 		}
+	}
+
+	std::future<std::shared_ptr<Scene>> Scene::LoadSceneAsync(const std::string& path)
+	{
+		// Запускаємо завантаження у фоновому потоці.
+		// Всерединьі потоці просто створюємо нову сцену та десиріалізуємо префалб у неї.
+		auto task = std::make_shared<std::packaged_task<std::shared_ptr<Scene>()>>([path]() -> std::shared_ptr<Scene> {
+			auto newScene = std::make_shared<Scene>();
+
+			// Десиріалізуємо префалб у нову сцену (синхронно всередині потоку)
+			if (PrefabSerializer::Deserialize(newScene.get(), path) != Entity{})
+			{
+				return newScene;
+			}
+
+			// Якщо префалб не валідний — повертаємо порожню сцену
+			return nullptr;
+		});
+
+		// Виконуємо задачу в окремому потоці та повертаємо future
+		std::thread t([task]() { (*task)(); });
+		t.detach();
+
+		return task->get_future();
+	}
+
+	void Scene::SwapScene(std::shared_ptr<Scene> newScene)
+	{
+		if (!newScene)
+		{
+			CH_CORE_ERROR("Scene::SwapScene: newScene is null");
+			return;
+		}
+
+		// Рушіймо стан (unique_ptr — move, а не copy)
+		m_Registry = std::move(newScene->m_Registry);
+		m_ScriptingManager = std::move(newScene->m_ScriptingManager);
+		m_Settings = newScene->m_Settings;
+		m_State = newScene->m_State;
+
+		CH_CORE_INFO("Scene: Swapped to '{}'", m_Settings.Name);
 	}
 
 } // namespace Chained

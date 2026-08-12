@@ -17,6 +17,10 @@ add_library(engine_scripting STATIC
     script_glue_scene.cpp
     script_glue_entity.h
     script_glue_entity.cpp
+    script_glue_transform.cpp
+    script_glue_physics.cpp
+    script_glue_player.cpp
+    script_glue_animation.cpp
     script_glue_camera.h
     script_glue_camera.cpp
     script_glue_ui.h

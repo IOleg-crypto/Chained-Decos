@@ -240,7 +240,7 @@ namespace Chained
 			{
 				if (resolvedPath.is_relative())
 				{
-					resolvedPath = Project::GetAssetDirectory() / filepath;
+					resolvedPath = project->GetAssetDirectory() / filepath;
 				}
 			}
 			result = ma_sound_init_from_file(m_engine.get(), resolvedPath.string().c_str(), flags, NULL, NULL,

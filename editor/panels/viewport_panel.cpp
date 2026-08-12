@@ -11,6 +11,7 @@
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/core/service_locator.h"
+#include "engine/scene/systems/nametag_system.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/debug_renderer.h"
@@ -69,9 +70,13 @@ namespace Chained
 
 	static uint32_t GetIconHandle(const std::shared_ptr<TextureAsset>& icon)
 	{
-		if (icon && icon->GetTexture())
+		if (icon && icon->IsReady())
 		{
-			return icon->GetTexture()->GetNativeHandle();
+			auto tex = icon->GetTexture();
+			if (tex)
+			{
+				return tex->GetNativeHandle();
+			}
 		}
 		return 0;
 	}
@@ -493,21 +498,7 @@ namespace Chained
 		if (glm::distance(glm::vec3(camera.Position), glm::vec3(camera.Target)) < 0.001f)
 		{
 			camera.Position.z += 1.0f;
-		}
-
-		camera.ViewMatrix = glm::lookAt(glm::vec3(camera.Position), glm::vec3(camera.Target), glm::vec3(camera.Up));
-
-		float aspect = (float)m_ViewportSize.x / std::max((float)m_ViewportSize.y, 1.0f);
-		if (camera.Projection == ProjectionType::Perspective)
-		{
-			camera.ProjectionMatrix =
-				glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
-		}
-		else // Orthographic
-		{
-			float orthoSize = camera.OrthographicSize;
-			camera.ProjectionMatrix = glm::ortho(-aspect * orthoSize, aspect * orthoSize, -orthoSize, orthoSize,
-												 camera.NearClip, camera.FarClip);
+			camera.ViewMatrix = glm::lookAt(glm::vec3(camera.Position), glm::vec3(camera.Target), glm::vec3(camera.Up));
 		}
 
 		SceneRenderOptions options;
@@ -516,8 +507,7 @@ namespace Chained
 		options.ShowDebugColliders = currentDebugFlags.DrawColliders;
 		options.ShowDebugSpawnZones = currentDebugFlags.DrawSpawnZones;
 		options.SetCollisionWireframeMode = currentDebugFlags.SetCollisionWireframeMode;
-		m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, camera.NearClip,
-									 camera.FarClip, options);
+		m_SceneRenderer->RenderScene(activeScene->GetRegistry(), activeScene->GetSettings(), camera, options);
 
 		// Render proper editor icons (camera, light, spawn) with loaded textures
 		if (EditorLayer::Get().GetSceneManager().GetSceneState() != SceneState::Play &&
@@ -573,7 +563,7 @@ namespace Chained
 					Entity entity = activeScene->CreateEntity(filename);
 					auto& modelcomp = entity.AddComponent<ModelComponent>();
 					// Use relative path if possible to satisfy portability
-					modelcomp.ModelPath = Project::GetRelativePath(filepath);
+					modelcomp.ModelPath = Project::GetActive()->GetRelativePath(filepath);
 
 					// Select the new entity. Dispatch through the app so Inspector/Material
 					// panels (which subscribe to EntitySelectedEvent) also refresh — the event
@@ -632,6 +622,14 @@ namespace Chained
 				activeScene->OnRenderUI();
 			}
 			ImGui::End();
+		}
+
+		if (activeScene && (sceneState == SceneState::Play || sceneState == SceneState::Simulate))
+		{
+			if (auto* ren = ServiceLocator::TryGet<Renderer>())
+			{
+				NametagSystem::DrawNametags(activeScene, ren);
+			}
 		}
 
 		// 3. Selection Highlight
@@ -707,19 +705,7 @@ namespace Chained
 				const float iconScale = editorCfg.IconSizeScale;
 
 				Camera3D cam = m_CameraController->ToCamera3D();
-				const float aspect = viewportSize.x / std::max(viewportSize.y, 1.0f);
-				const glm::mat4 view = glm::lookAt(cam.Position, cam.Target, cam.Up);
-				glm::mat4 proj;
-				if (cam.Projection == ProjectionType::Perspective)
-				{
-					proj = glm::perspective(glm::radians(cam.FovDegrees), aspect, cam.NearClip, cam.FarClip);
-				}
-				else
-				{
-					const float h = cam.OrthographicSize;
-					proj = glm::ortho(-aspect * h, aspect * h, -h, h, cam.NearClip, cam.FarClip);
-				}
-				const glm::mat4 vp = proj * view;
+				const glm::mat4 vp = cam.ProjectionMatrix * cam.ViewMatrix;
 
 				// Project world point to screen pixels; returns {-1,-1} if behind camera.
 				auto worldToScreen = [&](const glm::vec3& wp) -> glm::vec2 {
@@ -801,10 +787,10 @@ namespace Chained
 			// 3D Picking
 			if (!bestHit)
 			{
-				SceneRaycastResult result = ScenePicker::Raycast(activeScene, ray);
+				RaycastResult result = ScenePicker::Raycast(activeScene, ray);
 				if (result.Hit)
 				{
-					bestHit = result.HitEntity;
+					bestHit = Entity(result.Entity, &activeScene->GetRegistry());
 				}
 			}
 

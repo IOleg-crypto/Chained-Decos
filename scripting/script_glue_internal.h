@@ -15,59 +15,65 @@
 namespace Chained
 {
 
-// Cross-platform string conversion wrappers using Coral::StringHelper.
-// On Windows: UCChar = wchar_t (UTF-16), on Linux/macOS: UCChar = char (UTF-8).
-inline std::string ToUtf8(const Coral::UCChar* str)
-{
-    if (!str)
-    {
-        return {};
-    }
-    return Coral::StringHelper::ConvertWideToUtf8(str);
-}
+	// Cross-platform string conversion wrappers using Coral::StringHelper.
+	// On Windows: UCChar = wchar_t (UTF-16), on Linux/macOS: UCChar = char (UTF-8).
+	inline std::string ToUtf8(const Coral::UCChar* str)
+	{
+		if (!str)
+		{
+			return {};
+		}
+		return Coral::StringHelper::ConvertWideToUtf8(str);
+	}
 
-inline Coral::UCString ToWide(const std::string& str)
-{
-    return Coral::StringHelper::ConvertUtf8ToWide(str);
-}
+	inline Coral::UCString ToWide(const std::string& str)
+	{
+		return Coral::StringHelper::ConvertUtf8ToWide(str);
+	}
 
-// Backward-compat aliases so existing .cpp files compile without changes.
-static inline std::string ch_u16_to_string(const Coral::UCChar* ptr)
-{
-    return ToUtf8(ptr);
-}
-static inline std::u16string ch_utf8_to_u16(const std::string& str)
-{
-    // This function is kept only for rare call sites that genuinely need std::u16string.
-    // Prefer ToWide() for new code.
-    auto wide = ToWide(str);
-    return std::u16string(wide.begin(), wide.end());
-}
+	// Backward-compat aliases so existing .cpp files compile without changes.
+	static inline std::string ch_u16_to_string(const Coral::UCChar* ptr)
+	{
+		return ToUtf8(ptr);
+	}
+	static inline std::u16string ch_utf8_to_u16(const std::string& str)
+	{
+		auto wide = ToWide(str);
+		return std::u16string(wide.begin(), wide.end());
+	}
 
-inline void ResolveComponentName(std::string& name)
-{
-    if (name == "MeshComponent")
-    {
-        name = "ModelComponent";
-    }
-    if (name == "PhysicsComponent")
-    {
-        name = "ColliderComponent";
-    }
-    // The registry derives SerializationKey from the human-readable display name
-    // (RegisterReflective("Rigid Body") -> "Rigid BodyComponent"), but C# sends the
-    // CLR type name typeof(RigidBodyComponent).Name == "RigidBodyComponent" (no space).
-    // Without this alias the registry lookup never matches, so GetComponent<RigidBodyComponent>()
-    // returns null and PlayerController.OnUpdate bails before applying WASD movement.
-    if (name == "RigidBodyComponent")
-    {
-        name = "Rigid BodyComponent";
-    }
-}
+	// Unified string-return abstraction for glue functions.
+	// Replaces per-file thread_local buffers with a single rotating pool.
+	// Each thread gets 4 slots; ReturnString cycles through them so multiple
+	// return values can coexist within one interop call chain.
+	class GlueStringPool
+	{
+	public:
+		static constexpr int kSlots = 4;
 
-Scene* GetActiveScene();
+		// Store a string and return a stable C pointer valid until the next
+		// ReturnString call that wraps around to the same slot.
+		static const Coral::UCChar* ReturnString(const std::string& str)
+		{
+			thread_local Coral::UCString s_Buffers[kSlots];
+			thread_local int s_Index = 0;
 
-Entity GetEntity(uint64_t entityID);
+			s_Buffers[s_Index] = ToWide(str);
+			const Coral::UCChar* result = s_Buffers[s_Index].c_str();
+			s_Index = (s_Index + 1) % kSlots;
+			return result;
+		}
+
+		// Overload for wide strings (pass-through).
+		static const Coral::UCChar* ReturnString(const Coral::UCChar* str)
+		{
+			return str;
+		}
+	};
+
+	Scene* GetActiveScene();
+
+	Entity GetEntity(uint64_t entityID);
 } // namespace Chained
 
 #endif // CH_SCRIPT_GLUE_INTERNAL_H

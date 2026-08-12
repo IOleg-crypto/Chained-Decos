@@ -4,6 +4,7 @@
 #include "engine/core/window.h"
 #include <filesystem>
 #include <memory>
+#include <mutex>
 #include <optional>
 #include <string>
 
@@ -100,12 +101,10 @@ namespace Chained
 		Configuration BuildConfig = Configuration::Debug;
 	};
 
-	/// @brief Owns the active project configuration and environment asset, plus path helpers
-	/// rooted at the process-wide active project.
+	/// @brief Owns the active project configuration and environment asset.
 	///
 	/// Projects define the game's settings, asset directories, and scene list.
-	/// A single project is active at any time (set via SetActive). Static methods
-	/// operate on the active project; instance methods operate on a specific project.
+	/// A single project is active at any time (set via SetActive).
 	class Project
 	{
 	public:
@@ -113,8 +112,6 @@ namespace Chained
 		~Project();
 
 		/// @brief Load a project from a .chproject YAML file.
-		/// @param filepath Path to the .chproject file.
-		/// @return The loaded project, or nullptr on failure.
 		static std::shared_ptr<Project> Load(const std::filesystem::path& filepath);
 
 		/// @brief Get the currently active project.
@@ -123,12 +120,11 @@ namespace Chained
 		/// @brief Set the active project (called by RuntimeLayer or Editor after loading).
 		static void SetActive(std::shared_ptr<Project> project);
 
-		// Returns the active project configuration.
+		// Config access
 		const ProjectConfig& GetConfig() const
 		{
 			return m_Config;
 		}
-		// Returns the active project configuration for mutation.
 		ProjectConfig& GetConfig()
 		{
 			return m_Config;
@@ -141,7 +137,7 @@ namespace Chained
 			m_Config.Scripting.AutoLoad = autoLoad;
 		}
 
-		// Validation setters — prefer these over direct GetConfig() mutation
+		// Validation setters
 		void SetName(const std::string& name)
 		{
 			m_Config.Name = name;
@@ -208,19 +204,15 @@ namespace Chained
 			return m_Config.BuildConfig;
 		}
 
-		// Path helpers (static, relative to the active project)
-		static std::filesystem::path GetAssetDirectory();
-		static std::filesystem::path GetProjectDirectory();
-		static std::filesystem::path GetAssetPath(const std::filesystem::path& relative);
-
-		// Converts a path to a project-relative string when possible.
-		// NOTE: Engine root resolution is handled by AssetManager.
-		static std::string GetRelativePath(const std::filesystem::path& path);
-		// Converts a path to an absolute path under the active project.
-		static std::filesystem::path GetAbsolutePath(const std::filesystem::path& path);
+		// Path helpers (instance methods — operate on this project's config)
+		std::filesystem::path GetAssetDirectory() const;
+		std::filesystem::path GetProjectDirectory() const;
+		std::filesystem::path GetAssetPath(const std::filesystem::path& relative) const;
+		std::string GetRelativePath(const std::filesystem::path& path) const;
+		std::filesystem::path GetAbsolutePath(const std::filesystem::path& path) const;
 		std::vector<std::string> GetAvailableScenes() const;
 
-		// static utility (Pure functions)
+		// Pure static utilities (no project state needed)
 		static std::filesystem::path NormalizePath(const std::filesystem::path& path);
 		static std::optional<std::string> TryMakeRelative(const std::filesystem::path& absolutePath,
 														  const std::filesystem::path& basePath);
@@ -236,11 +228,10 @@ namespace Chained
 		std::filesystem::path GetAbsolutePathInternal(const std::filesystem::path& path) const;
 
 		static std::shared_ptr<Project> s_ActiveProject;
+		static std::mutex s_Mutex;
 
 		ProjectConfig m_Config;
 		std::shared_ptr<EnvironmentAsset> m_Environment;
-
-		friend class ProjectSerializer;
 	};
 } // namespace Chained
 

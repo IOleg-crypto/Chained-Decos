@@ -182,7 +182,7 @@ namespace Chained
 					if (Project::GetActive())
 					{
 						settings.BackgroundTexturePath =
-							std::filesystem::relative(p, Project::GetAssetDirectory()).string();
+							std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
 					}
 					else
 					{
@@ -453,7 +453,7 @@ namespace Chained
 					if (Project::GetActive())
 					{
 						settings.Skybox.TexturePath =
-							std::filesystem::relative(p, Project::GetAssetDirectory()).string();
+							std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
 					}
 					else
 					{

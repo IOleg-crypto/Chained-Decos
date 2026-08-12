@@ -53,10 +53,21 @@ namespace Chained
 			}
 			else if (metadata.IsReflective && metadata.ReflectInternal)
 			{
-				// Only try if the node exists for this component
-				if (node[metadata.SerializationKey])
+				YAML::Node compNode = node[metadata.SerializationKey];
+				if (!compNode)
 				{
-					Serialization::PropertyArchive archive(node[metadata.SerializationKey]);
+					// Fallback for scenes saved prior to space-stripping SerializationKey fix
+					// e.g. "Scene TransitionComponent" or "Rigid BodyComponent"
+					std::string legacyKey = metadata.Name + "Component";
+					if (legacyKey != metadata.SerializationKey && node[legacyKey])
+					{
+						compNode = node[legacyKey];
+					}
+				}
+
+				if (compNode)
+				{
+					Serialization::PropertyArchive archive(compNode);
 					metadata.ReflectInternal(entity, archive, ReflectionMode::Deserialize);
 				}
 			}

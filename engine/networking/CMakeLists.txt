@@ -17,8 +17,6 @@ target_link_libraries(engine_network PUBLIC
     engine_external_entt
     GameNetworkingSockets::static
     glm
-    assimp
-    Jolt
     engine_external_miniupnpc
 )
 

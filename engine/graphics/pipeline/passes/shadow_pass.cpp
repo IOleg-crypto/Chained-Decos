@@ -106,7 +106,7 @@ namespace Chained
 		// Set shadow bias on renderer
 		if (auto* r = ServiceLocator::TryGet<Renderer>())
 		{
-			r->GetShadow().Bias = 0.003f;
+			r->GetLightingManager().GetShadow().Bias = 0.003f;
 		}
 
 		auto* shader = m_DepthShaderAsset->GetShader().get();

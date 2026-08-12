@@ -346,7 +346,7 @@ Entities:
           Fields:
             - Name: MapScene
               Type: 4
-              Value: scenes/test_rpg.chscene
+              Value: scenes/test_rpg_mp.chscene
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -403,7 +403,7 @@ Entities:
           Fields:
             - Name: MapScene
               Type: 4
-              Value: scenes/test_platform_scene.chscene
+              Value: scenes/test_platform_scene_mp.chscene
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -460,7 +460,7 @@ Entities:
           Fields:
             - Name: MapScene
               Type: 4
-              Value: scenes/rpg_strategy_scene.chscene
+              Value: scenes/rpg_strategy_scene_mp.chscene
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -517,7 +517,7 @@ Entities:
           Fields:
             - Name: MapScene
               Type: 4
-              Value: scenes/test_first_scene.chscene
+              Value: scenes/rpg_strategy_scene_mp.chscene
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]

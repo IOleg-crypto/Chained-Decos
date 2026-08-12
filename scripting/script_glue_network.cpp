@@ -331,7 +331,7 @@ namespace Chained
 			return;
 		}
 		std::string pathStr = ch_u16_to_string(path);
-		NetworkSystem::SetPlayerPrefab(pathStr.c_str());
+		NetworkSystem::GetInstance().SetPlayerPrefab(pathStr.c_str());
 		CH_CORE_INFO("[Script] Network.SetPlayerPrefab(path='{}')", pathStr);
 	}
 

@@ -6,6 +6,7 @@
 #include "engine/project/project.h"
 #include "engine/scene/hierarchy_serializer.h"
 #include "engine/scene/yaml.h"
+#include "engine/scene/components/physics_component.h"
 #include "scene.h"
 #include <fstream>
 #include <set>
@@ -29,7 +30,8 @@ namespace Chained
 		{
 			static std::string ToProjectRelativePath(const std::string& absPath)
 			{
-				return Project::GetActive() ? Project::GetRelativePath(absPath) : absPath;
+				auto project = Project::GetActive();
+				return project ? project->GetRelativePath(absPath) : absPath;
 			}
 		} // namespace
 
@@ -310,6 +312,13 @@ namespace Chained
 					tc.PrevRotationQuat = tc.RotationQuat;
 					tc.PrevTranslation = tc.Translation;
 					tc.PrevScale = tc.Scale;
+				}
+
+				// Editor-saved physics handles are stale at runtime. Reset so
+				// PhysicsBodySystem / BatchInitializeBodies will create fresh bodies.
+				if (deserializedEntity.HasComponent<RigidBodyComponent>())
+				{
+					deserializedEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
 				}
 
 				HierarchyTask task;

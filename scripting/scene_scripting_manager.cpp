@@ -9,18 +9,9 @@
 #include "scripting/script_interop_pointers.h"
 #include <Coral/String.hpp>
 #include <Coral/Type.hpp>
-#include <memory>
 
 namespace Chained
 {
-
-	namespace
-	{
-		// No-op deleter: the shared_ptr is just a non-null marker for "this script is instantiated".
-		void NoOpDeleter(void*)
-		{
-		}
-	} // namespace
 
 	static std::vector<SceneScriptingManager*> s_Managers;
 	static std::mutex s_ManagersMutex;
@@ -86,11 +77,6 @@ namespace Chained
 
 		if (m_Scene && ServiceLocator::IsAvailable())
 		{
-			if (auto* physics = ServiceLocator::TryGet<Physics>())
-			{
-				physics->SetCollisionCallback(m_Scene, nullptr);
-			}
-
 			if (m_Scene->IsSimulationRunning())
 			{
 				auto ctx = AcquireScriptEngine();
@@ -120,51 +106,16 @@ namespace Chained
 			auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
 			for (auto& script : msc.Scripts)
 			{
-				script.Instance.reset();
+				script.IsInstantiated = false;
 				script.NeedsStart = true;
 			}
 		}
 
 		entt::registry* registryPtr = m_Scene->GetRegistryPtr();
-		if (auto* physics = ServiceLocator::TryGet<Physics>())
-		{
-			physics->SetCollisionCallback(m_Scene, [registryPtr](entt::entity a, entt::entity b) {
-				if (!registryPtr)
-				{
-					return;
-				}
-
-				auto engine = ServiceLocator::TryGet<ScriptEngine>();
-				if (!engine || !engine->GetHost().IsInitialized())
-				{
-					return;
-				}
-
-				auto* coreAssembly = engine->GetHost().GetCoreAssembly();
-				if (!coreAssembly)
-				{
-					return;
-				}
-
-				Coral::Type scriptEngineType = coreAssembly->GetLocalType("Chained.ScriptEngine");
-				if (scriptEngineType)
-				{
-					if (ManagedCallbacks_::OnCollisionEnter)
-					{
-						ManagedCallbacks_::OnCollisionEnter((uint64_t)(uint32_t)a, (uint64_t)(uint32_t)b);
-					}
-				}
-			});
-		}
 	}
 
 	void SceneScriptingManager::OnRuntimeStop()
 	{
-		if (auto* physics = ServiceLocator::TryGet<Physics>())
-		{
-			physics->SetCollisionCallback(m_Scene, nullptr);
-		}
-
 		auto ctx = AcquireScriptEngine();
 		if (ctx.engine && ctx.scriptEngineType && !m_ReloadInProgress)
 		{
@@ -181,7 +132,7 @@ namespace Chained
 			auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
 			for (auto& script : msc.Scripts)
 			{
-				script.Instance.reset();
+				script.IsInstantiated = false;
 				script.NeedsStart = true;
 			}
 		}
@@ -219,7 +170,7 @@ namespace Chained
 						std::u16string classNameStr = ch_utf8_to_u16(script.ClassName);
 						if (ManagedCallbacks_::InstantiateScript)
 						{
-							ManagedCallbacks_::InstantiateScript((uint64_t)(uint32_t)entity, classNameStr.c_str());
+							ManagedCallbacks_::InstantiateScript(static_cast<uint64_t>(entity), classNameStr.c_str());
 						}
 						CH_CORE_INFO("C++ calling InstantiateScript SUCCESS");
 
@@ -232,24 +183,24 @@ namespace Chained
 							{
 								if (auto* val = std::get_if<float>(&field.Value))
 								{
-									ctx.scriptEngineType.InvokeStaticMethod("SetFieldFloat", (uint64_t)(uint32_t)entity,
-																			cNameStr, fNameStr, *val);
+									ctx.scriptEngineType.InvokeStaticMethod(
+										"SetFieldFloat", static_cast<uint64_t>(entity), cNameStr, fNameStr, *val);
 								}
 							}
 							else if (field.Type == ScriptFieldType::Int)
 							{
 								if (auto* val = std::get_if<int>(&field.Value))
 								{
-									ctx.scriptEngineType.InvokeStaticMethod("SetFieldInt", (uint64_t)(uint32_t)entity,
-																			cNameStr, fNameStr, *val);
+									ctx.scriptEngineType.InvokeStaticMethod(
+										"SetFieldInt", static_cast<uint64_t>(entity), cNameStr, fNameStr, *val);
 								}
 							}
 							else if (field.Type == ScriptFieldType::Bool)
 							{
 								if (auto* val = std::get_if<bool>(&field.Value))
 								{
-									ctx.scriptEngineType.InvokeStaticMethod("SetFieldBool", (uint64_t)(uint32_t)entity,
-																			cNameStr, fNameStr, *val);
+									ctx.scriptEngineType.InvokeStaticMethod(
+										"SetFieldBool", static_cast<uint64_t>(entity), cNameStr, fNameStr, *val);
 								}
 							}
 							else if (field.Type == ScriptFieldType::String)
@@ -258,7 +209,7 @@ namespace Chained
 								{
 									Coral::String vStr = Coral::String::New(*val);
 									ctx.scriptEngineType.InvokeStaticMethod(
-										"SetFieldString", (uint64_t)(uint32_t)entity, cNameStr, fNameStr, vStr);
+										"SetFieldString", static_cast<uint64_t>(entity), cNameStr, fNameStr, vStr);
 									Coral::String::Free(vStr);
 								}
 							}
@@ -266,12 +217,8 @@ namespace Chained
 							Coral::String::Free(fNameStr);
 						}
 
-						// Mark instantiated on C++ side. The stored pointer must be
-						// NON-NULL: HasInstance() checks `Instance != nullptr`, which
-						// compares the stored pointer (get()), not the control block.
-						// A null stored pointer makes HasInstance() always false, so the
-						// script re-instantiates every frame and never reaches OnStart/OnUpdate.
-						script.Instance = std::shared_ptr<void>(reinterpret_cast<void*>(0x1), NoOpDeleter);
+						// Mark instantiated on C++ side
+						script.IsInstantiated = true;
 						script.NeedsStart = false; // Start is called natively on the C# side
 					} catch (const std::exception& e)
 					{

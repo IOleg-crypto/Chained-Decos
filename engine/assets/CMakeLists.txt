@@ -4,6 +4,8 @@ add_library(engine_assets STATIC
     asset_manager.cpp
     asset_metadata.h
     asset_metadata.cpp
+    asset_path_resolver.cpp
+    asset_path_resolver.h
     model_data.h
     types/audio_asset.h
     types/environment_asset.h
@@ -16,6 +18,7 @@ add_library(engine_assets STATIC
     types/shader_asset.h
     types/texture_asset.h
     types/texture_asset.cpp
+    types/animation_graph_asset.h
     loaders/iasset_loader.h
     loaders/anim_graph_loader.h
     loaders/anim_graph_loader.cpp
