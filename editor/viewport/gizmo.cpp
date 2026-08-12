@@ -1,6 +1,6 @@
 #include "editor/viewport/gizmo.h"
-#include "engine/scene/components/component_utils.h"
-#include "engine/scene/components/hierarchy_component.h"
+#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/components/core/hierarchy_component.h"
 #include "gui.h"
 #include "imgui_internal.h"
 #include "layer.h"
@@ -11,161 +11,161 @@
 namespace Chained
 {
 
-bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize,
-                                  const Chained::Camera3D& camera)
-{
-    auto& layer = EditorLayer::Get();
-    Scene* scene = layer.GetActiveScene().get();
-    Entity entity = layer.GetSelectedEntity();
+	bool EditorGizmo::RenderAndHandle(GizmoType type, ImVec2 viewportPos, ImVec2 viewportSize,
+									  const Chained::Camera3D& camera)
+	{
+		auto& layer = EditorLayer::Get();
+		Scene* scene = layer.GetActiveScene().get();
+		Entity entity = layer.GetSelectedEntity();
 
-    if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE ||
-        layer.GetSceneState() == SceneState::Play)
-    {
-        return false;
-    }
+		if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE ||
+			layer.GetSceneState() == SceneState::Play)
+		{
+			return false;
+		}
 
-    if (viewportSize.x <= 1.0f || viewportSize.y <= 1.0f)
-    {
-        return false;
-    }
+		if (viewportSize.x <= 1.0f || viewportSize.y <= 1.0f)
+		{
+			return false;
+		}
 
-    auto& transform = entity.GetComponent<TransformComponent>();
-    glm::mat4 modelMat = transform.WorldTransform;
+		auto& transform = entity.GetComponent<TransformComponent>();
+		glm::mat4 modelMat = transform.WorldTransform;
 
-    // Setup ImGuizmo
-    ImGuizmo::SetOrthographic(camera.Projection != ProjectionType::Perspective);
-    ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
-    ImGuizmo::SetAlternativeWindow(ImGui::GetCurrentWindow());
+		// Setup ImGuizmo
+		ImGuizmo::SetOrthographic(camera.Projection != ProjectionType::Perspective);
+		ImGuizmo::SetDrawlist(ImGui::GetForegroundDrawList());
+		ImGuizmo::SetAlternativeWindow(ImGui::GetCurrentWindow());
 
-    // Ensure we are using absolute screen coordinates for SetRect
-    ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
+		// Ensure we are using absolute screen coordinates for SetRect
+		ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
-    // 2. Prepare View/Projection matrices
-    glm::vec3 up = camera.Up;
-    if (glm::dot(up, up) <= 0.000001f)
-    {
-        up = {0.0f, 1.0f, 0.0f};
-    }
+		// 2. Prepare View/Projection matrices
+		glm::vec3 up = camera.Up;
+		if (glm::dot(up, up) <= 0.000001f)
+		{
+			up = {0.0f, 1.0f, 0.0f};
+		}
 
-    glm::vec3 forward = camera.Target - camera.Position;
-    if (glm::dot(forward, forward) <= 0.000001f)
-    {
-        forward = {0.0f, 0.0f, -1.0f};
-    }
-    else
-    {
-        forward = glm::normalize(forward);
-    }
+		glm::vec3 forward = camera.Target - camera.Position;
+		if (glm::dot(forward, forward) <= 0.000001f)
+		{
+			forward = {0.0f, 0.0f, -1.0f};
+		}
+		else
+		{
+			forward = glm::normalize(forward);
+		}
 
-    glm::mat4 view = glm::lookAt(camera.Position, camera.Position + forward, up);
-    glm::mat4 projection;
+		glm::mat4 view = glm::lookAt(camera.Position, camera.Position + forward, up);
+		glm::mat4 projection;
 
-    const float aspect = viewportSize.x / viewportSize.y;
-    if (camera.Projection == ProjectionType::Perspective)
-    {
-        projection = glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
-    }
-    else
-    {
-        float top = camera.OrthographicSize * 0.5f;
-        float right = top * aspect;
-        projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
-    }
+		const float aspect = viewportSize.x / viewportSize.y;
+		if (camera.Projection == ProjectionType::Perspective)
+		{
+			projection = glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
+		}
+		else
+		{
+			float top = camera.OrthographicSize * 0.5f;
+			float right = top * aspect;
+			projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
+		}
 
-    float currentSnapValues[3] = {0.0f, 0.0f, 0.0f};
-    if (m_SnappingEnabled)
-    {
-        if (type == GizmoType::TRANSLATE)
-        {
-            currentSnapValues[0] = m_TranslationSnap;
-            currentSnapValues[1] = m_TranslationSnap;
-            currentSnapValues[2] = m_TranslationSnap;
-        }
-        else if (type == GizmoType::ROTATE)
-        {
+		float currentSnapValues[3] = {0.0f, 0.0f, 0.0f};
+		if (m_SnappingEnabled)
+		{
+			if (type == GizmoType::TRANSLATE)
+			{
+				currentSnapValues[0] = m_TranslationSnap;
+				currentSnapValues[1] = m_TranslationSnap;
+				currentSnapValues[2] = m_TranslationSnap;
+			}
+			else if (type == GizmoType::ROTATE)
+			{
 
-            currentSnapValues[0] = m_RotationSnap;
-        }
-        else if (type == GizmoType::SCALE)
-        {
-            currentSnapValues[0] = m_ScaleSnap;
-            currentSnapValues[1] = m_ScaleSnap;
-            currentSnapValues[2] = m_ScaleSnap;
-        }
-    }
+				currentSnapValues[0] = m_RotationSnap;
+			}
+			else if (type == GizmoType::SCALE)
+			{
+				currentSnapValues[0] = m_ScaleSnap;
+				currentSnapValues[1] = m_ScaleSnap;
+				currentSnapValues[2] = m_ScaleSnap;
+			}
+		}
 
-    float* snap = m_SnappingEnabled ? currentSnapValues : nullptr;
+		float* snap = m_SnappingEnabled ? currentSnapValues : nullptr;
 
-    // 4. Manipulation
-    ImGuizmo::MODE mode = m_IsLocalSpace ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
+		// 4. Manipulation
+		ImGuizmo::MODE mode = m_IsLocalSpace ? ImGuizmo::LOCAL : ImGuizmo::WORLD;
 
-    ImGuizmo::OPERATION op = static_cast<ImGuizmo::OPERATION>(type);
-    if (m_Is2DMode)
-    {
-        if (op == ImGuizmo::TRANSLATE)
-        {
-            op = (ImGuizmo::OPERATION)(ImGuizmo::TRANSLATE_X | ImGuizmo::TRANSLATE_Y);
-        }
-        else if (op == ImGuizmo::SCALE)
-        {
-            op = (ImGuizmo::OPERATION)(ImGuizmo::SCALE_X | ImGuizmo::SCALE_Y);
-        }
-        else if (op == ImGuizmo::ROTATE)
-        {
-            op = ImGuizmo::ROTATE_Z;
-        }
-    }
+		ImGuizmo::OPERATION op = static_cast<ImGuizmo::OPERATION>(type);
+		if (m_Is2DMode)
+		{
+			if (op == ImGuizmo::TRANSLATE)
+			{
+				op = (ImGuizmo::OPERATION)(ImGuizmo::TRANSLATE_X | ImGuizmo::TRANSLATE_Y);
+			}
+			else if (op == ImGuizmo::SCALE)
+			{
+				op = (ImGuizmo::OPERATION)(ImGuizmo::SCALE_X | ImGuizmo::SCALE_Y);
+			}
+			else if (op == ImGuizmo::ROTATE)
+			{
+				op = ImGuizmo::ROTATE_Z;
+			}
+		}
 
-    const bool wasUsing = m_WasUsing;
-    const bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), op, mode,
-                                                  glm::value_ptr(modelMat), nullptr, snap);
+		const bool wasUsing = m_WasUsing;
+		const bool manipulated = ImGuizmo::Manipulate(glm::value_ptr(view), glm::value_ptr(projection), op, mode,
+													  glm::value_ptr(modelMat), nullptr, snap);
 
-    const bool isUsingNow = ImGuizmo::IsUsing();
-    if (isUsingNow && !wasUsing)
-    {
-        m_WasUsing = true;
-        m_OldTransform = transform;
-    }
+		const bool isUsingNow = ImGuizmo::IsUsing();
+		if (isUsingNow && !wasUsing)
+		{
+			m_WasUsing = true;
+			m_OldTransform = transform;
+		}
 
-    if (manipulated || isUsingNow)
-    {
-        glm::mat4 localMat = modelMat;
-        if (entity.HasComponent<HierarchyComponent>())
-        {
-            auto& hierarchy = entity.GetComponent<HierarchyComponent>();
-            if (hierarchy.Parent != entt::null && scene->GetRegistry().valid(hierarchy.Parent) &&
-                scene->GetRegistry().all_of<TransformComponent>(hierarchy.Parent))
-            {
-                const auto& parentTransform = scene->GetRegistry().get<TransformComponent>(hierarchy.Parent);
-                localMat = glm::inverse(parentTransform.WorldTransform) * modelMat;
-            }
-        }
+		if (manipulated || isUsingNow)
+		{
+			glm::mat4 localMat = modelMat;
+			if (entity.HasComponent<HierarchyComponent>())
+			{
+				auto& hierarchy = entity.GetComponent<HierarchyComponent>();
+				if (hierarchy.Parent != entt::null && scene->GetRegistry().valid(hierarchy.Parent) &&
+					scene->GetRegistry().all_of<TransformComponent>(hierarchy.Parent))
+				{
+					const auto& parentTransform = scene->GetRegistry().get<TransformComponent>(hierarchy.Parent);
+					localMat = glm::inverse(parentTransform.WorldTransform) * modelMat;
+				}
+			}
 
-        glm::vec3 translation, rotation, scale;
-        ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(localMat), glm::value_ptr(translation),
-                                              glm::value_ptr(rotation), glm::value_ptr(scale));
+			glm::vec3 translation, rotation, scale;
+			ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(localMat), glm::value_ptr(translation),
+												  glm::value_ptr(rotation), glm::value_ptr(scale));
 
-        ComponentUtils::SetTranslation(transform, translation);
-        ComponentUtils::SetRotation(transform, glm::radians(rotation));
-        ComponentUtils::SetScale(transform, scale);
-    }
-    else if (m_WasUsing && !isUsingNow)
-    {
-        m_WasUsing = false;
+			ComponentUtils::SetTranslation(transform, translation);
+			ComponentUtils::SetRotation(transform, glm::radians(rotation));
+			ComponentUtils::SetScale(transform, scale);
+		}
+		else if (m_WasUsing && !isUsingNow)
+		{
+			m_WasUsing = false;
 
-        const bool changed = glm::length(transform.Translation - m_OldTransform.Translation) > 0.0001f ||
-                             glm::length(transform.Rotation - m_OldTransform.Rotation) > 0.0001f ||
-                             glm::length(transform.Scale - m_OldTransform.Scale) > 0.0001f;
+			const bool changed = glm::length(transform.Translation - m_OldTransform.Translation) > 0.0001f ||
+								 glm::length(transform.Rotation - m_OldTransform.Rotation) > 0.0001f ||
+								 glm::length(transform.Scale - m_OldTransform.Scale) > 0.0001f;
 
-        if (changed)
-        {
-            EditorLayer::Get().GetCommandHistory().PushCommand(
-                std::make_unique<ModifyComponentCommand<TransformComponent>>(entity, m_OldTransform, transform,
-                                                                             "Transform Entity"));
-        }
-    }
+			if (changed)
+			{
+				EditorLayer::Get().GetCommandHistory().PushCommand(
+					std::make_unique<ModifyComponentCommand<TransformComponent>>(entity, m_OldTransform, transform,
+																				 "Transform Entity"));
+			}
+		}
 
-    return ImGuizmo::IsOver() || isUsingNow;
-}
+		return ImGuizmo::IsOver() || isUsingNow;
+	}
 
 } // namespace Chained

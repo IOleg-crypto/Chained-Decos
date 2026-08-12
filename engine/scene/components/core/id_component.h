@@ -6,21 +6,21 @@
 
 namespace Chained
 {
-struct IDComponent
-{
-    UUID ID;
+	struct IDComponent
+	{
+		UUID ID;
 
-    static const char* GetStaticName()
-    {
-        return "IDComponent";
-    }
+		static const char* GetStaticName()
+		{
+			return "IDComponent";
+		}
 
-    struct UI
-    {
-        UIMeta ID = {.Tooltip = "Unique entity identifier (UUID)"};
-    };
-};
-CH_MARK_RFL(IDComponent);
+		struct UI
+		{
+			UIMeta ID = {.Tooltip = "Unique entity identifier (UUID)"};
+		};
+	};
+	CH_MARK_RFL(IDComponent);
 } // namespace Chained
 
 // IDComponent uses manual registration in RegisterEngineComponents()

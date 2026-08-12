@@ -5,9 +5,9 @@
 #include "engine/core/service_locator.h"
 #include "engine/physics/iphysics_world.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/components/physics_component.h"
-#include "engine/scene/components/model_component.h"
-#include "engine/scene/components/transform_component.h"
+#include "engine/scene/components/physics/physics_component.h"
+#include "engine/scene/components/render/model_component.h"
+#include "engine/scene/components/core/transform_component.h"
 #include <algorithm>
 
 namespace Chained::PhysicsBodySystem

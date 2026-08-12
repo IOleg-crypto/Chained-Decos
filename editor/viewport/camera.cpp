@@ -2,9 +2,9 @@
 #include "editor/layer.h"
 #include "engine/app/application.h"
 #include "engine/core/input.h"
-#include "engine/scene/components/camera_component.h"
-#include "engine/scene/components/component_utils.h"
-#include "engine/scene/components/transform_component.h"
+#include "engine/scene/components/render/camera_component.h"
+#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/components/core/transform_component.h"
 
 #include <algorithm>
 #include <glm/gtx/quaternion.hpp>

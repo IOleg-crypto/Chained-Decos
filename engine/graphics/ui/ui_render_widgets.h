@@ -1,7 +1,7 @@
 #ifndef CH_UI_RENDER_WIDGETS_H
 #define CH_UI_RENDER_WIDGETS_H
 
-#include "engine/scene/components/control_component.h"
+#include "engine/scene/components/ui/control_component.h"
 #include "engine/scene/entity.h"
 #include "imgui.h"
 

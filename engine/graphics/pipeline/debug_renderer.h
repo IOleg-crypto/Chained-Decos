@@ -3,7 +3,7 @@
 
 #include "engine/graphics/camera_types.h"
 #include "engine/graphics/api/renderer_types.h"
-#include "engine/scene/components/model_component.h"
+#include "engine/scene/components/render/model_component.h"
 #include "engine/scene/scene_settings.h"
 #include "engine/graphics/pipeline/scene_renderer_types.h"
 #include "engine/core/service.h"
