@@ -5,21 +5,21 @@
 
 namespace Chained
 {
-struct TagComponent
-{
-    std::string Tag;
-    static const char* GetStaticName()
-    {
-        return "TagComponent";
-    }
+	struct TagComponent
+	{
+		std::string Tag;
+		static const char* GetStaticName()
+		{
+			return "TagComponent";
+		}
 
-    struct UI
-    {
-        UIMeta Tag = {.Tooltip = "Custom tag for entity lookup and filtering"};
-    };
-};
+		struct UI
+		{
+			UIMeta Tag = {.Tooltip = "Custom tag for entity lookup and filtering"};
+		};
+	};
 
-CH_MARK_RFL(TagComponent);
+	CH_MARK_RFL(TagComponent);
 
 } // namespace Chained
 

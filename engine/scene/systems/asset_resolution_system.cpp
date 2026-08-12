@@ -8,11 +8,11 @@
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
-#include "engine/scene/components/model_component.h"
-#include "engine/scene/components/primitive_component.h"
-#include "engine/scene/components/primitive_runtime.h"
-#include "engine/scene/components/shader_component.h"
-#include "engine/scene/components/sprite_component.h"
+#include "engine/scene/components/render/model_component.h"
+#include "engine/scene/components/render/primitive_component.h"
+#include "engine/scene/components/render/primitive_runtime.h"
+#include "engine/scene/components/render/shader_component.h"
+#include "engine/scene/components/render/sprite_component.h"
 #include <filesystem>
 
 namespace Chained::AssetResolutionSystem

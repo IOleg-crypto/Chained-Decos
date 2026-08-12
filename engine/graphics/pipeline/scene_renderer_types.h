@@ -2,7 +2,7 @@
 #define CH_SCENE_RENDERER_TYPES_H
 
 #include "engine/graphics/api/renderer_types.h"
-#include "engine/scene/components/animation_component.h"
+#include "engine/scene/components/animation/animation_component.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/environment_asset.h"
 #include <vector>

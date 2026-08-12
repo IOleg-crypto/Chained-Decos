@@ -1,4 +1,4 @@
-#include "engine/scene/components/scripting_components.h"
+#include "engine/scene/components/scripting/scripting_components.h"
 #include "engine/core/service_locator.h"
 #include "engine/reflection/reflection.h"
 #include "scripting/scriptengine.h"

@@ -1,8 +1,8 @@
 #include <imgui.h>
 #include <GraphEditor.h>
 #include "engine/assets/types/animation_graph_asset.h"
-#include "engine/scene/components/animation_component.h"
-#include "engine/scene/components/model_component.h"
+#include "engine/scene/components/animation/animation_component.h"
+#include "engine/scene/components/render/model_component.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/loaders/anim_graph_loader.h"

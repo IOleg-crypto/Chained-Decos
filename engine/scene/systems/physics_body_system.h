@@ -1,7 +1,7 @@
 #ifndef CH_PHYSICS_BODY_SYSTEM_H
 #define CH_PHYSICS_BODY_SYSTEM_H
 
-#include "engine/scene/components/physics_component.h"
+#include "engine/scene/components/physics/physics_component.h"
 #include <entt/entt.hpp>
 #include <glm/glm.hpp>
 
