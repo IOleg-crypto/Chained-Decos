@@ -2,7 +2,7 @@
 #include "engine/core/log.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/scene/components/control_component.h"
+#include "engine/scene/components/ui/control_component.h"
 #include "engine/scene/scene.h"
 #include "engine/core/service_locator.h"
 

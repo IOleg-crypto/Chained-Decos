@@ -1,5 +1,5 @@
 #include "component_serializer.h"
-#include "components/id_component.h"
+#include "components/core/id_component.h"
 #include "engine/scene/hierarchy_serializer.h"
 #include "engine/scene/serialization.h"
 

@@ -1,7 +1,7 @@
 #include "scene_transition_system.h"
 #include "engine/core/profiler.h"
-#include "engine/scene/components/control_component.h"
-#include "engine/scene/components/scene_transition_component.h"
+#include "engine/scene/components/ui/control_component.h"
+#include "engine/scene/components/ui/scene_transition_component.h"
 
 namespace Chained::SceneTransitionSystem
 {

@@ -5,24 +5,29 @@ add_library(engine_scene_core STATIC
     scene_events.h scene_settings.h scene_state.h
     camera.cpp camera.h
     components.h
-    components/animation_component.h
-    components/audio_component.h
-    components/camera_component.h
-    components/component_utils.h
-    components/hierarchy_component.h
-    components/id_component.h
-    components/light_component.h
-    components/model_component.h
-    components/physics_component.h
-    components/player_component.h
-    components/primitive_component.h
-    components/scene_transition_component.h
-    components/scripting_components.h
-    components/shader_component.h
-    components/spawn_component.h
-    components/sprite_component.h
-    components/tag_component.h
-    components/transform_component.h
+    components/core/transform_component.h
+    components/core/id_component.h
+    components/core/tag_component.h
+    components/core/hierarchy_component.h
+    components/core/component_utils.h
+    components/render/camera_component.h
+    components/render/light_component.h
+    components/render/model_component.h
+    components/render/sprite_component.h
+    components/render/shader_component.h
+    components/render/primitive_component.h
+    components/render/primitive_runtime.h
+    components/physics/physics_component.h
+    components/audio/audio_component.h
+    components/animation/animation_component.h
+    components/animation/animation_graph_component.h
+    components/ui/control_component.h
+    components/ui/ui_action_component.h
+    components/ui/scene_transition_component.h
+    components/gameplay/player_component.h
+    components/gameplay/spawn_component.h
+    components/gameplay/network_identity_component.h
+    components/scripting/scripting_components.h
 )
 target_include_directories(engine_scene_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
 target_link_libraries(engine_scene_core PUBLIC engine_reflection engine_assets engine_external_entt glm)
@@ -64,7 +69,7 @@ add_library(engine_scene STATIC
     systems/nametag_system.cpp
     systems/system_manager.h
     systems/system_manager.cpp
-    components/scripting_components.cpp
+    components/scripting/scripting_components.cpp
 )
 
 target_include_directories(engine_scene PUBLIC
