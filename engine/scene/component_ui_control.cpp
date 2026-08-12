@@ -21,7 +21,7 @@ namespace Chained
 			std::vector<uint64_t> ids;
 			for (auto ent : s->GetRegistry().view<UIControlComponent>())
 			{
-				ids.push_back((uint64_t)(uint32_t)ent);
+				ids.push_back(static_cast<uint64_t>(ent));
 			}
 			return ids;
 		};

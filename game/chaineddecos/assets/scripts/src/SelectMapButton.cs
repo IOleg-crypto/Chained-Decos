@@ -9,7 +9,7 @@ namespace ChainedDecos.Scripts
     /// </summary>
     public class SelectMapButton : Script
     {
-        public string MapScene = "scenes/test_rpg.chscene";
+        public string MapScene = "scenes/rpg_strategy_scene_mp.chscene";
 
         public override void OnUpdate(float deltaTime)
         {

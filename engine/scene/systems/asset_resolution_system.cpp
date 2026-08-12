@@ -1,369 +1,421 @@
 #include "asset_resolution_system.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/types/material_asset.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/shader_asset.h"
 #include "engine/assets/types/texture_asset.h"
+#include "engine/graphics/api/texture.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/geometry_generator.h"
-#include "engine/scene/components/component_utils.h"
 #include "engine/scene/components/model_component.h"
 #include "engine/scene/components/primitive_component.h"
 #include "engine/scene/components/primitive_runtime.h"
 #include "engine/scene/components/shader_component.h"
 #include "engine/scene/components/sprite_component.h"
+#include <filesystem>
 
 namespace Chained::AssetResolutionSystem
 {
 
-static void ResolveSprite(entt::registry& reg, entt::entity e)
-{
-    auto& sprite = reg.get<SpriteComponent>(e);
-    if (sprite.TextureHandle != 0)
-    {
-        return;
-    }
+	static void ResolveSprite(entt::registry& reg, entt::entity e)
+	{
+		auto& sprite = reg.get<SpriteComponent>(e);
 
-    auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets)
-    {
-        return;
-    }
+		auto* assets = ServiceLocator::TryGet<AssetManager>();
+		if (!assets)
+		{
+			return;
+		}
 
-    // Try UUID first
-    if (sprite.TextureUUID != 0)
-    {
-        auto asset = assets->GetByUUID<TextureAsset>(sprite.TextureUUID);
-        if (asset && asset->IsReady())
-        {
-            sprite.TextureHandle = asset->GetID();
-            return;
-        }
-    }
+		if (sprite.TextureHandle != AssetHandle(0))
+		{
+			auto currentAsset = assets->Get<TextureAsset>(sprite.TextureHandle);
+			if (currentAsset && currentAsset->IsReady())
+			{
+				return;
+			}
+		}
 
-    // Fallback to path
-    if (!sprite.TexturePath.empty())
-    {
-        assets->LoadAsset(sprite.TexturePath, TextureAsset::GetStaticType());
-        auto asset = assets->Get<TextureAsset>(sprite.TexturePath);
-        if (asset && asset->IsReady())
-        {
-            sprite.TextureHandle = asset->GetID();
-            sprite.TextureUUID = asset->GetID();
-        }
-    }
-}
+		if (sprite.TextureUUID != 0)
+		{
+			auto asset = assets->GetByUUID<TextureAsset>(sprite.TextureUUID);
+			if (asset)
+			{
+				if (asset->IsReady())
+				{
+					sprite.TextureHandle = asset->GetID();
+					if (sprite.TexturePath.empty())
+					{
+						sprite.TexturePath = asset->GetPath();
+					}
+				}
+				return;
+			}
+		}
 
-static void ResolveShader(entt::registry& reg, entt::entity e)
-{
-    auto& shader = reg.get<ShaderComponent>(e);
-    if (shader.ShaderHandle != 0)
-    {
-        return;
-    }
+		if (!sprite.TexturePath.empty())
+		{
+			auto asset = assets->Get<TextureAsset>(sprite.TexturePath);
+			if (asset)
+			{
+				sprite.TextureUUID = asset->GetID();
+				if (asset->IsReady())
+				{
+					sprite.TextureHandle = asset->GetID();
+				}
+			}
+		}
+	}
 
-    auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets)
-    {
-        return;
-    }
+	static void ResolveShader(entt::registry& reg, entt::entity e)
+	{
+		auto& shader = reg.get<ShaderComponent>(e);
 
-    // Try UUID first
-    if (shader.ShaderUUID != 0)
-    {
-        auto asset = assets->GetByUUID<ShaderAsset>(shader.ShaderUUID);
-        if (asset && asset->IsReady())
-        {
-            shader.ShaderHandle = asset->GetID();
-            return;
-        }
-    }
+		auto* assets = ServiceLocator::TryGet<AssetManager>();
+		if (!assets)
+		{
+			return;
+		}
 
-    // Fallback to path
-    if (!shader.ShaderPath.empty())
-    {
-        assets->LoadAsset(shader.ShaderPath, ShaderAsset::GetStaticType());
-        auto asset = assets->Get<ShaderAsset>(shader.ShaderPath);
-        if (asset && asset->IsReady())
-        {
-            shader.ShaderHandle = asset->GetID();
-            shader.ShaderUUID = asset->GetID();
-        }
-    }
-}
+		if (shader.ShaderHandle != AssetHandle(0))
+		{
+			auto currentAsset = assets->Get<ShaderAsset>(shader.ShaderHandle);
+			if (currentAsset && currentAsset->IsReady())
+			{
+				return;
+			}
+		}
 
-static void ResolveModel(entt::registry& reg, entt::entity e)
-{
-    auto& model = reg.get<ModelComponent>(e);
+		if (shader.ShaderUUID != 0)
+		{
+			auto asset = assets->GetByUUID<ShaderAsset>(shader.ShaderUUID);
+			if (asset)
+			{
+				if (asset->IsReady())
+				{
+					shader.ShaderHandle = asset->GetID();
+					if (shader.ShaderPath.empty())
+					{
+						shader.ShaderPath = asset->GetPath();
+					}
+				}
+				return;
+			}
+		}
 
-    // Already resolved
-    if (model.ModelHandle != 0)
-    {
-        return;
-    }
+		if (!shader.ShaderPath.empty())
+		{
+			auto asset = assets->Get<ShaderAsset>(shader.ShaderPath);
+			if (asset)
+			{
+				shader.ShaderUUID = asset->GetID();
+				if (asset->IsReady())
+				{
+					shader.ShaderHandle = asset->GetID();
+				}
+			}
+		}
+	}
 
-    auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets)
-    {
-        return;
-    }
+	static void ResolveModel(entt::registry& reg, entt::entity e)
+	{
+		auto& model = reg.get<ModelComponent>(e);
 
-    // Try UUID first
-    if (model.ModelUUID != 0)
-    {
-        auto asset = assets->GetByUUID<ModelAsset>(model.ModelUUID);
-        if (asset && asset->IsReady())
-        {
-            model.ModelHandle = asset->GetID();
-            return;
-        }
-    }
+		auto* assets = ServiceLocator::TryGet<AssetManager>();
+		if (!assets)
+		{
+			return;
+		}
 
-    // Fallback to path
-    ComponentUtils::ResolveModelPath(model);
+		if (model.ModelHandle != AssetHandle(0))
+		{
+			auto currentAsset = assets->Get<ModelAsset>(model.ModelHandle);
+			if (currentAsset && currentAsset->IsReady())
+			{
+				return;
+			}
+		}
 
-    // Remember UUID for next time
-    if (model.ModelHandle != 0 && model.ModelUUID == 0)
-    {
-        auto asset = assets->Get<ModelAsset>(model.ModelPath);
-        if (asset)
-        {
-            model.ModelUUID = asset->GetID();
-        }
-    }
-}
+		if (model.ModelUUID != 0)
+		{
+			auto asset = assets->GetByUUID<ModelAsset>(model.ModelUUID);
+			if (asset)
+			{
+				if (asset->IsReady())
+				{
+					model.ModelHandle = asset->GetID();
+					if (model.ModelPath.empty())
+					{
+						model.ModelPath = asset->GetPath();
+					}
+				}
+				return;
+			}
+		}
 
-static void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
-{
-    reg.get_or_emplace<PrimitiveRuntimeState>(e).Dirty = true;
-}
+		// Inline ResolveModelPath logic (was previously in ComponentUtils::ResolveModelPath)
+		if (model.ModelPath.empty())
+		{
+			model.ModelHandle = AssetHandle(0);
+			return;
+		}
 
-static void ResolvePrimitive(entt::registry& reg, entt::entity e)
-{
-    auto& prim = reg.get<PrimitiveComponent>(e);
-    auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(e);
+		auto asset = assets->Get<ModelAsset>(model.ModelPath);
+		if (asset && asset->GetState() == AssetState::Ready)
+		{
+			model.ModelHandle = asset->GetID();
 
-    const char* typeMarker = nullptr;
-    switch (prim.Type)
-    {
-    case PrimitiveType::Cube:
-        typeMarker = ":cube:";
-        break;
-    case PrimitiveType::Sphere:
-        typeMarker = ":sphere:";
-        break;
-    case PrimitiveType::Plane:
-        typeMarker = ":plane:";
-        break;
-    case PrimitiveType::Cylinder:
-        typeMarker = ":cylinder:";
-        break;
-    case PrimitiveType::Cone:
-        typeMarker = ":cone:";
-        break;
-    case PrimitiveType::Torus:
-        typeMarker = ":torus:";
-        break;
-    case PrimitiveType::Knot:
-        typeMarker = ":knot:";
-        break;
-    case PrimitiveType::Hemisphere:
-        typeMarker = ":hemisphere:";
-        break;
-    case PrimitiveType::None:
-    default:
-        rt.Dirty = false;
-        return;
-    }
+			const auto& materials = asset->GetMaterials();
+			if (model.MaterialPaths.empty() || model.MaterialPaths.size() != materials.size())
+			{
+				std::filesystem::path modelPath(model.ModelPath);
+				std::string modelName = modelPath.stem().string();
+				std::filesystem::path modelDir = modelPath.parent_path();
 
-    ProceduralParameters params;
-    params.Radius = prim.Radius;
-    params.InnerRadius = prim.InnerRadius;
-    params.Height = prim.Height;
-    params.Slices = prim.Slices;
-    params.Stacks = prim.Stacks;
-    params.Dimensions = prim.Dimensions;
+				model.MaterialPaths.resize(materials.size());
 
-    PendingModelData data = GeometryGenerator::GeneratePrimitivePendingData(typeMarker, params);
-    if (!data.isValid)
-    {
-        rt.Dirty = false;
-        return;
-    }
+				for (int i = 0; i < (int)materials.size(); i++)
+				{
+					std::string matFileName = modelName + "_material_" + std::to_string(i) + ".chmat";
+					model.MaterialPaths[i] = (modelDir / matFileName).generic_string();
 
-    bool hadAsset = (rt.Asset != nullptr);
-    std::vector<Material> editedMaterials;
-    if (hadAsset)
-    {
-        editedMaterials = rt.Asset->GetMaterials();
-    }
+					std::string resolvedMatPath = assets->ResolvePath(model.MaterialPaths[i]);
+					if (!std::filesystem::exists(resolvedMatPath))
+					{
+						auto matAsset = std::make_shared<MaterialAsset>();
+						matAsset->SetMaterial(materials[i]);
+						matAsset->SaveToFile(resolvedMatPath);
+					}
+				}
+			}
+		}
+		else
+		{
+			model.ModelHandle = AssetHandle(0);
+		}
+	}
 
-    if (!rt.Asset)
-    {
-        rt.Asset = std::make_shared<ModelAsset>();
-    }
-    rt.Asset->SetPendingData(std::move(data));
-    rt.Asset->OnLoaded();
+	static void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
+	{
+		reg.get_or_emplace<PrimitiveRuntimeState>(e).Dirty = true;
+	}
 
-    auto resolveTexture = [](AssetManager* assets, const std::string& path, std::shared_ptr<Texture>& outTex) -> bool {
-        if (path.empty())
-        {
-            return false;
-        }
-        assets->LoadAsset(path, TextureAsset::GetStaticType());
-        auto texAsset = assets->Get<TextureAsset>(path);
-        if (texAsset && texAsset->IsReady())
-        {
-            outTex = texAsset->GetTexture();
-            return false;
-        }
-        return true;
-    };
+	static bool ResolveTexture(AssetManager* assets, const std::string& path, std::shared_ptr<Texture>& outMap)
+	{
+		if (path.empty())
+		{
+			return false;
+		}
+		assets->LoadAsset(path, TextureAsset::GetStaticType());
+		auto texAsset = assets->Get<TextureAsset>(path);
+		if (texAsset && texAsset->IsReady())
+		{
+			outMap = texAsset->GetTexture();
+			return false;
+		}
+		return true;
+	}
 
-    auto applyMaterialTextures = [&](Material& mat) -> bool {
-        bool anyPending = false;
-        if (auto* assets = ServiceLocator::TryGet<AssetManager>())
-        {
-            anyPending |= resolveTexture(assets, mat.AlbedoPath, mat.AlbedoMap);
-            anyPending |= resolveTexture(assets, mat.NormalPath, mat.NormalMap);
-            anyPending |= resolveTexture(assets, mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
-            anyPending |= resolveTexture(assets, mat.EmissivePath, mat.EmissiveMap);
-        }
-        return anyPending;
-    };
+	static void ResolvePrimitive(entt::registry& reg, entt::entity e)
+	{
+		auto& prim = reg.get<PrimitiveComponent>(e);
+		auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(e);
 
-    auto& regenerated = rt.Asset->GetMaterials();
-    bool anyPending = false;
+		const char* typeMarker = nullptr;
+		switch (prim.Type)
+		{
+		case PrimitiveType::Cube:
+			typeMarker = ":cube:";
+			break;
+		case PrimitiveType::Sphere:
+			typeMarker = ":sphere:";
+			break;
+		case PrimitiveType::Plane:
+			typeMarker = ":plane:";
+			break;
+		case PrimitiveType::Cylinder:
+			typeMarker = ":cylinder:";
+			break;
+		case PrimitiveType::Cone:
+			typeMarker = ":cone:";
+			break;
+		case PrimitiveType::Torus:
+			typeMarker = ":torus:";
+			break;
+		case PrimitiveType::Knot:
+			typeMarker = ":knot:";
+			break;
+		case PrimitiveType::Hemisphere:
+			typeMarker = ":hemisphere:";
+			break;
+		case PrimitiveType::None:
+		default:
+			rt.Dirty = false;
+			return;
+		}
 
-    if (!editedMaterials.empty())
-    {
-        for (size_t i = 0; i < regenerated.size() && i < editedMaterials.size(); ++i)
-        {
-            anyPending |= applyMaterialTextures(editedMaterials[i]);
-            regenerated[i] = editedMaterials[i];
-        }
-        if (!regenerated.empty())
-        {
-            prim.SetMaterial(regenerated[0]);
-        }
-    }
-    else
-    {
-        if (!regenerated.empty())
-        {
-            Material mat = prim.GetMaterial();
-            anyPending = applyMaterialTextures(mat);
-            regenerated[0] = mat;
-        }
-    }
+		ProceduralParameters params;
+		params.Radius = prim.Radius;
+		params.InnerRadius = prim.InnerRadius;
+		params.Height = prim.Height;
+		params.Slices = prim.Slices;
+		params.Stacks = prim.Stacks;
+		params.Dimensions = prim.Dimensions;
 
-    if (anyPending)
-    {
-        rt.TexturesPending = true;
-        rt.Dirty = false;
-        return;
-    }
+		PendingModelData data = GeometryGenerator::GeneratePrimitivePendingData(typeMarker, params);
+		if (!data.isValid)
+		{
+			rt.Dirty = false;
+			return;
+		}
 
-    rt.TexturesPending = false;
-    rt.Dirty = false;
-}
+		bool hadAsset = (rt.Asset != nullptr);
+		std::vector<Material> editedMaterials;
+		if (hadAsset)
+		{
+			editedMaterials = rt.Asset->GetMaterials();
+		}
 
-static void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e)
-{
-    auto* rt = reg.try_get<PrimitiveRuntimeState>(e);
-    auto* prim = reg.try_get<PrimitiveComponent>(e);
-    if (!rt || !rt->Asset || !prim)
-    {
-        return;
-    }
+		if (!rt.Asset)
+		{
+			rt.Asset = std::make_shared<ModelAsset>();
+		}
+		rt.Asset->SetPendingData(std::move(data));
+		rt.Asset->OnLoaded();
 
-    auto& mats = rt->Asset->GetMaterials();
-    if (mats.empty())
-    {
-        return;
-    }
+		auto applyMaterialTextures = [&](Material& mat) -> bool {
+			bool anyPending = false;
+			if (auto* assets = ServiceLocator::TryGet<AssetManager>())
+			{
+				anyPending |= ResolveTexture(assets, mat.AlbedoPath, mat.AlbedoMap);
+				anyPending |= ResolveTexture(assets, mat.NormalPath, mat.NormalMap);
+				anyPending |= ResolveTexture(assets, mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
+				anyPending |= ResolveTexture(assets, mat.EmissivePath, mat.EmissiveMap);
+			}
+			return anyPending;
+		};
 
-    auto* assets = ServiceLocator::TryGet<AssetManager>();
-    if (!assets)
-    {
-        return;
-    }
+		auto& regenerated = rt.Asset->GetMaterials();
+		bool anyPending = false;
 
-    Material mat = mats[0];
-    bool anyPending = false;
+		if (!editedMaterials.empty())
+		{
+			for (size_t i = 0; i < regenerated.size() && i < editedMaterials.size(); ++i)
+			{
+				anyPending |= applyMaterialTextures(editedMaterials[i]);
+				regenerated[i] = editedMaterials[i];
+			}
+			if (!regenerated.empty())
+			{
+				prim.SetMaterial(regenerated[0]);
+			}
+		}
+		else
+		{
+			if (!regenerated.empty())
+			{
+				Material mat = prim.GetMaterial();
+				anyPending = applyMaterialTextures(mat);
+				regenerated[0] = mat;
+			}
+		}
 
-    auto resolveTexture = [&](const std::string& path, std::shared_ptr<Texture>& outTex) -> bool {
-        if (path.empty())
-        {
-            return false;
-        }
-        assets->LoadAsset(path, TextureAsset::GetStaticType());
-        auto texAsset = assets->Get<TextureAsset>(path);
-        if (texAsset && texAsset->IsReady())
-        {
-            outTex = texAsset->GetTexture();
-            return false;
-        }
-        return true;
-    };
+		if (anyPending)
+		{
+			rt.TexturesPending = true;
+			rt.Dirty = false;
+			return;
+		}
 
-    anyPending |= resolveTexture(mat.AlbedoPath, mat.AlbedoMap);
-    anyPending |= resolveTexture(mat.NormalPath, mat.NormalMap);
-    anyPending |= resolveTexture(mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
-    anyPending |= resolveTexture(mat.EmissivePath, mat.EmissiveMap);
+		rt.TexturesPending = false;
+		rt.Dirty = false;
+	}
 
-    mats[0] = mat;
-    rt->TexturesPending = anyPending;
-}
+	static void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e)
+	{
+		auto* rt = reg.try_get<PrimitiveRuntimeState>(e);
+		auto* prim = reg.try_get<PrimitiveComponent>(e);
+		if (!rt || !rt->Asset || !prim)
+		{
+			return;
+		}
 
-void RegisterObservers(entt::registry& reg)
-{
-    reg.on_construct<SpriteComponent>().connect<&ResolveSprite>();
-    reg.on_update<SpriteComponent>().connect<&ResolveSprite>();
+		auto& mats = rt->Asset->GetMaterials();
+		if (mats.empty())
+		{
+			return;
+		}
 
-    reg.on_construct<ShaderComponent>().connect<&ResolveShader>();
-    reg.on_update<ShaderComponent>().connect<&ResolveShader>();
+		auto* assets = ServiceLocator::TryGet<AssetManager>();
+		if (!assets)
+		{
+			return;
+		}
 
-    reg.on_construct<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
-    reg.on_update<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
-}
+		Material mat = mats[0];
+		bool anyPending = false;
 
-void Update(entt::registry& reg)
-{
-    CH_PROFILE_FUNCTION();
+		anyPending |= ResolveTexture(assets, mat.AlbedoPath, mat.AlbedoMap);
+		anyPending |= ResolveTexture(assets, mat.NormalPath, mat.NormalMap);
+		anyPending |= ResolveTexture(assets, mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
+		anyPending |= ResolveTexture(assets, mat.EmissivePath, mat.EmissiveMap);
 
-    reg.view<SpriteComponent>().each([&](auto entity, auto& sprite) {
-        if (sprite.TextureHandle == 0 && (sprite.TextureUUID != 0 || !sprite.TexturePath.empty()))
-        {
-            ResolveSprite(reg, entity);
-        }
-    });
+		mats[0] = mat;
+		rt->TexturesPending = anyPending;
+	}
 
-    reg.view<ShaderComponent>().each([&](auto entity, auto& shader) {
-        if (shader.ShaderHandle == 0 && (shader.ShaderUUID != 0 || !shader.ShaderPath.empty()))
-        {
-            ResolveShader(reg, entity);
-        }
-    });
+	void RegisterObservers(entt::registry& reg)
+	{
+		reg.on_construct<SpriteComponent>().connect<&ResolveSprite>();
+		reg.on_update<SpriteComponent>().connect<&ResolveSprite>();
 
-    reg.view<ModelComponent>().each([&](auto entity, auto& model) {
-        if (model.ModelHandle == 0 && (model.ModelUUID != 0 || !model.ModelPath.empty()))
-        {
-            ResolveModel(reg, entity);
-        }
-    });
+		reg.on_construct<ShaderComponent>().connect<&ResolveShader>();
+		reg.on_update<ShaderComponent>().connect<&ResolveShader>();
 
-    reg.view<PrimitiveComponent>().each([&](auto entity, auto& prim) {
-        auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(entity);
-        if (prim.Type != PrimitiveType::None && (!rt.Asset || rt.Dirty))
-        {
-            ResolvePrimitive(reg, entity);
-        }
-        else if (rt.TexturesPending && rt.Asset)
-        {
-            ApplyPrimitiveTextures(reg, entity);
-        }
-    });
-}
+		reg.on_construct<ModelComponent>().connect<&ResolveModel>();
+		reg.on_update<ModelComponent>().connect<&ResolveModel>();
+
+		reg.on_construct<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
+		reg.on_update<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
+	}
+
+	void Update(entt::registry& reg)
+	{
+		CH_PROFILE_FUNCTION();
+
+		reg.view<SpriteComponent>().each([&](auto entity, auto& sprite) {
+			if (sprite.TextureHandle == AssetHandle(0) && (sprite.TextureUUID != 0 || !sprite.TexturePath.empty()))
+			{
+				ResolveSprite(reg, entity);
+			}
+		});
+
+		reg.view<ShaderComponent>().each([&](auto entity, auto& shader) {
+			if (shader.ShaderHandle == AssetHandle(0) && (shader.ShaderUUID != 0 || !shader.ShaderPath.empty()))
+			{
+				ResolveShader(reg, entity);
+			}
+		});
+
+		reg.view<ModelComponent>().each([&](auto entity, auto& model) {
+			if (model.ModelHandle == AssetHandle(0) && (model.ModelUUID != 0 || !model.ModelPath.empty()))
+			{
+				ResolveModel(reg, entity);
+			}
+		});
+
+		reg.view<PrimitiveComponent>().each([&](auto entity, auto& prim) {
+			auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(entity);
+			if (prim.Type != PrimitiveType::None && (!rt.Asset || rt.Dirty))
+			{
+				ResolvePrimitive(reg, entity);
+			}
+			else if (rt.TexturesPending && rt.Asset)
+			{
+				ApplyPrimitiveTextures(reg, entity);
+			}
+		});
+	}
 
 } // namespace Chained::AssetResolutionSystem

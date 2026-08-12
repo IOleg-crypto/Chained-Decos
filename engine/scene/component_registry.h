@@ -1,4 +1,6 @@
 #ifndef CH_COMPONENT_REGISTRY_H
+// std::remove/erase used in RegisterReflective
+#include <algorithm>
 #define CH_COMPONENT_REGISTRY_H
 
 #include "engine/scene/entity.h"
@@ -148,6 +150,10 @@ namespace Chained
 		/**
 		 * @brief Registers a component that implements 'void Reflect(Properties& props)'.
 		 * Automatically generates UI and Serialization handlers.
+		 *
+		 * SerializationKey strips spaces from the display name before appending "Component"
+		 * so that multi-word names like "Rigid Body" produce the correct YAML key
+		 * "RigidBodyComponent" rather than "Rigid BodyComponent".
 		 */
 		template <typename T>
 		static void RegisterReflective(const std::string& name, const char* icon = nullptr,
@@ -155,7 +161,10 @@ namespace Chained
 		{
 			ComponentMetadata metadata;
 			metadata.Name = name;
-			metadata.SerializationKey = name + "Component";
+			// Strip spaces: "Rigid Body" -> "RigidBodyComponent"
+			std::string keyBase = name;
+			keyBase.erase(std::remove(keyBase.begin(), keyBase.end(), ' '), keyBase.end());
+			metadata.SerializationKey = keyBase + "Component";
 			metadata.Icon = icon;
 			metadata.Category = category;
 
@@ -170,7 +179,7 @@ namespace Chained
 				std::vector<uint64_t> ids;
 				for (auto ent : s->GetRegistry().view<T>())
 				{
-					ids.push_back((uint64_t)(uint32_t)ent);
+					ids.push_back(static_cast<uint64_t>(ent));
 				}
 				return ids;
 			};

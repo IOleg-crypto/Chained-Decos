@@ -7,31 +7,33 @@
 
 namespace Chained
 {
-struct SpriteComponent
-{
-    AssetHandle TextureHandle = 0;
-    std::string TexturePath;
-    uint64_t TextureUUID = 0;
-    Color Tint = Color::White();
-    bool FlipX = false;
-    bool FlipY = false;
-    int ZOrder = 0;
+	struct SpriteComponent
+	{
+		AssetHandle TextureHandle = 0;
+		std::string TexturePath;
+		uint64_t TextureUUID = 0;
+		Color Tint = Color::White();
+		bool FlipX = false;
+		bool FlipY = false;
+		int ZOrder = 0;
 
-    static const char* GetStaticName()
-    {
-        return "SpriteComponent";
-    }
+		static const char* GetStaticName()
+		{
+			return "SpriteComponent";
+		}
 
-    struct UI
-    {
-        UIMeta TexturePath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".png,.jpg,.jpeg,.tga,.bmp"};
-        UIMeta TextureUUID = {.ReadOnly = true};
-        UIMeta Tint = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
-        UIMeta ZOrder = {.Speed = 1.0f};
-    };
-};
+		struct UI
+		{
+			UIMeta TextureHandle = {.ReadOnly = true, .Transient = true};
+			UIMeta TexturePath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
+								  .Extensions = ".png,.jpg,.jpeg,.tga,.bmp"};
+			UIMeta TextureUUID = {.ReadOnly = true};
+			UIMeta Tint = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
+			UIMeta ZOrder = {.Speed = 1.0f};
+		};
+	};
 
-CH_MARK_RFL(SpriteComponent);
+	CH_MARK_RFL(SpriteComponent);
 } // namespace Chained
 
 #endif // CH_SPRITE_COMPONENT_H

@@ -1,17 +1,17 @@
 Material:
-  Name: Material.003
+  Name: Material
   AlbedoColor:
-    - 0.024316106
-    - 0.800000072
-    - 0.0211679917
+    - 0.219689921
+    - 0.256325692
+    - 0.532439649
     - 1
   EmissiveColor:
-    - 0
-    - 0
-    - 0
+    - 0.0356332287
+    - 0.362543643
+    - 0.410963953
     - 1
   EmissiveIntensity: 0
-  Metalness: 0
-  Roughness: 0.147239268
+  Metalness: 0.337423325
+  Roughness: 0
   Transparent: false
   Alpha: 1

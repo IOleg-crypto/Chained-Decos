@@ -207,7 +207,6 @@ namespace Chained
                 }
                 // They need OnStart on the NEXT frame
                 s_ScriptsNeedingStart.AddRange(batch);
-                return; // wait one frame before OnStart/OnUpdate
             }
 
             // 2. OnStart for scripts that got OnCreate last frame

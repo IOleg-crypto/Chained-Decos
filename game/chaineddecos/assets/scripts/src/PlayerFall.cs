@@ -22,15 +22,18 @@ public class PlayerFall : Script
         m_Intensity = 0.0f;
 
         // Reset shaders state
-        ulong[] shaderEntities = Entity.FindAllWithComponent<ShaderComponent>();
-        foreach (ulong id in shaderEntities)
+        ulong[]? shaderEntities = Entity.FindAllWithComponent<ShaderComponent>();
+        if (shaderEntities != null)
         {
-            Entity e = new Entity(id);
-            var shader = e.GetComponent<ShaderComponent>();
-            if (shader != null)
+            foreach (ulong id in shaderEntities)
             {
-                shader.Enabled = false;
-                shader.SetFloat("uIntensity", 0.0f);
+                Entity e = new Entity(id);
+                var shader = e.GetComponent<ShaderComponent>();
+                if (shader != null)
+                {
+                    shader.Enabled = false;
+                    shader.SetFloat("uIntensity", 0.0f);
+                }
             }
         }
 

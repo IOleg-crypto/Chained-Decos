@@ -7,16 +7,41 @@ namespace ChainedDecos.Scripts
     {
         private bool IsPlayerInside = false;
 
-        public override void OnUpdate(float deltaTime)
+    public override void OnUpdate(float deltaTime)
+    {
+        // Only the host runs respawn logic — clients rely on authoritative state
+        if (Network.IsClient)
+            return;
+
+        // Find the local player entity (by ownership in network, or first PlayerComponent)
+        ulong playerId = 0;
+        if (Network.IsConnected)
+        {
+            ulong[] owned = Entity.FindAllWithComponent<NetworkIdentityComponent>();
+            foreach (ulong id in owned)
+            {
+                Entity e = new Entity(id);
+                var netId = e.GetComponent<NetworkIdentityComponent>();
+                if (netId != null && netId.IsOwner)
+                {
+                    playerId = id;
+                    break;
+                }
+            }
+        }
+
+        if (playerId == 0)
         {
             ulong[] players = Entity.FindAllWithComponent<PlayerComponent>();
             if (players.Length == 0)
                 return;
+            playerId = players[0];
+        }
 
-            Entity player = new Entity(players[0]);
-            TransformComponent? playerTransform = player.GetComponent<TransformComponent>();
-            if (playerTransform == null)
-                return;
+        Entity player = new Entity(playerId);
+        TransformComponent? playerTransform = player.GetComponent<TransformComponent>();
+        if (playerTransform == null)
+            return;
 
             ulong[] spawnEntities = Entity.FindAllWithComponent<SpawnComponent>();
             if (spawnEntities.Length == 0)
@@ -55,10 +80,10 @@ namespace ChainedDecos.Scripts
                 }
             }
 
-            if (playerTransform.Translation.Y < -50.0f || Input.IsKeyPressed(Key.F))
-            {
-                Respawn(player, spawnEntities);
-            }
+            // if (playerTransform.Translation.Y < -50.0f || Input.IsKeyPressed(Key.F))
+            // {
+            //     Respawn(player, spawnEntities);
+            // }
         }
 
         private void Respawn(Entity player, ulong[] spawnEntities)

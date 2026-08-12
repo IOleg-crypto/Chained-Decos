@@ -11,6 +11,8 @@ public class CameraController : Script
     public float Yaw = 0.0f;
     public string TargetTag = "Player";
 
+    private ulong _localPlayerId = 0;
+
     public override void OnCreate()
     {
         Entity? camEntity = Scene.GetMainCamera();
@@ -35,8 +37,12 @@ public class CameraController : Script
         }
 
         camera.IsOrbitCamera = true;
-        camera.TargetEntityTag = "Player";
+        camera.TargetEntityTag = TargetTag;
+        
+        // Initialize camera orbit with reasonable script defaults (Pitch=25, Distance=10)
         camera.SetOrbit(Yaw, Pitch, Distance);
+
+        _localPlayerId = FindLocalPlayerId();
     }
 
     public override void OnUpdate(float deltaTime)
@@ -49,7 +55,21 @@ public class CameraController : Script
         if (camera == null)
             return;
 
-        Entity? player = Scene.FindEntityByTag("Player");
+        // Find the player entity to follow.
+        // Networked: use the entity we own (IsOwner). Offline: fall back to tag.
+        Entity? player = null;
+
+        if (Network.IsConnected)
+        {
+            _localPlayerId = FindLocalPlayerId();
+
+            if (_localPlayerId != 0)
+                player = new Entity(_localPlayerId);
+        }
+
+        if (player == null)
+            player = Scene.FindEntityByTag(TargetTag);
+
         if (player == null)
             return;
 
@@ -61,16 +81,62 @@ public class CameraController : Script
             Vector3 mouseDelta = Input.MouseDelta;
             yaw -= mouseDelta.X * LookSensitivity;
             pitch -= mouseDelta.Y * LookSensitivity;
-
-            // Clamp pitch
-            pitch = Mathf.Clamp(pitch, -10.0f, 85.0f);
         }
+
+        // Always clamp pitch & distance every frame to keep camera in a sane 3rd person view
+        pitch = Mathf.Clamp(pitch, -10.0f, 85.0f);
 
         float wheel = Input.GetMouseWheelMove();
         distance -= wheel * 2.0f;
-        distance = Mathf.Clamp(distance, 0.0f, 40.0f);
+        distance = Mathf.Clamp(distance, 2.0f, 30.0f);
 
         camera.SetOrbit(yaw, pitch, distance);
+    }
+    // public override void OnUpdate(float deltaTime)
+    // {
+    //     Entity? camEntity = Scene.GetMainCamera();
+    //     if (camEntity == null)
+    //         return;
+
+    //     CameraComponent? camera = camEntity.GetComponent<CameraComponent>();
+    //     if (camera == null)
+    //         return;
+
+    //     Entity? player = Scene.FindEntityByTag("Player");
+    //     if (player == null)
+    //         return;
+
+    //     camera.GetOrbit(out float yaw, out float pitch, out float distance);
+
+    //     // Handle Input (Orbit & Zoom)
+    //     if (Input.IsMouseButtonDown(MouseButton.Right))
+    //     {
+    //         Vector3 mouseDelta = Input.MouseDelta;
+    //         yaw -= mouseDelta.X * LookSensitivity;
+    //         pitch -= mouseDelta.Y * LookSensitivity;
+
+    //         // Clamp pitch
+    //         pitch = Mathf.Clamp(pitch, -10.0f, 85.0f);
+    //     }
+
+    //     float wheel = Input.GetMouseWheelMove();
+    //     distance -= wheel * 2.0f;
+    //     distance = Mathf.Clamp(distance, 0.0f, 40.0f);
+
+    //     camera.SetOrbit(yaw, pitch, distance);
+    // }
+
+    private static ulong FindLocalPlayerId()
+    {
+        var ids = Entity.FindAllWithComponent<NetworkIdentityComponent>();
+        foreach (var id in ids)
+        {
+            var entity = new Entity(id);
+            var netId = entity.GetComponent<NetworkIdentityComponent>();
+            if (netId != null && netId.IsOwner)
+                return id;
+        }
+        return 0;
     }
 }
 }

@@ -165,7 +165,7 @@ namespace Chained
 			return;
 		}
 
-		const std::filesystem::path assetDir = Project::GetAssetDirectory();
+		const std::filesystem::path assetDir = Project::GetActive()->GetAssetDirectory();
 		const std::array<std::filesystem::path, 2> candidateDirs = {
 			assetDir / "fonts",
 			assetDir / "font",

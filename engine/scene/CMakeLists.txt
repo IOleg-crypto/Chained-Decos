@@ -4,7 +4,6 @@ add_library(engine_scene_core STATIC
     scene.h
     scene_events.h scene_settings.h scene_state.h
     camera.cpp camera.h
-    animation_graph.h
     components.h
     components/animation_component.h
     components/audio_component.h
@@ -61,6 +60,11 @@ add_library(engine_scene STATIC
     systems/scene_transition_system.cpp
     systems/network_system.h
     systems/network_system.cpp
+    systems/nametag_system.h
+    systems/nametag_system.cpp
+    systems/system_manager.h
+    systems/system_manager.cpp
+    components/scripting_components.cpp
 )
 
 target_include_directories(engine_scene PUBLIC

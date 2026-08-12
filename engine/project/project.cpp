@@ -8,20 +8,15 @@
 #include "yaml-cpp/yaml.h"
 #include <fstream>
 #include <sstream>
+#include <mutex>
 
 namespace Chained
 {
 
 	std::shared_ptr<Project> Project::s_ActiveProject = nullptr;
+	std::mutex Project::s_Mutex;
 
-	Project::~Project()
-	{
-		if (s_ActiveProject.get() == this)
-		{
-			CH_CORE_WARN("Project destroyed while still active - calling SetActive(nullptr)");
-			s_ActiveProject = nullptr;
-		}
-	}
+	Project::~Project() = default;
 
 	std::shared_ptr<Project> Project::Load(const std::filesystem::path& filepath)
 	{
@@ -222,53 +217,39 @@ namespace Chained
 
 	std::shared_ptr<Project> Project::GetActive()
 	{
+		std::lock_guard lock(s_Mutex);
 		return s_ActiveProject;
 	}
 
 	void Project::SetActive(std::shared_ptr<Project> project)
 	{
+		std::lock_guard lock(s_Mutex);
 		s_ActiveProject = std::move(project);
 	}
 
-	std::filesystem::path Project::GetAssetDirectory()
+	std::filesystem::path Project::GetAssetDirectory() const
 	{
-		if (!s_ActiveProject)
-		{
-			return {};
-		}
-		return s_ActiveProject->m_Config.ProjectDirectory / s_ActiveProject->m_Config.AssetDirectory;
+		return m_Config.ProjectDirectory / m_Config.AssetDirectory;
 	}
 
-	std::filesystem::path Project::GetProjectDirectory()
+	std::filesystem::path Project::GetProjectDirectory() const
 	{
-		return s_ActiveProject ? s_ActiveProject->m_Config.ProjectDirectory : std::filesystem::path();
+		return m_Config.ProjectDirectory;
 	}
 
-	std::filesystem::path Project::GetAssetPath(const std::filesystem::path& relative)
+	std::filesystem::path Project::GetAssetPath(const std::filesystem::path& relative) const
 	{
-		if (!s_ActiveProject)
-		{
-			return relative;
-		}
-		return s_ActiveProject->m_Config.ProjectDirectory / s_ActiveProject->m_Config.AssetDirectory / relative;
+		return m_Config.ProjectDirectory / m_Config.AssetDirectory / relative;
 	}
 
-	std::string Project::GetRelativePath(const std::filesystem::path& path)
+	std::string Project::GetRelativePath(const std::filesystem::path& path) const
 	{
-		if (!s_ActiveProject)
-		{
-			return path.generic_string();
-		}
-		return s_ActiveProject->GetRelativePathInternal(path);
+		return GetRelativePathInternal(path);
 	}
 
-	std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path)
+	std::filesystem::path Project::GetAbsolutePath(const std::filesystem::path& path) const
 	{
-		if (!s_ActiveProject)
-		{
-			return path;
-		}
-		return s_ActiveProject->GetAbsolutePathInternal(path);
+		return GetAbsolutePathInternal(path);
 	}
 
 	std::vector<std::string> Project::GetAvailableScenes() const

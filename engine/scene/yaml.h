@@ -1,7 +1,6 @@
 #ifndef CH_YAML_UTILS_H
 #define CH_YAML_UTILS_H
 
-#include "engine/app/application.h"
 #include "engine/common/color.h"
 #include "engine/scene/components.h"
 #include "yaml-cpp/yaml.h"

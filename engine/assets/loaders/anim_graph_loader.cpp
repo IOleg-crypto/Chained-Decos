@@ -34,14 +34,7 @@ namespace Chained
 
 			if (auto* am = ServiceLocator::TryGet<AssetManager>())
 			{
-				if (am->IsPacked())
-				{
-					auto data = am->ReadAssetData(resolvedPath);
-					if (!data.empty())
-					{
-						content.assign(data.begin(), data.end());
-					}
-				}
+				content = am->ReadText(resolvedPath);
 			}
 
 			if (content.empty())

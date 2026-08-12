@@ -40,12 +40,22 @@ add_library(engine_graphics STATIC
     pipeline/renderer.h
     pipeline/renderer.cpp
     pipeline/renderer_data.h
+    pipeline/lighting_manager.h
+    pipeline/lighting_manager.cpp
+    pipeline/geometry_factory.h
+    pipeline/geometry_factory.cpp
+    pipeline/entity_collector.h
+    pipeline/entity_collector.cpp
+    pipeline/material_manager.h
+    pipeline/material_manager.cpp
     pipeline/render_pass.h
     pipeline/scene_renderer.h
     pipeline/scene_renderer.cpp
     pipeline/shader_storage.h
     pipeline/shader_storage.cpp
     pipeline/shader_uniform_utils.h
+    text_renderer.h
+    text_renderer.cpp
     pipeline/passes/composite_pass.h
     pipeline/passes/composite_pass.cpp
     pipeline/passes/geometry_pass.h

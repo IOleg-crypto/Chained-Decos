@@ -84,9 +84,9 @@ namespace Chained
 		{
 			return m_EntityHandle;
 		}
-		operator uint32_t() const
+		explicit operator uint32_t() const
 		{
-			return (uint32_t)m_EntityHandle;
+			return static_cast<uint32_t>(m_EntityHandle);
 		}
 
 		bool operator==(const Entity& other) const

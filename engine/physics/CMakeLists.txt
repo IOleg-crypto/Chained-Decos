@@ -18,7 +18,6 @@ target_link_libraries(engine_physics PUBLIC
     engine_project
     engine_external_entt
     glm
-    assimp
     Jolt
 )
 

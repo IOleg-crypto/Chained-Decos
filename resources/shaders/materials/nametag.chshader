@@ -1,0 +1,13 @@
+# Nametag Billboard Shader
+VertexShader: nametag.vs
+FragmentShader: nametag.fs
+
+Uniforms:
+  - projection
+  - view
+  - modelPosition
+  - size
+  - textTexture
+  - textColor
+  - backgroundColor
+  - useBackground

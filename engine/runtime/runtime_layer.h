@@ -76,8 +76,6 @@ namespace Chained
 		struct CameraConfig
 		{
 			Camera3D Camera;
-			float NearClip = 0.01f;
-			float FarClip = 10000.0f;
 		};
 		std::optional<CameraConfig> GetCameraConfig();
 		glm::vec4 CalculateBackgroundColor() const;
