@@ -5,7 +5,9 @@
 #include "upnp_port_mapper.h"
 #include "engine/core/service.h"
 #include <steam/steamnetworkingsockets.h>
+#include <atomic>
 #include <functional>
+#include <future>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -17,7 +19,8 @@ namespace Chained
 	{
 		Offline = 0,
 		Host = 1,
-		Client = 2
+		Client = 2,
+		HostAndClient = 3 // Same role as Host, but also acts as a client connecting to self
 	};
 
 	class Network : public Service
@@ -116,11 +119,11 @@ namespace Chained
 		}
 		bool IsHost() const
 		{
-			return m_Role == Role::Host;
+			return m_Role == Role::Host || m_Role == Role::HostAndClient;
 		}
 		bool IsClient() const
 		{
-			return m_Role == Role::Client;
+			return m_Role == Role::Client || m_Role == Role::HostAndClient;
 		}
 		bool IsConnected() const
 		{
@@ -160,7 +163,9 @@ namespace Chained
 
 		// Cached public IP (fetched asynchronously after HostGame).
 		std::string m_CachedPublicAddress;
-		bool m_PublicAddressFetched = false;
+		std::future<std::string> m_PublicAddressFuture;
+		std::atomic<bool> m_PublicAddressFetched{false};
+		std::atomic<bool> m_ShuttingDown{false};
 
 		std::vector<HSteamNetConnection> m_Clients;
 
@@ -181,10 +186,9 @@ namespace Chained
 		static constexpr uint64_t HostNetworkID = 1;
 		uint64_t m_NextNetworkID = 2;
 
-		// The GNS library is process-wide, so instances are tracked as a list and the
-		// library itself is refcounted across them.
-		static std::vector<Network*> s_Instances;
-		static int s_LibRefCount;
+		// Single owner of the process-wide GNS library. Only one Network instance
+		// exists at a time (registered via ServiceLocator).
+		static Network* s_Instance;
 
 		UpnpPortMapper m_UpnpMapper;
 	};

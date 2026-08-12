@@ -24,7 +24,6 @@ namespace Chained
 																   : false;
 	}
 
-	static thread_local Coral::UCString s_ButtonLabelBuf;
 	const Coral::UCChar* ButtonControl_GetLabel(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
@@ -33,8 +32,7 @@ namespace Chained
 			auto& widget = entity.GetComponent<UIControlComponent>();
 			if (std::holds_alternative<ButtonData>(widget.Data))
 			{
-				s_ButtonLabelBuf = ToWide(std::get<ButtonData>(widget.Data).Label);
-				return s_ButtonLabelBuf.c_str();
+				return GlueStringPool::ReturnString(std::get<ButtonData>(widget.Data).Label);
 			}
 		}
 		return nullptr;
@@ -65,7 +63,6 @@ namespace Chained
 		}
 	}
 
-	static thread_local Coral::UCString s_LabelTextBuf;
 	const Coral::UCChar* LabelControl_GetText(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
@@ -74,8 +71,7 @@ namespace Chained
 			auto& widget = entity.GetComponent<UIControlComponent>();
 			if (std::holds_alternative<LabelData>(widget.Data))
 			{
-				s_LabelTextBuf = ToWide(std::get<LabelData>(widget.Data).Text);
-				return s_LabelTextBuf.c_str();
+				return GlueStringPool::ReturnString(std::get<LabelData>(widget.Data).Text);
 			}
 		}
 		return nullptr;
@@ -93,7 +89,6 @@ namespace Chained
 		}
 	}
 
-	static thread_local Coral::UCString s_SliderLabelBuf;
 	const Coral::UCChar* SliderControl_GetLabel(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
@@ -102,8 +97,7 @@ namespace Chained
 			auto& widget = entity.GetComponent<UIControlComponent>();
 			if (std::holds_alternative<SliderData>(widget.Data))
 			{
-				s_SliderLabelBuf = ToWide(std::get<SliderData>(widget.Data).Label);
-				return s_SliderLabelBuf.c_str();
+				return GlueStringPool::ReturnString(std::get<SliderData>(widget.Data).Label);
 			}
 		}
 		return nullptr;
@@ -221,7 +215,6 @@ namespace Chained
 			}
 		}
 	}
-	static thread_local Coral::UCString s_ProgressBarOverlayBuf;
 	const Coral::UCChar* ProgressBarControl_GetOverlayText(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
@@ -230,8 +223,7 @@ namespace Chained
 			auto& widget = entity.GetComponent<UIControlComponent>();
 			if (std::holds_alternative<ProgressBarData>(widget.Data))
 			{
-				s_ProgressBarOverlayBuf = ToWide(std::get<ProgressBarData>(widget.Data).OverlayText);
-				return s_ProgressBarOverlayBuf.c_str();
+				return GlueStringPool::ReturnString(std::get<ProgressBarData>(widget.Data).OverlayText);
 			}
 		}
 		return nullptr;
@@ -289,7 +281,6 @@ namespace Chained
 		}
 	}
 
-	static thread_local Coral::UCString s_TextColorBuf;
 	const Coral::UCChar* WidgetControl_GetTextColor(uint64_t entityID)
 	{
 		// Returns "R G B A" as space-separated integers
@@ -299,8 +290,7 @@ namespace Chained
 			auto& c = entity.GetComponent<UIControlComponent>().TextStyle.TextColor;
 			std::string s =
 				std::to_string(c.r) + " " + std::to_string(c.g) + " " + std::to_string(c.b) + " " + std::to_string(c.a);
-			s_TextColorBuf = ToWide(s);
-			return s_TextColorBuf.c_str();
+			return GlueStringPool::ReturnString(s);
 		}
 		return nullptr;
 	}
@@ -394,8 +384,6 @@ namespace Chained
 		}
 		return 0;
 	}
-	static thread_local Coral::UCString s_UITagBuffer;
-
 	const Coral::UCChar* ComboBoxControl_GetItem(uint64_t entityID, int index)
 	{
 		Entity entity = GetEntity(entityID);
@@ -407,15 +395,12 @@ namespace Chained
 				auto& combo = std::get<ComboBoxData>(widget.Data);
 				if (index >= 0 && index < (int)combo.Items.size())
 				{
-					s_UITagBuffer = ToWide(combo.Items[index]);
-					return s_UITagBuffer.c_str();
+					return GlueStringPool::ReturnString(combo.Items[index]);
 				}
 			}
 		}
 		return nullptr;
 	}
-	static thread_local Coral::UCString s_InputTextBuffer;
-
 	const Coral::UCChar* InputTextControl_GetText(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
@@ -430,8 +415,7 @@ namespace Chained
 				{
 					input.Text = input.InputBuffer.data();
 				}
-				s_InputTextBuffer = ToWide(input.Text);
-				return s_InputTextBuffer.c_str();
+				return GlueStringPool::ReturnString(input.Text);
 			}
 		}
 		return nullptr;

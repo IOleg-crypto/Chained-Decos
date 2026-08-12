@@ -20,6 +20,7 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
+#include "engine/scene/systems/nametag_system.h"
 #include "scripting/scene_scripting_manager.h"
 #include "scripting/scriptengine.h"
 #include <algorithm>
@@ -150,6 +151,12 @@ namespace Chained
 			}
 
 			m_Scene->OnUpdateRuntime(ts);
+
+			if (!m_Scene->GetPendingScenePath().empty())
+			{
+				m_PendingScenePath = m_Scene->GetPendingScenePath();
+				m_Scene->ClearPendingScenePath();
+			}
 		}
 
 		if (m_LoadState.BoostUploadsTimer > 0.0f)
@@ -186,8 +193,7 @@ namespace Chained
 
 			m_HDRFramebuffer->Bind();
 			m_Renderer->Clear(bgColor);
-			m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camConfig->Camera,
-										 camConfig->NearClip, camConfig->FarClip, options);
+			m_SceneRenderer->RenderScene(m_Scene->GetRegistry(), m_Scene->GetSettings(), camConfig->Camera, options);
 			m_HDRFramebuffer->Unbind();
 			m_HDRFramebuffer->Resolve();
 
@@ -240,6 +246,15 @@ namespace Chained
 					ImGui::EndChild();
 				}
 			}
+
+			if (IsRunning())
+			{
+				if (auto* ren = ServiceLocator::TryGet<Renderer>())
+				{
+					NametagSystem::DrawNametags(m_Scene.get(), ren);
+				}
+			}
+
 			ImGui::End();
 			ImGui::PopStyleVar(2);
 
@@ -266,11 +281,6 @@ namespace Chained
 			}
 			return false;
 		});
-
-		dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
-			m_PendingScenePath = ev.GetPath();
-			return true;
-		});
 	}
 
 	//-----------------------------------------------------------------------------
@@ -288,7 +298,7 @@ namespace Chained
 		std::filesystem::path scenePath = normalizedPath;
 		if (scenePath.is_relative() && Project::GetActive())
 		{
-			scenePath = Project::GetAssetPath(scenePath);
+			scenePath = Project::GetActive()->GetAssetPath(scenePath);
 		}
 
 		if (!scenePath.is_absolute())
@@ -402,10 +412,10 @@ namespace Chained
 
 		CH_CORE_INFO("RuntimeSystem: Project loaded: {}", project->GetName());
 		CH_CORE_INFO("RuntimeSystem: Project Directory: {}", project->GetConfig().ProjectDirectory.string());
-		CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", Project::GetAssetDirectory().string());
+		CH_CORE_INFO("RuntimeSystem: Asset Directory: {}", project->GetAssetDirectory().string());
 
 		m_AssetManager->SetProjectDirectory(project->GetConfig().ProjectDirectory);
-		m_AssetManager->SetAssetDirectory(Project::GetAssetDirectory());
+		m_AssetManager->SetAssetDirectory(project->GetAssetDirectory());
 
 #ifdef CH_SOURCE_GAME_DIR
 		{
@@ -497,7 +507,7 @@ namespace Chained
 		}
 
 		// Try resolving via project path first (disk)
-		std::string resolvedIconPath = Project::GetAbsolutePath(config.IconPath).string();
+		std::string resolvedIconPath = project->GetAbsolutePath(config.IconPath).string();
 		if (std::filesystem::exists(resolvedIconPath))
 		{
 			CH_CORE_INFO("RuntimeSystem: Setting window icon: {}", resolvedIconPath);
@@ -558,7 +568,7 @@ namespace Chained
 
 		if (sceneToLoad.empty())
 		{
-			std::filesystem::path scenesDir = Project::GetAssetDirectory() / "scenes";
+			std::filesystem::path scenesDir = project->GetAssetDirectory() / "scenes";
 			if (std::filesystem::exists(scenesDir))
 			{
 				try
@@ -568,7 +578,7 @@ namespace Chained
 						if (entry.path().extension() == ".chscene")
 						{
 							sceneToLoad =
-								std::filesystem::relative(entry.path(), Project::GetAssetDirectory()).string();
+								std::filesystem::relative(entry.path(), project->GetAssetDirectory()).string();
 							break;
 						}
 					}
@@ -686,7 +696,6 @@ namespace Chained
 
 		m_Scene = nextScene;
 		m_Scene->GetSettings().ScenePath = scenePath.string();
-		m_Scene->SetEventCallback([this](Event& e) { OnEvent(e); });
 
 		if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
 		{
@@ -752,18 +761,7 @@ namespace Chained
 			return std::nullopt;
 		}
 
-		CameraConfig activeCameraConfig;
-		activeCameraConfig.Camera = camera.value();
-
-		Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(m_Scene->GetRegistry(), m_Scene->GetRegistryPtr());
-		if (primaryCam && primaryCam.HasComponent<CameraComponent>())
-		{
-			auto& cameraComp = primaryCam.GetComponent<CameraComponent>().Camera;
-			activeCameraConfig.NearClip = cameraComp.GetPerspectiveNearClip();
-			activeCameraConfig.FarClip = cameraComp.GetPerspectiveFarClip();
-		}
-
-		return activeCameraConfig;
+		return CameraConfig{camera.value()};
 	}
 
 	glm::vec4 RuntimeLayer::CalculateBackgroundColor() const

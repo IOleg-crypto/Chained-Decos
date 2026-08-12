@@ -1,24 +1,23 @@
 #include "engine/app/application.h"
-#include "engine/core/platform.h"
 #include "engine/core/profiler.h"
-#include "engine/common/thread_pool.h"
+#include "engine/core/platform.h"
 #include "engine/imgui/imgui_layer.h"
 #include "engine/core/events/window_events.h"
-#include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
+#include "engine/scene/component_registry.h"
+#include "engine/platform/dialogs/dialogs.h"
+#include "engine/project/project.h"
+#include "engine/common/thread_pool.h"
+#include "engine/assets/asset_manager.h"
 #include "engine/audio/audio.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/graphics/ui/ui_font_registry.h"
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/component_registry.h"
-#include "engine/platform/dialogs/dialogs.h"
-#include "engine/project/project.h"
-
-#include "scripting/scriptengine.h"
-#include "network_service.h"
 #include "engine/core/input.h"
+#include "scripting/scriptengine.h"
+#include "engine/networking/network_service.h"
 
 namespace Chained
 {
@@ -38,6 +37,19 @@ namespace Chained
 		Log::Init();
 		ComponentRegistry::RegisterEngineComponents();
 
+		if (!m_Specification.WorkingDirectory.empty())
+		{
+			std::filesystem::current_path(m_Specification.WorkingDirectory);
+		}
+
+		// Window creation (not a Service — owns the OpenGL context)
+		if (!m_Specification.Headless)
+		{
+			m_Window = Window::Create(m_Specification.Window);
+			m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
+		}
+
+		// Service registration - explicit order
 		unsigned int threads = std::thread::hardware_concurrency();
 		if (threads == 0)
 		{
@@ -45,51 +57,38 @@ namespace Chained
 		}
 		unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
 
-		if (!m_Specification.WorkingDirectory.empty())
-		{
-			std::filesystem::current_path(m_Specification.WorkingDirectory);
-		}
+		// 1. Input — must be first (window callbacks fire during creation)
+		ServiceLocator::Provide<Core::Input>([] { return std::make_unique<Core::Input>(); });
 
-		// --- 1. Create Window ---
-		// Input must be available before window creation (event callbacks may fire)
-		ServiceLocator::Provide(std::make_unique<Core::Input>());
+		// 2. ThreadPool
+		ServiceLocator::Provide<ThreadPool>([=] { return std::make_unique<ThreadPool>(workerCount); });
 
+		// 3. AssetManager
+		ServiceLocator::Provide<AssetManager>([&] {
+			auto am = std::make_unique<AssetManager>();
+			am->SetEngineRoot(m_Specification.EngineRoot);
+			return am;
+		});
+
+		// 4. Renderer (only when not headless)
 		if (!m_Specification.Headless)
 		{
-			m_Window = Window::Create(m_Specification.Window);
-			m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
+			ServiceLocator::Provide<Renderer>([] { return std::make_unique<Renderer>(); });
+			ServiceLocator::Provide<UIFontRegistry>([] { return std::make_unique<UIFontRegistry>(); });
+			ServiceLocator::Provide<WidgetRenderer>([] { return std::make_unique<WidgetRenderer>(); });
+			ServiceLocator::Provide<DebugRenderer>([] { return std::make_unique<DebugRenderer>(); });
 		}
 
-		ServiceLocator::Provide(std::make_unique<ThreadPool>(workerCount));
-		ServiceLocator::Provide(std::make_unique<AssetManager>());
+		// 5. Audio, Physics, ScriptEngine, Network
+		ServiceLocator::Provide<Audio>([] { return std::make_unique<Audio>(); });
+		ServiceLocator::Provide<Physics>([] { return std::make_unique<Physics>(); });
+		ServiceLocator::Provide<ScriptEngine>(
+			[=] { return std::make_unique<ScriptEngine>(m_Specification.EnableScripting); });
+		ServiceLocator::Provide<Network>([] { return std::make_unique<Network>(); });
 
-		// Set engine root BEFORE any other modules (like Renderer) try to load assets!
-		if (!m_Specification.EngineRoot.empty())
-		{
-			if (auto* am = ServiceLocator::TryGet<AssetManager>())
-			{
-				am->SetEngineRoot(m_Specification.EngineRoot);
-			}
-			CH_CORE_INFO("AssetManager: Engine root set to '{}'", m_Specification.EngineRoot.string());
-		}
-
-		if (!m_Specification.Headless)
-		{
-			ServiceLocator::Provide(std::make_unique<Renderer>());
-			ServiceLocator::Provide(std::make_unique<UIFontRegistry>());
-			if (ServiceLocator::Has<Renderer>())
-			{
-				ServiceLocator::Provide(std::make_unique<WidgetRenderer>());
-				ServiceLocator::Provide(std::make_unique<DebugRenderer>());
-			}
-		}
-		ServiceLocator::Provide(std::make_unique<Audio>());
-		ServiceLocator::Provide(std::make_unique<Physics>());
-		ServiceLocator::Provide(std::make_unique<ScriptEngine>(m_Specification.EnableScripting));
-		ServiceLocator::Provide(std::make_unique<Network>());
-
-		ServiceLocator::InitializeModule();
+		// 6. Freeze the locator, then initialize all modules
 		ServiceLocator::Lock();
+		ServiceLocator::InitializeModule();
 
 		if (m_Window)
 		{

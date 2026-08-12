@@ -3,6 +3,9 @@
 #include "engine/scene/components/transform_component.h"
 #include "engine/scene/components/player_component.h"
 #include "engine/scene/components/physics_component.h"
+#include "engine/scene/components/camera_component.h"
+#include "engine/scene/components/spawn_component.h"
+#include "engine/scene/components/scripting_components.h"
 #include "engine/networking/network_service.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/prefab_serializer.h"
@@ -20,72 +23,37 @@
 namespace Chained
 {
 
-	// Persistent interpolation buffer for client-side state smoothing.
-	static std::unordered_map<uint64_t, PendingNetworkState> s_PendingStates;
-
-	// Accumulated inputs from clients (host-side).
-	static std::vector<ProcessedInput> s_PendingInputs;
-
-	// Client tick counter.
-	static uint32_t s_ClientTick = 0;
-
-	// Peer -> NetworkID mapping (host-side).
-	static std::unordered_map<HSteamNetConnection, uint64_t> s_PeerToNetworkID;
-
-	// Role the packet callback was installed for, so it is reinstalled when the role changes.
-	static Role s_CallbackRole = Role::Offline;
-
-	// Prefab instantiated per connecting client (host-side). Relative to the assets
-	// directory. Empty by default: no player prefab exists on disk yet, and spawning
-	// the wrong one silently would be worse than refusing. Set via SetPlayerPrefab().
-	static std::string s_PlayerPrefab;
-
-	// Avatar entity spawned for each peer, so it can be destroyed on disconnect.
-	static std::unordered_map<HSteamNetConnection, UUID> s_PeerToAvatar;
-
-	// Identity reserved for the host's own player. Network assigns peers from 2 up.
-	static constexpr uint64_t HostAvatarNetworkID = 1;
-
-	// Chat messages received from the network (pending for C# consumption).
-	static std::vector<ChatMessagePacket> s_PendingChatMessages;
-
-	// Client-side: NetworkID -> locally instantiated entity, so world state and
-	// destroy packets resolve without scanning the registry.
-	static std::unordered_map<uint64_t, UUID> s_NetworkIDToEntity;
-
-	// Client-side: the identity the host assigned to us (via PlayerAssign). The
-	// owned avatar must not be interpolated towards its own echoed state.
-	static uint64_t s_LocalNetworkID = 0;
-
-	// Scene the replication maps were built against. A scene change invalidates
-	// every entity handle, so the maps are dropped when the scene swaps.
-	static Scene* s_ReplicationScene = nullptr;
-
-	void NetworkSystem::SetPlayerPrefab(const std::string& path)
+	NetworkSystem& NetworkSystem::GetInstance()
 	{
-		s_PlayerPrefab = path;
-	}
-
-	const std::string& NetworkSystem::GetPlayerPrefab()
-	{
-		return s_PlayerPrefab;
+		static NetworkSystem s_Instance;
+		return s_Instance;
 	}
 
 	// ---- Peer mapping ----
 
-	void NetworkSystem::RegisterPeerEntity(HSteamNetConnection peer, uint64_t networkID)
+	void NetworkSystem::SetPlayerPrefab(const std::string& path)
 	{
-		s_PeerToNetworkID[peer] = networkID;
+		m_PlayerPrefab = path;
 	}
 
-	void NetworkSystem::UnregisterPeer(HSteamNetConnection peer)
+	const std::string& NetworkSystem::GetPlayerPrefab()
 	{
-		s_PeerToNetworkID.erase(peer);
+		return m_PlayerPrefab;
+	}
+
+	void NetworkSystem::RegisterPeerEntity(NetworkPeerHandle peer, uint64_t networkID)
+	{
+		m_PeerToNetworkID[peer] = networkID;
+	}
+
+	void NetworkSystem::UnregisterPeer(NetworkPeerHandle peer)
+	{
+		m_PeerToNetworkID.erase(peer);
 	}
 
 	// ---- Incoming packet processing (client side) ----
 
-	static void ProcessWorldStatePacket(const uint8_t* data, size_t size)
+	void NetworkSystem::ProcessWorldStatePacket(const uint8_t* data, size_t size)
 	{
 		if (size < sizeof(uint32_t))
 		{
@@ -96,7 +64,7 @@ namespace Chained
 		std::memcpy(&count, data, sizeof(uint32_t));
 
 		size_t offset = sizeof(uint32_t);
-		constexpr size_t PerEntity = sizeof(uint64_t) + sizeof(float) * 7;
+		constexpr size_t PerEntity = sizeof(uint64_t) + sizeof(float) * 7 + sizeof(float) * 3;
 
 		for (uint32_t i = 0; i < count; ++i)
 		{
@@ -115,11 +83,14 @@ namespace Chained
 			std::memcpy(&state.TargetRotation, data + offset, sizeof(float) * 4);
 			offset += sizeof(float) * 4;
 
-			s_PendingStates[state.NetworkID] = state;
+			std::memcpy(&state.TargetVelocity, data + offset, sizeof(float) * 3);
+			offset += sizeof(float) * 3;
+
+			m_PendingStates[state.NetworkID] = state;
 		}
 	}
 
-	static void ProcessSceneChangePacket(const uint8_t* data, size_t size)
+	void NetworkSystem::ProcessSceneChangePacket(const uint8_t* data, size_t size)
 	{
 		if (size < sizeof(SceneChangePacket))
 		{
@@ -140,9 +111,32 @@ namespace Chained
 		}
 	}
 
-	// Client instantiates the prefab the host told it about and binds it to the
-	// NetworkID so WorldState updates can steer it.
-	static void ProcessEntitySpawnPacket(const uint8_t* data, size_t size, Scene* scene)
+	// Find a spawn position for a new networked entity.
+	// Priority: active SpawnComponent entity > scene Player entity > default.
+	static glm::vec3 FindSpawnPosition(entt::registry& reg)
+	{
+		for (auto [entity, spawn] : reg.view<SpawnComponent>().each())
+		{
+			if (spawn.IsActive)
+			{
+				if (auto* transform = reg.try_get<TransformComponent>(entity))
+				{
+					return transform->Translation + spawn.SpawnPoint;
+				}
+			}
+		}
+		// Fallback: use scene player entity position
+		for (auto [entity, player] : reg.view<PlayerComponent>().each())
+		{
+			if (auto* transform = reg.try_get<TransformComponent>(entity))
+			{
+				return transform->Translation;
+			}
+		}
+		return {0, 100, 0};
+	}
+
+	void NetworkSystem::ProcessEntitySpawnPacket(const uint8_t* data, size_t size, Scene* scene)
 	{
 		if (size < EntitySpawnPacket::WireSize() || !scene)
 		{
@@ -157,7 +151,7 @@ namespace Chained
 
 		// Idempotent: the host re-sends the full set to late joiners, and the
 		// newcomer's own spawn is echoed to it as well.
-		if (s_NetworkIDToEntity.find(pkt.NetworkID) != s_NetworkIDToEntity.end())
+		if (m_NetworkIDToEntity.find(pkt.NetworkID) != m_NetworkIDToEntity.end())
 		{
 			return;
 		}
@@ -175,16 +169,35 @@ namespace Chained
 			return;
 		}
 
+		// Place only the client's OWN avatar at the spawn point.
+		if (m_LocalNetworkID != 0 && pkt.NetworkID == m_LocalNetworkID)
+		{
+			if (avatar.HasComponent<TransformComponent>())
+			{
+				auto& transform = avatar.GetComponent<TransformComponent>();
+				transform.Translation = FindSpawnPosition(scene->GetRegistry());
+				transform.TransformChanged = true;
+			}
+		}
+
 		auto& netID = avatar.AddOrReplaceComponent<NetworkIdentityComponent>();
 		netID.NetworkID = pkt.NetworkID;
-		// The host simulates every avatar; a client only ever interpolates.
-		netID.IsOwner = (pkt.NetworkID == s_LocalNetworkID);
+		if (m_LocalNetworkID != 0)
+		{
+			netID.IsOwner = (pkt.NetworkID == m_LocalNetworkID);
+		}
+		else
+		{
+			netID.IsOwner = false;
+			CH_CORE_WARN("Network: EntitySpawn for netID={} arrived before PlayerAssign — IsOwner deferred.",
+						 pkt.NetworkID);
+		}
 
-		s_NetworkIDToEntity[pkt.NetworkID] = avatar.GetUUID();
+		m_NetworkIDToEntity[pkt.NetworkID] = avatar.GetUUID();
 		CH_CORE_INFO("Network: Spawned replicated entity (netID={}, owner={}).", pkt.NetworkID, netID.IsOwner);
 	}
 
-	static void ProcessEntityDestroyPacket(const uint8_t* data, size_t size, Scene* scene)
+	void NetworkSystem::ProcessEntityDestroyPacket(const uint8_t* data, size_t size, Scene* scene)
 	{
 		if (size < EntityDestroyPacket::WireSize() || !scene)
 		{
@@ -192,8 +205,8 @@ namespace Chained
 		}
 
 		EntityDestroyPacket pkt = EntityDestroyPacket::Deserialize(data);
-		auto it = s_NetworkIDToEntity.find(pkt.NetworkID);
-		if (it == s_NetworkIDToEntity.end())
+		auto it = m_NetworkIDToEntity.find(pkt.NetworkID);
+		if (it == m_NetworkIDToEntity.end())
 		{
 			return;
 		}
@@ -204,13 +217,13 @@ namespace Chained
 			scene->DestroyEntity(entity);
 		}
 
-		s_NetworkIDToEntity.erase(it);
-		s_PendingStates.erase(pkt.NetworkID);
+		m_NetworkIDToEntity.erase(it);
+		m_PendingStates.erase(pkt.NetworkID);
 		CH_CORE_INFO("Network: Destroyed replicated entity (netID={}).", pkt.NetworkID);
 	}
 
 	// Host tells the client which NetworkID belongs to it.
-	static void ProcessPlayerAssignPacket(const uint8_t* data, size_t size, Network* net)
+	void NetworkSystem::ProcessPlayerAssignPacket(const uint8_t* data, size_t size)
 	{
 		if (size < PlayerAssignPacket::WireSize())
 		{
@@ -218,14 +231,18 @@ namespace Chained
 		}
 
 		PlayerAssignPacket pkt = PlayerAssignPacket::Deserialize(data);
-		s_LocalNetworkID = pkt.NetworkID;
-		net->SetLocalNetworkID(pkt.NetworkID);
+		m_LocalNetworkID = pkt.NetworkID;
+
+		if (auto* net = ServiceLocator::TryGet<Network>())
+		{
+			net->SetLocalNetworkID(pkt.NetworkID);
+		}
 
 		// A spawn for this entity may already have arrived; correct its ownership.
-		auto it = s_NetworkIDToEntity.find(pkt.NetworkID);
-		if (it != s_NetworkIDToEntity.end())
+		auto it = m_NetworkIDToEntity.find(pkt.NetworkID);
+		if (it != m_NetworkIDToEntity.end())
 		{
-			if (auto* scene = s_ReplicationScene)
+			if (auto* scene = m_ReplicationScene)
 			{
 				Entity entity = scene->GetEntityByUUID(it->second);
 				if (entity && entity.HasComponent<NetworkIdentityComponent>())
@@ -240,7 +257,7 @@ namespace Chained
 
 	// ---- Incoming packet processing (host side) ----
 
-	static void ProcessInputStatePacket(const uint8_t* data, size_t size, HSteamNetConnection sender)
+	void NetworkSystem::ProcessInputStatePacket(const uint8_t* data, size_t size, NetworkPeerHandle sender)
 	{
 		if (size < InputStatePacket::WireSize())
 		{
@@ -250,8 +267,19 @@ namespace Chained
 		InputStatePacket pkt = InputStatePacket::Deserialize(data);
 
 		// Resolve peer -> NetworkID
-		auto it = s_PeerToNetworkID.find(sender);
-		uint64_t networkID = (it != s_PeerToNetworkID.end()) ? it->second : 0;
+		auto it = m_PeerToNetworkID.find(sender);
+		uint64_t networkID = (it != m_PeerToNetworkID.end()) ? it->second : 0;
+		if (networkID == 0)
+		{
+			if (auto* net = ServiceLocator::TryGet<Network>())
+			{
+				networkID = net->GetNetworkIDForConnection(sender);
+				if (networkID != 0)
+				{
+					m_PeerToNetworkID[sender] = networkID;
+				}
+			}
+		}
 
 		ProcessedInput input;
 		input.NetworkID = networkID;
@@ -261,11 +289,11 @@ namespace Chained
 		input.MouseX = pkt.MouseX;
 		input.MouseY = pkt.MouseY;
 
-		s_PendingInputs.push_back(input);
+		m_PendingInputs.push_back(input);
 	}
 
 	// Host processes PlayerInfo from a connecting client.
-	static void ProcessPlayerInfoPacket(const uint8_t* data, size_t size, HSteamNetConnection sender, Network* net)
+	void NetworkSystem::ProcessPlayerInfoPacket(const uint8_t* data, size_t size, NetworkPeerHandle sender)
 	{
 		if (size < PlayerInfoPacket::WireSize())
 		{
@@ -274,9 +302,12 @@ namespace Chained
 
 		PlayerInfoPacket pkt = PlayerInfoPacket::Deserialize(data);
 
-		// The identity was bound when the connection was accepted. Without a match
-		// the packet is from a peer we no longer track — dropping it is safer than
-		// guessing an entry and corrupting somebody else's name.
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net)
+		{
+			return;
+		}
+
 		const uint64_t networkID = net->GetNetworkIDForConnection(sender);
 		if (networkID == 0)
 		{
@@ -305,7 +336,7 @@ namespace Chained
 	}
 
 	// Client processes the full player list from the host.
-	static void ProcessPlayerListPacket(const uint8_t* data, size_t size, Network* net)
+	void NetworkSystem::ProcessPlayerListPacket(const uint8_t* data, size_t size)
 	{
 		if (size < PlayerListPacket::HeaderSize())
 		{
@@ -317,6 +348,12 @@ namespace Chained
 
 		size_t entrySize = sizeof(PlayerListEntry);
 		size_t offset = PlayerListPacket::HeaderSize();
+
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net)
+		{
+			return;
+		}
 
 		auto& playerList = net->GetPlayerListMutable();
 		playerList.clear();
@@ -346,7 +383,7 @@ namespace Chained
 	}
 
 	// Processes a chat message from the network (both host and client).
-	static void ProcessChatMessagePacket(const uint8_t* data, size_t size)
+	void NetworkSystem::ProcessChatMessagePacket(const uint8_t* data, size_t size)
 	{
 		if (size < ChatMessagePacket::WireSize())
 		{
@@ -354,7 +391,7 @@ namespace Chained
 		}
 
 		ChatMessagePacket pkt = ChatMessagePacket::Deserialize(data);
-		s_PendingChatMessages.push_back(pkt);
+		m_PendingChatMessages.push_back(pkt);
 		CH_CORE_INFO("Network: Chat from '{}': {}", pkt.SenderName, pkt.Message);
 	}
 
@@ -362,14 +399,14 @@ namespace Chained
 
 	void NetworkSystem::ApplyHostInputs(entt::registry& reg, Timestep ts)
 	{
-		if (s_PendingInputs.empty())
+		if (m_PendingInputs.empty())
 		{
 			return;
 		}
 
 		float dt = static_cast<float>(ts);
 
-		for (auto& input : s_PendingInputs)
+		for (auto& input : m_PendingInputs)
 		{
 			if (input.NetworkID == 0)
 			{
@@ -400,7 +437,7 @@ namespace Chained
 				auto& player = reg.get<PlayerComponent>(targetEntity);
 				auto& rb = reg.get<RigidBodyComponent>(targetEntity);
 
-				if (rb.Handle == 0)
+				if (rb.Handle == kInvalidPhysicsBody)
 				{
 					continue;
 				}
@@ -425,12 +462,12 @@ namespace Chained
 			}
 		}
 
-		s_PendingInputs.clear();
+		m_PendingInputs.clear();
 	}
 
 	// ---- Client-side: collect local input and send to server ----
 
-	static void CollectAndSendInput(Network* net, float dt)
+	void NetworkSystem::CollectAndSendInput(Network* net, float dt)
 	{
 		if (!net->IsClient())
 		{
@@ -438,27 +475,60 @@ namespace Chained
 		}
 
 		InputStatePacket pkt;
-		pkt.Tick = s_ClientTick++;
+		pkt.Tick = m_ClientTick++;
 		pkt.DeltaTime = dt;
 
-		// WASD movement direction
-		float moveX = 0.0f;
-		float moveZ = 0.0f;
+		// WASD movement direction — camera-relative
+		float rawX = 0.0f;
+		float rawZ = 0.0f;
 		if (Core::Input::IsKeyDown(KeyCode::W))
 		{
-			moveZ -= 1.0f;
+			rawZ += 1.0f;
 		}
 		if (Core::Input::IsKeyDown(KeyCode::S))
 		{
-			moveZ += 1.0f;
+			rawZ -= 1.0f;
 		}
 		if (Core::Input::IsKeyDown(KeyCode::A))
 		{
-			moveX -= 1.0f;
+			rawX -= 1.0f;
 		}
 		if (Core::Input::IsKeyDown(KeyCode::D))
 		{
-			moveX += 1.0f;
+			rawX += 1.0f;
+		}
+
+		// Transform to camera-relative space
+		float moveX = rawX;
+		float moveZ = rawZ;
+		if (m_ReplicationScene)
+		{
+			auto camView = m_ReplicationScene->GetRegistry().view<CameraComponent, TransformComponent>();
+			for (auto entity : camView)
+			{
+				auto& cam = camView.get<CameraComponent>(entity);
+				if (!cam.Primary)
+				{
+					continue;
+				}
+				auto& tc = camView.get<TransformComponent>(entity);
+				glm::vec3 forward = tc.WorldTransform * glm::vec4(0.0f, 0.0f, -1.0f, 0.0f);
+				forward.y = 0.0f;
+				float fwdLen = glm::length(forward);
+				if (fwdLen > 0.001f)
+				{
+					forward /= fwdLen;
+				}
+				else
+				{
+					forward = glm::vec3(0.0f, 0.0f, -1.0f);
+				}
+				glm::vec3 right = glm::vec3(-forward.z, 0.0f, forward.x);
+
+				moveX = rawX * right.x + rawZ * forward.x;
+				moveZ = rawX * right.z + rawZ * forward.z;
+				break;
+			}
 		}
 
 		// Normalize diagonal movement
@@ -497,7 +567,7 @@ namespace Chained
 
 	// ---- Client-side: interpolate towards server state ----
 
-	static void InterpolateEntities(entt::registry& reg, float dt)
+	void NetworkSystem::InterpolateEntities(entt::registry& reg, float dt)
 	{
 		constexpr float InterpSpeed = 15.0f;
 		float t = glm::clamp(dt * InterpSpeed, 0.0f, 1.0f);
@@ -508,16 +578,36 @@ namespace Chained
 			auto& netID = view.get<NetworkIdentityComponent>(entity);
 			auto& transform = view.get<TransformComponent>(entity);
 
-			// Every replicated entity is interpolated, including the owned avatar:
-			// the client does not simulate locally, so the host's state is the only
-			// source of motion. IsOwner marks identity (camera, HUD), not authority.
-			auto it = s_PendingStates.find(netID.NetworkID);
-			if (it == s_PendingStates.end())
+			auto it = m_PendingStates.find(netID.NetworkID);
+			if (it == m_PendingStates.end())
 			{
 				continue;
 			}
 
 			auto& target = it->second;
+
+			// --- Owned avatar: local simulation runs physics, server only corrects ---
+			if (netID.IsOwner)
+			{
+				float dist = glm::length(transform.Translation - target.TargetPosition);
+
+				if (dist > NetworkSystem::kMaxCorrectionDistance)
+				{
+					// SNAP: client diverged too far from authoritative state.
+					transform.Translation = target.TargetPosition;
+					transform.RotationQuat = glm::normalize(target.TargetRotation);
+					transform.Rotation = glm::eulerAngles(transform.RotationQuat);
+					transform.TransformChanged = true;
+
+					if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+					{
+						rb->Velocity = target.TargetVelocity;
+					}
+				}
+				continue;
+			}
+
+			// --- Remote entities: interpolate from server state (other players) ---
 			transform.Translation = glm::mix(transform.Translation, target.TargetPosition, t);
 
 			glm::quat currentQuat = glm::quat_cast(glm::mat4(transform.WorldTransform));
@@ -526,12 +616,17 @@ namespace Chained
 			transform.Rotation = glm::eulerAngles(blended);
 			transform.RotationQuat = blended;
 			transform.TransformChanged = true;
+
+			if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+			{
+				rb->Velocity = target.TargetVelocity;
+			}
 		}
 	}
 
 	// ---- Host-side: broadcast world state ----
 
-	static void BroadcastWorldState(entt::registry& reg)
+	void NetworkSystem::BroadcastWorldState(entt::registry& reg)
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		if (!net || !net->IsHost())
@@ -544,6 +639,7 @@ namespace Chained
 			uint64_t NetworkID;
 			glm::vec3 Position;
 			glm::quat Rotation;
+			glm::vec3 Velocity;
 		};
 
 		std::vector<EntityNetState> states;
@@ -557,11 +653,13 @@ namespace Chained
 			s.NetworkID = netID.NetworkID;
 			s.Position = transform.Translation;
 			s.Rotation = glm::quat_cast(transform.WorldTransform);
+			s.Velocity = reg.try_get<RigidBodyComponent>(entity) ? reg.get<RigidBodyComponent>(entity).Velocity
+																 : glm::vec3{0, 0, 0};
 			states.push_back(s);
 		}
 
 		constexpr size_t Header = sizeof(uint32_t);
-		constexpr size_t PerEntity = sizeof(uint64_t) + sizeof(float) * 7;
+		constexpr size_t PerEntity = sizeof(uint64_t) + sizeof(float) * 7 + sizeof(float) * 3;
 		size_t totalSize = Header + states.size() * PerEntity;
 
 		std::vector<uint8_t> buffer(totalSize);
@@ -579,14 +677,18 @@ namespace Chained
 
 			std::memcpy(buffer.data() + offset, &s.Rotation, sizeof(float) * 4);
 			offset += sizeof(float) * 4;
+
+			std::memcpy(buffer.data() + offset, &s.Velocity, sizeof(float) * 3);
+			offset += sizeof(float) * 3;
 		}
 
-		net->BroadcastPacket(PacketType::WorldState, buffer.data(), totalSize);
+		net->BroadcastPacket(PacketType::WorldState, buffer.data(), totalSize, false);
 	}
 
 	// ---- Host-side: broadcast an entity spawn/destroy ----
 
-	static void SendEntitySpawn(Network* net, uint64_t networkID, const std::string& prefabPath, HSteamNetConnection to)
+	void NetworkSystem::SendEntitySpawn(Network* net, uint64_t networkID, const std::string& prefabPath,
+										NetworkPeerHandle to)
 	{
 		EntitySpawnPacket pkt;
 		pkt.NetworkID = networkID;
@@ -596,7 +698,7 @@ namespace Chained
 		uint8_t buffer[EntitySpawnPacket::WireSize()];
 		pkt.Serialize(buffer);
 
-		if (to == k_HSteamNetConnection_Invalid)
+		if (to == kInvalidPeerHandle)
 		{
 			net->BroadcastPacket(PacketType::EntitySpawn, buffer, sizeof(buffer), true);
 		}
@@ -606,7 +708,7 @@ namespace Chained
 		}
 	}
 
-	static void SendEntityDestroy(Network* net, uint64_t networkID)
+	void NetworkSystem::SendEntityDestroy(Network* net, uint64_t networkID)
 	{
 		EntityDestroyPacket pkt;
 		pkt.NetworkID = networkID;
@@ -618,10 +720,16 @@ namespace Chained
 
 	// The host's own player is authored in the scene, not spawned from a prefab, so
 	// it carries no network identity. Attach one at session start (reserved ID 1)
-	// so the host shows up in everyone else's world. Scenes and prefabs stay
-	// untouched and remain valid for singleplayer.
-	static void EnsureHostIdentity(entt::registry& reg)
+	// so the host shows up in everyone else's world.
+	void NetworkSystem::EnsureHostIdentity(Scene* scene)
 	{
+		if (!scene || scene->GetSettings().Type == SceneType::UI)
+		{
+			return;
+		}
+
+		entt::registry& reg = scene->GetRegistry();
+
 		auto owned = reg.view<NetworkIdentityComponent>();
 		for (auto entity : owned)
 		{
@@ -642,21 +750,62 @@ namespace Chained
 			auto& netID = reg.emplace<NetworkIdentityComponent>(entity);
 			netID.NetworkID = HostAvatarNetworkID;
 			netID.IsOwner = true;
+
+			// Move host player to the scene's spawn point
+			if (reg.all_of<TransformComponent>(entity))
+			{
+				auto& transform = reg.get<TransformComponent>(entity);
+				transform.Translation = FindSpawnPosition(reg);
+				transform.TransformChanged = true;
+			}
+
 			CH_CORE_INFO("Network: Tagged host player with netID={}.", HostAvatarNetworkID);
 			return;
+		}
+
+		// No static player entity in scene — spawn host avatar dynamically from player prefab
+		if (!m_PlayerPrefab.empty())
+		{
+			std::string path = m_PlayerPrefab;
+			if (auto* am = ServiceLocator::TryGet<AssetManager>())
+			{
+				path = am->ResolvePath(m_PlayerPrefab);
+			}
+
+			Entity hostAvatar = PrefabSerializer::Deserialize(scene, path);
+			if (hostAvatar)
+			{
+				if (hostAvatar.HasComponent<TransformComponent>())
+				{
+					auto& transform = hostAvatar.GetComponent<TransformComponent>();
+					transform.Translation = FindSpawnPosition(reg);
+					transform.TransformChanged = true;
+				}
+
+				auto& netID = hostAvatar.AddOrReplaceComponent<NetworkIdentityComponent>();
+				netID.NetworkID = HostAvatarNetworkID;
+				netID.IsOwner = true;
+
+				bool hasRB = hostAvatar.HasComponent<RigidBodyComponent>();
+				bool hasCollider = hostAvatar.HasComponent<ColliderComponent>();
+				int rbType = hasRB ? (int)hostAvatar.GetComponent<RigidBodyComponent>().Type : -1;
+				CH_CORE_INFO(
+					"Network: Dynamically spawned host avatar (netID={}, entity={}, rb={}, collider={}, rbType={})",
+					HostAvatarNetworkID, (uint32_t)hostAvatar, hasRB, hasCollider, rbType);
+			}
 		}
 	}
 
 	// ---- Host-side: spawn/despawn an avatar per connected peer ----
 
-	static void SyncPeerAvatars(Scene* scene, Network* net)
+	void NetworkSystem::SyncPeerAvatars(Scene* scene, Network* net)
 	{
 		if (!scene || scene->GetSettings().Type == SceneType::UI)
 		{
 			return;
 		}
 
-		if (s_PlayerPrefab.empty())
+		if (m_PlayerPrefab.empty())
 		{
 			// Warn once rather than per peer per frame.
 			static bool warned = false;
@@ -672,66 +821,71 @@ namespace Chained
 		const auto& clients = net->GetClients();
 
 		// Spawn for peers that don't have an avatar yet.
-		for (HSteamNetConnection peer : clients)
+		for (NetworkPeerHandle peer : clients)
 		{
-			if (s_PeerToAvatar.find(peer) != s_PeerToAvatar.end())
+			if (m_PeerToAvatar.find(peer) != m_PeerToAvatar.end())
 			{
 				continue;
 			}
 
-			// The identity was bound by Network when the connection was accepted;
-			// reuse it so avatar, player list and chat all agree.
 			uint64_t networkID = net->GetNetworkIDForConnection(peer);
 			if (networkID == 0)
 			{
 				continue; // not accepted yet — retry next frame
 			}
-			s_PeerToNetworkID[peer] = networkID;
+			m_PeerToNetworkID[peer] = networkID;
 
-			std::string path = s_PlayerPrefab;
+			std::string path = m_PlayerPrefab;
 			if (auto* am = ServiceLocator::TryGet<AssetManager>())
 			{
-				path = am->ResolvePath(s_PlayerPrefab);
+				path = am->ResolvePath(m_PlayerPrefab);
 			}
 
 			Entity avatar = PrefabSerializer::Deserialize(scene, path);
 			if (!avatar)
 			{
-				CH_CORE_ERROR("Network: Failed to spawn player prefab '{}' for peer {}.", s_PlayerPrefab,
+				CH_CORE_ERROR("Network: Failed to spawn player prefab '{}' for peer {}.", m_PlayerPrefab,
 							  (uint32_t)peer);
-				// Record the failure so the prefab isn't reloaded every frame for this peer.
-				s_PeerToAvatar[peer] = UUID(0);
+				m_PeerToAvatar[peer] = UUID(0);
 				continue;
+			}
+
+			// Place the avatar at the scene's spawn point with an offset per peer
+			if (avatar.HasComponent<TransformComponent>())
+			{
+				auto& transform = avatar.GetComponent<TransformComponent>();
+				glm::vec3 spawnPos = FindSpawnPosition(scene->GetRegistry());
+				spawnPos.x += static_cast<float>(networkID - 1) * 1.5f;
+				transform.Translation = spawnPos;
+				transform.TransformChanged = true;
 			}
 
 			auto& netID = avatar.AddOrReplaceComponent<NetworkIdentityComponent>();
 			netID.NetworkID = networkID;
-			// The host simulates this avatar, but the connected peer owns it.
 			netID.IsOwner = false;
 
-			s_PeerToAvatar[peer] = avatar.GetUUID();
+			m_PeerToAvatar[peer] = avatar.GetUUID();
 			CH_CORE_INFO("Network: Spawned avatar (netID={}) for peer {}.", networkID, (uint32_t)peer);
 
-			// Catch the newcomer up on everything already replicated, then tell
-			// everyone (including it) about the new avatar.
-			for (const auto& [existingPeer, uuid] : s_PeerToAvatar)
+			// Catch the newcomer up on everything already replicated
+			for (const auto& [existingPeer, uuid] : m_PeerToAvatar)
 			{
 				if (existingPeer == peer || uuid == UUID(0))
 				{
 					continue;
 				}
-				auto netIdIt = s_PeerToNetworkID.find(existingPeer);
-				if (netIdIt != s_PeerToNetworkID.end())
+				auto netIdIt = m_PeerToNetworkID.find(existingPeer);
+				if (netIdIt != m_PeerToNetworkID.end())
 				{
-					SendEntitySpawn(net, netIdIt->second, s_PlayerPrefab, peer);
+					SendEntitySpawn(net, netIdIt->second, m_PlayerPrefab, peer);
 				}
 			}
-			SendEntitySpawn(net, HostAvatarNetworkID, s_PlayerPrefab, peer);
-			SendEntitySpawn(net, networkID, s_PlayerPrefab, k_HSteamNetConnection_Invalid);
+			SendEntitySpawn(net, HostAvatarNetworkID, m_PlayerPrefab, peer);
+			SendEntitySpawn(net, networkID, m_PlayerPrefab, kInvalidPeerHandle);
 		}
 
 		// Despawn avatars whose peer is gone.
-		for (auto it = s_PeerToAvatar.begin(); it != s_PeerToAvatar.end();)
+		for (auto it = m_PeerToAvatar.begin(); it != m_PeerToAvatar.end();)
 		{
 			if (std::find(clients.begin(), clients.end(), it->first) != clients.end())
 			{
@@ -748,19 +902,106 @@ namespace Chained
 				}
 			}
 
-			auto idIt = s_PeerToNetworkID.find(it->first);
-			if (idIt != s_PeerToNetworkID.end())
+			auto idIt = m_PeerToNetworkID.find(it->first);
+			if (idIt != m_PeerToNetworkID.end())
 			{
 				SendEntityDestroy(net, idIt->second);
 			}
 
-			NetworkSystem::UnregisterPeer(it->first);
+			UnregisterPeer(it->first);
 			CH_CORE_INFO("Network: Despawned avatar for peer {}.", (uint32_t)it->first);
-			it = s_PeerToAvatar.erase(it);
+			it = m_PeerToAvatar.erase(it);
 		}
 	}
 
-	// ---- Main update ----
+	void NetworkSystem::InstallPacketCallback()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || m_CallbackRole == net->GetRole())
+		{
+			return;
+		}
+
+		m_CallbackRole = net->GetRole();
+		net->SetPacketCallback(
+			[this, net](PacketType type, const uint8_t* data, size_t size, NetworkPeerHandle sender) {
+				if (net->IsHost())
+				{
+					if (type == PacketType::InputState)
+					{
+						ProcessInputStatePacket(data, size, sender);
+					}
+					else if (type == PacketType::PlayerInfo)
+					{
+						ProcessPlayerInfoPacket(data, size, sender);
+					}
+					else if (type == PacketType::ChatMessage)
+					{
+						ProcessChatMessagePacket(data, size);
+						if (size >= ChatMessagePacket::WireSize())
+						{
+							ChatMessagePacket pkt = ChatMessagePacket::Deserialize(data);
+							net->StorePendingChatMessage(pkt);
+						}
+						net->BroadcastPacket(PacketType::ChatMessage, data, size, true);
+					}
+				}
+				else if (net->IsClient())
+				{
+					if (type == PacketType::WorldState)
+					{
+						ProcessWorldStatePacket(data, size);
+					}
+					else if (type == PacketType::SceneChange)
+					{
+						ProcessSceneChangePacket(data, size);
+					}
+					else if (type == PacketType::PlayerList)
+					{
+						ProcessPlayerListPacket(data, size);
+					}
+					else if (type == PacketType::PlayerAssign)
+					{
+						ProcessPlayerAssignPacket(data, size);
+					}
+					else if (type == PacketType::EntitySpawn)
+					{
+						ProcessEntitySpawnPacket(data, size, m_ReplicationScene);
+					}
+					else if (type == PacketType::EntityDestroy)
+					{
+						ProcessEntityDestroyPacket(data, size, m_ReplicationScene);
+					}
+					else if (type == PacketType::ChatMessage)
+					{
+						ProcessChatMessagePacket(data, size);
+						if (size >= ChatMessagePacket::WireSize())
+						{
+							ChatMessagePacket pkt = ChatMessagePacket::Deserialize(data);
+							net->StorePendingChatMessage(pkt);
+						}
+					}
+				}
+			});
+	}
+
+	// ---- Early identity setup (runs BEFORE scripts) ----
+
+	void NetworkSystem::EnsureLocalIdentity(Scene* scene)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || net->GetRole() == Role::Offline || !scene)
+		{
+			return;
+		}
+
+		if (net->IsHost())
+		{
+			EnsureHostIdentity(scene);
+		}
+	}
+
+	// ---- Client-side: interpolate towards server state ----
 
 	void NetworkSystem::Update(Scene* scene, Timestep ts)
 	{
@@ -774,87 +1015,15 @@ namespace Chained
 
 		// Entity handles do not survive a scene swap, so the replication maps are
 		// rebuilt from the host's catch-up spawns rather than carried across.
-		if (s_ReplicationScene != scene)
+		if (m_ReplicationScene != scene)
 		{
-			s_ReplicationScene = scene;
-			s_NetworkIDToEntity.clear();
-			s_PeerToAvatar.clear();
-			s_PendingStates.clear();
+			m_ReplicationScene = scene;
+			m_NetworkIDToEntity.clear();
+			m_PeerToAvatar.clear();
+			m_PendingStates.clear();
 		}
 
-		// Install the packet callback for the current role. Reinstalled on role change so
-		// a peer that hosts after being a client still dispatches the right packets.
-		if (s_CallbackRole != net->GetRole())
-		{
-			s_CallbackRole = net->GetRole();
-			// Capture only net — NOT scene. The scene pointer changes on every scene
-			// load and the old captured value becomes dangling. s_ReplicationScene is
-			// updated at the top of Update() each frame and is always valid when a
-			// packet arrives during the same frame's RunCallbacks() pump.
-			net->SetPacketCallback(
-				[net](PacketType type, const uint8_t* data, size_t size, HSteamNetConnection sender) {
-					if (net->IsHost())
-					{
-						if (type == PacketType::InputState)
-						{
-							ProcessInputStatePacket(data, size, sender);
-						}
-						else if (type == PacketType::PlayerInfo)
-						{
-							ProcessPlayerInfoPacket(data, size, sender, net);
-						}
-						else if (type == PacketType::ChatMessage)
-						{
-							// Host receives from client, stores, and re-broadcasts
-							ProcessChatMessagePacket(data, size);
-							if (size >= ChatMessagePacket::WireSize())
-							{
-								ChatMessagePacket pkt = ChatMessagePacket::Deserialize(data);
-								net->StorePendingChatMessage(pkt);
-							}
-							net->BroadcastPacket(PacketType::ChatMessage, data, size, true);
-						}
-					}
-					else if (net->IsClient())
-					{
-						if (type == PacketType::WorldState)
-						{
-							ProcessWorldStatePacket(data, size);
-						}
-						else if (type == PacketType::SceneChange)
-						{
-							ProcessSceneChangePacket(data, size);
-						}
-						else if (type == PacketType::PlayerList)
-						{
-							ProcessPlayerListPacket(data, size, net);
-						}
-						else if (type == PacketType::PlayerAssign)
-						{
-							ProcessPlayerAssignPacket(data, size, net);
-						}
-						else if (type == PacketType::EntitySpawn)
-						{
-							// Read s_ReplicationScene here — it is updated every frame at
-							// the top of NetworkSystem::Update() and is always current.
-							ProcessEntitySpawnPacket(data, size, s_ReplicationScene);
-						}
-						else if (type == PacketType::EntityDestroy)
-						{
-							ProcessEntityDestroyPacket(data, size, s_ReplicationScene);
-						}
-						else if (type == PacketType::ChatMessage)
-						{
-							ProcessChatMessagePacket(data, size);
-							if (size >= ChatMessagePacket::WireSize())
-							{
-								ChatMessagePacket pkt = ChatMessagePacket::Deserialize(data);
-								net->StorePendingChatMessage(pkt);
-							}
-						}
-					}
-				});
-		}
+		InstallPacketCallback();
 
 		float dt = static_cast<float>(ts);
 
@@ -863,7 +1032,7 @@ namespace Chained
 
 		if (net->IsHost())
 		{
-			EnsureHostIdentity(reg);
+			EnsureHostIdentity(scene);
 			// Runs after the pump, so peers accepted this frame get an avatar immediately.
 			SyncPeerAvatars(scene, net);
 			BroadcastWorldState(reg);
@@ -877,22 +1046,22 @@ namespace Chained
 
 	const std::vector<ProcessedInput>& NetworkSystem::GetPendingInputs()
 	{
-		return s_PendingInputs;
+		return m_PendingInputs;
 	}
 
 	void NetworkSystem::ClearPendingInputs()
 	{
-		s_PendingInputs.clear();
+		m_PendingInputs.clear();
 	}
 
 	const std::vector<ChatMessagePacket>& NetworkSystem::GetPendingChatMessages()
 	{
-		return s_PendingChatMessages;
+		return m_PendingChatMessages;
 	}
 
 	void NetworkSystem::ClearPendingChatMessages()
 	{
-		s_PendingChatMessages.clear();
+		m_PendingChatMessages.clear();
 	}
 
 } // namespace Chained

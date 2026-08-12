@@ -21,99 +21,105 @@
 namespace Chained
 {
 
-// Jolt Physics backend. Wraps JPH::PhysicsSystem and provides body management,
-// raycasting, gravity control, and ground detection via contact callbacks.
-class JoltPhysicsWorld : public IPhysicsWorld
-{
-public:
-    JoltPhysicsWorld();
-    virtual ~JoltPhysicsWorld() override;
+	// Jolt Physics backend. Wraps JPH::PhysicsSystem and provides body management,
+	// raycasting, gravity control, and ground detection via contact callbacks.
+	class JoltPhysicsWorld : public IPhysicsWorld
+	{
+	public:
+		JoltPhysicsWorld();
+		virtual ~JoltPhysicsWorld() override;
 
-    virtual PhysicsBodyHandle CreateBody(const PhysicsBodyDesc& desc) override;
-    virtual std::vector<PhysicsBodyHandle> CreateBodies(const std::vector<PhysicsBodyDesc>& descs) override;
-    virtual void DestroyBody(PhysicsBodyHandle handle) override;
+		virtual PhysicsBodyHandle CreateBody(const PhysicsBodyDesc& desc) override;
+		virtual std::vector<PhysicsBodyHandle> CreateBodies(const std::vector<PhysicsBodyDesc>& descs) override;
+		virtual void DestroyBody(PhysicsBodyHandle handle) override;
 
-    virtual void SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot) override;
-    virtual void GetTransform(PhysicsBodyHandle handle, glm::vec3& pos, glm::quat& rot) override;
+		virtual void SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot) override;
+		virtual void GetTransform(PhysicsBodyHandle handle, glm::vec3& pos, glm::quat& rot) override;
 
-    virtual void SetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity) override;
-    virtual glm::vec3 GetVelocity(PhysicsBodyHandle handle) const override;
-    virtual void SetVelocityForce(PhysicsBodyHandle handle, const glm::vec3& velocity) override;
+		virtual void SetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity) override;
+		virtual glm::vec3 GetVelocity(PhysicsBodyHandle handle) const override;
 
-    virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) override;
+		virtual RaycastResult Raycast(const glm::vec3& origin, const glm::vec3& direction, float maxDistance) override;
 
-    virtual void Step(float fixedDt) override;
+		virtual void Step(float fixedDt) override;
 
-    virtual void SetGravity(float gravity) override;
+		virtual void SetGravity(float gravity) override;
 
-    virtual bool IsBodyGrounded(PhysicsBodyHandle handle) const override;
-    virtual bool IsBodyActive(PhysicsBodyHandle handle) const override;
+		virtual bool IsBodyGrounded(PhysicsBodyHandle handle) const override;
+		virtual bool IsBodyActive(PhysicsBodyHandle handle) const override;
 
-    /// Clear all grounded state (call before/after world reset).
-    virtual void ClearGroundedState() override;
+		/// Clear all grounded state (call before/after world reset).
+		virtual void ClearGroundedState() override;
 
-    virtual bool HasCachedMeshShape(const std::string& key) const override;
+		virtual bool HasCachedMeshShape(const std::string& key) const override;
 
-    /// Clear the cached mesh shapes (call on world reset).
-    void ClearShapeCache();
+		/// Clear the cached mesh shapes (call on world reset).
+		void ClearShapeCache();
 
-    /// Builds a Jolt shape from a PhysicsBodyDesc (used by CreateBody and CreateBodies).
-    JPH::ShapeRefC BuildShape(const PhysicsBodyDesc& desc);
+		/// Builds a Jolt shape from a PhysicsBodyDesc (used by CreateBody and CreateBodies).
+		JPH::ShapeRefC BuildShape(const PhysicsBodyDesc& desc);
 
-    /// Builds BodyCreationSettings from a desc + pre-built shape.
-    JPH::BodyCreationSettings BuildBodySettings(const PhysicsBodyDesc& desc, JPH::ShapeRefC shape);
+		/// Builds BodyCreationSettings from a desc + pre-built shape.
+		JPH::BodyCreationSettings BuildBodySettings(const PhysicsBodyDesc& desc, JPH::ShapeRefC shape);
 
-private:
-    // ── Jolt subsystems ──────────────────────────────────────────────────────
-    JPH::PhysicsSystem m_PhysicsSystem;
-    std::unique_ptr<JPH::TempAllocatorImpl> m_TempAllocator;
-    std::unique_ptr<JPH::JobSystemThreadPool> m_JobSystem;
+	private:
+		/// Creates a unit-box fallback shape and logs a warning.
+		JPH::ShapeRefC FallbackUnitBox(const std::string& reason);
 
-    // ── Ground detection ──────────────────────────────────────────────────────
-    // Set of Jolt body IDs (packed as uint32) that have at least one ground
-    // contact — i.e. a contact whose normal Y component is positive (pointing
-    // upward relative to the body being checked).
-    // Protected by m_GroundedMutex: Jolt calls contact callbacks from worker threads.
-    std::unordered_set<uint32_t> m_GroundedBodies;
-    mutable std::mutex m_GroundedMutex;
+	private:
+		// ── Jolt subsystems ──────────────────────────────────────────────────────
+		// m_Factory declared first → destroyed last (C++ reverse destruction order).
+		// PhysicsSystem must be destroyed before the factory.
+		std::unique_ptr<JPH::Factory> m_Factory;
+		JPH::PhysicsSystem m_PhysicsSystem;
+		std::unique_ptr<JPH::TempAllocatorImpl> m_TempAllocator;
+		std::unique_ptr<JPH::JobSystemThreadPool> m_JobSystem;
 
-    // ── Mesh shape cache ─────────────────────────────────────────────────────
-    // Built MeshShapes are cached per triangle fingerprint (model path + scale)
-    // so that multiple bodies using the same mesh share a single BVH build.
-    mutable std::mutex m_CacheMutex;
-    std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_MeshShapeCache;
+		// ── Ground detection ──────────────────────────────────────────────────────
+		// Set of Jolt body IDs (packed as uint32) that have at least one ground
+		// contact — i.e. a contact whose normal Y component is positive (pointing
+		// upward relative to the body being checked).
+		// Protected by m_GroundedMutex: Jolt calls contact callbacks from worker threads.
+		std::unordered_set<uint32_t> m_GroundedBodies;
+		mutable std::mutex m_GroundedMutex;
 
-    // ── Convex hull shape cache ─────────────────────────────────────────────
-    // For dynamic meshes, a ConvexHull is built from deduped vertices. Cache it
-    // per model path so identical dynamic bodies reuse the same hull.
-    std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_ConvexHullCache;
+		// ── Mesh shape cache ─────────────────────────────────────────────────────
+		// Built MeshShapes are cached per triangle fingerprint (model path + scale)
+		// so that multiple bodies using the same mesh share a single BVH build.
+		mutable std::mutex m_CacheMutex;
+		std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_MeshShapeCache;
 
-    // Contact listener that populates m_GroundedBodies.
-    class ContactListenerImpl : public JPH::ContactListener
-    {
-    public:
-        JPH::ValidateResult OnContactValidate(const JPH::Body&, const JPH::Body&, JPH::RVec3Arg,
-                                              const JPH::CollideShapeResult&) override;
-        void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2, const JPH::ContactManifold& inManifold,
-                            JPH::ContactSettings& inSettings) override;
-        void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
-                                const JPH::ContactManifold& inManifold, JPH::ContactSettings& inSettings) override;
-        void OnContactRemoved(const JPH::SubShapeIDPair& inPair) override;
+		// ── Convex hull shape cache ─────────────────────────────────────────────
+		// For dynamic meshes, a ConvexHull is built from deduped vertices. Cache it
+		// per model path so identical dynamic bodies reuse the same hull.
+		std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_ConvexHullCache;
 
-        /// Set the tracker that receives ground-contact updates.
-        void SetGroundedTracker(std::unordered_set<uint32_t>* tracker, std::mutex* mutex)
-        {
-            m_Tracker = tracker;
-            m_Mutex = mutex;
-        }
+		// Contact listener that populates m_GroundedBodies.
+		class ContactListenerImpl : public JPH::ContactListener
+		{
+		public:
+			JPH::ValidateResult OnContactValidate(const JPH::Body&, const JPH::Body&, JPH::RVec3Arg,
+												  const JPH::CollideShapeResult&) override;
+			void OnContactAdded(const JPH::Body& inBody1, const JPH::Body& inBody2,
+								const JPH::ContactManifold& inManifold, JPH::ContactSettings& inSettings) override;
+			void OnContactPersisted(const JPH::Body& inBody1, const JPH::Body& inBody2,
+									const JPH::ContactManifold& inManifold, JPH::ContactSettings& inSettings) override;
+			void OnContactRemoved(const JPH::SubShapeIDPair& inPair) override;
 
-    private:
-        std::unordered_set<uint32_t>* m_Tracker = nullptr;
-        std::mutex* m_Mutex = nullptr;
-    };
+			/// Set the tracker that receives ground-contact updates.
+			void SetGroundedTracker(std::unordered_set<uint32_t>* tracker, std::mutex* mutex)
+			{
+				m_Tracker = tracker;
+				m_Mutex = mutex;
+			}
 
-    ContactListenerImpl m_ContactListener;
-};
+		private:
+			std::unordered_set<uint32_t>* m_Tracker = nullptr;
+			std::mutex* m_Mutex = nullptr;
+		};
+
+		ContactListenerImpl m_ContactListener;
+	};
 
 } // namespace Chained
 

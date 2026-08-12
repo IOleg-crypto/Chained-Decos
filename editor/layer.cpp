@@ -478,10 +478,24 @@ namespace Chained
 				{
 					scene->OnUpdateRuntime(ts);
 				}
+
+				if (!scene->GetPendingScenePath().empty())
+				{
+					std::string path = scene->GetPendingScenePath();
+					scene->ClearPendingScenePath();
+					m_SceneManager->OpenScene(path);
+				}
 			}
 			else if (scene->GetSceneState() == SceneState::Simulate)
 			{
 				scene->OnUpdateSimulation(ts);
+
+				if (!scene->GetPendingScenePath().empty())
+				{
+					std::string path = scene->GetPendingScenePath();
+					scene->ClearPendingScenePath();
+					m_SceneManager->OpenScene(path);
+				}
 			}
 			else
 			{
@@ -573,6 +587,10 @@ namespace Chained
 			m_SceneManager->SetSceneState(SceneState::Edit);
 			return true;
 		});
+		dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& e) {
+			m_SceneManager->OpenScene(e.GetPath());
+			return true;
+		});
 
 		// 2. Project Management
 		dispatcher.Dispatch<ProjectOpenedEvent>([this](auto& e) { return m_ProjectManager->OnProjectOpened(e); });
@@ -659,7 +677,7 @@ namespace Chained
 			// If the path is relative, resolve it via Project::GetAssetPath
 			if (scenePath.is_relative() && Project::GetActive())
 			{
-				scenePath = Project::GetAssetPath(ev.GetPath());
+				scenePath = Project::GetActive()->GetAssetPath(ev.GetPath());
 			}
 
 			std::string finalPath = scenePath.string();

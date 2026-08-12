@@ -2,27 +2,15 @@
 #include "engine/core/log.h"
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <atomic>
-#include <mutex>
-#include <thread>
-
-#if CH_PLATFORM_WINDOWS
-#define WIN32_LEAN_AND_MEAN
-#include <windows.h>
-#include <winhttp.h>
-#pragma comment(lib, "winhttp.lib")
-#endif
 
 namespace Chained
 {
-	/// Process-wide tracking: every Network instance registers here so the static GNS
-	/// callback can route connection events to the correct owner (host or client).
-	std::vector<Network*> Network::s_Instances;
-
-	/// GNS is a process-wide singleton. Multiple Network instances (e.g. host + client
-	/// in listen-server or split-screen) share one library init/kill cycle.
-	int Network::s_LibRefCount = 0;
+	/// Single owner of the process-wide GNS library. Only one Network instance
+	/// exists at a time (registered via ServiceLocator).
+	Network* Network::s_Instance = nullptr;
 
 	/// Safety net — if someone forgets to call Shutdown(), the destructor cleans up.
 	/// Logs a warning because explicit shutdown is preferred for deterministic ordering.
@@ -36,14 +24,11 @@ namespace Chained
 	}
 
 	/// Initialize GameNetworkingSockets library (once per process) and obtain the
-	/// networking interface. After this call the instance is registered in s_Instances
+	/// networking interface. After this call the instance is registered as s_Instance
 	/// and ready to host or connect.
 	void Network::Initialize()
 	{
-		// The GNS library is a process-wide singleton and asserts on a second Init, so
-		// refcount it — a host and a client can coexist in one process (tests, listen
-		// server, split-screen) and each still owns its own sockets.
-		if (s_LibRefCount == 0)
+		if (!s_Instance)
 		{
 			SteamDatagramErrMsg errMsg;
 			if (!GameNetworkingSockets_Init(nullptr, errMsg))
@@ -52,18 +37,20 @@ namespace Chained
 				SetEnabled(false);
 				return;
 			}
+			CH_CORE_INFO("Network: GameNetworkingSockets library initialized.");
 		}
-		++s_LibRefCount;
 
-		m_Interface = SteamNetworkingSockets(); // global accessor, valid after Init
-		s_Instances.push_back(this);
-		CH_CORE_INFO("Network: Initialized successfully (GameNetworkingSockets).");
+		s_Instance = this;
+		m_Interface = SteamNetworkingSockets();
+		CH_CORE_INFO("Network: Initialized successfully.");
 	}
 
 	/// Tear down all networking state: close sockets, destroy poll group, release
-	/// the GNS library if this was the last instance.
+	/// the GNS library if this is the owning instance.
 	void Network::Shutdown()
 	{
+		m_ShuttingDown.store(true, std::memory_order_release);
+
 		Disconnect(); // close all active connections first
 
 		if (m_hListenSocket != k_HSteamListenSocket_Invalid)
@@ -83,17 +70,11 @@ namespace Chained
 		m_Role = Role::Offline;
 		m_Port = 0;
 
-		// Unregister and decrement refcount — last instance kills the library
-		auto it = std::find(s_Instances.begin(), s_Instances.end(), this);
-		if (it != s_Instances.end())
+		if (s_Instance == this)
 		{
-			s_Instances.erase(it);
-
+			s_Instance = nullptr;
 			m_Interface = nullptr;
-			if (--s_LibRefCount == 0)
-			{
-				GameNetworkingSockets_Kill();
-			}
+			GameNetworkingSockets_Kill();
 		}
 
 		CH_CORE_INFO("Network: Shutdown complete.");
@@ -143,70 +124,26 @@ namespace Chained
 		m_Port = port;
 
 		// UPnP: async discovery + port mapping so the host is reachable from the internet
-		// without manual router configuration. Runs in a detached thread — failure is
-		// non-fatal (LAN still works, and the host's public address label falls back).
+		// without manual router configuration. Failure is non-fatal (LAN still works,
+		// and the host's public address label falls back to LAN address).
 		m_CachedPublicAddress.clear();
-		m_PublicAddressFetched = false;
-		std::thread([this, port]() {
+		m_PublicAddressFetched.store(false, std::memory_order_release);
+		m_PublicAddressFuture = std::async(std::launch::async, [this, port]() -> std::string {
 			if (m_UpnpMapper.Initialize())
 			{
 				m_UpnpMapper.AddMapping(port, "UDP", "Chained Engine");
 				std::string publicIP = m_UpnpMapper.GetPublicIP();
 				if (!publicIP.empty())
 				{
-					m_CachedPublicAddress = publicIP + ":" + std::to_string(port);
-					m_PublicAddressFetched = true;
-					CH_CORE_INFO("Network: UPnP public address = {}", m_CachedPublicAddress);
-					return;
+					std::string addr = publicIP + ":" + std::to_string(port);
+					CH_CORE_INFO("Network: UPnP public address = {}", addr);
+					return addr;
 				}
 			}
-#if CH_PLATFORM_WINDOWS
-			std::string ip;
-			HINTERNET hSession = WinHttpOpen(L"ChainedDecos/1.0", WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
-											 WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
-			if (hSession)
-			{
-				HINTERNET hConnect = WinHttpConnect(hSession, L"api.ipify.org", INTERNET_DEFAULT_HTTP_PORT, 0);
-				if (hConnect)
-				{
-					HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", L"/", nullptr, WINHTTP_NO_REFERER,
-															WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
-					if (hRequest)
-					{
-						if (WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0,
-											   0, 0) &&
-							WinHttpReceiveResponse(hRequest, nullptr))
-						{
-							char buf[64] = {};
-							DWORD read = 0;
-							WinHttpReadData(hRequest, buf, sizeof(buf) - 1, &read);
-							if (read > 0)
-								ip = std::string(buf, read);
-						}
-						WinHttpCloseHandle(hRequest);
-					}
-					WinHttpCloseHandle(hConnect);
-				}
-				WinHttpCloseHandle(hSession);
-			}
-			// Trim whitespace
-			while (!ip.empty() && (ip.back() == '\n' || ip.back() == '\r' || ip.back() == ' '))
-				ip.pop_back();
-			if (!ip.empty())
-			{
-				m_CachedPublicAddress = ip + ":" + std::to_string(port);
-				CH_CORE_INFO("Network: Public address = {}", m_CachedPublicAddress);
-			}
-			else
-			{
-				m_CachedPublicAddress = "Port: " + std::to_string(port);
-				CH_CORE_WARN("Network: Could not fetch public IP. Showing port only.");
-			}
-#else
-			m_CachedPublicAddress = "Port: " + std::to_string(port);
-#endif
-			m_PublicAddressFetched = true;
-		}).detach();
+			std::string fallback = "Port: " + std::to_string(port);
+			CH_CORE_INFO("Network: UPnP public IP not available. Using fallback: {}", fallback);
+			return fallback;
+		});
 
 		CH_CORE_INFO("Network: Hosting on port {} (max {} clients).", port, maxClients);
 
@@ -279,6 +216,15 @@ namespace Chained
 			m_Clients.clear();
 		}
 
+		if (m_Role == Role::Host || m_Role == Role::HostAndClient)
+		{
+			if (m_hPollGroup != k_HSteamNetPollGroup_Invalid)
+			{
+				m_Interface->DestroyPollGroup(m_hPollGroup);
+				m_hPollGroup = k_HSteamNetPollGroup_Invalid;
+			}
+		}
+
 		if (m_Role == Role::Host && m_UpnpMapper.IsAvailable())
 		{
 			m_UpnpMapper.RemoveMapping(m_Port, "UDP");
@@ -295,7 +241,7 @@ namespace Chained
 
 	/// Read all pending messages from the network. Host reads from its poll group
 	/// (all clients), client reads from its single server connection. Each message
-	/// is deserialized as [PacketType][payload] and dispatched via m_PacketCallback.
+	/// is deserialized as [PacketHeader][payload] and dispatched via m_PacketCallback.
 	void Network::ReceiveMessages()
 	{
 		if (!m_Interface)
@@ -306,15 +252,22 @@ namespace Chained
 		SteamNetworkingMessage_t* msgs[32]; // batch buffer — up to 32 msgs per poll
 		while (true)
 		{
-			// Only the host owns a poll group; a client reads from its single connection.
+			// Determine which source to read from based on role
 			int n = 0;
-			if (m_hPollGroup != k_HSteamNetPollGroup_Invalid)
+			if (m_hPollGroup != k_HSteamNetPollGroup_Invalid && (m_Role == Role::Host || m_Role == Role::HostAndClient))
 			{
 				n = m_Interface->ReceiveMessagesOnPollGroup(m_hPollGroup, msgs, 32);
 			}
-			else if (m_ServerConnection != k_HSteamNetConnection_Invalid)
+			if (m_Role == Role::Client || m_Role == Role::HostAndClient)
 			{
-				n = m_Interface->ReceiveMessagesOnConnection(m_ServerConnection, msgs, 32);
+				if (m_ServerConnection != k_HSteamNetConnection_Invalid)
+				{
+					int n2 = m_Interface->ReceiveMessagesOnConnection(m_ServerConnection, msgs + n, 32 - n);
+					if (n2 > 0)
+					{
+						n += n2;
+					}
+				}
 			}
 
 			if (n <= 0)
@@ -326,16 +279,22 @@ namespace Chained
 			{
 				SteamNetworkingMessage_t* msg = msgs[i];
 
-				// Wire format: [PacketType (1 byte)][payload (N bytes)]
-				if (msg->m_cbSize >= sizeof(PacketType) && m_PacketCallback)
+				// Wire format: [PacketHeader (2 bytes)][payload (N bytes)]
+				if (msg->m_cbSize >= PacketHeader::WireSize() && m_PacketCallback)
 				{
-					PacketType type;
-					std::memcpy(&type, msg->m_pData, sizeof(PacketType));
+					PacketHeader hdr = PacketHeader::Deserialize(static_cast<const uint8_t*>(msg->m_pData));
 
-					const uint8_t* payload = static_cast<const uint8_t*>(msg->m_pData) + sizeof(PacketType);
-					size_t payloadSize = msg->m_cbSize - sizeof(PacketType);
+					// Silently drop packets with mismatched protocol version
+					if (hdr.Version != kProtocolVersion)
+					{
+						msg->Release();
+						continue;
+					}
 
-					m_PacketCallback(type, payload, payloadSize, msg->m_conn);
+					const uint8_t* payload = static_cast<const uint8_t*>(msg->m_pData) + PacketHeader::WireSize();
+					size_t payloadSize = msg->m_cbSize - PacketHeader::WireSize();
+
+					m_PacketCallback(hdr.Type, payload, payloadSize, msg->m_conn);
 				}
 
 				msg->Release(); // return buffer to GNS — must be called for every message
@@ -473,27 +432,25 @@ namespace Chained
 	}
 
 	/// Static GNS callback — invoked by RunCallbacks() for ANY connection in the
-	/// process. We must figure out which Network instance owns this connection
-	/// by checking listen socket, outgoing connection, or client list.
+	/// process. Routes to the single Network instance that owns this connection.
 	void Network::SteamNetConnectionStatusChangedCallback(SteamNetConnectionStatusChangedCallback_t* pInfo)
 	{
-		// Several Network instances can share the process-wide library, so route the
-		// callback to the one that owns this connection rather than a single global.
-		for (Network* net : s_Instances)
+		if (!s_Instance)
 		{
-			// Check if this connection belongs to net: incoming on its listen socket,
-			// or it's the client's outgoing connection, or it's in the host's client list
-			const bool ownsListenSocket = pInfo->m_info.m_hListenSocket != k_HSteamListenSocket_Invalid &&
-										  pInfo->m_info.m_hListenSocket == net->m_hListenSocket;
-			const bool ownsOutgoing = pInfo->m_hConn == net->m_ServerConnection;
-			const bool ownsClient =
-				std::find(net->m_Clients.begin(), net->m_Clients.end(), pInfo->m_hConn) != net->m_Clients.end();
+			return;
+		}
 
-			if (ownsListenSocket || ownsOutgoing || ownsClient)
-			{
-				net->OnConnectionStatusChanged(pInfo);
-				return;
-			}
+		// Verify this connection belongs to us: incoming on our listen socket,
+		// our outgoing server connection, or in our client list.
+		const bool ownsListenSocket = pInfo->m_info.m_hListenSocket != k_HSteamListenSocket_Invalid &&
+									  pInfo->m_info.m_hListenSocket == s_Instance->m_hListenSocket;
+		const bool ownsOutgoing = pInfo->m_hConn == s_Instance->m_ServerConnection;
+		const bool ownsClient = std::find(s_Instance->m_Clients.begin(), s_Instance->m_Clients.end(), pInfo->m_hConn) !=
+								s_Instance->m_Clients.end();
+
+		if (ownsListenSocket || ownsOutgoing || ownsClient)
+		{
+			s_Instance->OnConnectionStatusChanged(pInfo);
 		}
 	}
 
@@ -506,13 +463,17 @@ namespace Chained
 			return;
 		}
 
-		size_t totalSize = sizeof(PacketType) + size;
+		PacketHeader hdr;
+		hdr.Version = kProtocolVersion;
+		hdr.Type = type;
+
+		size_t totalSize = PacketHeader::WireSize() + size;
 		std::vector<uint8_t> buffer(totalSize);
 
-		std::memcpy(buffer.data(), &type, sizeof(PacketType));
+		hdr.Serialize(buffer.data());
 		if (size > 0 && data)
 		{
-			std::memcpy(buffer.data() + sizeof(PacketType), data, size);
+			std::memcpy(buffer.data() + PacketHeader::WireSize(), data, size);
 		}
 
 		int flags = reliable ? k_nSteamNetworkingSend_Reliable : k_nSteamNetworkingSend_UnreliableNoNagle;
@@ -588,12 +549,21 @@ namespace Chained
 
 	/// Returns the public IP:PORT string (e.g. "203.0.113.5:7777") suitable
 	/// for sharing with friends over the internet.
-	/// The first call spawns an async WinHTTP fetch; subsequent calls are instant.
+	/// The first call spawns an async UPnP fetch; subsequent calls are instant.
 	std::string Network::GetPublicAddress()
 	{
-		if (!m_PublicAddressFetched)
+		if (!m_PublicAddressFetched.load(std::memory_order_acquire))
 		{
-			return "Fetching...";
+			if (m_PublicAddressFuture.valid() &&
+				m_PublicAddressFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+			{
+				m_CachedPublicAddress = m_PublicAddressFuture.get();
+				m_PublicAddressFetched.store(true, std::memory_order_release);
+			}
+			else
+			{
+				return "Fetching...";
+			}
 		}
 		return m_CachedPublicAddress;
 	}

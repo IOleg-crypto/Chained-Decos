@@ -1,0 +1,8 @@
+# Nametag Text Shader (for rendering text to FBO)
+VertexShader: nametag_text.vs
+FragmentShader: nametag_text.fs
+
+Uniforms:
+  - projection
+  - fontAtlas
+  - textColor

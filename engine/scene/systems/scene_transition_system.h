@@ -2,17 +2,15 @@
 #define CH_SCENE_TRANSITION_SYSTEM_H
 
 #include <entt/entt.hpp>
-#include <functional>
+#include <optional>
+#include <string>
 
 namespace Chained
 {
-class Event;
-
-namespace SceneTransitionSystem
-{
-using EventCallbackFn = std::function<void(Event&)>;
-void Update(entt::registry& reg, const EventCallbackFn& callback);
-} // namespace SceneTransitionSystem
+	namespace SceneTransitionSystem
+	{
+		std::optional<std::string> Update(entt::registry& reg);
+	} // namespace SceneTransitionSystem
 } // namespace Chained
 
 #endif // CH_SCENE_TRANSITION_SYSTEM_H

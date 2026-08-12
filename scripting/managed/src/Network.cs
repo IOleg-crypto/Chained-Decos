@@ -155,7 +155,9 @@ namespace Chained
             if (Network_GetPlayerListJSON_Ptr == null) return "[]";
             sbyte* buf = stackalloc sbyte[4096];
             Network_GetPlayerListJSON_Ptr((char*)buf, 4096);
-            return new string(buf);
+            int len = 0;
+            while (buf[len] != 0 && len < 4095) len++;
+            return System.Text.Encoding.UTF8.GetString((byte*)buf, len);
         }
 
         /// <summary>Returns the local player's network ID (assigned by host).</summary>
@@ -182,7 +184,9 @@ namespace Chained
             if (Network_GetPendingChatJSON_Ptr == null) return "[]";
             sbyte* buf = stackalloc sbyte[8192];
             Network_GetPendingChatJSON_Ptr((char*)buf, 8192);
-            return new string(buf);
+            int len = 0;
+            while (buf[len] != 0 && len < 8191) len++;
+            return System.Text.Encoding.UTF8.GetString((byte*)buf, len);
         }
 
         /// <summary>Clears pending chat messages after reading.</summary>

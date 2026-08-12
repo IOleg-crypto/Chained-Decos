@@ -8,16 +8,17 @@
 
 namespace Chained
 {
-class EnvironmentLoader : public IAssetLoader
-{
-public:
-    bool IsAsync() const override
-    {
-        return true;
-    }
-    std::shared_ptr<Asset> Create() override;
-    bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError = nullptr) override;
-};
+	class EnvironmentLoader : public IAssetLoader
+	{
+	public:
+		bool IsAsync() const override
+		{
+			return false;
+		}
+		std::shared_ptr<Asset> Create() override;
+		bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath,
+				  std::string* outError = nullptr) override;
+	};
 } // namespace Chained
 
 #endif // CH_ENVIRONMENT_LOADER_H

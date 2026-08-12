@@ -14,6 +14,7 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 #include "engine/scene/scene_state.h"
+#include "engine/scene/systems/system_manager.h"
 
 namespace Chained
 {
@@ -25,13 +26,6 @@ namespace Chained
 	public:
 		Scene();
 		~Scene();
-
-	public:
-		using EventCallbackFn = std::function<void(Event&)>;
-		void SetEventCallback(const EventCallbackFn& callback)
-		{
-			m_EventCallback = callback;
-		}
 
 	public:
 		static std::shared_ptr<Scene> CreateDefault();
@@ -111,11 +105,49 @@ namespace Chained
 
 	public: // Systems & Tools
 		/// Returns the underlying EnTT registry for direct access.
-		/// @warning Returns mutable reference — prefer Entity API for component access.
-		/// Direct registry manipulation bypasses Entity lifecycle hooks.
+		/// @deprecated Prefer typed methods below or the Entity API for component access.
 		entt::registry& GetRegistry();
 		const entt::registry& GetRegistry() const;
 		entt::registry* GetRegistryPtr();
+
+		// Registry Facade — prefer these over raw GetRegistry() access
+		Entity GetEntity(entt::entity handle);
+		const Entity GetEntity(entt::entity handle) const;
+
+		template <typename... Components> auto View()
+		{
+			return m_Registry->view<Components...>();
+		}
+
+		template <typename... Components> auto View() const
+		{
+			return m_Registry->view<Components...>();
+		}
+
+		bool IsValid(entt::entity handle) const
+		{
+			return m_Registry && m_Registry->valid(handle);
+		}
+
+		template <typename T> T& GetContext()
+		{
+			return m_Registry->ctx().get<T>();
+		}
+
+		template <typename T> const T& GetContext() const
+		{
+			return m_Registry->ctx().get<T>();
+		}
+
+		template <typename T> T* TryGetContext()
+		{
+			return m_Registry->ctx().find<T>();
+		}
+
+		template <typename T> const T* TryGetContext() const
+		{
+			return m_Registry->ctx().find<T>();
+		}
 
 		void OnRuntimeStop();
 		void OnRuntimeStart();
@@ -123,8 +155,31 @@ namespace Chained
 		void OnUpdateEditor(Timestep timestep);
 		void OnUpdateRuntime(Timestep timestep);
 
+		// System registration (called during Scene construction)
+		SystemManager& GetSystemManager()
+		{
+			return m_SystemManager;
+		}
+		const SystemManager& GetSystemManager() const
+		{
+			return m_SystemManager;
+		}
+
+		// Async scene loading
+		std::future<std::shared_ptr<Scene>> LoadSceneAsync(const std::string& path);
+		void SwapScene(std::shared_ptr<Scene> newScene);
+
+		// Pending scene change (from SceneTransitionSystem)
+		const std::string& GetPendingScenePath() const
+		{
+			return m_PendingScenePath;
+		}
+		void ClearPendingScenePath()
+		{
+			m_PendingScenePath.clear();
+		}
+
 	private:
-		void UpdateCommon(Timestep ts, bool runScripting, bool runPhysics, bool runTransitions);
 		void InitializePhysicsStartup();
 		void RebuildRootCache() const;
 
@@ -140,12 +195,14 @@ namespace Chained
 		SceneSettings m_Settings;
 
 		std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
-		EventCallbackFn m_EventCallback;
+		std::string m_PendingScenePath;
 
 		bool m_IsStartingUp = false;
 
 		mutable std::vector<entt::entity> m_CachedRoots;
 		mutable bool m_RootsDirty = true;
+
+		SystemManager m_SystemManager;
 
 	private:
 		void OnIDConstruct(entt::registry& registry, entt::entity entity);
