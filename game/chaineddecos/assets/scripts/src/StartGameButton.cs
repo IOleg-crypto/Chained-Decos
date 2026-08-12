@@ -12,12 +12,23 @@ namespace ChainedDecos.Scripts
         public override void OnUpdate(float deltaTime)
         {
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+
+            // Client restriction: Only the host can start the game!
+            if (Network.IsConnected && !Network.IsHost)
+            {
+                if (btn != null && btn.Label != "Waiting for Host...")
+                {
+                    btn.Label = "Waiting for Host...";
+                }
+                return;
+            }
+
             if (btn == null || !btn.IsClicked)
                 return;
 
             string map = LobbyManager.SelectedMap;
             int playerCount = Network.ClientCount;
-            Log.Info($"[StartGameButton] Starting game with {playerCount} client(s), map: {map}");
+            Log.Info($"[StartGameButton] Host starting game with {playerCount} client(s), map: {map}");
 
             Network.BroadcastSceneChange(map);
             Scene.LoadScene(map);

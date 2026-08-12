@@ -6,6 +6,8 @@
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/camera_types.h"
 #include "engine/graphics/pipeline/renderer_data.h"
+#include "engine/graphics/pipeline/lighting_manager.h"
+#include "engine/graphics/pipeline/geometry_factory.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include "engine/assets/types/environment_asset.h"
 #include <glm/glm.hpp>
@@ -33,7 +35,7 @@ namespace Chained
 		void InitializeResources();
 
 		/// @brief Begin a new render frame with the given camera.
-		void BeginScene(const Camera3D& camera, float nearClip = 0.01f, float farClip = 10000.0f);
+		void BeginScene(const Camera3D& camera);
 
 		/// @brief Flush pending draw calls and finalize the frame.
 		void EndScene();
@@ -54,16 +56,15 @@ namespace Chained
 								 ShaderAsset* overrideShader = nullptr,
 								 const std::vector<ShaderUniform>& uniforms = {});
 
-		// Lighting
-		void SetLight(int index, const RenderLight& light);
-		void SetLightCount(int count);
-		void ClearLights();
-		void ApplyEnvironment(const EnvironmentSettings& s);
-		void SetMainLight(const LightingSettings& s);
-		void SetShadowState(bool e, uint32_t id, const glm::mat4& m, float b);
-		void SetLightingUniforms(Shader* shader);
-		void ApplyFogUniforms(Shader* shader);
-		void UploadLights();
+		// Lighting (delegated to LightingManager)
+		LightingManager& GetLightingManager()
+		{
+			return m_LightingManager;
+		}
+		const LightingManager& GetLightingManager() const
+		{
+			return m_LightingManager;
+		}
 
 		// Frame
 		void SetDiagnosticMode(float mode);
@@ -73,17 +74,9 @@ namespace Chained
 		{
 			return *m_Data->Shaders;
 		}
-		LightingData& GetLighting()
-		{
-			return m_Data->Lighting;
-		}
 		const FrameState& GetFrame() const
 		{
 			return m_Data->Frame;
-		}
-		ShadowState& GetShadow()
-		{
-			return m_Data->Shadow;
 		}
 
 		void SetHeadless(bool headless)
@@ -120,6 +113,8 @@ namespace Chained
 
 	private:
 		std::unique_ptr<RendererData> m_Data;
+		LightingManager m_LightingManager;
+		GeometryFactory m_GeometryFactory;
 		bool m_Headless = false;
 		bool m_ResourcesLoaded = false;
 		uint32_t m_ViewportWidth = 1280;

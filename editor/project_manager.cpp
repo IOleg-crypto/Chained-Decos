@@ -397,22 +397,7 @@ namespace Chained
 			// Must be done in one pass: Clear → add editor fonts → add project fonts → Build().
 			// Calling Build() twice (once per font group) crashes because ImGui frees
 			// font file data after the first Build(), making a second Build() invalid.
-			{
-				auto* imguiLayer = Application::Get().GetImGuiLayer();
-
-				imguiLayer->ClearFonts();
-				if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
-				{
-					fontRegistry->Clear();
-				}
-
-				EditorLayer::Get().AddEditorFontsToAtlas();
-				if (widgetRenderer)
-				{
-					widgetRenderer->LoadProjectFonts();
-				}
-				imguiLayer->RefreshFontAtlasTexture();
-			}
+			EditorLayer::Get().ReloadEditorFonts();
 
 			m_LastProjectPath = openedPath;
 
@@ -512,11 +497,11 @@ namespace Chained
 
 				if (scenePath.is_relative())
 				{
-					scenePath = Project::GetAssetPath(scenePath);
+					scenePath = project->GetAssetPath(scenePath);
 				}
 
 				scenePath = std::filesystem::absolute(scenePath);
-				project->SetActiveScenePath(Project::GetRelativePath(scenePath));
+				project->SetActiveScenePath(project->GetRelativePath(scenePath));
 				sceneArgument = std::format(" --scene \"{}\"", scenePath.string());
 			}
 		}

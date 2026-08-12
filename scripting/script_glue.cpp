@@ -368,7 +368,7 @@ namespace Chained
 								 (void*)&NetworkIdentityComponent_GetIsOwner);
 
 		assembly.UploadInternalCalls();
-		CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.", 130, (std::string)assembly.GetName());
+		CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.", 172, (std::string)assembly.GetName());
 	}
 
 } // namespace Chained

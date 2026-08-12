@@ -3,7 +3,6 @@
 #include <algorithm>
 namespace Chained
 {
-	static thread_local Coral::UCString s_AudioTagBuffer;
 
 	void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
 	{
@@ -123,16 +122,14 @@ namespace Chained
 		Entity entity = GetEntity(entityID);
 		std::string path =
 			entity && entity.HasComponent<AudioComponent>() ? entity.GetComponent<AudioComponent>().SoundPath : "";
-		s_AudioTagBuffer = ToWide(path);
-		return s_AudioTagBuffer.c_str();
+		return GlueStringPool::ReturnString(path);
 	}
 	const Coral::UCChar* SpriteComponent_GetTexturePath(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		std::string path =
 			entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().TexturePath : "";
-		s_AudioTagBuffer = ToWide(path);
-		return s_AudioTagBuffer.c_str();
+		return GlueStringPool::ReturnString(path);
 	}
 	void SpriteComponent_SetTexturePath(uint64_t entityID, const Coral::UCChar* path)
 	{

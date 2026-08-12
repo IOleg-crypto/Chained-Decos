@@ -21,45 +21,43 @@ namespace Chained
 		m_Name = "Material Editor";
 	}
 
-	static uint32_t GetTextureID(const std::shared_ptr<Texture>& tex, const std::string& path)
+	static uint32_t GetTextureID(const std::shared_ptr<Texture>& map, const std::string& path)
 	{
-		if (tex)
+		if (map)
 		{
-			return tex->GetNativeHandle();
+			return map->GetNativeHandle();
 		}
 		if (path.empty())
 		{
 			return 0;
 		}
-		auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
-		if (!assetMgr)
+		auto* am = ServiceLocator::TryGet<AssetManager>();
+		if (am)
 		{
-			return 0;
-		}
-		auto texAsset = assetMgr->Get<TextureAsset>(path);
-		if (texAsset && texAsset->GetTexture())
-		{
-			return texAsset->GetTexture()->GetNativeHandle();
+			auto texAsset = am->Get<TextureAsset>(path);
+			if (texAsset && texAsset->IsReady())
+			{
+				auto gpuTex = texAsset->GetTexture();
+				if (gpuTex)
+				{
+					return gpuTex->GetNativeHandle();
+				}
+			}
 		}
 		return 0;
 	}
 
-	static void UpdateTextureFromPath(std::shared_ptr<Texture>& tex, const std::string& path)
+	static void UpdateTextureFromPath(std::shared_ptr<Texture>& outMap, const std::string& path)
 	{
-		if (path.empty())
-		{
-			tex.reset();
-			return;
-		}
-		auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
-		if (!assetMgr)
+		auto* am = ServiceLocator::TryGet<AssetManager>();
+		if (!am || path.empty())
 		{
 			return;
 		}
-		auto texAsset = assetMgr->Get<TextureAsset>(path);
+		auto texAsset = am->Get<TextureAsset>(path);
 		if (texAsset && texAsset->IsReady())
 		{
-			tex = texAsset->GetTexture();
+			outMap = texAsset->GetTexture();
 		}
 	}
 

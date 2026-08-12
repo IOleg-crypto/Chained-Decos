@@ -341,7 +341,7 @@ namespace Chained
 		{
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& modelcomp = entity.AddComponent<ModelComponent>();
-			modelcomp.ModelPath = Project::GetRelativePath(entry.path);
+			modelcomp.ModelPath = Project::GetActive()->GetRelativePath(entry.path);
 
 			EntitySelectedEvent e((entt::entity)entity, scene.get());
 			Application::Get().OnEvent(e);
@@ -350,7 +350,7 @@ namespace Chained
 		{
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& sprite = entity.AddComponent<SpriteComponent>();
-			sprite.TexturePath = Project::GetRelativePath(entry.path);
+			sprite.TexturePath = Project::GetActive()->GetRelativePath(entry.path);
 			EntitySelectedEvent e((entt::entity)entity, scene.get());
 			Application::Get().OnEvent(e);
 		}
@@ -366,7 +366,7 @@ namespace Chained
 		{
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& shader = entity.AddComponent<ShaderComponent>();
-			shader.ShaderPath = Project::GetRelativePath(entry.path);
+			shader.ShaderPath = Project::GetActive()->GetRelativePath(entry.path);
 			EntitySelectedEvent e((entt::entity)entity, scene.get());
 			Application::Get().OnEvent(e);
 		}

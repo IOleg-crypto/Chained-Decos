@@ -1,11 +1,18 @@
 #ifndef CH_NET_PACKET_H
 #define CH_NET_PACKET_H
 
+#include <bit>
 #include <cstdint>
 #include <cstring>
 
+static_assert(std::endian::native == std::endian::little, "Network packets assume little-endian byte order. "
+														  "Add byte-swapping for big-endian platforms.");
+
 namespace Chained
 {
+	// Protocol version — bump when wire format changes.
+	// Receivers silently drop packets with a mismatched version.
+	static constexpr uint8_t kProtocolVersion = 1;
 
 	enum class PacketType : uint8_t
 	{
@@ -38,6 +45,59 @@ namespace Chained
 		InputAction_Interact = 1 << 2,
 	};
 
+	// ── Template-based serialization ─────────────────────────────────────
+	// Replaces the copy-pasted WireSize/Serialize/Deserialize pattern.
+	// Specialize for packets that need null-termination or custom layout.
+
+	template <typename T> struct PacketTraits
+	{
+		static constexpr size_t WireSize()
+		{
+			return sizeof(T);
+		}
+
+		static void Serialize(const T& pkt, uint8_t* out)
+		{
+			std::memcpy(out, &pkt, sizeof(T));
+		}
+
+		static T Deserialize(const uint8_t* in)
+		{
+			T pkt;
+			std::memcpy(&pkt, in, sizeof(T));
+			return pkt;
+		}
+	};
+
+	// ── Packet header (prepended to every datagram) ──────────────────────
+
+	struct PacketHeader
+	{
+		uint8_t Version = kProtocolVersion;
+		PacketType Type = PacketType::None;
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(PacketHeader);
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, this, sizeof(PacketHeader));
+		}
+
+		static PacketHeader Deserialize(const uint8_t* in)
+		{
+			PacketHeader hdr;
+			std::memcpy(&hdr, in, sizeof(PacketHeader));
+			return hdr;
+		}
+	};
+
+	// ── Concrete packet types ────────────────────────────────────────────
+
+#pragma pack(push, 1)
+
 	// Sent from client -> server every frame (unreliable)
 	struct InputStatePacket
 	{
@@ -49,25 +109,22 @@ namespace Chained
 		float MouseY = 0.0f;
 		float DeltaTime = 0.0f;
 
+		using Traits = PacketTraits<InputStatePacket>;
 		static constexpr size_t WireSize()
 		{
-			return sizeof(InputStatePacket);
+			return Traits::WireSize();
 		}
-
 		void Serialize(uint8_t* out) const
 		{
-			std::memcpy(out, this, sizeof(InputStatePacket));
+			Traits::Serialize(*this, out);
 		}
-
 		static InputStatePacket Deserialize(const uint8_t* in)
 		{
-			InputStatePacket pkt;
-			std::memcpy(&pkt, in, sizeof(InputStatePacket));
-			return pkt;
+			return Traits::Deserialize(in);
 		}
 	};
 
-	// Per-player info for the players list tab
+	// Per-player info for internal engine representations
 	struct PlayerNetInfo
 	{
 		uint64_t NetworkID = 0;
@@ -96,6 +153,7 @@ namespace Chained
 		{
 			SceneChangePacket pkt;
 			std::memcpy(&pkt, in, sizeof(SceneChangePacket));
+			pkt.ScenePath[sizeof(pkt.ScenePath) - 1] = '\0';
 			return pkt;
 		}
 	};
@@ -120,6 +178,7 @@ namespace Chained
 		{
 			PlayerInfoPacket pkt;
 			std::memcpy(&pkt, in, sizeof(PlayerInfoPacket));
+			pkt.Name[sizeof(pkt.Name) - 1] = '\0';
 			return pkt;
 		}
 	};
@@ -131,13 +190,36 @@ namespace Chained
 		char Name[32] = {};
 		uint8_t SkinIndex = 0;
 		uint8_t IsHost = 0;
+
+		static constexpr size_t WireSize()
+		{
+			return sizeof(uint64_t) + 32 + sizeof(uint8_t) + sizeof(uint8_t); // 42 bytes
+		}
+
+		void Serialize(uint8_t* out) const
+		{
+			std::memcpy(out, &NetworkID, sizeof(NetworkID));
+			std::memcpy(out + sizeof(NetworkID), Name, 32);
+			out[sizeof(NetworkID) + 32] = SkinIndex;
+			out[sizeof(NetworkID) + 33] = IsHost;
+		}
+
+		static PlayerListEntry Deserialize(const uint8_t* in)
+		{
+			PlayerListEntry entry;
+			std::memcpy(&entry.NetworkID, in, sizeof(entry.NetworkID));
+			std::memcpy(entry.Name, in + sizeof(entry.NetworkID), 32);
+			entry.Name[31] = '\0';
+			entry.SkinIndex = in[sizeof(entry.NetworkID) + 32];
+			entry.IsHost = in[sizeof(entry.NetworkID) + 33];
+			return entry;
+		}
 	};
 
 	// Sent from host -> all clients with the full player list (reliable)
 	struct PlayerListPacket
 	{
 		uint8_t Count = 0;
-		// Followed by Count × PlayerListEntry (not included in sizeof — wire format)
 
 		static constexpr size_t HeaderSize()
 		{
@@ -155,9 +237,7 @@ namespace Chained
 		}
 	};
 
-	// Sent from host -> clients when a networked entity appears. PrefabPath is
-	// relative to the assets directory; the client instantiates it and tags the
-	// result with NetworkID so world state updates can find it.
+	// Sent from host -> clients when a networked entity appears
 	struct EntitySpawnPacket
 	{
 		uint64_t NetworkID = 0;
@@ -177,54 +257,48 @@ namespace Chained
 		{
 			EntitySpawnPacket pkt;
 			std::memcpy(&pkt, in, sizeof(EntitySpawnPacket));
+			pkt.PrefabPath[sizeof(pkt.PrefabPath) - 1] = '\0';
 			return pkt;
 		}
 	};
 
-	// Sent from host -> clients when a networked entity goes away.
+	// Sent from host -> clients when a networked entity goes away
 	struct EntityDestroyPacket
 	{
 		uint64_t NetworkID = 0;
 
+		using Traits = PacketTraits<EntityDestroyPacket>;
 		static constexpr size_t WireSize()
 		{
-			return sizeof(EntityDestroyPacket);
+			return Traits::WireSize();
 		}
-
 		void Serialize(uint8_t* out) const
 		{
-			std::memcpy(out, this, sizeof(EntityDestroyPacket));
+			Traits::Serialize(*this, out);
 		}
-
 		static EntityDestroyPacket Deserialize(const uint8_t* in)
 		{
-			EntityDestroyPacket pkt;
-			std::memcpy(&pkt, in, sizeof(EntityDestroyPacket));
-			return pkt;
+			return Traits::Deserialize(in);
 		}
 	};
 
-	// Sent from host -> a single client, telling it which NetworkID is its own.
-	// Without this a client cannot tell its own avatar from everyone else's.
+	// Sent from host -> a single client with its NetworkID assignment
 	struct PlayerAssignPacket
 	{
 		uint64_t NetworkID = 0;
 
+		using Traits = PacketTraits<PlayerAssignPacket>;
 		static constexpr size_t WireSize()
 		{
-			return sizeof(PlayerAssignPacket);
+			return Traits::WireSize();
 		}
-
 		void Serialize(uint8_t* out) const
 		{
-			std::memcpy(out, this, sizeof(PlayerAssignPacket));
+			Traits::Serialize(*this, out);
 		}
-
 		static PlayerAssignPacket Deserialize(const uint8_t* in)
 		{
-			PlayerAssignPacket pkt;
-			std::memcpy(&pkt, in, sizeof(PlayerAssignPacket));
-			return pkt;
+			return Traits::Deserialize(in);
 		}
 	};
 
@@ -249,9 +323,13 @@ namespace Chained
 		{
 			ChatMessagePacket pkt;
 			std::memcpy(&pkt, in, sizeof(ChatMessagePacket));
+			pkt.SenderName[sizeof(pkt.SenderName) - 1] = '\0';
+			pkt.Message[sizeof(pkt.Message) - 1] = '\0';
 			return pkt;
 		}
 	};
+
+#pragma pack(pop)
 
 	inline PacketFlags operator|(PacketFlags lhs, PacketFlags rhs)
 	{

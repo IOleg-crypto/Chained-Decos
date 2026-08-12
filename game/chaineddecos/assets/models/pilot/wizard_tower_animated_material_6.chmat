@@ -1,9 +1,9 @@
 Material:
-  Name: color.001
+  Name: Material.007
   AlbedoColor:
-    - 1
-    - 1
-    - 1
+    - 0.0253767427
+    - 0.0223918892
+    - 0.0157370288
     - 1
   EmissiveColor:
     - 0

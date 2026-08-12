@@ -1,53 +1,64 @@
 Prefab: Player
-RootEntity: 3000000000000000001
+RootEntity: 10143220268921709979
 Entities:
-  - Entity: 3000000000000000001
+  - Entity: 10143220268921709979
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.debuginfoscript
+        - ClassName: chaineddecos.scripts.playercontroller
+        - ClassName: chaineddecos.scripts.cameracontroller
+    ModelComponent:
+      ModelPath: models/skeleton/scene.gltf
+      ModelUUID: 0
+      MaterialPaths:
+        - models/skeleton/scene_material_0.chmat
+        - models/skeleton/scene_material_1.chmat
+        - models/skeleton/scene_material_2.chmat
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
     TagComponent:
       Tag: Player
     IDComponent:
       {}
-    TransformComponent:
-      Translation: [0, 0.5, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    PrimitiveComponent:
+    ColliderComponent:
       Type: 1
-      Radius: 0.5
-      InnerRadius: 0.2
-      Height: 1
-      Slices: 16
-      Stacks: 16
-      Dimensions: [1, 1, 1]
-      AlbedoPath: ""
-      AlbedoColor: [1, 1, 1, 1]
-      NormalPath: ""
-      MetallicRoughnessPath: ""
-      EmissivePath: ""
-      EmissiveColor: [0, 0, 0, 1]
-      EmissiveIntensity: 0
-      Metalness: 0
-      Roughness: 0.5
-      Transparent: false
-      Alpha: 1
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: ChainedDecos.Scripts.PlayerController
-          Fields: []
+      Size: [0.8, 1.8, 0.8]
+      Offset: [0, 0.9, 0]
+      Radius: 0.4
+      Height: 1.8
+      Friction: 0.5
+      Restitution: 0.0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: models/skeleton/scene.gltf
+      ModelUUID: 0
+      IsColliding: false
     PlayerComponent:
       MovementSpeed: 15
       JumpForce: 10
       LookSensitivity: 0.9
     RigidBodyComponent:
-      Mass: 1
-      UseGravity: true
-      IsKinematic: false
-      FreezeRotation: false
+      Type: 1
+      Mass: 70
       LinearDamping: 0
-      AngularDamping: 0.0500000007
+      AngularDamping: 0
+      UseGravity: true
+      IsFixedRotation: true
+      Handle: 0
       Velocity: [0, 0, 0]
-    ColliderComponent:
-      Type: 0
-      Offset: [0, 0, 0]
-      Size: [1, 1, 1]
-      Radius: 0.5
-      IsTrigger: false
+      IsGrounded: true
+      VelocityForced: false
+    AnimationComponent:
+      GraphPath: animations/new_graph.chag
+      GraphUUID: 0
+      BlendDuration: 0.25
+      DefaultIsLooping: true
+      PlayOnStart: true
+      Variables:
+        speed: 0
+        isMoving: 0
