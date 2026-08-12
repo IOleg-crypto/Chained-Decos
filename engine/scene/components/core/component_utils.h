@@ -1,8 +1,8 @@
 #ifndef CH_COMPONENT_UTILS_H
 #define CH_COMPONENT_UTILS_H
 
-#include "engine/scene/components/transform_component.h"
-#include "engine/scene/components/control_component.h"
+#include "engine/scene/components/core/transform_component.h"
+#include "engine/scene/components/ui/control_component.h"
 #include "engine/graphics/ui/ui_types.h"
 #include <glm/gtx/quaternion.hpp>
 

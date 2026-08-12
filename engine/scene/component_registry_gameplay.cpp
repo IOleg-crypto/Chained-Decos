@@ -1,11 +1,11 @@
 // Gameplay & Audio component registrations (Audio, Animation, SceneTransition)
 // Split into its own TU to reduce obj file size in MinGW Clang Debug builds.
 #include "component_registry.h"
-#include "components/animation_component.h"
-#include "components/player_component.h"
-#include "components/audio_component.h"
-#include "components/scene_transition_component.h"
-#include "components/network_identity_component.h"
+#include "components/animation/animation_component.h"
+#include "components/gameplay/player_component.h"
+#include "components/audio/audio_component.h"
+#include "components/ui/scene_transition_component.h"
+#include "components/gameplay/network_identity_component.h"
 #include "thirdparty/IconsFontAwesome6.h"
 
 namespace Chained
