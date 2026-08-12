@@ -6,7 +6,7 @@
 #include "engine/project/project.h"
 #include "engine/scene/hierarchy_serializer.h"
 #include "engine/scene/yaml.h"
-#include "engine/scene/components/physics_component.h"
+#include "engine/scene/components/physics/physics_component.h"
 #include "scene.h"
 #include <fstream>
 #include <set>

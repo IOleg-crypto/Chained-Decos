@@ -9,8 +9,8 @@
 #include "engine/assets/types/font_asset.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/networking/network_service.h"
-#include "engine/scene/components/network_identity_component.h"
-#include "engine/scene/components/transform_component.h"
+#include "engine/scene/components/gameplay/network_identity_component.h"
+#include "engine/scene/components/core/transform_component.h"
 #include "engine/scene/scene.h"
 #include "engine/core/log.h"
 #include <glm/glm.hpp>

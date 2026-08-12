@@ -7,9 +7,9 @@
 #include "engine/core/service_locator.h"
 #include <algorithm>
 
-#include "engine/scene/components/component_utils.h"
-#include "engine/scene/components/hierarchy_component.h"
-#include "engine/scene/components/tag_component.h"
+#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/components/core/hierarchy_component.h"
+#include "engine/scene/components/core/tag_component.h"
 #include "engine/scene/scene.h"
 #include "ui_control_renderer.h"
 

@@ -1,7 +1,7 @@
 #ifndef SCRIPT_GLUE_UI_H
 #define SCRIPT_GLUE_UI_H
 #include "script_glue_internal.h"
-#include "engine/scene/components/control_component.h"
+#include "engine/scene/components/ui/control_component.h"
 #include <variant>
 #include <imgui_internal.h>
 
