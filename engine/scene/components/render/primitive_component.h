@@ -2,6 +2,7 @@
 #define CH_PRIMITIVE_COMPONENT_H
 
 #include "engine/reflection/reflection.h"
+#include "engine/reflection/reflection_rfl.h"
 #include "engine/graphics/api/renderer_types.h"
 
 namespace Chained
@@ -45,42 +46,33 @@ namespace Chained
 		bool Transparent = false;
 		float Alpha = 1.0f;
 
-		PrimitiveComponent() = default;
-
 		static const char* GetStaticName()
 		{
 			return "PrimitiveComponent";
 		}
 
-		template <typename T_Archive> void Reflect(Properties<T_Archive>& props)
+		struct UI
 		{
-			static const char* primitiveTypeNames[] = {"None", "Cube",	"Sphere", "Plane",	   "Cylinder",
-													   "Cone", "Torus", "Knot",	  "Hemisphere"};
-
-			props.Enum("Type", Type, primitiveTypeNames, 9);
-			props.Property("Radius", Radius);
-			props.Property("InnerRadius", InnerRadius);
-			props.Property("Height", Height);
-			props.Property("Slices", Slices);
-			props.Property("Stacks", Stacks);
-			props.Property("Dimensions", Dimensions);
-
-			// Material properties belong to Material Editor UI, but must be serialized during Save/Load
-			if (props.GetMode() != ReflectionMode::UI)
-			{
-				props.Property("AlbedoPath", AlbedoPath);
-				props.Property("AlbedoColor", AlbedoColor);
-				props.Property("NormalPath", NormalPath);
-				props.Property("MetallicRoughnessPath", MetallicRoughnessPath);
-				props.Property("EmissivePath", EmissivePath);
-				props.Property("EmissiveColor", EmissiveColor);
-				props.Property("EmissiveIntensity", EmissiveIntensity);
-				props.Property("Metalness", Metalness);
-				props.Property("Roughness", Roughness);
-				props.Property("Transparent", Transparent);
-				props.Property("Alpha", Alpha);
-			}
-		}
+			UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum, .Tooltip = "Geometric shape of the primitive"};
+			UIMeta Radius;
+			UIMeta InnerRadius;
+			UIMeta Height;
+			UIMeta Slices;
+			UIMeta Stacks;
+			UIMeta Dimensions;
+			// Material properties are edited in the Material Editor; serialized but hidden in the component inspector.
+			UIMeta AlbedoPath = {.Hidden = true};
+			UIMeta AlbedoColor = {.Hidden = true};
+			UIMeta NormalPath = {.Hidden = true};
+			UIMeta MetallicRoughnessPath = {.Hidden = true};
+			UIMeta EmissivePath = {.Hidden = true};
+			UIMeta EmissiveColor = {.Hidden = true};
+			UIMeta EmissiveIntensity = {.Hidden = true};
+			UIMeta Metalness = {.Hidden = true};
+			UIMeta Roughness = {.Hidden = true};
+			UIMeta Transparent = {.Hidden = true};
+			UIMeta Alpha = {.Hidden = true};
+		};
 
 		Material GetMaterial() const
 		{
@@ -115,6 +107,7 @@ namespace Chained
 		}
 	};
 
+	CH_MARK_RFL(PrimitiveComponent);
 } // namespace Chained
 
 #endif // CH_PRIMITIVE_COMPONENT_H
