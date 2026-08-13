@@ -17,10 +17,7 @@ namespace Chained
 {
 	class Scene;
 
-	// Opaque peer handle — avoids leaking Steam SDK headers into scene code.
-	// Matches HSteamNetConnection (uint32) from GameNetworkingSockets.
-	using NetworkPeerHandle = uint32_t;
-	constexpr NetworkPeerHandle kInvalidPeerHandle = 0;
+	// NetworkPeerHandle and Role are now defined in network_service.h
 
 	struct PendingNetworkState
 	{
@@ -59,8 +56,8 @@ namespace Chained
 		const std::vector<ProcessedInput>& GetPendingInputs();
 		void ClearPendingInputs();
 
-		void RegisterPeerEntity(NetworkPeerHandle peer, uint64_t networkID);
-		void UnregisterPeer(NetworkPeerHandle peer);
+		void RegisterPeerEntity(int peer, uint64_t networkID);
+		void UnregisterPeer(int peer);
 
 		// Prefab instantiated for each connecting client. Relative to the assets
 		// directory. Empty by default — clients get no avatar until this is set.
@@ -74,24 +71,24 @@ namespace Chained
 	private:
 		NetworkSystem() = default;
 
-		// ---- Incoming packet processing (client side) ----
-		void ProcessWorldStatePacket(const uint8_t* data, size_t size);
-		void ProcessSceneChangePacket(const uint8_t* data, size_t size);
-		void ProcessEntitySpawnPacket(const uint8_t* data, size_t size, Scene* scene);
-		void ProcessEntityDestroyPacket(const uint8_t* data, size_t size, Scene* scene);
-		void ProcessPlayerAssignPacket(const uint8_t* data, size_t size);
+		// ---- Incoming message processing ----
+		void ProcessWorldStateMessage(WorldStateMessage* msg);
+		void ProcessSceneChangeMessage(SceneChangeMessage* msg);
+		void ProcessEntitySpawnMessage(EntitySpawnMessage* msg, Scene* scene);
+		void ProcessEntityDestroyMessage(EntityDestroyMessage* msg, Scene* scene);
+		void ProcessPlayerAssignMessage(PlayerAssignMessage* msg);
 
-		// ---- Incoming packet processing (host side) ----
-		void ProcessInputStatePacket(const uint8_t* data, size_t size, NetworkPeerHandle sender);
-		void ProcessPlayerInfoPacket(const uint8_t* data, size_t size, NetworkPeerHandle sender);
-		void ProcessPlayerListPacket(const uint8_t* data, size_t size);
-		void ProcessChatMessagePacket(const uint8_t* data, size_t size);
+		// ---- Incoming message processing (host side) ----
+		void ProcessInputStateMessage(InputStateMessage* msg, int clientIndex);
+		void ProcessPlayerInfoMessage(PlayerInfoMessage* msg, int clientIndex);
+		void ProcessPlayerListMessage(PlayerListMessage* msg);
+		void ProcessChatMessageMessage(Chained::ChatMessageMessage* msg);
 
 		// ---- Host-side helpers ----
 		void EnsureHostIdentity(Scene* scene);
 		void SyncPeerAvatars(Scene* scene, Network* net);
 		void BroadcastWorldState(entt::registry& reg);
-		void SendEntitySpawn(Network* net, uint64_t networkID, const std::string& prefabPath, NetworkPeerHandle to);
+		void SendEntitySpawn(Network* net, uint64_t networkID, const std::string& prefabPath, int clientIndex);
 		void SendEntityDestroy(Network* net, uint64_t networkID);
 
 		// ---- Client-side helpers ----
@@ -105,10 +102,10 @@ namespace Chained
 		std::unordered_map<uint64_t, PendingNetworkState> m_PendingStates;
 		std::vector<ProcessedInput> m_PendingInputs;
 		uint32_t m_ClientTick = 0;
-		std::unordered_map<NetworkPeerHandle, uint64_t> m_PeerToNetworkID;
+		std::unordered_map<int, uint64_t> m_PeerToNetworkID;
 		Role m_CallbackRole = Role::Offline;
 		std::string m_PlayerPrefab = "prefab/player.chprefab";
-		std::unordered_map<NetworkPeerHandle, UUID> m_PeerToAvatar;
+		std::unordered_map<int, UUID> m_PeerToAvatar;
 		std::vector<ChatMessagePacket> m_PendingChatMessages;
 		std::unordered_map<uint64_t, UUID> m_NetworkIDToEntity;
 		uint64_t m_LocalNetworkID = 0;

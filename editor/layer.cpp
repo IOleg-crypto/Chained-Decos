@@ -260,8 +260,7 @@ namespace Chained
 		auto* assetManager = ServiceLocator::TryGet<AssetManager>();
 		if (assetManager)
 		{
-			std::string iconPath =
-				(assetManager->GetEngineRoot() / "resources/icons/chaineddecosmapeditor.jpg").string();
+			std::string iconPath = assetManager->ResolvePath("engine/resources/icons/chaineddecosmapeditor.jpg");
 			if (std::filesystem::exists(iconPath))
 			{
 				app.GetWindow().SetWindowIcon(iconPath);
@@ -288,10 +287,9 @@ namespace Chained
 		{
 			return;
 		}
-		auto engineRoot = assetManager->GetEngineRoot();
-
-		std::string relFont = !m_Config.FontPath.empty() ? m_Config.FontPath : "resources/font/lato/lato-bold.ttf";
-		std::string fontPath = (engineRoot / relFont).string();
+		std::string relFont =
+			!m_Config.FontPath.empty() ? m_Config.FontPath : "engine/resources/font/lato/lato-bold.ttf";
+		std::string fontPath = assetManager->ResolvePath(relFont);
 
 		bool baseFontLoaded = false;
 
@@ -308,7 +306,7 @@ namespace Chained
 		}
 
 		// --- Icon Font (FontAwesome) ---
-		std::string faPath = (engineRoot / "resources/font/fa-solid-900.ttf").string();
+		std::string faPath = assetManager->ResolvePath("engine/resources/font/fa-solid-900.ttf");
 		if (baseFontLoaded && std::filesystem::exists(faPath))
 		{
 			ImFontConfig icons_config;
