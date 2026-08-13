@@ -12,7 +12,9 @@
 #include "panels/scene_hierarchy_panel.h"
 #include "panels/viewport_panel.h"
 #include "panels/anim_graph_panel.h"
+#ifdef CH_NETWORKING
 #include "panels/network_panel.h"
+#endif
 
 namespace Chained
 {
@@ -30,7 +32,9 @@ namespace Chained
 		Register<ProfilerPanel>();
 		Register<ProjectSettingsPanel>();
 		Register<AnimGraphPanel>();
+#ifdef CH_NETWORKING
 		Register<NetworkPanel>();
+#endif
 	}
 
 	void EditorPanels::OnUpdate(Timestep ts)

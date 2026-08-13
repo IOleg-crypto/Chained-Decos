@@ -8,15 +8,14 @@
 
 namespace Chained
 {
-struct EditorState
-{
-    Entity SelectedEntity;
-    bool FullscreenGame = false;
-    bool StandaloneActive = false;
-    bool NeedsLayoutReset = false;
-    int LastHitMeshIndex = -1;
-    DebugRenderFlags DebugRenderFlags;
-};
+	struct EditorState
+	{
+		Entity SelectedEntity;
+		bool FullscreenGame = false;
+		bool NeedsLayoutReset = false;
+		int LastHitMeshIndex = -1;
+		DebugRenderFlags DebugRenderFlags;
+	};
 
 } // namespace Chained
 
