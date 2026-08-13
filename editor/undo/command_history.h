@@ -9,32 +9,21 @@
 
 namespace Chained
 {
-class CommandHistory
-{
-public:
-    using CommandEventCallback = std::function<void()>;
+	class CommandHistory
+	{
+	public:
+		CommandHistory(size_t maxHistory = 50);
+		~CommandHistory() = default;
 
-    CommandHistory(size_t maxHistory = 50);
-    ~CommandHistory() = default;
+		void PushCommand(std::unique_ptr<IEditorCommand> command);
+		void Undo();
+		void Redo();
 
-    void PushCommand(std::unique_ptr<IEditorCommand> command);
-    void Undo();
-    void Redo();
-
-    void SetNotifyCallback(CommandEventCallback callback)
-    {
-        m_NotifyCallback = callback;
-    }
-
-private:
-    void Notify();
-
-private:
-    size_t m_MaxHistory;
-    std::deque<std::unique_ptr<IEditorCommand>> m_UndoStack;
-    std::deque<std::unique_ptr<IEditorCommand>> m_RedoStack;
-    CommandEventCallback m_NotifyCallback;
-};
+	private:
+		size_t m_MaxHistory;
+		std::deque<std::unique_ptr<IEditorCommand>> m_UndoStack;
+		std::deque<std::unique_ptr<IEditorCommand>> m_RedoStack;
+	};
 } // namespace Chained
 
 #endif // CH_COMMAND_HISTORY_H

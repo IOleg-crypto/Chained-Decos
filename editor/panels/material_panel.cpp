@@ -391,7 +391,10 @@ namespace Chained
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
 			SaveMaterials();
-			m_SelectedEntity = Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry());
+			if (Scene* scene = ev.GetScene())
+			{
+				m_SelectedEntity = Entity(ev.GetEntity(), &scene->GetRegistry());
+			}
 			m_SelectedMeshIndex = ev.GetMeshIndex();
 			m_SelectedMaterialIndex = 0;
 			m_Materials.clear();

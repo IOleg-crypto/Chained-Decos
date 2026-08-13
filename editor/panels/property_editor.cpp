@@ -1,5 +1,6 @@
 #include "property_editor.h"
 #include "engine/reflection/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl_impl.h"
 #include "engine/scene/component_registry.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "editor/layer.h"

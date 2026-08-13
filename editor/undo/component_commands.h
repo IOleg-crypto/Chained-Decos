@@ -2,80 +2,80 @@
 #define CH_COMPONENT_COMMANDS_H
 
 #include "command.h"
-#include "entity_validate.h"
+
 #include "engine/scene/scene.h"
 #include <string>
 
 namespace Chained
 {
 
-template <typename T> class AddComponentCommand : public IEditorCommand
-{
-public:
-    AddComponentCommand(Entity entity)
-        : m_Entity(entity)
-    {
-    }
+	template <typename T> class AddComponentCommand : public IEditorCommand
+	{
+	public:
+		AddComponentCommand(Entity entity)
+			: m_Entity(entity)
+		{
+		}
 
-    void Execute() override
-    {
-        if (ValidateEntity(m_Entity) && !m_Entity.HasComponent<T>())
-        {
-            m_Entity.AddComponent<T>();
-        }
-    }
+		void Execute() override
+		{
+			if (m_Entity.IsValid() && !m_Entity.HasComponent<T>())
+			{
+				m_Entity.AddComponent<T>();
+			}
+		}
 
-    void Undo() override
-    {
-        if (ValidateEntity(m_Entity) && m_Entity.HasComponent<T>())
-        {
-            m_Entity.RemoveComponent<T>();
-        }
-    }
+		void Undo() override
+		{
+			if (m_Entity.IsValid() && m_Entity.HasComponent<T>())
+			{
+				m_Entity.RemoveComponent<T>();
+			}
+		}
 
-    std::string GetName() const override
-    {
-        return "Add Component";
-    }
+		std::string GetName() const override
+		{
+			return "Add Component";
+		}
 
-private:
-    Entity m_Entity;
-};
+	private:
+		Entity m_Entity;
+	};
 
-template <typename T> class RemoveComponentCommand : public IEditorCommand
-{
-public:
-    RemoveComponentCommand(Entity entity)
-        : m_Entity(entity),
-          m_ComponentState(entity.GetComponent<T>())
-    {
-    }
+	template <typename T> class RemoveComponentCommand : public IEditorCommand
+	{
+	public:
+		RemoveComponentCommand(Entity entity)
+			: m_Entity(entity),
+			  m_ComponentState(entity.GetComponent<T>())
+		{
+		}
 
-    void Execute() override
-    {
-        if (ValidateEntity(m_Entity) && m_Entity.HasComponent<T>())
-        {
-            m_Entity.RemoveComponent<T>();
-        }
-    }
+		void Execute() override
+		{
+			if (m_Entity.IsValid() && m_Entity.HasComponent<T>())
+			{
+				m_Entity.RemoveComponent<T>();
+			}
+		}
 
-    void Undo() override
-    {
-        if (ValidateEntity(m_Entity) && !m_Entity.HasComponent<T>())
-        {
-            m_Entity.AddComponent<T>(m_ComponentState);
-        }
-    }
+		void Undo() override
+		{
+			if (m_Entity.IsValid() && !m_Entity.HasComponent<T>())
+			{
+				m_Entity.AddComponent<T>(m_ComponentState);
+			}
+		}
 
-    std::string GetName() const override
-    {
-        return "Remove Component";
-    }
+		std::string GetName() const override
+		{
+			return "Remove Component";
+		}
 
-private:
-    Entity m_Entity;
-    T m_ComponentState;
-};
+	private:
+		Entity m_Entity;
+		T m_ComponentState;
+	};
 
 } // namespace Chained
 

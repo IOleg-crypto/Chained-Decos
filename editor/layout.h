@@ -17,12 +17,10 @@ namespace Chained
 
 		void LoadPreset(const std::string& filepath);
 		void SaveCurrent(const std::string& filepath);
-		void SaveDefaultLayout();
 
 		// Named preset management
 		void SavePreset(const std::string& name);
 		void LoadPresetByName(const std::string& name);
-		void DeletePreset(const std::string& name);
 		std::vector<std::string> GetPresetNames() const;
 		const std::string& GetActivePreset() const
 		{
@@ -38,7 +36,7 @@ namespace Chained
 		EditorPanels& m_Panels;
 		uint32_t m_DockSpaceID = 0;
 		bool m_NeedsRebuild = true;
-		std::string m_ActivePreset = "Default";
+		std::string m_ActivePreset;
 	};
 
 } // namespace Chained

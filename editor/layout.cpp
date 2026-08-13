@@ -20,16 +20,12 @@ namespace Chained
 	void EditorLayout::ResetLayout()
 	{
 		// Delete saved layout and rebuild the default DockBuilder arrangement
-		if (std::filesystem::exists("imgui.ini"))
+		const char* iniPath = ImGui::GetIO().IniFilename;
+		if (iniPath != nullptr && std::filesystem::exists(iniPath))
 		{
-			std::filesystem::remove("imgui.ini");
+			std::filesystem::remove(iniPath);
 		}
 		m_NeedsRebuild = true;
-	}
-
-	void EditorLayout::SaveDefaultLayout()
-	{
-		SaveCurrent("imgui.ini");
 	}
 
 	void EditorLayout::LoadPreset(const std::string& filepath)
@@ -111,20 +107,6 @@ namespace Chained
 		}
 	}
 
-	void EditorLayout::DeletePreset(const std::string& name)
-	{
-		std::string path = GetPresetPath(name);
-		if (std::filesystem::exists(path))
-		{
-			std::filesystem::remove(path);
-			CH_CORE_INFO("EditorLayout: Deleted preset '{}'", name);
-			if (m_ActivePreset == name)
-			{
-				m_ActivePreset = "Default";
-			}
-		}
-	}
-
 	std::vector<std::string> EditorLayout::GetPresetNames() const
 	{
 		std::vector<std::string> names;
@@ -138,11 +120,6 @@ namespace Chained
 					names.push_back(entry.path().stem().string());
 				}
 			}
-		}
-		// Always include Default
-		if (std::find(names.begin(), names.end(), "Default") == names.end())
-		{
-			names.insert(names.begin(), "Default");
 		}
 		return names;
 	}
