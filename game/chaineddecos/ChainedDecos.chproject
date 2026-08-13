@@ -1,6 +1,6 @@
 Project:
   Name: ChainedDecos
-  IconPath: resources/icons/chaineddecos.jpg
+  IconPath: engine/resources/icons/chaineddecos.jpg
   StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
   ActiveScene: assets/scenes/untitled100.chscene

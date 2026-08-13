@@ -15,7 +15,8 @@ target_link_libraries(engine_network PUBLIC
     engine_core
     engine_project
     engine_external_entt
-    GameNetworkingSockets::static
+    enet::enet_static
+    sodium
     glm
     engine_external_miniupnpc
 )

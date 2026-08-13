@@ -70,7 +70,8 @@ namespace Chained
 
 			// Load the Nametag billboard shader via the Renderer's shader library
 			auto& shaderStorage = renderer->GetShaderLibrary();
-			auto shaderAsset = shaderStorage.LoadOrGet("Nametag", "resources/shaders/materials/nametag.chshader");
+			auto shaderAsset =
+				shaderStorage.LoadOrGet("Nametag", "engine/resources/shaders/materials/nametag.chshader");
 			if (!shaderAsset || !shaderAsset->IsReady())
 			{
 				return;
@@ -128,7 +129,7 @@ namespace Chained
 				}
 
 				// Find player name
-				const char* name = nullptr;
+				std::string name;
 				bool isHost = false;
 
 				for (const auto& p : players)
@@ -140,7 +141,7 @@ namespace Chained
 						break;
 					}
 				}
-				if (!name || name[0] == '\0')
+				if (name.empty())
 				{
 					continue;
 				}
