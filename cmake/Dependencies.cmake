@@ -31,7 +31,7 @@ include(coral)
 include(external_gtest)
 include(pack)
 include(portable-file-dialogs)
-# GameNetworkingSockets replaces enet (transport, encryption; NAT traversal is not wired up)
+# enet + sodium are the networking transport (added via engine/CMakeLists.txt)
 include(reflect-cpp)
 include(miniupnpc)
 

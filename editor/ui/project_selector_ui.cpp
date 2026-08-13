@@ -51,11 +51,11 @@ namespace Chained
 		auto assetManager = ServiceLocator::TryGet<AssetManager>();
 		if (assetManager)
 		{
-			assetManager->LoadAsset("resources/icons/newproject.jpg", TextureAsset::GetStaticType());
-			assetManager->LoadAsset("resources/icons/folder.png", TextureAsset::GetStaticType());
+			assetManager->LoadAsset("engine/resources/icons/newproject.jpg", TextureAsset::GetStaticType());
+			assetManager->LoadAsset("engine/resources/icons/folder.png", TextureAsset::GetStaticType());
 
-			m_NewProjectIcon = assetManager->Get<TextureAsset>("resources/icons/newproject.jpg");
-			m_OpenProjectIcon = assetManager->Get<TextureAsset>("resources/icons/folder.png");
+			m_NewProjectIcon = assetManager->Get<TextureAsset>("engine/resources/icons/newproject.jpg");
+			m_OpenProjectIcon = assetManager->Get<TextureAsset>("engine/resources/icons/folder.png");
 			m_IconsLoaded = true;
 		}
 	}
@@ -169,7 +169,7 @@ namespace Chained
 				auto* am = ServiceLocator::TryGet<AssetManager>();
 				if (am)
 				{
-					auto texAsset = am->Get<TextureAsset>("resources/icons/newproject.jpg");
+					auto texAsset = am->Get<TextureAsset>("engine/resources/icons/newproject.jpg");
 					if (texAsset && texAsset->IsReady())
 					{
 						auto gpuTex = texAsset->GetTexture();
@@ -205,7 +205,7 @@ namespace Chained
 				auto* am = ServiceLocator::TryGet<AssetManager>();
 				if (am)
 				{
-					auto texAsset = am->Get<TextureAsset>("resources/icons/folder.png");
+					auto texAsset = am->Get<TextureAsset>("engine/resources/icons/folder.png");
 					if (texAsset && texAsset->IsReady())
 					{
 						auto gpuTex = texAsset->GetTexture();

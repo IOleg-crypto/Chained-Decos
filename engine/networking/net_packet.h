@@ -4,39 +4,33 @@
 #include <bit>
 #include <cstdint>
 #include <cstring>
+#include <string>
+#include <vector>
 
 static_assert(std::endian::native == std::endian::little, "Network packets assume little-endian byte order. "
 														  "Add byte-swapping for big-endian platforms.");
 
 namespace Chained
 {
-	// Protocol version — bump when wire format changes.
-	// Receivers silently drop packets with a mismatched version.
 	static constexpr uint8_t kProtocolVersion = 1;
 
-	enum class PacketType : uint8_t
+	constexpr int kChannel_Reliable = 0;
+	constexpr int kChannel_Unreliable = 1;
+
+	enum MessageType : uint16_t
 	{
-		None = 0,
-		InputState,
-		WorldState,
-		EntitySpawn,
-		EntityDestroy,
-		SceneChange,
-		PlayerAssign,
-		RPC,
-		PlayerInfo,
-		PlayerList,
-		ChatMessage
+		MessageType_InputState = 0,
+		MessageType_WorldState,
+		MessageType_EntitySpawn,
+		MessageType_EntityDestroy,
+		MessageType_SceneChange,
+		MessageType_PlayerAssign,
+		MessageType_PlayerInfo,
+		MessageType_PlayerList,
+		MessageType_ChatMessage,
+		MessageType_Count
 	};
 
-	enum class PacketFlags : uint32_t
-	{
-		Unreliable = 0,
-		Reliable = 1,
-		Unsequenced = 2,
-	};
-
-	// ActionFlags bitmask for InputStatePacket
 	enum InputAction : uint8_t
 	{
 		InputAction_None = 0,
@@ -45,61 +39,194 @@ namespace Chained
 		InputAction_Interact = 1 << 2,
 	};
 
-	// ── Template-based serialization ─────────────────────────────────────
-	// Replaces the copy-pasted WireSize/Serialize/Deserialize pattern.
-	// Specialize for packets that need null-termination or custom layout.
+	// ── Byte serialization ───────────────────────────────────────────────
 
-	template <typename T> struct PacketTraits
+	class ByteWriter
 	{
-		static constexpr size_t WireSize()
+	public:
+		void WriteU8(uint8_t v)
 		{
-			return sizeof(T);
+			m_Buffer.push_back(v);
 		}
 
-		static void Serialize(const T& pkt, uint8_t* out)
+		void WriteU16(uint16_t v)
 		{
-			std::memcpy(out, &pkt, sizeof(T));
+			m_Buffer.push_back(static_cast<uint8_t>(v & 0xFF));
+			m_Buffer.push_back(static_cast<uint8_t>((v >> 8) & 0xFF));
 		}
 
-		static T Deserialize(const uint8_t* in)
+		void WriteU32(uint32_t v)
 		{
-			T pkt;
-			std::memcpy(&pkt, in, sizeof(T));
-			return pkt;
+			for (int i = 0; i < 4; ++i)
+			{
+				m_Buffer.push_back(static_cast<uint8_t>((v >> (i * 8)) & 0xFF));
+			}
 		}
+
+		void WriteU64(uint64_t v)
+		{
+			for (int i = 0; i < 8; ++i)
+			{
+				m_Buffer.push_back(static_cast<uint8_t>((v >> (i * 8)) & 0xFF));
+			}
+		}
+
+		void WriteFloat(float v)
+		{
+			uint32_t u;
+			std::memcpy(&u, &v, sizeof(u));
+			WriteU32(u);
+		}
+
+		void WriteString(const char* str, size_t maxLen)
+		{
+			size_t len = str ? strnlen(str, maxLen) : 0;
+			WriteU8(static_cast<uint8_t>(len));
+			if (len > 0)
+			{
+				m_Buffer.insert(m_Buffer.end(), str, str + len);
+			}
+		}
+
+		void WriteBytes(const uint8_t* data, size_t len)
+		{
+			m_Buffer.insert(m_Buffer.end(), data, data + len);
+		}
+
+		const std::vector<uint8_t>& Data() const
+		{
+			return m_Buffer;
+		}
+		void Clear()
+		{
+			m_Buffer.clear();
+		}
+
+	private:
+		std::vector<uint8_t> m_Buffer;
 	};
 
-	// ── Packet header (prepended to every datagram) ──────────────────────
-
-	struct PacketHeader
+	class ByteReader
 	{
-		uint8_t Version = kProtocolVersion;
-		PacketType Type = PacketType::None;
-
-		static constexpr size_t WireSize()
+	public:
+		ByteReader(const uint8_t* data, size_t size)
+			: m_Data(data),
+			  m_Size(size)
 		{
-			return sizeof(PacketHeader);
 		}
 
-		void Serialize(uint8_t* out) const
+		bool ReadU8(uint8_t& v)
 		{
-			std::memcpy(out, this, sizeof(PacketHeader));
+			if (m_Pos >= m_Size)
+			{
+				return false;
+			}
+			v = m_Data[m_Pos++];
+			return true;
 		}
 
-		static PacketHeader Deserialize(const uint8_t* in)
+		bool ReadU16(uint16_t& v)
 		{
-			PacketHeader hdr;
-			std::memcpy(&hdr, in, sizeof(PacketHeader));
-			return hdr;
+			if (m_Pos + 2 > m_Size)
+			{
+				return false;
+			}
+			v = static_cast<uint16_t>(m_Data[m_Pos] | (m_Data[m_Pos + 1] << 8));
+			m_Pos += 2;
+			return true;
 		}
+
+		bool ReadU32(uint32_t& v)
+		{
+			if (m_Pos + 4 > m_Size)
+			{
+				return false;
+			}
+			v = 0;
+			for (int i = 0; i < 4; ++i)
+			{
+				v |= static_cast<uint32_t>(m_Data[m_Pos + i]) << (i * 8);
+			}
+			m_Pos += 4;
+			return true;
+		}
+
+		bool ReadU64(uint64_t& v)
+		{
+			if (m_Pos + 8 > m_Size)
+			{
+				return false;
+			}
+			v = 0;
+			for (int i = 0; i < 8; ++i)
+			{
+				v |= static_cast<uint64_t>(m_Data[m_Pos + i]) << (i * 8);
+			}
+			m_Pos += 8;
+			return true;
+		}
+
+		bool ReadFloat(float& v)
+		{
+			uint32_t u;
+			if (!ReadU32(u))
+			{
+				return false;
+			}
+			std::memcpy(&v, &u, sizeof(v));
+			return true;
+		}
+
+		bool ReadString(char* str, size_t maxLen)
+		{
+			uint8_t len = 0;
+			if (!ReadU8(len))
+			{
+				return false;
+			}
+			if (len >= maxLen)
+			{
+				return false;
+			}
+			if (m_Pos + len > m_Size)
+			{
+				return false;
+			}
+			std::memcpy(str, m_Data + m_Pos, len);
+			str[len] = '\0';
+			m_Pos += len;
+			return true;
+		}
+
+		bool ReadBytes(uint8_t* out, size_t len)
+		{
+			if (m_Pos + len > m_Size)
+			{
+				return false;
+			}
+			std::memcpy(out, m_Data + m_Pos, len);
+			m_Pos += len;
+			return true;
+		}
+
+		bool Eof() const
+		{
+			return m_Pos >= m_Size;
+		}
+		size_t Remaining() const
+		{
+			return m_Size - m_Pos;
+		}
+
+	private:
+		const uint8_t* m_Data;
+		size_t m_Size;
+		size_t m_Pos = 0;
 	};
 
-	// ── Concrete packet types ────────────────────────────────────────────
+	// ── Message structs ──────────────────────────────────────────────────
 
-#pragma pack(push, 1)
-
-	// Sent from client -> server every frame (unreliable)
-	struct InputStatePacket
+	struct InputStateMessage
 	{
 		uint32_t Tick = 0;
 		float MoveX = 0.0f;
@@ -109,245 +236,230 @@ namespace Chained
 		float MouseY = 0.0f;
 		float DeltaTime = 0.0f;
 
-		using Traits = PacketTraits<InputStatePacket>;
-		static constexpr size_t WireSize()
+		void Encode(ByteWriter& w) const
 		{
-			return Traits::WireSize();
+			w.WriteU32(Tick);
+			w.WriteFloat(MoveX);
+			w.WriteFloat(MoveZ);
+			w.WriteU8(ActionFlags);
+			w.WriteFloat(MouseX);
+			w.WriteFloat(MouseY);
+			w.WriteFloat(DeltaTime);
 		}
-		void Serialize(uint8_t* out) const
+
+		bool Decode(ByteReader& r)
 		{
-			Traits::Serialize(*this, out);
-		}
-		static InputStatePacket Deserialize(const uint8_t* in)
-		{
-			return Traits::Deserialize(in);
+			return r.ReadU32(Tick) && r.ReadFloat(MoveX) && r.ReadFloat(MoveZ) && r.ReadU8(ActionFlags) &&
+				   r.ReadFloat(MouseX) && r.ReadFloat(MouseY) && r.ReadFloat(DeltaTime);
 		}
 	};
 
-	// Per-player info for internal engine representations
-	struct PlayerNetInfo
+	struct WorldStateMessage
 	{
+		uint32_t Tick = 0;
 		uint64_t NetworkID = 0;
-		uint32_t Ping = 0;
-		char Name[32] = {};
-		uint8_t SkinIndex = 0;
-		uint8_t IsHost = 0;
-	};
+		float Position[3] = {0, 0, 0};
+		float Rotation[4] = {1, 0, 0, 0};
+		float Velocity[3] = {0, 0, 0};
 
-	// Sent from host -> all clients when starting the game
-	struct SceneChangePacket
-	{
-		char ScenePath[256] = {};
-
-		static constexpr size_t WireSize()
+		void Encode(ByteWriter& w) const
 		{
-			return sizeof(SceneChangePacket);
+			w.WriteU32(Tick);
+			w.WriteU64(NetworkID);
+			for (int i = 0; i < 3; ++i)
+			{
+				w.WriteFloat(Position[i]);
+			}
+			for (int i = 0; i < 4; ++i)
+			{
+				w.WriteFloat(Rotation[i]);
+			}
+			for (int i = 0; i < 3; ++i)
+			{
+				w.WriteFloat(Velocity[i]);
+			}
 		}
 
-		void Serialize(uint8_t* out) const
+		bool Decode(ByteReader& r)
 		{
-			std::memcpy(out, this, sizeof(SceneChangePacket));
-		}
-
-		static SceneChangePacket Deserialize(const uint8_t* in)
-		{
-			SceneChangePacket pkt;
-			std::memcpy(&pkt, in, sizeof(SceneChangePacket));
-			pkt.ScenePath[sizeof(pkt.ScenePath) - 1] = '\0';
-			return pkt;
-		}
-	};
-
-	// Sent from client -> host when connecting (reliable)
-	struct PlayerInfoPacket
-	{
-		char Name[32] = {};
-		uint8_t SkinIndex = 0;
-
-		static constexpr size_t WireSize()
-		{
-			return sizeof(PlayerInfoPacket);
-		}
-
-		void Serialize(uint8_t* out) const
-		{
-			std::memcpy(out, this, sizeof(PlayerInfoPacket));
-		}
-
-		static PlayerInfoPacket Deserialize(const uint8_t* in)
-		{
-			PlayerInfoPacket pkt;
-			std::memcpy(&pkt, in, sizeof(PlayerInfoPacket));
-			pkt.Name[sizeof(pkt.Name) - 1] = '\0';
-			return pkt;
+			if (!r.ReadU32(Tick) || !r.ReadU64(NetworkID))
+			{
+				return false;
+			}
+			for (int i = 0; i < 3; ++i)
+			{
+				if (!r.ReadFloat(Position[i]))
+				{
+					return false;
+				}
+			}
+			for (int i = 0; i < 4; ++i)
+			{
+				if (!r.ReadFloat(Rotation[i]))
+				{
+					return false;
+				}
+			}
+			for (int i = 0; i < 3; ++i)
+			{
+				if (!r.ReadFloat(Velocity[i]))
+				{
+					return false;
+				}
+			}
+			return true;
 		}
 	};
 
-	// Per-entry in a PlayerListPacket (variable-length array follows the header)
-	struct PlayerListEntry
-	{
-		uint64_t NetworkID = 0;
-		char Name[32] = {};
-		uint8_t SkinIndex = 0;
-		uint8_t IsHost = 0;
-
-		static constexpr size_t WireSize()
-		{
-			return sizeof(uint64_t) + 32 + sizeof(uint8_t) + sizeof(uint8_t); // 42 bytes
-		}
-
-		void Serialize(uint8_t* out) const
-		{
-			std::memcpy(out, &NetworkID, sizeof(NetworkID));
-			std::memcpy(out + sizeof(NetworkID), Name, 32);
-			out[sizeof(NetworkID) + 32] = SkinIndex;
-			out[sizeof(NetworkID) + 33] = IsHost;
-		}
-
-		static PlayerListEntry Deserialize(const uint8_t* in)
-		{
-			PlayerListEntry entry;
-			std::memcpy(&entry.NetworkID, in, sizeof(entry.NetworkID));
-			std::memcpy(entry.Name, in + sizeof(entry.NetworkID), 32);
-			entry.Name[31] = '\0';
-			entry.SkinIndex = in[sizeof(entry.NetworkID) + 32];
-			entry.IsHost = in[sizeof(entry.NetworkID) + 33];
-			return entry;
-		}
-	};
-
-	// Sent from host -> all clients with the full player list (reliable)
-	struct PlayerListPacket
-	{
-		uint8_t Count = 0;
-
-		static constexpr size_t HeaderSize()
-		{
-			return sizeof(uint8_t);
-		}
-
-		void Serialize(uint8_t* out) const
-		{
-			std::memcpy(out, this, HeaderSize());
-		}
-
-		static void DeserializeHeader(const uint8_t* in, uint8_t& outCount)
-		{
-			std::memcpy(&outCount, in, sizeof(uint8_t));
-		}
-	};
-
-	// Sent from host -> clients when a networked entity appears
-	struct EntitySpawnPacket
+	struct EntitySpawnMessage
 	{
 		uint64_t NetworkID = 0;
 		char PrefabPath[128] = {};
 
-		static constexpr size_t WireSize()
+		void Encode(ByteWriter& w) const
 		{
-			return sizeof(EntitySpawnPacket);
+			w.WriteU64(NetworkID);
+			w.WriteString(PrefabPath, sizeof(PrefabPath));
 		}
 
-		void Serialize(uint8_t* out) const
+		bool Decode(ByteReader& r)
 		{
-			std::memcpy(out, this, sizeof(EntitySpawnPacket));
-		}
-
-		static EntitySpawnPacket Deserialize(const uint8_t* in)
-		{
-			EntitySpawnPacket pkt;
-			std::memcpy(&pkt, in, sizeof(EntitySpawnPacket));
-			pkt.PrefabPath[sizeof(pkt.PrefabPath) - 1] = '\0';
-			return pkt;
+			return r.ReadU64(NetworkID) && r.ReadString(PrefabPath, sizeof(PrefabPath));
 		}
 	};
 
-	// Sent from host -> clients when a networked entity goes away
-	struct EntityDestroyPacket
+	struct EntityDestroyMessage
 	{
 		uint64_t NetworkID = 0;
 
-		using Traits = PacketTraits<EntityDestroyPacket>;
-		static constexpr size_t WireSize()
+		void Encode(ByteWriter& w) const
 		{
-			return Traits::WireSize();
+			w.WriteU64(NetworkID);
 		}
-		void Serialize(uint8_t* out) const
+		bool Decode(ByteReader& r)
 		{
-			Traits::Serialize(*this, out);
-		}
-		static EntityDestroyPacket Deserialize(const uint8_t* in)
-		{
-			return Traits::Deserialize(in);
+			return r.ReadU64(NetworkID);
 		}
 	};
 
-	// Sent from host -> a single client with its NetworkID assignment
-	struct PlayerAssignPacket
+	struct SceneChangeMessage
+	{
+		char ScenePath[256] = {};
+
+		void Encode(ByteWriter& w) const
+		{
+			w.WriteString(ScenePath, sizeof(ScenePath));
+		}
+		bool Decode(ByteReader& r)
+		{
+			return r.ReadString(ScenePath, sizeof(ScenePath));
+		}
+	};
+
+	struct PlayerAssignMessage
 	{
 		uint64_t NetworkID = 0;
 
-		using Traits = PacketTraits<PlayerAssignPacket>;
-		static constexpr size_t WireSize()
+		void Encode(ByteWriter& w) const
 		{
-			return Traits::WireSize();
+			w.WriteU64(NetworkID);
 		}
-		void Serialize(uint8_t* out) const
+		bool Decode(ByteReader& r)
 		{
-			Traits::Serialize(*this, out);
-		}
-		static PlayerAssignPacket Deserialize(const uint8_t* in)
-		{
-			return Traits::Deserialize(in);
+			return r.ReadU64(NetworkID);
 		}
 	};
 
-	// Sent from any participant -> all (reliable)
-	struct ChatMessagePacket
+	struct PlayerInfoMessage
+	{
+		char Name[32] = {};
+		uint8_t SkinIndex = 0;
+
+		void Encode(ByteWriter& w) const
+		{
+			w.WriteString(Name, sizeof(Name));
+			w.WriteU8(SkinIndex);
+		}
+
+		bool Decode(ByteReader& r)
+		{
+			return r.ReadString(Name, sizeof(Name)) && r.ReadU8(SkinIndex);
+		}
+	};
+
+	struct PlayerListEntryInfo
+	{
+		uint64_t NetworkID = 0;
+		char Name[32] = {};
+		uint8_t SkinIndex = 0;
+		uint8_t IsHost = 0;
+	};
+
+	struct PlayerListMessage
+	{
+		uint8_t Count = 0;
+		PlayerListEntryInfo Entries[64];
+
+		void Encode(ByteWriter& w) const
+		{
+			w.WriteU8(Count);
+			for (int i = 0; i < Count && i < 64; ++i)
+			{
+				w.WriteU64(Entries[i].NetworkID);
+				w.WriteString(Entries[i].Name, sizeof(Entries[i].Name));
+				w.WriteU8(Entries[i].SkinIndex);
+				w.WriteU8(Entries[i].IsHost);
+			}
+		}
+
+		bool Decode(ByteReader& r)
+		{
+			if (!r.ReadU8(Count))
+			{
+				return false;
+			}
+			for (int i = 0; i < Count && i < 64; ++i)
+			{
+				if (!r.ReadU64(Entries[i].NetworkID) || !r.ReadString(Entries[i].Name, sizeof(Entries[i].Name)) ||
+					!r.ReadU8(Entries[i].SkinIndex) || !r.ReadU8(Entries[i].IsHost))
+				{
+					return false;
+				}
+			}
+			return true;
+		}
+	};
+
+	struct ChatMessageMessage
 	{
 		uint64_t SenderNetworkID = 0;
 		char SenderName[32] = {};
 		char Message[256] = {};
 
-		static constexpr size_t WireSize()
+		void Encode(ByteWriter& w) const
 		{
-			return sizeof(ChatMessagePacket);
+			w.WriteU64(SenderNetworkID);
+			w.WriteString(SenderName, sizeof(SenderName));
+			w.WriteString(Message, sizeof(Message));
 		}
 
-		void Serialize(uint8_t* out) const
+		bool Decode(ByteReader& r)
 		{
-			std::memcpy(out, this, sizeof(ChatMessagePacket));
-		}
-
-		static ChatMessagePacket Deserialize(const uint8_t* in)
-		{
-			ChatMessagePacket pkt;
-			std::memcpy(&pkt, in, sizeof(ChatMessagePacket));
-			pkt.SenderName[sizeof(pkt.SenderName) - 1] = '\0';
-			pkt.Message[sizeof(pkt.Message) - 1] = '\0';
-			return pkt;
+			return r.ReadU64(SenderNetworkID) && r.ReadString(SenderName, sizeof(SenderName)) &&
+				   r.ReadString(Message, sizeof(Message));
 		}
 	};
 
-#pragma pack(pop)
+	// ── Internal engine types ────────────────────────────────────────────
 
-	inline PacketFlags operator|(PacketFlags lhs, PacketFlags rhs)
+	struct PlayerNetInfo
 	{
-		using T = std::underlying_type_t<PacketFlags>;
-		return static_cast<PacketFlags>(static_cast<T>(lhs) | static_cast<T>(rhs));
-	}
-
-	inline PacketFlags& operator|=(PacketFlags& lhs, PacketFlags rhs)
-	{
-		lhs = lhs | rhs;
-		return lhs;
-	}
-
-	inline PacketFlags operator&(PacketFlags lhs, PacketFlags rhs)
-	{
-		using T = std::underlying_type_t<PacketFlags>;
-		return static_cast<PacketFlags>(static_cast<T>(lhs) & static_cast<T>(rhs));
-	}
+		uint64_t NetworkID = 0;
+		uint32_t Ping = 0;
+		std::string Name;
+		uint8_t SkinIndex = 0;
+		uint8_t IsHost = 0;
+	};
 
 } // namespace Chained
 
