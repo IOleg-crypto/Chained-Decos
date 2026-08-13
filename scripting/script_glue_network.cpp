@@ -55,6 +55,11 @@ namespace Chained
 
 			return out;
 		}
+
+		std::string EscapeJson(const std::string& text)
+		{
+			return EscapeJson(text.c_str());
+		}
 	} // namespace
 
 	CH_SCRIPT_FUNC void Network_HostGame(uint16_t port, int maxClients)
