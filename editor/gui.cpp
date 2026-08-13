@@ -34,7 +34,7 @@ namespace Chained
 		return buttonSize * 1.5f;
 	}
 
-	static void DrawPropertyLabel(const char* label)
+	void EditorGUI::DrawPropertyLabel(const char* label)
 	{
 		const char* displayLabel = label ? label : "Unknown";
 		if (ImGui::GetCurrentTable() != nullptr)
@@ -67,23 +67,6 @@ namespace Chained
 	{
 		ImGui::EndTable();
 		ImGui::PopStyleVar();
-	}
-
-	void EditorGUI::BeginProperty(const char* label)
-	{
-		if (!label)
-		{
-			return;
-		}
-		DrawPropertyLabel(label);
-		ImGui::PushID(label);
-		ImGui::PushItemWidth(-1);
-	}
-
-	void EditorGUI::EndProperty()
-	{
-		ImGui::PopItemWidth();
-		ImGui::PopID();
 	}
 
 	// --- Property Widgets Implementation ---
@@ -233,7 +216,8 @@ namespace Chained
 
 		ImGui::PushItemWidth(width - buttonSize - thumbnailSize - (thumbnailFn ? 10.0f : 5.0f));
 
-		std::string displayPath = Project::GetActive()->GetRelativePath(value);
+		auto project = Project::GetActive();
+		std::string displayPath = project ? project->GetRelativePath(value) : value;
 		char inputTextBuf[256];
 		memset(inputTextBuf, 0, sizeof(inputTextBuf));
 		strncpy(inputTextBuf, displayPath.c_str(), sizeof(inputTextBuf) - 1);
@@ -241,7 +225,7 @@ namespace Chained
 		bool changed = false;
 		if (ImGui::InputText("##prop", inputTextBuf, sizeof(inputTextBuf)))
 		{
-			value = Project::GetActive()->GetAbsolutePath(inputTextBuf).string();
+			value = project ? project->GetAbsolutePath(inputTextBuf).string() : std::string(inputTextBuf);
 			changed = true;
 		}
 		if (ImGui::BeginDragDropTarget())
@@ -251,7 +235,7 @@ namespace Chained
 				const char* dropPath = static_cast<const char*>(payload->Data);
 				if (dropPath)
 				{
-					value = Project::GetActive()->GetRelativePath(dropPath);
+					value = project ? project->GetRelativePath(dropPath) : std::string(dropPath);
 					changed = true;
 				}
 			}
@@ -269,7 +253,7 @@ namespace Chained
 			auto result = Chained::Dialogs::OpenFile(filters);
 			if (result)
 			{
-				value = Project::GetActive()->GetRelativePath(*result);
+				value = project ? project->GetRelativePath(*result) : result->string();
 				changed = true;
 			}
 		}
