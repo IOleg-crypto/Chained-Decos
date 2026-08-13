@@ -1,6 +1,7 @@
 // Scripting component registrations (ManagedScriptComponent)
 // Split into its own TU to reduce obj file size in MinGW Clang Debug builds.
 #include "component_registry.h"
+#include "engine/reflection/reflection_rfl_impl.h"
 #include "components/scripting/scripting_components.h"
 #include <yaml-cpp/yaml.h>
 
