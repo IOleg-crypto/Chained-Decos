@@ -1,6 +1,7 @@
 // Core component registrations (Transform, Tag, Camera, ID, Name, Hierarchy)
 // Split into its own TU to reduce obj file size in MinGW Clang Debug builds.
 #include "component_registry.h"
+#include "engine/reflection/reflection_rfl_impl.h"
 #include "components/render/camera_component.h"
 #include "components/core/hierarchy_component.h"
 #include "components/core/id_component.h"

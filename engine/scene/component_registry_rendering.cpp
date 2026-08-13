@@ -1,6 +1,7 @@
 // Rendering component registrations (Model, Light, Sprite, Shader, Spawn, Player)
 // Split into its own TU to reduce obj file size in MinGW Clang Debug builds.
 #include "component_registry.h"
+#include "engine/reflection/reflection_rfl_impl.h"
 #include "components/render/light_component.h"
 #include "components/render/model_component.h"
 #include "components/gameplay/player_component.h"
