@@ -80,6 +80,7 @@ def sync_resources(
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Sync engine resources to build output")
+    parser.add_argument("command", nargs="?", help=argparse.SUPPRESS)
     parser.add_argument("--root", required=True, help="Project root (folder that contains resources/)")
     parser.add_argument("--bin", required=True, help="Binary output base directory (build/<preset>/bin)")
     parser.add_argument("--config", default=None, help="Single build config to target (Debug/Release/…)")
