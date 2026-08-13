@@ -13,8 +13,6 @@ namespace
 {
 	constexpr uint16_t kTestPort = 27599;
 
-	// Host and client share one process, which exercises Network's refcounting of the
-	// process-wide GNS library.
 	class NetworkLoopbackTest : public ::testing::Test
 	{
 	protected:
@@ -22,8 +20,8 @@ namespace
 		{
 			m_Host.Initialize();
 			m_Client.Initialize();
-			ASSERT_TRUE(m_Host.IsEnabled()) << "GameNetworkingSockets failed to initialize";
-			ASSERT_TRUE(m_Client.IsEnabled()) << "GameNetworkingSockets failed to initialize";
+			ASSERT_TRUE(m_Host.IsEnabled()) << "ENet failed to initialize";
+			ASSERT_TRUE(m_Client.IsEnabled()) << "ENet failed to initialize";
 		}
 
 		void TearDown() override
@@ -32,14 +30,13 @@ namespace
 			m_Host.Shutdown();
 		}
 
-		// GNS handshakes asynchronously, so pump both peers until the predicate holds.
 		template <typename Predicate> bool PumpUntil(Predicate pred, std::chrono::milliseconds timeout)
 		{
 			const auto deadline = std::chrono::steady_clock::now() + timeout;
 			while (std::chrono::steady_clock::now() < deadline)
 			{
-				m_Host.Update(0.0f);
-				m_Client.Update(0.0f);
+				m_Host.Update(1.0f / 60.0f);
+				m_Client.Update(1.0f / 60.0f);
 				if (pred())
 				{
 					return true;
@@ -91,33 +88,36 @@ TEST_F(NetworkLoopbackTest, ClientToHostPacketRoundTrip)
 	ASSERT_TRUE(m_Client.IsEnabled());
 	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5)));
 
-	InputStatePacket received{};
+	InputStateMessage received{};
 	bool gotPacket = false;
-	m_Host.SetPacketCallback([&](PacketType type, const uint8_t* data, size_t size, HSteamNetConnection) {
-		if (type == PacketType::InputState && size == InputStatePacket::WireSize())
+	m_Host.SetPacketCallback([&](int clientIndex, MessageType type, const uint8_t* data, size_t len) {
+		if (type == MessageType_InputState && clientIndex >= 0)
 		{
-			received = InputStatePacket::Deserialize(data);
-			gotPacket = true;
+			ByteReader r(data, len);
+			if (received.Decode(r))
+			{
+				gotPacket = true;
+			}
 		}
 	});
 
-	InputStatePacket sent{};
+	InputStateMessage sent;
 	sent.Tick = 4242;
 	sent.MoveX = 1.5f;
 	sent.MoveZ = -2.5f;
 	sent.ActionFlags = InputAction_Jump | InputAction_Sprint;
 
-	uint8_t buffer[InputStatePacket::WireSize()];
-	sent.Serialize(buffer);
-	m_Client.SendToServer(PacketType::InputState, buffer, sizeof(buffer), true);
+	ByteWriter w;
+	sent.Encode(w);
+	m_Client.SendToServer(MessageType_InputState, w.Data().data(), w.Data().size(), true);
 
 	ASSERT_TRUE(PumpUntil([&] { return gotPacket; }, std::chrono::seconds(5)))
-		<< "Host never received the client's input packet";
+		<< "Host never received the client's input message";
 
-	EXPECT_EQ(received.Tick, sent.Tick);
-	EXPECT_FLOAT_EQ(received.MoveX, sent.MoveX);
-	EXPECT_FLOAT_EQ(received.MoveZ, sent.MoveZ);
-	EXPECT_EQ(received.ActionFlags, sent.ActionFlags);
+	EXPECT_EQ(received.Tick, 4242u);
+	EXPECT_FLOAT_EQ(received.MoveX, 1.5f);
+	EXPECT_FLOAT_EQ(received.MoveZ, -2.5f);
+	EXPECT_EQ(received.ActionFlags, InputAction_Jump | InputAction_Sprint);
 
 	m_Host.ClearPacketCallback();
 }
@@ -132,10 +132,15 @@ TEST_F(NetworkLoopbackTest, HostBroadcastReachesClient)
 	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5)));
 
 	std::string receivedPath;
-	m_Client.SetPacketCallback([&](PacketType type, const uint8_t* data, size_t size, HSteamNetConnection) {
-		if (type == PacketType::SceneChange && size == SceneChangePacket::WireSize())
+	m_Client.SetPacketCallback([&](int clientIndex, MessageType type, const uint8_t* data, size_t len) {
+		if (type == MessageType_SceneChange)
 		{
-			receivedPath = SceneChangePacket::Deserialize(data).ScenePath;
+			SceneChangeMessage msg;
+			ByteReader r(data, len);
+			if (msg.Decode(r))
+			{
+				receivedPath = msg.ScenePath;
+			}
 		}
 	});
 
@@ -158,7 +163,7 @@ TEST_F(NetworkLoopbackTest, HostAppearsInItsOwnPlayerList)
 	ASSERT_EQ(players.size(), 1u) << "Host is missing from its own lobby";
 	EXPECT_EQ(players[0].NetworkID, 1u);
 	EXPECT_EQ(players[0].IsHost, 1);
-	EXPECT_STREQ(players[0].Name, "Alice");
+	EXPECT_EQ(players[0].Name, "Alice");
 	EXPECT_EQ(players[0].SkinIndex, 3);
 	EXPECT_EQ(m_Host.GetLocalNetworkID(), 1u);
 }
@@ -172,12 +177,13 @@ TEST_F(NetworkLoopbackTest, PeerGetsIdentityDistinctFromHost)
 	ASSERT_TRUE(m_Client.IsEnabled());
 	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5)));
 
-	const HSteamNetConnection peer = m_Host.GetClients().front();
+	const auto clients = m_Host.GetClients();
+	ASSERT_EQ(clients.size(), 1u);
+	const int peer = clients.front();
 	const uint64_t peerID = m_Host.GetNetworkIDForConnection(peer);
 	EXPECT_NE(peerID, 0u) << "Peer identity was not bound at accept time";
 	EXPECT_NE(peerID, 1u) << "NetworkID 1 is reserved for the host";
 
-	// The host must still be in the list, and only it may be flagged as host.
 	const auto& players = m_Host.GetPlayerList();
 	ASSERT_EQ(players.size(), 2u);
 	int hostFlags = 0;
@@ -187,34 +193,46 @@ TEST_F(NetworkLoopbackTest, PeerGetsIdentityDistinctFromHost)
 	}
 	EXPECT_EQ(hostFlags, 1);
 
-	EXPECT_EQ(m_Host.GetNetworkIDForConnection(k_HSteamNetConnection_Invalid), 0u);
+	EXPECT_EQ(m_Host.GetNetworkIDForConnection(kInvalidPeerHandle), 0u);
 }
 
-TEST(NetworkPacketTest, EntitySpawnRoundTrip)
+TEST(NetworkMessageTest, EntitySpawnFields)
 {
-	EntitySpawnPacket sent;
-	sent.NetworkID = 0x00000000DEADBEEFull;
-	std::strncpy(sent.PrefabPath, "prefab/player.chprefab", sizeof(sent.PrefabPath) - 1);
+	EntitySpawnMessage msg;
+	msg.NetworkID = 0x00000000DEADBEEFull;
+	std::strncpy(msg.PrefabPath, "prefab/player.chprefab", sizeof(msg.PrefabPath) - 1);
+	msg.PrefabPath[sizeof(msg.PrefabPath) - 1] = '\0';
 
-	uint8_t buffer[EntitySpawnPacket::WireSize()];
-	sent.Serialize(buffer);
-	const EntitySpawnPacket received = EntitySpawnPacket::Deserialize(buffer);
+	ByteWriter w;
+	msg.Encode(w);
 
-	EXPECT_EQ(received.NetworkID, sent.NetworkID);
-	EXPECT_STREQ(received.PrefabPath, "prefab/player.chprefab");
+	EntitySpawnMessage decoded;
+	ByteReader r(w.Data().data(), w.Data().size());
+	ASSERT_TRUE(decoded.Decode(r));
+
+	EXPECT_EQ(decoded.NetworkID, 0x00000000DEADBEEFull);
+	EXPECT_STREQ(decoded.PrefabPath, "prefab/player.chprefab");
 }
 
-TEST(NetworkPacketTest, EntityDestroyAndPlayerAssignRoundTrip)
+TEST(NetworkMessageTest, EntityDestroyAndPlayerAssignFields)
 {
-	EntityDestroyPacket destroy;
+	EntityDestroyMessage destroy;
 	destroy.NetworkID = 77;
-	uint8_t destroyBuf[EntityDestroyPacket::WireSize()];
-	destroy.Serialize(destroyBuf);
-	EXPECT_EQ(EntityDestroyPacket::Deserialize(destroyBuf).NetworkID, 77u);
 
-	PlayerAssignPacket assign;
+	ByteWriter w1;
+	destroy.Encode(w1);
+	EntityDestroyMessage dec1;
+	ByteReader r1(w1.Data().data(), w1.Data().size());
+	ASSERT_TRUE(dec1.Decode(r1));
+	EXPECT_EQ(dec1.NetworkID, 77u);
+
+	PlayerAssignMessage assign;
 	assign.NetworkID = 5;
-	uint8_t assignBuf[PlayerAssignPacket::WireSize()];
-	assign.Serialize(assignBuf);
-	EXPECT_EQ(PlayerAssignPacket::Deserialize(assignBuf).NetworkID, 5u);
+
+	ByteWriter w2;
+	assign.Encode(w2);
+	PlayerAssignMessage dec2;
+	ByteReader r2(w2.Data().data(), w2.Data().size());
+	ASSERT_TRUE(dec2.Decode(r2));
+	EXPECT_EQ(dec2.NetworkID, 5u);
 }

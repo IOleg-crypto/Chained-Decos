@@ -57,16 +57,33 @@ namespace Chained
 		}
 		unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
 
+		// Determine an optional explicit resources-directory override.
+		// When ApplicationSpecification::ResourcesDir is set (e.g. via CMake for a
+		// packaged/installed build), asset paths resolve there instead of the
+		// default EngineRoot/ProjectDirectory search. When empty, the original
+		// resolution is preserved: we must NOT call SetAssetDirectory, because asset
+		// references already include the "resources/" prefix and would otherwise
+		// double up (e.g. ".../resources/resources/...").
+		std::filesystem::path resourcesDir;
+		if (!m_Specification.ResourcesDir.empty() && std::filesystem::exists(m_Specification.ResourcesDir))
+		{
+			resourcesDir = m_Specification.ResourcesDir;
+		}
+
 		// 1. Input — must be first (window callbacks fire during creation)
 		ServiceLocator::Provide<Core::Input>([] { return std::make_unique<Core::Input>(); });
 
 		// 2. ThreadPool
 		ServiceLocator::Provide<ThreadPool>([=] { return std::make_unique<ThreadPool>(workerCount); });
 
-		// 3. AssetManager
-		ServiceLocator::Provide<AssetManager>([&] {
+		// 3. AssetManager — override asset directory only when explicitly provided
+		ServiceLocator::Provide<AssetManager>([&, resourcesDir] {
 			auto am = std::make_unique<AssetManager>();
 			am->SetEngineRoot(m_Specification.EngineRoot);
+			if (!resourcesDir.empty())
+			{
+				am->SetAssetDirectory(resourcesDir);
+			}
 			return am;
 		});
 

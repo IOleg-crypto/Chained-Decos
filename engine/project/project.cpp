@@ -325,6 +325,18 @@ namespace Chained
 
 		std::string pathStr = path.generic_string();
 
+		// Engine resources are referenced with the "engine/" prefix and resolve
+		// against EngineRoot (where the build copies the engine resources).
+		if (pathStr.rfind("engine/", 0) == 0)
+		{
+			if (auto* am = ServiceLocator::TryGet<AssetManager>())
+			{
+				return NormalizePath(am->ResolvePath(pathStr));
+			}
+			CH_CORE_WARN("Project: AssetManager unavailable, cannot resolve engine resource '{}'", pathStr);
+			return NormalizePath(pathStr);
+		}
+
 		auto assetDir = m_Config.ProjectDirectory / m_Config.AssetDirectory;
 		auto projectDir = m_Config.ProjectDirectory;
 
