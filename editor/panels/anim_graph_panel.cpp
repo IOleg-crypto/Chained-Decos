@@ -930,14 +930,17 @@ namespace Chained
 				VarType t = m_VariableTypes[it->first];
 				std::string oldKey = it->first;
 				std::string newKey = varBuf;
-				m_VariableTypes.erase(oldKey);
-				// Rename in graph DefaultVariables
-				graph->DefaultVariables.erase(oldKey);
-				graph->DefaultVariables[newKey] = val;
-				animComp.Variables.erase(it);
-				animComp.Variables[newKey] = val;
-				m_VariableTypes[newKey] = t;
-				m_ChangedGraph = true;
+				if (newKey == oldKey || (!graph->DefaultVariables.count(newKey) && !animComp.Variables.count(newKey)))
+				{
+					m_VariableTypes.erase(oldKey);
+					// Rename in graph DefaultVariables
+					graph->DefaultVariables.erase(oldKey);
+					graph->DefaultVariables[newKey] = val;
+					animComp.Variables.erase(it);
+					animComp.Variables[newKey] = val;
+					m_VariableTypes[newKey] = t;
+					m_ChangedGraph = true;
+				}
 				ImGui::PopID();
 				break;
 			}

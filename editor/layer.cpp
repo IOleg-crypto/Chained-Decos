@@ -216,11 +216,6 @@ namespace Chained
 		PropertyEditor::Init();
 		m_Panels->Init();
 
-		m_CommandHistory.SetNotifyCallback([this]() {
-			CH_CORE_TRACE("CommandHistory: Scene state changed, notifying editor...");
-			m_SceneManager->MarkSceneDirty();
-		});
-
 		// Load editor fonts BEFORE project auto-load.
 		// OnProjectOpened will clear + rebuild the atlas (editor + project fonts together).
 		// LoadEditorFonts must run first so there is a valid atlas for the initial UI frame.
@@ -377,7 +372,7 @@ namespace Chained
 		// always written regardless of shutdown timing.
 		if (m_Layout)
 		{
-			m_Layout->SaveDefaultLayout();
+			ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
 		}
 		SaveConfig();
 	}
@@ -667,7 +662,7 @@ namespace Chained
 			return true;
 		});
 		dispatcher.Dispatch<AppSaveLayoutEvent>([this](auto& ev) {
-			m_Layout->SaveDefaultLayout();
+			ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
 			return true;
 		});
 		dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
@@ -686,7 +681,10 @@ namespace Chained
 
 		// 4. Selections/Picking
 		dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
-			SetSelectedEntity(Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry()));
+			if (Scene* scene = ev.GetScene())
+			{
+				SetSelectedEntity(Entity(ev.GetEntity(), &scene->GetRegistry()));
+			}
 			GetEditorState().LastHitMeshIndex = ev.GetMeshIndex();
 			return false;
 		});
