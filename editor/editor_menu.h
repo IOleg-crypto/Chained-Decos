@@ -34,6 +34,14 @@ namespace Chained
 		void DrawExportDialog();
 
 	private:
+		void DrawFileMenu();
+		void DrawViewMenu(EditorPanels& panels);
+		void DrawProjectMenu();
+		void DrawEditorMenu();
+		void DrawPlaybackControls();
+		void DrawExportResultPopup();
+		void DrawUnsavedChangesPopup();
+
 		// State for the Export Project feature
 		struct ExportState
 		{
