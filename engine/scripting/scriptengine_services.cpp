@@ -5,7 +5,8 @@
 #include "engine/project/project.h"
 #include "script_glue.h"
 #include "script_interop_pointers.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scene_scripting_manager.h"
+#include "engine/scripting/scriptengine.h"
 #include <Coral/GC.hpp>
 #include <algorithm>
 #include <cctype>
@@ -463,6 +464,12 @@ namespace Chained
 			return false;
 		}
 
+		// Tear down existing scripts in the OLD ALC before unloading it:
+		// run ClearAll (OnDestroy on live scripts, clears static collections) and
+		// reset per-entity instantiation flags so OnUpdate re-instantiates from
+		// the reloaded assembly instead of keeping zombie instances.
+		SceneScriptingManager::ResetAll();
+
 		// Safety step: Clear stale Coral::Type entries from the registry before unloading the context
 		GetScriptRegistry().Clear();
 
@@ -555,19 +562,6 @@ namespace Chained
 			if (fullIt != m_ScriptClasses.end())
 			{
 				return &fullIt->second;
-			}
-		}
-
-		for (auto& [storedKey, type] : m_ScriptClasses)
-		{
-			if (storedKey.size() >= key.size() + 1)
-			{
-				const size_t suffixPos = storedKey.size() - key.size();
-				const char dot = storedKey[suffixPos - 1];
-				if (dot == '.' && storedKey.compare(suffixPos, key.size(), key) == 0)
-				{
-					return &type;
-				}
 			}
 		}
 

@@ -26,7 +26,7 @@ include(${CMAKE_SOURCE_DIR}/cmake/external/enet.cmake)
 include(${CMAKE_SOURCE_DIR}/cmake/external/sodium.cmake)
 add_subdirectory(networking)
 add_subdirectory(platform)
-add_subdirectory(${CMAKE_SOURCE_DIR}/scripting ${CMAKE_BINARY_DIR}/scripting)
+add_subdirectory(scripting)
 add_subdirectory(app)
 add_subdirectory(runtime)
 

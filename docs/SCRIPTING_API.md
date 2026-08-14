@@ -148,8 +148,11 @@ public override void OnUpdate(float deltaTime)
 ## 3. Components
 
 Component wrappers live in `scripting/managed/src/Components/`. All derive from
-`Component`, which itself exposes `Entity` and a `Transform` shortcut. The wrappers
-available to scripts are listed below with their public members.
+`Component`, which itself exposes `Entity` and a `Transform` shortcut.
+
+> 💡 **Native Binding Architecture**: Components use Roslyn Source Generation (`[NativeProperty]` and `[NativeCall]` attributes). Function pointers (`_Ptr` fields) and C# getters/setters are auto-generated at compile time. See [SCRIPTING_INTEROP.md](SCRIPTING_INTEROP.md) for details on extending components and adding native calls.
+
+The wrappers available to scripts are listed below with their public members.
 
 ### TransformComponent
 

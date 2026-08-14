@@ -44,6 +44,9 @@ namespace Chained
 		};
 		ScriptEngineContext AcquireScriptEngine();
 
+		// entt on_destroy<ManagedScriptComponent> handler — notifies C# to destroy scripts.
+		void OnManagedScriptDestroyed(entt::registry& registry, entt::entity entity);
+
 	private:
 		Scene* m_Scene = nullptr;
 		std::atomic<bool> m_ReloadInProgress{false};

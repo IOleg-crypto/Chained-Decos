@@ -44,6 +44,7 @@ namespace Chained
 		std::map<std::string, ScriptField> Fields; // Persistent fields
 		bool IsInstantiated = false;
 		bool NeedsStart = true;
+		bool InstantiateTried = false; // set once C++ attempted instantiation (success or not)
 
 		ManagedScriptInstance ClonePersistent() const
 		{
@@ -57,6 +58,7 @@ namespace Chained
 		{
 			IsInstantiated = false;
 			NeedsStart = true;
+			InstantiateTried = false;
 		}
 
 		bool HasInstance() const

@@ -10,7 +10,7 @@
 #include "engine/project/project.h"
 #include "events.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "editor/scene_manager.h"
 #include "gui.h"
 #include "imgui.h"

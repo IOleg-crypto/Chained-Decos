@@ -2,7 +2,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/project/project.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "gtest/gtest.h"
 
 #include <filesystem>
