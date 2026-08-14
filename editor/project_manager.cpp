@@ -8,7 +8,7 @@
 #include "engine/graphics/ui/ui_font_registry.h"
 #include "engine/graphics/ui/widget_renderer.h"
 #include "engine/scene/scene_events.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/imgui/imgui_layer.h"
 #include <algorithm>

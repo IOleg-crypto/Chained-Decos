@@ -25,7 +25,7 @@
 #include "events.h"
 #include "imgui.h"
 #include "imgui_internal.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "undo/entity_commands.h"
 

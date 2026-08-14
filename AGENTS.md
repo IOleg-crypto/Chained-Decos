@@ -59,7 +59,7 @@ CI format check only runs on files changed relative to the PR base — not the e
 
 **Adding a native component:** struct in `engine/scene/components.h`, YAML in `scene_serializer.cpp`, inspector in `editor/editor_panels.cpp`, logic in a `SceneSystem`. See `docs/COMPONENTS.md`.
 
-**Scripting bridge:** C++/C# via Coral (.NET). `ScriptTypeRegistry::Discover()` scans game assembly for `Chained.Script` subclasses. `SceneScripting` instantiates and calls `__Init()`. Managed API: `scripting/managed/src/` (`Script.cs`, `Entity.cs`, `Input.cs`, `UI.cs`, etc.).
+**Scripting bridge:** C++/C# via Coral (.NET). `ScriptTypeRegistry::Discover()` scans game assembly for `Chained.Script` subclasses. `SceneScripting` instantiates and calls `__Init()`. Managed API: `scripting/managed/src/` (`Script.cs`, `Entity.cs`, `Input.cs`, `UI.cs`, etc.). Unmanaged function pointers (`_Ptr` fields) and C# getters/setters are auto-generated at C# compile time via Roslyn Source Generator (`Chained.Managed.Generator` with `[NativeProperty]` / `[NativeCall]` attributes). See `docs/SCRIPTING_INTEROP.md`.
 
 ## CI
 

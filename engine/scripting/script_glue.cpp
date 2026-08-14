@@ -26,32 +26,62 @@
 namespace Chained
 {
 
-	// Called from C# Interop.RegisterCallbacks() — receives the 7 lifecycle function pointers.
-	static void RegisterManagedCallbacks(ManagedCallbacks* cb)
+	// ── C++ → C# callback pointers (filled by ScriptGlue_Register*Callback) ──
+	void (*g_ScriptOnUpdate)(float) = nullptr;
+	void (*g_ScriptOnEvent)(int) = nullptr;
+	void (*g_ScriptOnRenderUI)() = nullptr;
+	void (*g_ScriptOnCollisionEnter)(uint64_t, uint64_t) = nullptr;
+	void (*g_ScriptClearAll)() = nullptr;
+	uint8_t (*g_ScriptInstantiate)(uint64_t, const char16_t*) = nullptr;
+	void (*g_ScriptDestroy)(uint64_t, const char16_t*) = nullptr;
+
+	// C# registers each lifecycle callback directly — no struct, no round-trip.
+	static void ScriptGlue_RegisterUpdateCallback(void (*cb)(float))
 	{
-		if (!cb)
-		{
-			return;
-		}
-		ManagedCallbacks_::OnUpdate = cb->OnUpdate;
-		ManagedCallbacks_::OnEvent = cb->OnEvent;
-		ManagedCallbacks_::OnRenderUI = cb->OnRenderUI;
-		ManagedCallbacks_::OnCollisionEnter = cb->OnCollisionEnter;
-		ManagedCallbacks_::ClearAll = cb->ClearAll;
-		ManagedCallbacks_::InstantiateScript = cb->InstantiateScript;
-		ManagedCallbacks_::DestroyScript = cb->DestroyScript;
-		if (ManagedCallbacks_::InstantiateScript == nullptr || ManagedCallbacks_::DestroyScript == nullptr)
-		{
-			CH_CORE_ERROR("[ScriptGlue] ManagedCallbacks: critical lifecycle callbacks "
-						  "(InstantiateScript/DestroyScript) are null!");
-		}
-		CH_CORE_INFO("[ScriptGlue] ManagedCallbacks registered.");
+		g_ScriptOnUpdate = cb;
+	}
+	static void ScriptGlue_RegisterEventCallback(void (*cb)(int))
+	{
+		g_ScriptOnEvent = cb;
+	}
+	static void ScriptGlue_RegisterRenderUICallback(void (*cb)())
+	{
+		g_ScriptOnRenderUI = cb;
+	}
+	static void ScriptGlue_RegisterCollisionCallback(void (*cb)(uint64_t, uint64_t))
+	{
+		g_ScriptOnCollisionEnter = cb;
+	}
+	static void ScriptGlue_RegisterClearAllCallback(void (*cb)())
+	{
+		g_ScriptClearAll = cb;
+	}
+	static void ScriptGlue_RegisterInstantiateCallback(uint8_t (*cb)(uint64_t, const char16_t*))
+	{
+		g_ScriptInstantiate = cb;
+	}
+	static void ScriptGlue_RegisterDestroyCallback(void (*cb)(uint64_t, const char16_t*))
+	{
+		g_ScriptDestroy = cb;
 	}
 
 	void ScriptGlue::RegisterInternalCalls(Coral::ManagedAssembly& assembly)
 	{
-		// ── RegisterManagedCallbacks (C# → C++ lifecycle) ─────────────────
-		assembly.AddInternalCall("Chained.Interop", "RegisterManagedCallbacks_Ptr", (void*)&RegisterManagedCallbacks);
+		// ── C# → C++ lifecycle callbacks (registered directly, one per callback) ──
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterUpdateCallback_Ptr",
+								 (void*)&ScriptGlue_RegisterUpdateCallback);
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterEventCallback_Ptr",
+								 (void*)&ScriptGlue_RegisterEventCallback);
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterRenderUICallback_Ptr",
+								 (void*)&ScriptGlue_RegisterRenderUICallback);
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterCollisionCallback_Ptr",
+								 (void*)&ScriptGlue_RegisterCollisionCallback);
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterClearAllCallback_Ptr",
+								 (void*)&ScriptGlue_RegisterClearAllCallback);
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterInstantiateCallback_Ptr",
+								 (void*)&ScriptGlue_RegisterInstantiateCallback);
+		assembly.AddInternalCall("Chained.Interop", "ScriptGlue_RegisterDestroyCallback_Ptr",
+								 (void*)&ScriptGlue_RegisterDestroyCallback);
 
 		// ── Entity ────────────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.Entity", "Entity_HasComponent_Ptr", (void*)&Entity_HasComponent);

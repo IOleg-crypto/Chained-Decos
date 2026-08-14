@@ -21,7 +21,7 @@
 #include "engine/project/project.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "ui/project_selector_ui.h"
 #include <ImGuizmo.h>

@@ -14,7 +14,7 @@
 #include "imgui.h"
 #include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include <Coral/ManagedObject.hpp>
 
 #include "engine/app/application.h"

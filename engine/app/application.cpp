@@ -16,7 +16,7 @@
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/core/input.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "engine/networking/network_service.h"
 
 namespace Chained
