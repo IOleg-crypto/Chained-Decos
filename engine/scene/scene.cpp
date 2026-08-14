@@ -18,7 +18,7 @@
 #include "engine/scene/systems/network_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "engine/scene/prefab_serializer.h"
 #include <entt/entt.hpp>
 

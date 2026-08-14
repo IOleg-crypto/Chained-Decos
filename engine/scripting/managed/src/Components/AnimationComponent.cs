@@ -3,27 +3,25 @@ using System.Runtime.InteropServices;
 
 namespace Chained
 {
-    /// <summary>Animation component wrapper.</summary>
-    public class AnimationComponent : Component
+    /// <summary>Animation component wrapper. Native call bindings are generated from the
+    /// [NativeCall] attributes below (see NativeCallGenerator).</summary>
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetCurrentAnimationIndex", "int", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_SetCurrentAnimationIndex", "void", "ulong", "int")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetIsPlaying", "uint", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_SetIsPlaying", "void", "ulong", "uint")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetIsLooping", "byte", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_SetIsLooping", "void", "ulong", "byte")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetIsFinished", "byte", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetDuration", "float", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetNormalizedTime", "float", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetBlendDuration", "float", "ulong")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_SetBlendDuration", "void", "ulong", "float")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_CrossFade", "void", "ulong", "int", "float")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_SetFloat", "void", "ulong", "char*", "float")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_SetBool", "void", "ulong", "char*", "byte")]
+    [NativeCall("Chained.AnimationComponent", "AnimationComponent_GetFloat", "float", "ulong", "char*")]
+    public partial class AnimationComponent : Component
     {
-#pragma warning disable 0649
-        internal static unsafe delegate* unmanaged<ulong, int> AnimationComponent_GetCurrentAnimationIndex_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, int, void> AnimationComponent_SetCurrentAnimationIndex_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, uint> AnimationComponent_GetIsPlaying_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, uint, void> AnimationComponent_SetIsPlaying_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, byte> AnimationComponent_GetIsLooping_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, byte, void> AnimationComponent_SetIsLooping_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, byte> AnimationComponent_GetIsFinished_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, float> AnimationComponent_GetDuration_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, float> AnimationComponent_GetNormalizedTime_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, float> AnimationComponent_GetBlendDuration_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, float, void> AnimationComponent_SetBlendDuration_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, int, float, void> AnimationComponent_CrossFade_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, char*, float, void> AnimationComponent_SetFloat_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, char*, byte, void> AnimationComponent_SetBool_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, char*, float> AnimationComponent_GetFloat_Ptr;
-#pragma warning restore 0649
-
         public int CurrentAnimationIndex
         {
             get { unsafe { return AnimationComponent_GetCurrentAnimationIndex_Ptr != null ? AnimationComponent_GetCurrentAnimationIndex_Ptr(Entity.ID) : 0; } }

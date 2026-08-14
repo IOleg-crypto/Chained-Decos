@@ -28,4 +28,13 @@
       <HintPath>$(CoralManagedDir)/Coral.Managed.dll</HintPath>
     </Reference>
   </ItemGroup>
+
+  <!-- The generator project lives as a subfolder; keep its sources out of this assembly. -->
+  <ItemGroup>
+    <Compile Remove="Chained.Managed.Generator/**/*.cs" />
+    <None Remove="Chained.Managed.Generator/**" />
+    <ProjectReference Include="Chained.Managed.Generator\Chained.Managed.Generator.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
+  </ItemGroup>
 </Project>

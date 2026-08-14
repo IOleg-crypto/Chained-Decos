@@ -33,7 +33,7 @@ namespace Chained
         /// OnCreate is deferred to the next OnUpdate tick.
         /// </summary>
         [UnmanagedCallersOnly]
-        public static unsafe void InstantiateScript(ulong entityId, char* classNamePtr)
+        public static unsafe byte InstantiateScript(ulong entityId, char* classNamePtr)
         {
             string className = (classNamePtr != null) ? new string(classNamePtr) : string.Empty;
             if (!s_ScriptTypes.TryGetValue(className, out Type? type))
@@ -63,7 +63,7 @@ namespace Chained
                 if (type == null)
                 {
                     Console.WriteLine($"[ScriptEngine] ERROR: Could not find script type: {className}");
-                    return;
+                    return 0;
                 }
                 s_ScriptTypes[className] = type;
             }
@@ -74,7 +74,7 @@ namespace Chained
                 if (script == null)
                 {
                     Console.WriteLine($"[ScriptEngine] ERROR: Failed to cast {className} to Script.");
-                    return;
+                    return 0;
                 }
 
                 // Initialize the base struct entity ID and C++ bindings
@@ -92,10 +92,12 @@ namespace Chained
                 // Do NOT add to s_ActiveScripts yet — the script graduates there
                 // only after OnStart completes, so OnUpdate never runs prematurely.
                 s_ScriptsNeedingCreate.Add(script);
+                return 1;
             }
             catch (Exception ex)
             {
                 Console.WriteLine($"[ScriptEngine] ERROR: Exception instantiating {className}: {ex}");
+                return 0;
             }
         }
 

@@ -9,10 +9,10 @@
 
 namespace Chained
 {
-CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(const Coral::UCChar* tag);
-CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID);
-CH_SCRIPT_FUNC void Scene_LoadScene(const Coral::UCChar* path);
-CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity();
+	CH_SCRIPT_FUNC uint64_t Scene_FindEntityByTag(const Coral::UCChar* tag);
+	CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID);
+	CH_SCRIPT_FUNC void Scene_LoadScene(const Coral::UCChar* path);
+	CH_SCRIPT_FUNC uint64_t Scene_GetPrimaryCameraEntity();
 
 } // namespace Chained
 #endif
