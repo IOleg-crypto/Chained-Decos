@@ -1,4 +1,5 @@
 using System;
+using System.Reflection;
 using System.Runtime.InteropServices;
 
 namespace Chained
@@ -50,6 +51,32 @@ namespace Chained
 
             RegisterManagedCallbacks_Ptr(&cb);
             Console.WriteLine("[C# Interop] ManagedCallbacks registered successfully.");
+            VerifyInternalCalls();
+        }
+
+        /// <summary>
+        /// Catches ABI/signature drift: any delegate* field suffixed with _Ptr that Coral
+        /// failed to bind (name mismatch, signature mismatch) stays null. A null here means
+        /// a C++ AddInternalCall has no matching C# field (or vice versa) — a silent crash
+        /// waiting to happen. We surface it loudly at load time instead.
+        /// </summary>
+        private static void VerifyInternalCalls()
+        {
+            var unbound = new System.Collections.Generic.List<string>();
+            var asm = typeof(Interop).Assembly;
+            foreach (var type in asm.GetTypes())
+            {
+                foreach (var field in type.GetFields(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+                {
+                    if (field.Name.EndsWith("_Ptr") && field.FieldType.IsFunctionPointer && field.GetValue(null) == null)
+                        unbound.Add($"{type.Name}.{field.Name}");
+                }
+            }
+
+            if (unbound.Count > 0)
+                Console.WriteLine($"[C# Interop] ERROR: {unbound.Count} internal call(s) NOT bound by Coral: {string.Join(", ", unbound)}");
+            else
+                Console.WriteLine("[C# Interop] All internal calls bound successfully.");
         }
     }
 }

@@ -55,14 +55,14 @@ namespace Chained
 
 	// ── SpawnComponent ───────────────────────────────────────────────────
 
-	bool SpawnComponent_GetIsActive(uint64_t entityID)
+	uint8_t SpawnComponent_GetIsActive(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<Chained::SpawnComponent>()
 				   ? entity.GetComponent<Chained::SpawnComponent>().IsActive
 				   : false;
 	}
-	void SpawnComponent_SetIsActive(uint64_t entityID, bool value)
+	void SpawnComponent_SetIsActive(uint64_t entityID, uint8_t value)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<Chained::SpawnComponent>())
@@ -70,14 +70,14 @@ namespace Chained
 			entity.GetComponent<Chained::SpawnComponent>().IsActive = value;
 		}
 	}
-	bool SpawnComponent_IsCheckpoint(uint64_t entityID)
+	uint8_t SpawnComponent_IsCheckpoint(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<Chained::SpawnComponent>()
 				   ? entity.GetComponent<Chained::SpawnComponent>().IsCheckpoint
 				   : false;
 	}
-	void SpawnComponent_SetIsCheckpoint(uint64_t entityID, bool value)
+	void SpawnComponent_SetIsCheckpoint(uint64_t entityID, uint8_t value)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<Chained::SpawnComponent>())
@@ -105,7 +105,7 @@ namespace Chained
 			entity.GetComponent<Chained::SpawnComponent>().SpawnPoint = *inPoint;
 		}
 	}
-	bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
+	uint8_t SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<Chained::SpawnComponent>()

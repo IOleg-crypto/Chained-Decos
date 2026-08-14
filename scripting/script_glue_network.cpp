@@ -96,19 +96,19 @@ namespace Chained
 		net->Disconnect();
 	}
 
-	CH_SCRIPT_FUNC bool Network_IsHost()
+	CH_SCRIPT_FUNC uint8_t Network_IsHost()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		return net && net->IsHost();
 	}
 
-	CH_SCRIPT_FUNC bool Network_IsClient()
+	CH_SCRIPT_FUNC uint8_t Network_IsClient()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		return net && net->IsClient();
 	}
 
-	CH_SCRIPT_FUNC bool Network_IsConnected()
+	CH_SCRIPT_FUNC uint8_t Network_IsConnected()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		return net && net->IsConnected();
@@ -170,7 +170,7 @@ namespace Chained
 		net->BroadcastSceneChange(path.c_str());
 	}
 
-	CH_SCRIPT_FUNC bool Network_HasPendingSceneChange()
+	CH_SCRIPT_FUNC uint8_t Network_HasPendingSceneChange()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		return net && net->HasPendingSceneChange();
@@ -282,7 +282,7 @@ namespace Chained
 		net->SendChatMessage(msg.c_str());
 	}
 
-	CH_SCRIPT_FUNC bool Network_HasPendingChat()
+	CH_SCRIPT_FUNC uint8_t Network_HasPendingChat()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		return net && net->HasPendingChatMessages();
