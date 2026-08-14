@@ -11,6 +11,19 @@
 
 namespace Chained
 {
+	static constexpr float kMouseSensitivity = 0.003f;
+
+	// Pan speed: viewport-independent polynomial curve (empirically tuned)
+	static constexpr float kPanSpeedDivisor = 1000.0f;
+	static constexpr float kPanSpeedCap = 2.4f;
+	static constexpr float kPanSpeedA = 0.0366f;
+	static constexpr float kPanSpeedB = -0.1778f;
+	static constexpr float kPanSpeedC = 0.3021f;
+
+	// Zoom speed: quadratic distance-based curve
+	static constexpr float kZoomDistanceScale = 0.2f;
+	static constexpr float kZoomSpeedMin = 0.1f;
+	static constexpr float kZoomSpeedMax = 100.0f;
 
 	EditorCameraController::EditorCameraController()
 	{
@@ -95,7 +108,7 @@ namespace Chained
 			}
 		}
 
-		glm::vec2 delta = Core::Input::GetMouseDelta() * 0.003f;
+		glm::vec2 delta = Core::Input::GetMouseDelta() * kMouseSensitivity;
 
 		if (Core::Input::IsMouseButtonDown(MouseCode::ButtonRight))
 		{
@@ -238,10 +251,10 @@ namespace Chained
 
 	std::pair<float, float> EditorCameraController::PanSpeed() const
 	{
-		float x = std::min((float)m_ViewportWidth / 1000.0f, 2.4f);
-		float xFactor = 0.0366f * (x * x) - 0.1778f * x + 0.3021f;
-		float y = std::min((float)m_ViewportHeight / 1000.0f, 2.4f);
-		float yFactor = 0.0366f * (y * y) - 0.1778f * y + 0.3021f;
+		float x = std::min((float)m_ViewportWidth / kPanSpeedDivisor, kPanSpeedCap);
+		float xFactor = kPanSpeedA * (x * x) + kPanSpeedB * x + kPanSpeedC;
+		float y = std::min((float)m_ViewportHeight / kPanSpeedDivisor, kPanSpeedCap);
+		float yFactor = kPanSpeedA * (y * y) + kPanSpeedB * y + kPanSpeedC;
 		return {xFactor, yFactor};
 	}
 
@@ -252,11 +265,11 @@ namespace Chained
 
 	float EditorCameraController::ZoomSpeed() const
 	{
-		float distance = m_Distance * 0.2f;
+		float distance = m_Distance * kZoomDistanceScale;
 		distance = std::max(distance, 0.0f);
 		float speed = distance * distance;
 
-		return std::clamp(speed * m_ZoomSpeedMultiplier, 0.1f, 100.0f);
+		return std::clamp(speed * m_ZoomSpeedMultiplier, kZoomSpeedMin, kZoomSpeedMax);
 	}
 
 } // namespace Chained

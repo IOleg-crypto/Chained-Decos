@@ -32,6 +32,8 @@
 namespace Chained
 {
 
+	constexpr float kMinIconClickRadius = 14.0f;
+
 	Camera3D ViewportPanel::GetActiveOrEditorCamera(Scene* scene) const
 	{
 		if (!scene)
@@ -79,6 +81,13 @@ namespace Chained
 			}
 		}
 		return 0;
+	}
+
+	static float ComputeIconSize(const glm::vec3& worldPos, const glm::vec3& cameraPos, float minSize, float maxSize,
+								 float scale)
+	{
+		const float distance = glm::distance(worldPos, cameraPos);
+		return std::clamp(distance * scale, minSize, maxSize);
 	}
 
 	static const GizmoBtn s_GizmoBtns[] = {
@@ -304,6 +313,23 @@ namespace Chained
 			m_CursorLocked = false;
 		}
 
+		// Auto-switch camera 2D mode based on scene type
+		auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
+		if (activeScene)
+		{
+			SceneType sceneType = activeScene->GetSettings().Type;
+			if (sceneType != m_LastSceneType)
+			{
+				bool want2D = (sceneType == SceneType::UI);
+				if (m_CameraController->Is2DMode() != want2D)
+				{
+					m_CameraController->Set2DMode(want2D);
+					m_Gizmo.Set2DMode(want2D);
+				}
+				m_LastSceneType = sceneType;
+			}
+		}
+
 		// Cursor lock/unlock for camera rotation
 		if (m_Hovered || m_CursorLocked)
 		{
@@ -391,18 +417,7 @@ namespace Chained
 		{
 			return {};
 		}
-		auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-
-		Camera3D camera;
-		if (activeCameraOpt.has_value() && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Play)
-		{
-			camera = activeCameraOpt.value();
-		}
-		else
-		{
-			camera = m_CameraController->ToCamera3D();
-		}
-
+		Camera3D camera = GetActiveOrEditorCamera(activeScene.get());
 		return ScenePicker::CreateRayFromViewport(camera, mousePosition, m_ViewportSize);
 	}
 
@@ -486,14 +501,7 @@ namespace Chained
 			return;
 		}
 
-		auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
-		bool cameraFound = activeCameraOpt.has_value();
-		auto camera = m_CameraController->ToCamera3D();
-
-		if (cameraFound && EditorLayer::Get().GetSceneManager().GetSceneState() == SceneState::Play)
-		{
-			camera = activeCameraOpt.value();
-		}
+		auto camera = GetActiveOrEditorCamera(activeScene);
 
 		if (glm::distance(glm::vec3(camera.Position), glm::vec3(camera.Target)) < 0.001f)
 		{
@@ -565,12 +573,7 @@ namespace Chained
 					// Use relative path if possible to satisfy portability
 					modelcomp.ModelPath = Project::GetActive()->GetRelativePath(filepath);
 
-					// Select the new entity. Dispatch through the app so Inspector/Material
-					// panels (which subscribe to EntitySelectedEvent) also refresh — the event
-					// handler in EditorLayer::OnEvent updates EditorLayer::Get().GetEditorState().SelectedEntity for
-					// us.
-					EntitySelectedEvent e((entt::entity)entity, activeScene);
-					Application::Get().OnEvent(e);
+					SelectEntity(entity, activeScene);
 				}
 			}
 			ImGui::EndDragDropTarget();
@@ -654,10 +657,102 @@ namespace Chained
 		}
 	}
 
+	Entity ViewportPanel::HandleIconPicking(Scene* scene, const Camera3D& camera, const ImVec2& mousePos,
+											const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
+	{
+		if (!EditorLayer::Get().GetConfig().ShowEditorIcons)
+		{
+			return {};
+		}
+
+		const auto& editorCfg = EditorLayer::Get().GetConfig();
+		const float iconMin = editorCfg.IconSizeMin;
+		const float iconMax = editorCfg.IconSizeMax;
+		const float iconScale = editorCfg.IconSizeScale;
+
+		const glm::mat4 vp = camera.ProjectionMatrix * camera.ViewMatrix;
+
+		auto worldToScreen = [&](const glm::vec3& wp) -> glm::vec2 {
+			glm::vec4 clip = vp * glm::vec4(wp, 1.0f);
+			if (clip.w <= 0.0f)
+			{
+				return {-1.f, -1.f};
+			}
+			const glm::vec3 ndc = glm::vec3(clip) / clip.w;
+			return {(ndc.x * 0.5f + 0.5f) * viewportSize.x + viewportScreenPos.x,
+					(1.0f - (ndc.y * 0.5f + 0.5f)) * viewportSize.y + viewportScreenPos.y};
+		};
+
+		auto iconPixelRadius = [&](const glm::vec3& wp) -> float {
+			const float dist = glm::distance(wp, camera.Position);
+			const float worldSz = std::clamp(dist * iconScale, iconMin, iconMax);
+			float ppu;
+			if (camera.Projection == ProjectionType::Perspective && dist > 0.001f)
+			{
+				ppu = (viewportSize.y * 0.5f) / (std::tan(glm::radians(camera.FovDegrees) * 0.5f) * dist);
+			}
+			else
+			{
+				ppu = (viewportSize.y * 0.5f) / std::max(camera.OrthographicSize, 0.001f);
+			}
+			return std::max(worldSz * ppu * 0.5f, kMinIconClickRadius);
+		};
+
+		Entity bestHit = {};
+		float bestIconDist = FLT_MAX;
+
+		auto testIcon = [&](entt::entity id, const glm::vec3& wp) {
+			const glm::vec2 sp = worldToScreen(wp);
+			if (sp.x < 0.f)
+			{
+				return;
+			}
+			const float r = iconPixelRadius(wp);
+			const float dx = mousePos.x - sp.x;
+			const float dy = mousePos.y - sp.y;
+			if (dx * dx + dy * dy <= r * r)
+			{
+				const float d = glm::distance(wp, camera.Position);
+				if (d < bestIconDist)
+				{
+					bestIconDist = d;
+					bestHit = Entity(id, &scene->GetRegistry());
+				}
+			}
+		};
+
+		auto& reg = scene->GetRegistry();
+
+		reg.view<TransformComponent, CameraComponent>().each(
+			[&](entt::entity id, TransformComponent& tc, CameraComponent&) {
+				const glm::vec3 wp = glm::vec3(tc.WorldTransform[3]);
+				if (glm::distance(wp, camera.Position) >= 0.25f)
+				{
+					testIcon(id, wp);
+				}
+			});
+
+		reg.view<TransformComponent, LightComponent>().each(
+			[&](entt::entity id, TransformComponent& tc, LightComponent&) {
+				testIcon(id, glm::vec3(tc.WorldTransform[3]));
+			});
+
+		reg.view<TransformComponent, SpawnComponent>().each(
+			[&](entt::entity id, TransformComponent& tc, SpawnComponent&) {
+				testIcon(id, glm::vec3(tc.WorldTransform[3]));
+			});
+
+		reg.view<TransformComponent, AudioComponent>().each(
+			[&](entt::entity id, TransformComponent& tc, AudioComponent&) {
+				testIcon(id, glm::vec3(tc.WorldTransform[3]));
+			});
+
+		return bestHit;
+	}
+
 	void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
 	{
 		// Object picking logic
-		auto activeCameraOpt = SceneRenderer::GetActiveCamera(activeScene->GetRegistry());
 		bool isUIChildHovered =
 			ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 		bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
@@ -697,91 +792,10 @@ namespace Chained
 			}
 
 			// Icon Picking — screen-space hit test against billboard icons
-			if (!bestHit && EditorLayer::Get().GetConfig().ShowEditorIcons)
+			if (!bestHit)
 			{
-				const auto& editorCfg = EditorLayer::Get().GetConfig();
-				const float iconMin = editorCfg.IconSizeMin;
-				const float iconMax = editorCfg.IconSizeMax;
-				const float iconScale = editorCfg.IconSizeScale;
-
 				Camera3D cam = m_CameraController->ToCamera3D();
-				const glm::mat4 vp = cam.ProjectionMatrix * cam.ViewMatrix;
-
-				// Project world point to screen pixels; returns {-1,-1} if behind camera.
-				auto worldToScreen = [&](const glm::vec3& wp) -> glm::vec2 {
-					glm::vec4 clip = vp * glm::vec4(wp, 1.0f);
-					if (clip.w <= 0.0f)
-					{
-						return {-1.f, -1.f};
-					}
-					const glm::vec3 ndc = glm::vec3(clip) / clip.w;
-					return {(ndc.x * 0.5f + 0.5f) * viewportSize.x + viewportScreenPos.x,
-							(1.0f - (ndc.y * 0.5f + 0.5f)) * viewportSize.y + viewportScreenPos.y};
-				};
-
-				// Pixel radius of billboard at given world position (mirrors RenderEditorIcons sizing).
-				auto iconPixelRadius = [&](const glm::vec3& wp) -> float {
-					const float dist = glm::distance(wp, cam.Position);
-					const float worldSz = std::clamp(dist * iconScale, iconMin, iconMax);
-					float ppu;
-					if (cam.Projection == ProjectionType::Perspective && dist > 0.001f)
-					{
-						ppu = (viewportSize.y * 0.5f) / (std::tan(glm::radians(cam.FovDegrees) * 0.5f) * dist);
-					}
-					else
-					{
-						ppu = (viewportSize.y * 0.5f) / std::max(cam.OrthographicSize, 0.001f);
-					}
-					return std::max(worldSz * ppu * 0.5f, 14.0f); // 14px minimum for comfortable clicking
-				};
-
-				float bestIconDist = FLT_MAX;
-
-				auto testIcon = [&](entt::entity id, const glm::vec3& wp) {
-					const glm::vec2 sp = worldToScreen(wp);
-					if (sp.x < 0.f)
-					{
-						return;
-					}
-					const float r = iconPixelRadius(wp);
-					const float dx = mousePos.x - sp.x;
-					const float dy = mousePos.y - sp.y;
-					if (dx * dx + dy * dy <= r * r)
-					{
-						const float d = glm::distance(wp, cam.Position);
-						if (d < bestIconDist)
-						{
-							bestIconDist = d;
-							bestHit = Entity(id, &activeScene->GetRegistry());
-						}
-					}
-				};
-
-				auto& reg = activeScene->GetRegistry();
-
-				reg.view<TransformComponent, CameraComponent>().each(
-					[&](entt::entity id, TransformComponent& tc, CameraComponent&) {
-						const glm::vec3 wp = glm::vec3(tc.WorldTransform[3]);
-						if (glm::distance(wp, cam.Position) >= 0.25f)
-						{
-							testIcon(id, wp);
-						}
-					});
-
-				reg.view<TransformComponent, LightComponent>().each(
-					[&](entt::entity id, TransformComponent& tc, LightComponent&) {
-						testIcon(id, glm::vec3(tc.WorldTransform[3]));
-					});
-
-				reg.view<TransformComponent, SpawnComponent>().each(
-					[&](entt::entity id, TransformComponent& tc, SpawnComponent&) {
-						testIcon(id, glm::vec3(tc.WorldTransform[3]));
-					});
-
-				reg.view<TransformComponent, AudioComponent>().each(
-					[&](entt::entity id, TransformComponent& tc, AudioComponent&) {
-						testIcon(id, glm::vec3(tc.WorldTransform[3]));
-					});
+				bestHit = HandleIconPicking(activeScene, cam, mousePos, viewportSize, viewportScreenPos);
 			}
 
 			// 3D Picking
@@ -796,23 +810,17 @@ namespace Chained
 
 			if (bestHit)
 			{
-				// Dispatch via Application so Inspector / MaterialPanel (which listen for
-				// EntitySelectedEvent in their OnEvent handlers) refresh too. EditorLayer's
-				// own handler is what writes EditorLayer::Get().GetEditorState().SelectedEntity — don't do it twice.
-				EntitySelectedEvent e((entt::entity)bestHit, activeScene);
-				Application::Get().OnEvent(e);
+				SelectEntity(bestHit, activeScene);
 			}
 			else
 			{
-				// Only deselect if the mouse is genuinely inside the viewport area
 				ImVec2 mousePos = ImGui::GetMousePos();
 				bool mouseInViewport =
 					(mousePos.x >= viewportScreenPos.x && mousePos.x <= viewportScreenPos.x + viewportSize.x &&
 					 mousePos.y >= viewportScreenPos.y && mousePos.y <= viewportScreenPos.y + viewportSize.y);
 				if (mouseInViewport)
 				{
-					EntitySelectedEvent e(entt::null, activeScene);
-					Application::Get().OnEvent(e);
+					DeselectEntity(activeScene);
 				}
 			}
 		}
@@ -844,13 +852,23 @@ namespace Chained
 
 			ImGui::SameLine(0, 10);
 			bool is2D = m_CameraController->Is2DMode();
+			bool isUIScene = activeScene && activeScene->GetSettings().Type == SceneType::UI;
 			if (is2D)
 			{
 				ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::ActiveToolOrange);
 			}
+			if (!isUIScene)
+			{
+				ImGui::BeginDisabled();
+			}
 			if (ImGui::Button(is2D ? (ICON_FA_CAMERA " 2D") : (ICON_FA_CUBE " 3D"), {50, 28}))
 			{
 				m_CameraController->Set2DMode(!is2D);
+				m_Gizmo.Set2DMode(!is2D);
+			}
+			if (!isUIScene)
+			{
+				ImGui::EndDisabled();
 			}
 			if (is2D)
 			{
@@ -858,7 +876,7 @@ namespace Chained
 			}
 			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Toggle 2D/3D Editor Mode");
+				ImGui::SetTooltip(isUIScene ? "Toggle 2D/3D Editor Mode" : "2D mode available for UI scenes only");
 			}
 
 			ImGui::SameLine(0, 10);
@@ -930,64 +948,6 @@ namespace Chained
 		}
 	}
 
-	void ViewportPanel::DrawPlaybackControls()
-	{
-		SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
-		bool isPlaying = (sceneState == SceneState::Play);
-		bool isSimulating = (sceneState == SceneState::Simulate);
-		ImGui::SameLine(0, 10);
-
-		if (isPlaying)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::PlayGreen);
-		}
-		if (ImGui::Button(isPlaying ? ICON_FA_STOP : ICON_FA_PLAY, ImVec2(28, 28)))
-		{
-			if (isPlaying)
-			{
-				EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Edit);
-			}
-			else
-			{
-				EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Play);
-			}
-		}
-		if (isPlaying)
-		{
-			ImGui::PopStyleColor();
-		}
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip(isPlaying ? "Stop" : "Play (Run Physics & Scripts)");
-		}
-
-		ImGui::SameLine(0, 5);
-
-		if (isSimulating)
-		{
-			ImGui::PushStyleColor(ImGuiCol_Text, EditorColors::SimulateOrange);
-		}
-		if (ImGui::Button(isSimulating ? ICON_FA_STOP : ICON_FA_GEARS, ImVec2(28, 28)))
-		{
-			if (isSimulating)
-			{
-				EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Edit);
-			}
-			else
-			{
-				EditorLayer::Get().GetSceneManager().SetSceneState(SceneState::Simulate);
-			}
-		}
-		if (isSimulating)
-		{
-			ImGui::PopStyleColor();
-		}
-		if (ImGui::IsItemHovered())
-		{
-			ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Run Physics Only)");
-		}
-	}
-
 	void ViewportPanel::DrawScriptReloadButton()
 	{
 		ImGui::SameLine(0, 5);
@@ -1015,38 +975,28 @@ namespace Chained
 	{
 		const glm::vec3 activeCameraPos = camera.Position;
 
-		auto iconSizeFromDistance = [&](const glm::vec3& worldPos) {
-			const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
-			return std::clamp(distanceToCamera * iconScale, iconMin, iconMax);
-		};
-
 		auto lightView = registry.view<TransformComponent, LightComponent>();
 		for (auto entity : lightView)
 		{
 			auto [transform, light] = lightView.get<TransformComponent, LightComponent>(entity);
 			const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-			const float iconSize = iconSizeFromDistance(iconPos);
+			const float iconSize = ComputeIconSize(iconPos, activeCameraPos, iconMin, iconMax, iconScale);
 
 			glm::vec4 lightTint = {light.LightColor.r / 255.0f, light.LightColor.g / 255.0f,
 								   light.LightColor.b / 255.0f, 0.95f};
 
 			uint32_t iconTextureId = GetIconHandle(m_EditorIcons.LightIcon);
-			if (iconTextureId != 0)
+			DrawBillboardIcon(camera, iconTextureId, iconPos, iconSize, lightTint);
+
+			if (iconTextureId != 0 && light.Type == LightType::Directional)
 			{
-				if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+				glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
+				if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
 				{
-					renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, lightTint);
-				}
-				if (light.Type == LightType::Directional)
-				{
-					glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.45f;
-					if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
-					{
-						debugRenderer->DrawLine(iconPos, iconPos + dir, lightTint);
-					}
+					debugRenderer->DrawLine(iconPos, iconPos + dir, lightTint);
 				}
 			}
-			else if (light.Type == LightType::Directional)
+			else if (iconTextureId == 0 && light.Type == LightType::Directional)
 			{
 				glm::vec3 dir = glm::normalize(glm::vec3(transform.WorldTransform[2])) * 0.5f;
 				if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
@@ -1079,6 +1029,18 @@ namespace Chained
 		}
 	}
 
+	void ViewportPanel::DrawBillboardIcon(const Camera3D& camera, uint32_t textureId, const glm::vec3& worldPos,
+										  float iconSize, const glm::vec4& tint)
+	{
+		if (textureId != 0)
+		{
+			if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+			{
+				renderer->DrawBillboard(camera, textureId, worldPos, iconSize, tint);
+			}
+		}
+	}
+
 	void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings,
 										  const Camera3D& camera)
 	{
@@ -1101,11 +1063,6 @@ namespace Chained
 		tryLoadIcon("engine/resources/icons/leaf_icon.png", m_EditorIcons.SpawnIcon);
 		tryLoadIcon("engine/resources/icons/audio.png", m_EditorIcons.AudioIcon);
 
-		auto iconSizeFromDistance = [&](const glm::vec3& worldPos, float minSize, float maxSize, float scale) {
-			const float distanceToCamera = glm::distance(worldPos, activeCameraPos);
-			return std::clamp(distanceToCamera * scale, minSize, maxSize);
-		};
-
 		// Gizmo icon sizing comes from the global editor settings (Editor Settings > Appearance).
 		const auto& editorCfg = EditorLayer::Get().GetConfig();
 		const float iconMin = editorCfg.IconSizeMin;
@@ -1123,16 +1080,9 @@ namespace Chained
 				continue;
 			}
 
-			const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
+			const float iconSize = ComputeIconSize(iconPos, activeCameraPos, iconMin, iconMax, iconScale);
 			const glm::vec4 cameraTint = glm::vec4(0.65f, 0.95f, 1.0f, 0.95f);
-			uint32_t iconTextureId = GetIconHandle(m_EditorIcons.CameraIcon);
-			if (iconTextureId != 0)
-			{
-				if (auto* renderer = ServiceLocator::TryGet<Renderer>())
-				{
-					renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, cameraTint);
-				}
-			}
+			DrawBillboardIcon(camera, GetIconHandle(m_EditorIcons.CameraIcon), iconPos, iconSize, cameraTint);
 		}
 
 		// Light icons
@@ -1145,35 +1095,20 @@ namespace Chained
 			{
 				auto [transform, spawn] = spawnView.get<TransformComponent, SpawnComponent>(entity);
 				const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-				const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
-				glm::vec4 spawnTint = {1.0f, 1.0f, 1.0f, 0.95f};
-				uint32_t iconTextureId = GetIconHandle(m_EditorIcons.SpawnIcon);
-				if (iconTextureId != 0)
-				{
-					if (auto* renderer = ServiceLocator::TryGet<Renderer>())
-					{
-						renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, spawnTint);
-					}
-				}
+				const float iconSize = ComputeIconSize(iconPos, activeCameraPos, iconMin, iconMax, iconScale);
+				const glm::vec4 spawnTint = {1.0f, 1.0f, 1.0f, 0.95f};
+				DrawBillboardIcon(camera, GetIconHandle(m_EditorIcons.SpawnIcon), iconPos, iconSize, spawnTint);
 			}
 		}
 		{
-			// Audio Component
 			auto audioView = registry.view<TransformComponent, AudioComponent>();
 			for (auto entity : audioView)
 			{
 				auto [transform, audio] = audioView.get<TransformComponent, AudioComponent>(entity);
 				const glm::vec3 iconPos = glm::vec3(transform.WorldTransform[3]);
-				const float iconSize = iconSizeFromDistance(iconPos, iconMin, iconMax, iconScale);
-				glm::vec4 audioTint = {1.0f, 1.0f, 1.0f, 0.95f};
-				uint32_t iconTextureId = GetIconHandle(m_EditorIcons.AudioIcon);
-				if (iconTextureId != 0)
-				{
-					if (auto* renderer = ServiceLocator::TryGet<Renderer>())
-					{
-						renderer->DrawBillboard(camera, iconTextureId, iconPos, iconSize, audioTint);
-					}
-				}
+				const float iconSize = ComputeIconSize(iconPos, activeCameraPos, iconMin, iconMax, iconScale);
+				const glm::vec4 audioTint = {1.0f, 1.0f, 1.0f, 0.95f};
+				DrawBillboardIcon(camera, GetIconHandle(m_EditorIcons.AudioIcon), iconPos, iconSize, audioTint);
 			}
 		}
 	}

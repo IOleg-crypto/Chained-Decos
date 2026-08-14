@@ -20,6 +20,8 @@ namespace Chained
 
 	class ProjectSelectorUI;
 	class EditorMenu;
+	class KeyPressedEvent;
+	class FontManager;
 
 	class EditorLayer : public Layer
 	{
@@ -80,6 +82,7 @@ namespace Chained
 	private:
 		void LoadEditorFonts();
 		void DrawLoadingOverlay(const char* title, const char* status);
+		bool HandleKeyboardShortcut(KeyPressedEvent& e);
 
 	public:
 		CommandHistory& GetCommandHistory();
@@ -120,20 +123,12 @@ namespace Chained
 			return m_Config;
 		}
 
-		// Rebuild the ImGui font atlas from the current EditorConfig (font path + size).
-		// Must NOT be called while an ImGui frame is in flight (clears the atlas the
-		// frame is drawing with) — from UI code use RequestEditorFontReload() instead.
 		void ReloadEditorFonts();
-
-		// Defers ReloadEditorFonts() to the next OnUpdate(), outside the ImGui frame.
-		void RequestEditorFontReload()
+		void RequestEditorFontReload();
+		FontManager& GetFontManager()
 		{
-			m_PendingEditorFontReload = true;
+			return *m_FontManager;
 		}
-
-		// Adds editor UI font + icon font to the current atlas WITHOUT rebuilding.
-		// Call RefreshFontAtlasTexture() separately after all fonts have been added.
-		void AddEditorFontsToAtlas();
 
 		std::shared_ptr<Scene> GetActiveScene() const;
 		EditorLayout* GetLayout() const
@@ -151,10 +146,10 @@ namespace Chained
 		std::unique_ptr<EditorSceneManager> m_SceneManager;
 		std::unique_ptr<ProjectSelectorUI> m_ProjectSelectorUI;
 		std::unique_ptr<EditorMenu> m_Menu;
+		std::unique_ptr<FontManager> m_FontManager;
 		CommandHistory m_CommandHistory;
 
 		std::string m_PendingSceneTransitionPath;
-		bool m_PendingEditorFontReload = false;
 		ImVec2 m_ViewportSize = {1280, 720};
 
 		// Tracks the scene state seen on the previous frame so we can detect the
