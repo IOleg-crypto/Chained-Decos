@@ -1,4 +1,5 @@
 #include "scene_hierarchy_panel.h"
+#include "editor/events.h"
 #include "editor/layer.h"
 #include "editor/types.h"
 #include "editor/undo/command_history.h"
@@ -127,8 +128,7 @@ namespace Chained
 
 			if (ImGui::IsMouseDown(0) && ImGui::IsWindowHovered() && !ImGui::IsAnyItemHovered())
 			{
-				EntitySelectedEvent e(entt::null, m_Context.get());
-				Application::Get().OnEvent(e);
+				DeselectEntity(m_Context.get());
 			}
 
 			// Focus Shortcut
@@ -325,8 +325,7 @@ namespace Chained
 
 		if (ImGui::IsItemClicked())
 		{
-			EntitySelectedEvent e(entity, m_Context.get());
-			Application::Get().OnEvent(e);
+			SelectEntity(entity, m_Context.get());
 		}
 
 		// Rename on F2

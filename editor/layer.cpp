@@ -1,5 +1,6 @@
 #include "layer.h"
 #include "editor_colors.h"
+#include "editor/font_manager.h"
 #include "engine/core/input.h"
 #include "engine/core/events/input_events.h"
 #include "engine/core/key_codes.h"
@@ -13,12 +14,10 @@
 
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/common/thread_pool.h"
 #include "engine/core/profiler.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/ui/ui_font_registry.h"
 #include "engine/graphics/ui/widget_renderer.h"
-#include "engine/physics/physics.h"
 #include "engine/project/project.h"
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
@@ -83,10 +82,11 @@ namespace Chained
 		m_SceneManager = std::make_unique<EditorSceneManager>();
 
 		m_Menu = std::make_unique<EditorMenu>();
-		m_Panels = std::make_unique<EditorPanels>(*this);
+		m_Panels = std::make_unique<EditorPanels>();
 
 		m_Layout = std::make_unique<EditorLayout>(*m_Panels);
 		m_ProjectSelectorUI = std::make_unique<ProjectSelectorUI>(*m_ProjectManager);
+		m_FontManager = std::make_unique<FontManager>(m_Config);
 
 		LoadConfig();
 	}
@@ -268,92 +268,19 @@ namespace Chained
 		CH_CORE_INFO("EditorLayer Attached with modular panels.");
 	}
 
-	void EditorLayer::AddEditorFontsToAtlas()
-	{
-		auto* imguiLayer = Application::Get().GetImGuiLayer();
-		if (!imguiLayer)
-		{
-			return;
-		}
-
-		float fontSize = m_Config.FontSize > 0.0f ? m_Config.FontSize : 16.0f;
-		auto* assetManager = ServiceLocator::TryGet<AssetManager>();
-		if (!assetManager)
-		{
-			return;
-		}
-		std::string relFont =
-			!m_Config.FontPath.empty() ? m_Config.FontPath : "engine/resources/font/lato/lato-bold.ttf";
-		std::string fontPath = assetManager->ResolvePath(relFont);
-
-		bool baseFontLoaded = false;
-
-		if (std::filesystem::exists(fontPath))
-		{
-			imguiLayer->AddFontFromFile(fontPath, fontSize);
-			CH_CORE_INFO("Loaded editor font: {} @ {}px", fontPath, fontSize);
-			baseFontLoaded = true;
-		}
-		else
-		{
-			CH_CORE_WARN("Editor font not found: {}. Using default ImGui font.", fontPath);
-			ImGui::GetIO().Fonts->AddFontDefault();
-		}
-
-		// --- Icon Font (FontAwesome) ---
-		std::string faPath = assetManager->ResolvePath("engine/resources/font/fa-solid-900.ttf");
-		if (baseFontLoaded && std::filesystem::exists(faPath))
-		{
-			ImFontConfig icons_config;
-			icons_config.MergeMode = true;
-			icons_config.PixelSnapH = true;
-
-			static const ImWchar* font_awesome_ranges = nullptr;
-			if (!font_awesome_ranges)
-			{
-				static const ImWchar ranges[] = {ICON_MIN_FA, ICON_MAX_16_FA, 0};
-				font_awesome_ranges = ranges;
-			}
-
-			imguiLayer->AddFontFromFile(faPath, fontSize, &icons_config, font_awesome_ranges);
-			CH_CORE_INFO("Loaded and merged FontAwesome for editor: {}", faPath);
-		}
-	}
 	void EditorLayer::LoadEditorFonts()
 	{
-		// Called from OnAttach — atlas is fresh, just add and build once.
-		AddEditorFontsToAtlas();
-		Application::Get().GetImGuiLayer()->RefreshFontAtlasTexture();
+		m_FontManager->LoadFonts();
 	}
 
 	void EditorLayer::ReloadEditorFonts()
 	{
-		// Full rebuild: clear atlas, re-add editor fonts, re-add project fonts, single Build().
-		// This avoids the "stbtt_InitFont: freed font data" crash caused by double Build().
-		auto* imguiLayer = Application::Get().GetImGuiLayer();
-		if (!imguiLayer)
-		{
-			return;
-		}
+		m_FontManager->ReloadFonts();
+	}
 
-		imguiLayer->ClearFonts();
-
-		// Invalidate cached ImFont* pointers — they are now dangling after ClearFonts.
-		if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
-		{
-			fontRegistry->Clear();
-		}
-
-		AddEditorFontsToAtlas();
-		EditorGUI::ApplyTheme();
-
-		// Re-add project fonts if a project is loaded.
-		if (auto* widgetRenderer = ServiceLocator::TryGet<WidgetRenderer>())
-		{
-			widgetRenderer->LoadProjectFonts();
-		}
-
-		imguiLayer->RefreshFontAtlasTexture();
+	void EditorLayer::RequestEditorFontReload()
+	{
+		m_FontManager->RequestReload();
 	}
 
 	void EditorLayer::OnDetach()
@@ -368,7 +295,7 @@ namespace Chained
 		// Explicitly save the ImGui panel layout before shutdown.
 		// ImGui's built-in autosave runs on a timer (io.IniSavingRate, default 5s) and
 		// may not fire before the process exits — especially if OnDetach is called after
-		// the GLFW window is already destroyed. Saving here guarantees the preset is
+		// the GLFW window is already destroyed. Saving here guarantees the layout is
 		// always written regardless of shutdown timing.
 		if (m_Layout)
 		{
@@ -383,16 +310,13 @@ namespace Chained
 
 		m_ProjectManager->ProcessPendingProjectOpen();
 
-		if (m_PendingEditorFontReload)
+		if (m_FontManager->HasPendingReload())
 		{
 			auto* imguiLayer = Application::Get().GetImGuiLayer();
 			if (imguiLayer)
 			{
 				imguiLayer->ExecuteNextFrame([this]() {
-					// Виконується суворо МІЖ кадрами
 					ReloadEditorFonts();
-
-					// Переприв'язуємо дефолт  ний шрифт для майбутнього кадру
 					ImGuiIO& io = ImGui::GetIO();
 					if (!io.Fonts->Fonts.empty())
 					{
@@ -400,7 +324,7 @@ namespace Chained
 					}
 				});
 			}
-			m_PendingEditorFontReload = false;
+			m_FontManager->ClearPendingReload();
 		}
 
 		if (auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>())
@@ -580,15 +504,10 @@ namespace Chained
 			m_SceneManager->SetSceneState(SceneState::Edit);
 			return true;
 		});
-		dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& e) {
-			m_SceneManager->OpenScene(e.GetPath());
-			return true;
-		});
 
 		// 2. Project Management
 		dispatcher.Dispatch<ProjectOpenedEvent>([this](auto& e) { return m_ProjectManager->OnProjectOpened(e); });
 		dispatcher.Dispatch<AppLaunchRuntimeEvent>([this](auto& e) {
-			// Enter play mode first if not already
 			if (GetSceneState() != SceneState::Play)
 			{
 				m_SceneManager->SetSceneState(SceneState::Play);
@@ -600,86 +519,25 @@ namespace Chained
 			return true;
 		});
 
-		// 3. Command/Undo & Scene shortcuts
-		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) {
-			if (e.IsRepeat())
-			{
-				return false;
-			}
+		// 3. Keyboard shortcuts
+		dispatcher.Dispatch<KeyPressedEvent>([this](KeyPressedEvent& e) { return HandleKeyboardShortcut(e); });
 
-			bool ctrl = Core::Input::IsKeyDown(KeyCode::LeftControl) || Core::Input::IsKeyDown(KeyCode::RightControl);
-			bool shift = Core::Input::IsKeyDown(KeyCode::LeftShift) || Core::Input::IsKeyDown(KeyCode::RightShift);
-			auto keyCode = e.GetKeyCode();
-
-			if (ctrl)
-			{
-				switch (keyCode)
-				{
-				case KeyCode::N:
-					if (GetSceneState() != SceneState::Play)
-					{
-						m_SceneManager->NewScene();
-					}
-					return true;
-				case KeyCode::O:
-					if (GetSceneState() != SceneState::Play)
-					{
-						m_SceneManager->OpenScene();
-					}
-					return true;
-				case KeyCode::S:
-					if (GetSceneState() != SceneState::Play)
-					{
-						shift ? m_SceneManager->SaveSceneAs() : m_SceneManager->SaveScene();
-					}
-					return true;
-				case KeyCode::Z:
-					if (GetSceneState() != SceneState::Play)
-					{
-						m_CommandHistory.Undo();
-					}
-					return true;
-				case KeyCode::Y:
-					if (GetSceneState() != SceneState::Play)
-					{
-						m_CommandHistory.Redo();
-					}
-					return true;
-				}
-			}
-
-			if (keyCode == KeyCode::F5)
-			{
-				m_ProjectManager->LaunchStandalone(m_SceneManager->GetActiveScene());
-				return true;
-			}
-
-			return false;
-		});
-		// 3. Layout/System
+		// 4. Layout/System
 		dispatcher.Dispatch<AppResetLayoutEvent>([this](auto& ev) {
 			ResetLayout();
 			return true;
 		});
-		dispatcher.Dispatch<AppSaveLayoutEvent>([this](auto& ev) {
-			ImGui::SaveIniSettingsToDisk(ImGui::GetIO().IniFilename);
-			return true;
-		});
 		dispatcher.Dispatch<SceneChangeRequestEvent>([this](auto& ev) {
 			std::filesystem::path scenePath = ev.GetPath();
-			// If the path is relative, resolve it via Project::GetAssetPath
 			if (scenePath.is_relative() && Project::GetActive())
 			{
 				scenePath = Project::GetActive()->GetAssetPath(ev.GetPath());
 			}
-
-			std::string finalPath = scenePath.string();
-
-			m_PendingSceneTransitionPath = finalPath;
+			m_PendingSceneTransitionPath = scenePath.string();
 			return true;
 		});
 
-		// 4. Selections/Picking
+		// 5. Selections/Picking
 		dispatcher.Dispatch<EntitySelectedEvent>([this](auto& ev) {
 			if (Scene* scene = ev.GetScene())
 			{
@@ -689,7 +547,7 @@ namespace Chained
 			return false;
 		});
 
-		// 5. Raw Input Overrides
+		// 6. Raw Input Overrides
 		if (e.GetEventType() == EventType::KeyPressed)
 		{
 			auto& ke = (KeyPressedEvent&)e;
@@ -704,6 +562,63 @@ namespace Chained
 				e.Handled = true;
 			}
 		}
+	}
+
+	bool EditorLayer::HandleKeyboardShortcut(KeyPressedEvent& e)
+	{
+		if (e.IsRepeat())
+		{
+			return false;
+		}
+
+		bool ctrl = Core::Input::IsKeyDown(KeyCode::LeftControl) || Core::Input::IsKeyDown(KeyCode::RightControl);
+		bool shift = Core::Input::IsKeyDown(KeyCode::LeftShift) || Core::Input::IsKeyDown(KeyCode::RightShift);
+		auto keyCode = e.GetKeyCode();
+
+		if (ctrl)
+		{
+			switch (keyCode)
+			{
+			case KeyCode::N:
+				if (GetSceneState() != SceneState::Play)
+				{
+					m_SceneManager->NewScene();
+				}
+				return true;
+			case KeyCode::O:
+				if (GetSceneState() != SceneState::Play)
+				{
+					m_SceneManager->OpenScene();
+				}
+				return true;
+			case KeyCode::S:
+				if (GetSceneState() != SceneState::Play)
+				{
+					shift ? m_SceneManager->SaveSceneAs() : m_SceneManager->SaveScene();
+				}
+				return true;
+			case KeyCode::Z:
+				if (GetSceneState() != SceneState::Play)
+				{
+					m_CommandHistory.Undo();
+				}
+				return true;
+			case KeyCode::Y:
+				if (GetSceneState() != SceneState::Play)
+				{
+					m_CommandHistory.Redo();
+				}
+				return true;
+			}
+		}
+
+		if (keyCode == KeyCode::F5)
+		{
+			m_ProjectManager->LaunchStandalone(m_SceneManager->GetActiveScene());
+			return true;
+		}
+
+		return false;
 	}
 
 	CommandHistory& EditorLayer::GetCommandHistory()

@@ -1,5 +1,6 @@
 #include "editor/panels/content_browser_panel.h"
 #include "editor/action_commands.h"
+#include "editor/events.h"
 #include "editor/layer.h"
 #include "engine/core/log.h"
 #include "engine/project/project.h"
@@ -10,7 +11,6 @@
 #include "thirdparty/IconsFontAwesome6.h"
 #include <algorithm>
 #include <unordered_map>
-#include "engine/scene/components.h"
 
 namespace Chained
 {
@@ -342,33 +342,28 @@ namespace Chained
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& modelcomp = entity.AddComponent<ModelComponent>();
 			modelcomp.ModelPath = Project::GetActive()->GetRelativePath(entry.path);
-
-			EntitySelectedEvent e((entt::entity)entity, scene.get());
-			Application::Get().OnEvent(e);
+			SelectEntity(entity, scene.get());
 		}
 		if (entry.type == EditorAssetType::Texture)
 		{
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& sprite = entity.AddComponent<SpriteComponent>();
 			sprite.TexturePath = Project::GetActive()->GetRelativePath(entry.path);
-			EntitySelectedEvent e((entt::entity)entity, scene.get());
-			Application::Get().OnEvent(e);
+			SelectEntity(entity, scene.get());
 		}
 		if (entry.type == EditorAssetType::Audio)
 		{
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& audiocomp = entity.AddComponent<AudioComponent>();
 			audiocomp.SoundPath = entry.path.string();
-			EntitySelectedEvent e((entt::entity)entity, scene.get());
-			Application::Get().OnEvent(e);
+			SelectEntity(entity, scene.get());
 		}
 		if (entry.type == EditorAssetType::Shader)
 		{
 			Entity entity = scene->CreateEntity(entry.name);
 			auto& shader = entity.AddComponent<ShaderComponent>();
 			shader.ShaderPath = Project::GetActive()->GetRelativePath(entry.path);
-			EntitySelectedEvent e((entt::entity)entity, scene.get());
-			Application::Get().OnEvent(e);
+			SelectEntity(entity, scene.get());
 		}
 	}
 
