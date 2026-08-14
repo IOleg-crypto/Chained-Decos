@@ -3,7 +3,7 @@
 #include "script_glue_internal.h"
 #include "engine/app/application.h"
 #include "engine/scene/scene.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 
 namespace Chained
 {

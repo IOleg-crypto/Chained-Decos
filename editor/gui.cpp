@@ -13,7 +13,7 @@
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "engine/common/thread_pool.h"
 #include "thirdparty/imgui/imgui_internal.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scriptengine.h"
 #include "editor/font_choice_gui.h"
 #include <cstring>
 #include <filesystem>

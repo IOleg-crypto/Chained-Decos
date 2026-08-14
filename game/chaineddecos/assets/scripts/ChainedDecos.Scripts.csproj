@@ -19,7 +19,7 @@
 
   <!-- Reference the engine's C# API library -->
   <ItemGroup>
-    <ProjectReference Include="../../../../scripting/managed/Chained.Managed.csproj" />
+    <ProjectReference Include="../../../../engine/scripting/managed/Chained.Managed.csproj" />
   </ItemGroup>
 
 </Project>

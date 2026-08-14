@@ -1,18 +1,18 @@
+
 #include "scene_scripting_manager.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/scene.h"
-#include "scripting/scriptengine.h"
-#include "scripting/scriptengine_services.h"
-#include "scripting/script_glue_internal.h"
-#include "scripting/script_interop_pointers.h"
+#include "engine/scripting/scriptengine.h"
+#include "engine/scripting/scriptengine_services.h"
+#include "engine/scripting/script_glue_internal.h"
+#include "engine/scripting/script_interop_pointers.h"
 #include <Coral/String.hpp>
 #include <Coral/Type.hpp>
 
 namespace Chained
 {
-
 	static std::vector<SceneScriptingManager*> s_Managers;
 	static std::mutex s_ManagersMutex;
 
@@ -82,9 +82,9 @@ namespace Chained
 				auto ctx = AcquireScriptEngine();
 				if (ctx.engine && ctx.scriptEngineType)
 				{
-					if (ManagedCallbacks_::ClearAll)
+					if (g_ScriptClearAll)
 					{
-						ManagedCallbacks_::ClearAll();
+						g_ScriptClearAll();
 					}
 				}
 			}
@@ -112,16 +112,29 @@ namespace Chained
 		}
 
 		entt::registry* registryPtr = m_Scene->GetRegistryPtr();
+
+		// Hook entity destruction so C# scripts are torn down (DestroyScript),
+		// preventing leaked script instances / stale entity handles.
+		auto& reg = m_Scene->GetRegistry();
+		reg.on_destroy<ManagedScriptComponent>().disconnect<&SceneScriptingManager::OnManagedScriptDestroyed>(this);
+		reg.on_destroy<ManagedScriptComponent>().connect<&SceneScriptingManager::OnManagedScriptDestroyed>(this);
 	}
 
 	void SceneScriptingManager::OnRuntimeStop()
 	{
+		if (m_Scene)
+		{
+			m_Scene->GetRegistry()
+				.on_destroy<ManagedScriptComponent>()
+				.disconnect<&SceneScriptingManager::OnManagedScriptDestroyed>(this);
+		}
+
 		auto ctx = AcquireScriptEngine();
 		if (ctx.engine && ctx.scriptEngineType && !m_ReloadInProgress)
 		{
-			if (ManagedCallbacks_::ClearAll)
+			if (g_ScriptClearAll)
 			{
-				ManagedCallbacks_::ClearAll();
+				g_ScriptClearAll();
 			}
 		}
 
@@ -162,15 +175,21 @@ namespace Chained
 			auto& msc = registry.get<Chained::ManagedScriptComponent>(entity);
 			for (auto& script : msc.Scripts)
 			{
-				if (!script.HasInstance() && !script.ClassName.empty())
+				if (!script.HasInstance() && !script.ClassName.empty() && !script.InstantiateTried)
 				{
 					try
 					{
 						CH_CORE_INFO("C++ calling InstantiateScript for {}", script.ClassName);
 						std::u16string classNameStr = ch_utf8_to_u16(script.ClassName);
-						if (ManagedCallbacks_::InstantiateScript)
+						if (g_ScriptInstantiate)
 						{
-							ManagedCallbacks_::InstantiateScript(static_cast<uint64_t>(entity), classNameStr.c_str());
+							uint8_t ok = g_ScriptInstantiate(static_cast<uint64_t>(entity), classNameStr.c_str());
+							script.IsInstantiated = ok != 0;
+							script.InstantiateTried = true;
+						}
+						else
+						{
+							script.InstantiateTried = true;
 						}
 						CH_CORE_INFO("C++ calling InstantiateScript SUCCESS");
 
@@ -230,9 +249,9 @@ namespace Chained
 
 		try
 		{
-			if (ManagedCallbacks_::OnUpdate)
+			if (g_ScriptOnUpdate)
 			{
-				ManagedCallbacks_::OnUpdate((float)deltaTime);
+				g_ScriptOnUpdate((float)deltaTime);
 			}
 		} catch (const std::exception& e)
 		{
@@ -257,9 +276,9 @@ namespace Chained
 
 		if (ctx.scriptEngineType)
 		{
-			if (ManagedCallbacks_::OnEvent)
+			if (g_ScriptOnEvent)
 			{
-				ManagedCallbacks_::OnEvent((int)e.GetEventType());
+				g_ScriptOnEvent((int)e.GetEventType());
 			}
 		}
 
@@ -283,13 +302,36 @@ namespace Chained
 
 		if (ctx.scriptEngineType)
 		{
-			if (ManagedCallbacks_::OnRenderUI)
+			if (g_ScriptOnRenderUI)
 			{
-				ManagedCallbacks_::OnRenderUI();
+				g_ScriptOnRenderUI();
 			}
 		}
 
 		ctx.engine->SetContextScene(nullptr);
+	}
+
+	void SceneScriptingManager::OnManagedScriptDestroyed(entt::registry& registry, entt::entity entity)
+	{
+		if (!g_ScriptDestroy)
+		{
+			return;
+		}
+
+		// Entity is still valid inside the on_destroy callback; read its scripts.
+		if (!registry.all_of<ManagedScriptComponent>(entity))
+		{
+			return;
+		}
+		auto& msc = registry.get<ManagedScriptComponent>(entity);
+		for (auto& script : msc.Scripts)
+		{
+			if (script.HasInstance() && !script.ClassName.empty())
+			{
+				std::u16string classNameStr = ch_utf8_to_u16(script.ClassName);
+				g_ScriptDestroy(static_cast<uint64_t>(entity), classNameStr.c_str());
+			}
+		}
 	}
 
 } // namespace Chained

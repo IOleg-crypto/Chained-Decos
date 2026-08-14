@@ -21,8 +21,8 @@
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
 #include "engine/scene/systems/nametag_system.h"
-#include "scripting/scene_scripting_manager.h"
-#include "scripting/scriptengine.h"
+#include "engine/scripting/scene_scripting_manager.h"
+#include "engine/scripting/scriptengine.h"
 #include <algorithm>
 #include <cctype>
 #include <cmath>
