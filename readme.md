@@ -258,7 +258,7 @@ Project:
 - engine/network/: networking layer (ENet-based, in progress).
 - editor/: ChainedEditor application and editor panels/tools.
 - runtime/: ChainedRuntime application and runtime layer.
-- scripting/: script host, glue bindings, and managed build integration.
+- engine/scripting/: script host, glue bindings, and managed build integration.
 - game/chaineddecos/: main game project and gameplay scripts under src/.
 - game/testproject/: alternate standalone game project used for project switching and smaller experiments.
 - tests/: native C++ test target (EngineTests).
