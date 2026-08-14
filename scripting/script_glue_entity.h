@@ -29,7 +29,7 @@ namespace Chained
 	// ── Registry Management ───────────────────────────────────────────────
 	CH_SCRIPT_FUNC void Entity_AddComponent(uint64_t entityID, const Coral::UCChar* componentName);
 
-	CH_SCRIPT_FUNC bool Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName);
+	CH_SCRIPT_FUNC uint8_t Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName);
 
 	CH_SCRIPT_FUNC int Entity_FindAllWithComponent(const Coral::UCChar* componentName, uint64_t* outBuf, int bufSize);
 
@@ -40,11 +40,11 @@ namespace Chained
 
 	CH_SCRIPT_FUNC void RigidBody_ForceSetVelocity(uint64_t entityID, glm::vec3* inVelocity);
 
-	CH_SCRIPT_FUNC bool RigidBody_IsGrounded(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t RigidBody_IsGrounded(uint64_t entityID);
 
 	CH_SCRIPT_FUNC uint32_t RigidBody_IsKinematic(uint64_t entityID);
 
-	CH_SCRIPT_FUNC void RigidBody_SetKinematic(uint64_t entityID, bool isKinematic);
+	CH_SCRIPT_FUNC void RigidBody_SetKinematic(uint64_t entityID, uint8_t isKinematic);
 
 	// ── Audio Component ───────────────────────────────────────────────────
 	CH_SCRIPT_FUNC void AudioComponent_Play(uint64_t entityID);
@@ -59,9 +59,9 @@ namespace Chained
 
 	CH_SCRIPT_FUNC void Shader_SetVec3(uint64_t entityID, const Coral::UCChar* inName, glm::vec3* inValue);
 
-	CH_SCRIPT_FUNC bool Shader_GetEnabled(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t Shader_GetEnabled(uint64_t entityID);
 
-	CH_SCRIPT_FUNC void Shader_SetEnabled(uint64_t entityID, bool enabled);
+	CH_SCRIPT_FUNC void Shader_SetEnabled(uint64_t entityID, uint8_t enabled);
 
 	// ── PlayerComponent ───────────────────────────────────────────────────
 	CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID);
@@ -77,13 +77,13 @@ namespace Chained
 	CH_SCRIPT_FUNC void PlayerComponent_SetLookSensitivity(uint64_t entityID, float value);
 
 	// ── SpawnComponent ────────────────────────────────────────────────────
-	CH_SCRIPT_FUNC bool SpawnComponent_GetIsActive(uint64_t entityID);
-	CH_SCRIPT_FUNC void SpawnComponent_SetIsActive(uint64_t entityID, bool value);
-	CH_SCRIPT_FUNC bool SpawnComponent_IsCheckpoint(uint64_t entityID);
-	CH_SCRIPT_FUNC void SpawnComponent_SetIsCheckpoint(uint64_t entityID, bool value);
+	CH_SCRIPT_FUNC uint8_t SpawnComponent_GetIsActive(uint64_t entityID);
+	CH_SCRIPT_FUNC void SpawnComponent_SetIsActive(uint64_t entityID, uint8_t value);
+	CH_SCRIPT_FUNC uint8_t SpawnComponent_IsCheckpoint(uint64_t entityID);
+	CH_SCRIPT_FUNC void SpawnComponent_SetIsCheckpoint(uint64_t entityID, uint8_t value);
 	CH_SCRIPT_FUNC void SpawnComponent_GetSpawnPoint(uint64_t entityID, glm::vec3* outPoint);
 	CH_SCRIPT_FUNC void SpawnComponent_SetSpawnPoint(uint64_t entityID, glm::vec3* inPoint);
-	CH_SCRIPT_FUNC bool SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t SpawnComponent_GetRenderSpawnZoneInScene(uint64_t entityID);
 	CH_SCRIPT_FUNC void SpawnComponent_GetZoneSize(uint64_t entityID, glm::vec3* outSize);
 
 	// ── AnimationComponent ──────────────────────────────────────────────────
@@ -91,9 +91,9 @@ namespace Chained
 	CH_SCRIPT_FUNC void AnimationComponent_SetCurrentAnimationIndex(uint64_t entityID, int index);
 	CH_SCRIPT_FUNC uint32_t AnimationComponent_GetIsPlaying(uint64_t entityID);
 	CH_SCRIPT_FUNC void AnimationComponent_SetIsPlaying(uint64_t entityID, uint32_t isPlaying);
-	CH_SCRIPT_FUNC bool AnimationComponent_GetIsLooping(uint64_t entityID);
-	CH_SCRIPT_FUNC void AnimationComponent_SetIsLooping(uint64_t entityID, bool isLooping);
-	CH_SCRIPT_FUNC bool AnimationComponent_GetIsFinished(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t AnimationComponent_GetIsLooping(uint64_t entityID);
+	CH_SCRIPT_FUNC void AnimationComponent_SetIsLooping(uint64_t entityID, uint8_t isLooping);
+	CH_SCRIPT_FUNC uint8_t AnimationComponent_GetIsFinished(uint64_t entityID);
 	CH_SCRIPT_FUNC float AnimationComponent_GetDuration(uint64_t entityID);
 	CH_SCRIPT_FUNC float AnimationComponent_GetNormalizedTime(uint64_t entityID);
 	CH_SCRIPT_FUNC float AnimationComponent_GetBlendDuration(uint64_t entityID);
@@ -102,12 +102,12 @@ namespace Chained
 
 	// ── AnimationComponent graph variables ──────────────────────────────
 	CH_SCRIPT_FUNC void AnimationComponent_SetFloat(uint64_t entityID, const Coral::UCChar* name, float value);
-	CH_SCRIPT_FUNC void AnimationComponent_SetBool(uint64_t entityID, const Coral::UCChar* name, bool value);
+	CH_SCRIPT_FUNC void AnimationComponent_SetBool(uint64_t entityID, const Coral::UCChar* name, uint8_t value);
 	CH_SCRIPT_FUNC float AnimationComponent_GetFloat(uint64_t entityID, const Coral::UCChar* name);
 
 	// ── NetworkIdentityComponent ─────────────────────────────────────────
 	CH_SCRIPT_FUNC uint64_t NetworkIdentityComponent_GetNetworkID(uint64_t entityID);
-	CH_SCRIPT_FUNC bool NetworkIdentityComponent_GetIsOwner(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t NetworkIdentityComponent_GetIsOwner(uint64_t entityID);
 
 } // namespace Chained
 #endif

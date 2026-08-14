@@ -12,9 +12,9 @@ namespace Chained
         internal static unsafe delegate* unmanaged<ulong, Vector4*, void> SpriteComponent_GetTint_Ptr;
         internal static unsafe delegate* unmanaged<ulong, Vector4, void> SpriteComponent_SetTint_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> SpriteComponent_GetFlipX_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipX_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> SpriteComponent_SetFlipX_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> SpriteComponent_GetFlipY_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> SpriteComponent_SetFlipY_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> SpriteComponent_SetFlipY_Ptr;
         internal static unsafe delegate* unmanaged<ulong, int> SpriteComponent_GetZOrder_Ptr;
         internal static unsafe delegate* unmanaged<ulong, int, void> SpriteComponent_SetZOrder_Ptr;
 #pragma warning restore 0649
@@ -34,13 +34,13 @@ namespace Chained
         public bool FlipX
         {
             get { unsafe { return SpriteComponent_GetFlipX_Ptr(Entity.ID) != 0; } }
-            set { unsafe { SpriteComponent_SetFlipX_Ptr(Entity.ID, value); } }
+            set { unsafe { SpriteComponent_SetFlipX_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public bool FlipY
         {
             get { unsafe { return SpriteComponent_GetFlipY_Ptr(Entity.ID) != 0; } }
-            set { unsafe { SpriteComponent_SetFlipY_Ptr(Entity.ID, value); } }
+            set { unsafe { SpriteComponent_SetFlipY_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public int ZOrder

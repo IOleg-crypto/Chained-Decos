@@ -12,7 +12,7 @@ namespace Chained
         internal static unsafe delegate* unmanaged<ulong, Vector3*, void> RigidBody_ForceSetVelocity_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> RigidBody_IsGrounded_Ptr;
         internal static unsafe delegate* unmanaged<ulong, uint> RigidBody_IsKinematic_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> RigidBody_SetKinematic_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> RigidBody_SetKinematic_Ptr;
 #pragma warning restore 0649
 
         public Vector3 Velocity
@@ -36,7 +36,7 @@ namespace Chained
         public bool IsKinematic
         {
             get { unsafe { return RigidBody_IsKinematic_Ptr(Entity.ID) != 0; } }
-            set { unsafe { RigidBody_SetKinematic_Ptr(Entity.ID, value); } }
+            set { unsafe { RigidBody_SetKinematic_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
     }
 }
