@@ -3,6 +3,12 @@
 // Coral automatically fills the matching delegate* fields on the C# side.
 // Adding a new function: 1) declare in script_glue_*.h, 2) implement in script_glue_*.cpp, 3) add one AddInternalCall
 // line here.
+//
+// ABI conventions (kept in sync with scripting/managed/src):
+//  - Strings are UTF-16 (Coral::UCChar == wchar_t on Windows). C# exposes them as `char*`
+//    (also 2 bytes), so no marshaling mismatch.
+//  - Booleans crossing the boundary use uint8_t (C++) / byte (C#), never `bool`, to avoid
+//    any reliance on marshaling semantics. Never return structs by value — use out-pointers.
 #include "script_glue.h"
 #include "script_interop_pointers.h"
 #include "engine/core/log.h"
@@ -34,6 +40,11 @@ namespace Chained
 		ManagedCallbacks_::ClearAll = cb->ClearAll;
 		ManagedCallbacks_::InstantiateScript = cb->InstantiateScript;
 		ManagedCallbacks_::DestroyScript = cb->DestroyScript;
+		if (ManagedCallbacks_::InstantiateScript == nullptr || ManagedCallbacks_::DestroyScript == nullptr)
+		{
+			CH_CORE_ERROR("[ScriptGlue] ManagedCallbacks: critical lifecycle callbacks "
+						  "(InstantiateScript/DestroyScript) are null!");
+		}
 		CH_CORE_INFO("[ScriptGlue] ManagedCallbacks registered.");
 	}
 

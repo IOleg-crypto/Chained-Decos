@@ -12,7 +12,7 @@ public class WidgetControl : Component
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, byte> WidgetControl_GetActive_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> WidgetControl_SetActive_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte, void> WidgetControl_SetActive_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*> WidgetControl_GetTextColor_Ptr;
     internal static unsafe delegate* unmanaged<ulong, int, int, int, int, void> WidgetControl_SetTextColorRGBA_Ptr;
 #pragma warning restore 0649
@@ -20,7 +20,7 @@ public class WidgetControl : Component
     public bool IsActive
     {
         get { unsafe { return WidgetControl_GetActive_Ptr(Entity.ID) != 0; } }
-        set { unsafe { WidgetControl_SetActive_Ptr(Entity.ID, value); } }
+        set { unsafe { WidgetControl_SetActive_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
     }
 
     public void SetTextColor(int r, int g, int b, int a = 255)
@@ -74,13 +74,13 @@ public class CheckboxControl : WidgetControl
 {
 #pragma warning disable 0649
     internal static unsafe delegate* unmanaged<ulong, byte> CheckboxControl_GetChecked_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> CheckboxControl_SetChecked_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte, void> CheckboxControl_SetChecked_Ptr;
 #pragma warning restore 0649
 
     public bool IsChecked
     {
         get { unsafe { return CheckboxControl_GetChecked_Ptr(Entity.ID) != 0; } }
-        set { unsafe { CheckboxControl_SetChecked_Ptr(Entity.ID, value); } }
+            set { unsafe { CheckboxControl_SetChecked_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
     }
 }
 
@@ -129,7 +129,7 @@ public class ProgressBarControl : WidgetControl
     internal static unsafe delegate* unmanaged<ulong, char*> ProgressBarControl_GetOverlayText_Ptr;
     internal static unsafe delegate* unmanaged<ulong, char*, void> ProgressBarControl_SetOverlayText_Ptr;
     internal static unsafe delegate* unmanaged<ulong, byte> ProgressBarControl_GetShowPercentage_Ptr;
-    internal static unsafe delegate* unmanaged<ulong, bool, void> ProgressBarControl_SetShowPercentage_Ptr;
+    internal static unsafe delegate* unmanaged<ulong, byte, void> ProgressBarControl_SetShowPercentage_Ptr;
 #pragma warning restore 0649
 
     public float Progress
@@ -145,7 +145,7 @@ public class ProgressBarControl : WidgetControl
     public bool ShowPercentage
     {
         get { unsafe { return ProgressBarControl_GetShowPercentage_Ptr(Entity.ID) != 0; } }
-        set { unsafe { ProgressBarControl_SetShowPercentage_Ptr(Entity.ID, value); } }
+            set { unsafe { ProgressBarControl_SetShowPercentage_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
     }
 }
 

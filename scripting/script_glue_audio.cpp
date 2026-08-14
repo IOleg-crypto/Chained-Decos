@@ -4,7 +4,7 @@
 namespace Chained
 {
 
-	void Audio_Play(const Coral::UCChar* path, float volume, float pitch, bool loop)
+	void Audio_Play(const Coral::UCChar* path, float volume, float pitch, uint8_t loop)
 	{
 		if (Project::GetActive() != nullptr && path)
 		{
@@ -93,7 +93,7 @@ namespace Chained
 			}
 		}
 	}
-	void AudioComponent_SetLoop(uint64_t entityID, bool loop)
+	void AudioComponent_SetLoop(uint64_t entityID, uint8_t loop)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<AudioComponent>())
@@ -101,7 +101,7 @@ namespace Chained
 			entity.GetComponent<AudioComponent>().Loop = loop;
 		}
 	}
-	bool AudioComponent_IsPlaying(uint64_t entityID)
+	uint8_t AudioComponent_IsPlaying(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		if (!entity || !entity.HasComponent<AudioComponent>())
@@ -160,12 +160,12 @@ namespace Chained
 														   clamped(tint.a)};
 		}
 	}
-	bool SpriteComponent_GetFlipX(uint64_t entityID)
+	uint8_t SpriteComponent_GetFlipX(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().FlipX : false;
 	}
-	void SpriteComponent_SetFlipX(uint64_t entityID, bool flip)
+	void SpriteComponent_SetFlipX(uint64_t entityID, uint8_t flip)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<SpriteComponent>())
@@ -173,12 +173,12 @@ namespace Chained
 			entity.GetComponent<SpriteComponent>().FlipX = flip;
 		}
 	}
-	bool SpriteComponent_GetFlipY(uint64_t entityID)
+	uint8_t SpriteComponent_GetFlipY(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<SpriteComponent>() ? entity.GetComponent<SpriteComponent>().FlipY : false;
 	}
-	void SpriteComponent_SetFlipY(uint64_t entityID, bool flip)
+	void SpriteComponent_SetFlipY(uint64_t entityID, uint8_t flip)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<SpriteComponent>())
