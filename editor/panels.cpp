@@ -21,7 +21,7 @@ namespace Chained
 
 	void EditorPanels::Init()
 	{
-		Register<ViewportPanel>(m_EditorLayer.GetViewportSizeRef());
+		Register<ViewportPanel>(EditorLayer::Get().GetViewportSizeRef());
 		Register<SceneHierarchyPanel>();
 		Register<InspectorPanel>();
 		Register<ContentBrowserPanel>();

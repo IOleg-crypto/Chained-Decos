@@ -22,6 +22,8 @@
 
 namespace Chained
 {
+	constexpr float kPlaybackBarWidth = 160.0f;
+
 	void EditorMenu::DrawMenuBar(EditorPanels& panels)
 	{
 		if (!ImGui::BeginMenuBar())
@@ -29,7 +31,19 @@ namespace Chained
 			return;
 		}
 
-		// File Menu
+		DrawFileMenu();
+		DrawViewMenu(panels);
+		DrawProjectMenu();
+		DrawEditorMenu();
+		DrawPlaybackControls();
+		DrawExportResultPopup();
+		DrawUnsavedChangesPopup();
+
+		ImGui::EndMenuBar();
+	}
+
+	void EditorMenu::DrawFileMenu()
+	{
 		if (ImGui::BeginMenu("File"))
 		{
 			if (ImGui::MenuItem(ICON_FA_FILE " New Project", "Ctrl+Shift+N"))
@@ -78,8 +92,10 @@ namespace Chained
 			}
 			ImGui::EndMenu();
 		}
+	}
 
-		// View Menu
+	void EditorMenu::DrawViewMenu(EditorPanels& panels)
+	{
 		if (ImGui::BeginMenu("View"))
 		{
 			panels.ForEach([](const std::shared_ptr<Panel>& panel) {
@@ -98,47 +114,17 @@ namespace Chained
 				AppResetLayoutEvent e;
 				Application::Get().OnEvent(e);
 			}
-			if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save Layout"))
-			{
-				AppSaveLayoutEvent e;
-				Application::Get().OnEvent(e);
-			}
-
-			// Presets submenu
-			auto* layout = EditorLayer::Get().GetLayout();
-			if (layout)
-			{
-				ImGui::Separator();
-				if (ImGui::BeginMenu(ICON_FA_FOLDER " Presets"))
-				{
-					auto presets = layout->GetPresetNames();
-					for (const auto& name : presets)
-					{
-						bool isActive = (layout->GetActivePreset() == name);
-						if (ImGui::MenuItem(name.c_str(), nullptr, isActive))
-						{
-							layout->LoadPresetByName(name);
-						}
-					}
-					ImGui::Separator();
-					if (ImGui::MenuItem(ICON_FA_FLOPPY_DISK " Save As..."))
-					{
-						// Use a static buffer for the input popup
-						static char presetNameBuf[128] = "";
-						ImGui::OpenPopup("Save Preset");
-					}
-					ImGui::EndMenu();
-				}
-			}
 			ImGui::EndMenu();
 		}
+	}
 
-		// Project Menu
+	void EditorMenu::DrawProjectMenu()
+	{
 		if (ImGui::BeginMenu("Project"))
 		{
 			if (ImGui::MenuItem(ICON_FA_GEARS " Settings"))
 			{
-				if (auto p = panels.Get("Project Settings"))
+				if (auto p = EditorLayer::Get().GetPanels().Get("Project Settings"))
 				{
 					p->IsOpen() = true;
 				}
@@ -205,8 +191,10 @@ namespace Chained
 			}
 			ImGui::EndMenu();
 		}
+	}
 
-		// Editor Menu
+	void EditorMenu::DrawEditorMenu()
+	{
 		if (ImGui::BeginMenu("Editor"))
 		{
 			if (ImGui::MenuItem(ICON_FA_SLIDERS " Settings"))
@@ -215,10 +203,12 @@ namespace Chained
 			}
 			ImGui::EndMenu();
 		}
+	}
 
-		// ── Main Menu Bar Playback Controls (Play / Simulate) ────────────────────
+	void EditorMenu::DrawPlaybackControls()
+	{
 		float barWidth = ImGui::GetWindowWidth();
-		float centerPos = (barWidth - 160.0f) * 0.5f;
+		float centerPos = (barWidth - kPlaybackBarWidth) * 0.5f;
 		if (centerPos > ImGui::GetCursorPosX())
 		{
 			ImGui::SameLine(centerPos);
@@ -265,14 +255,10 @@ namespace Chained
 		{
 			ImGui::SetTooltip(isSimulating ? "Stop Simulation" : "Simulate (Physics Only)");
 		}
+	}
 
-		// ── Export progress: snapshot state here, rendering happens in DrawExportProgressOverlay() ──
-		// (ImGui::Begin cannot be called inside BeginMenuBar/EndMenuBar context.)
-		// ── Export result popup ───────────────────────────────────────────────────
-		// Snapshot mutable state under the lock, then render without holding it.
-		// NOTE: ImGui::OpenPopup must NOT be called while holding m_ExportState.Mutex:
-		// ImGui is not thread-safe and doing so could deadlock if a background thread
-		// also tries to acquire the mutex while ImGui is in the middle of state mutation.
+	void EditorMenu::DrawExportResultPopup()
+	{
 		bool shouldOpenExportPopup = false;
 		{
 			std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
@@ -316,78 +302,43 @@ namespace Chained
 			}
 			ImGui::EndPopup();
 		}
+	}
 
-		// --- Unsaved Changes Confirm Dialog ---
+	void EditorMenu::DrawUnsavedChangesPopup()
+	{
+		auto& sceneMgr = EditorLayer::Get().GetSceneManager();
+		if (sceneMgr.IsConfirmPending())
 		{
-			auto& sceneMgr = EditorLayer::Get().GetSceneManager();
-			if (sceneMgr.IsConfirmPending())
-			{
-				ImGui::OpenPopup("Unsaved Changes");
-			}
-			if (ImGui::BeginPopupModal("Unsaved Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-			{
-				ImGui::Text("Scene has unsaved changes.");
-				ImGui::Spacing();
-				ImGui::TextDisabled("Do you want to save before continuing?");
-				ImGui::Spacing();
-				ImGui::Separator();
-
-				if (ImGui::Button("Save", ImVec2(120.f, 0.f)))
-				{
-					sceneMgr.SaveScene();
-					sceneMgr.ConfirmPendingAction();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Don't Save", ImVec2(120.f, 0.f)))
-				{
-					sceneMgr.ConfirmPendingAction();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel", ImVec2(120.f, 0.f)))
-				{
-					sceneMgr.CancelPendingAction();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::EndPopup();
-			}
+			ImGui::OpenPopup("Unsaved Changes");
 		}
-
-		// --- Save Preset Popup ---
+		if (ImGui::BeginPopupModal("Unsaved Changes", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
 		{
-			auto* layout = EditorLayer::Get().GetLayout();
-			if (layout)
+			ImGui::Text("Scene has unsaved changes.");
+			ImGui::Spacing();
+			ImGui::TextDisabled("Do you want to save before continuing?");
+			ImGui::Spacing();
+			ImGui::Separator();
+
+			if (ImGui::Button("Save", ImVec2(120.f, 0.f)))
 			{
-				static char presetNameBuf[128] = "";
-				if (ImGui::BeginPopupModal("Save Preset", nullptr, ImGuiWindowFlags_AlwaysAutoResize))
-				{
-					ImGui::Text("Enter preset name:");
-					ImGui::Spacing();
-					ImGui::SetNextItemWidth(250.f);
-					ImGui::InputText("##PresetName", presetNameBuf, sizeof(presetNameBuf));
-					ImGui::Spacing();
-					ImGui::Separator();
-
-					bool canSave = presetNameBuf[0] != '\0';
-					if (ImGui::Button("Save", ImVec2(120.f, 0.f)) && canSave)
-					{
-						layout->SavePreset(presetNameBuf);
-						presetNameBuf[0] = '\0';
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::SameLine();
-					if (ImGui::Button("Cancel", ImVec2(120.f, 0.f)))
-					{
-						presetNameBuf[0] = '\0';
-						ImGui::CloseCurrentPopup();
-					}
-					ImGui::EndPopup();
-				}
+				sceneMgr.SaveScene();
+				sceneMgr.ConfirmPendingAction();
+				ImGui::CloseCurrentPopup();
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Don't Save", ImVec2(120.f, 0.f)))
+			{
+				sceneMgr.ConfirmPendingAction();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel", ImVec2(120.f, 0.f)))
+			{
+				sceneMgr.CancelPendingAction();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
 		}
-
-		ImGui::EndMenuBar();
 	}
 
 	void EditorMenu::DrawExportDialog()

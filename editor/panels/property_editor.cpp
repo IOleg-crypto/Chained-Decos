@@ -27,6 +27,287 @@
 namespace Chained
 {
 
+	// --- UI Widget Data Drawers (extracted from UIControlComponent lambda) ---
+
+	static bool DrawButtonData(ButtonData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Interactable", data.IsInteractable))
+		{
+			changed = true;
+		}
+		if (ui.Property("Auto Size", data.AutoSize))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawLabelData(LabelData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Text", data.Text))
+		{
+			changed = true;
+		}
+		if (ui.Property("Auto Size", data.AutoSize))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawCheckboxData(CheckboxData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Checked", data.Checked))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawSliderData(SliderData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 0.01f)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Min", data.Min))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max", data.Max))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawProgressBarData(ProgressBarData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Progress", data.Progress, PropertyMeta(0.0f, 1.0f, 0.01f)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Overlay Text", data.OverlayText))
+		{
+			changed = true;
+		}
+		if (ui.Property("Show %", data.ShowPercentage))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawImageData(ImageData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg,.bmp,.tga"))
+		{
+			changed = true;
+		}
+		if (ui.Property("Tint Color", data.TintColor))
+		{
+			changed = true;
+		}
+		if (ui.Property("Border Color", data.BorderColor))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawPanelData(PanelData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
+		{
+			changed = true;
+		}
+		if (ui.Property("Full Screen", data.FullScreen))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawComboBoxData(ComboBoxData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (!data.Items.empty())
+		{
+			if (ui.Property("Selected", data.SelectedIndex, PropertyMeta(0, (int)data.Items.size() - 1, 1)))
+			{
+				changed = true;
+			}
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted("Items");
+		ImGui::TableSetColumnIndex(1);
+		int removeIdx = -1;
+		for (int i = 0; i < (int)data.Items.size(); i++)
+		{
+			ImGui::PushID(i);
+			char buf[256];
+			strncpy(buf, data.Items[i].c_str(), sizeof(buf) - 1);
+			buf[sizeof(buf) - 1] = 0;
+			if (ImGui::InputText("##item", buf, sizeof(buf)))
+			{
+				data.Items[i] = buf;
+				changed = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::SmallButton(ICON_FA_TRASH))
+			{
+				removeIdx = i;
+				changed = true;
+			}
+			ImGui::PopID();
+		}
+		if (removeIdx >= 0)
+		{
+			data.Items.erase(data.Items.begin() + removeIdx);
+		}
+		if (ImGui::SmallButton(ICON_FA_PLUS " Add Item"))
+		{
+			data.Items.push_back("");
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawInputTextData(InputTextData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Text", data.Text))
+		{
+			data.InputBuffer.clear();
+			changed = true;
+		}
+		if (ui.Property("Placeholder", data.Placeholder))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max Length", data.MaxLength, PropertyMeta(1, 1024, 1)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Multiline", data.Multiline))
+		{
+			changed = true;
+		}
+		if (ui.Property("Read Only", data.ReadOnly))
+		{
+			changed = true;
+		}
+		if (ui.Property("Password", data.Password))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawImageButtonData(ImageButtonData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
+		{
+			changed = true;
+		}
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawRadioButtonData(RadioButtonData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (!data.Options.empty())
+		{
+			if (ui.Property("Selected", data.SelectedIndex, PropertyMeta(0, (int)data.Options.size() - 1, 1)))
+			{
+				changed = true;
+			}
+		}
+		if (ui.Property("Horizontal", data.Horizontal))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawDragFloatData(DragFloatData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, data.Speed)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Min", data.Min))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max", data.Max))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawDragIntData(DragIntData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 1)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Min", data.Min))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max", data.Max))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
 	// --- Template Implementations (Moved from Header) ---
 
 	template <typename T>
@@ -617,249 +898,55 @@ namespace Chained
 						using T = std::decay_t<decltype(data)>;
 						if constexpr (std::is_same_v<T, ButtonData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (ui.Property("Interactable", data.IsInteractable))
-							{
-								changed = true;
-							}
-							if (ui.Property("Auto Size", data.AutoSize))
-							{
-								changed = true;
-							}
+							changed = DrawButtonData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, LabelData>)
 						{
-							if (ui.Property("Text", data.Text))
-							{
-								changed = true;
-							}
-							if (ui.Property("Auto Size", data.AutoSize))
-							{
-								changed = true;
-							}
+							changed = DrawLabelData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, CheckboxData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (ui.Property("Checked", data.Checked))
-							{
-								changed = true;
-							}
+							changed = DrawCheckboxData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, SliderData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 0.01f)))
-							{
-								changed = true;
-							}
-							if (ui.Property("Min", data.Min))
-							{
-								changed = true;
-							}
-							if (ui.Property("Max", data.Max))
-							{
-								changed = true;
-							}
+							changed = DrawSliderData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, ProgressBarData>)
 						{
-							if (ui.Property("Progress", data.Progress, PropertyMeta(0.0f, 1.0f, 0.01f)))
-							{
-								changed = true;
-							}
-							if (ui.Property("Overlay Text", data.OverlayText))
-							{
-								changed = true;
-							}
-							if (ui.Property("Show %", data.ShowPercentage))
-							{
-								changed = true;
-							}
+							changed = DrawProgressBarData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, ImageData>)
 						{
-							if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg,.bmp,.tga"))
-							{
-								changed = true;
-							}
-							if (ui.Property("Tint Color", data.TintColor))
-							{
-								changed = true;
-							}
-							if (ui.Property("Border Color", data.BorderColor))
-							{
-								changed = true;
-							}
+							changed = DrawImageData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, PanelData>)
 						{
-							if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
-							{
-								changed = true;
-							}
-							if (ui.Property("Full Screen", data.FullScreen))
-							{
-								changed = true;
-							}
+							changed = DrawPanelData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, ComboBoxData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (!data.Items.empty())
-							{
-								if (ui.Property("Selected", data.SelectedIndex,
-												PropertyMeta(0, (int)data.Items.size() - 1, 1)))
-								{
-									changed = true;
-								}
-							}
-							// Items list
-							ImGui::TableNextRow();
-							ImGui::TableSetColumnIndex(0);
-							ImGui::TextUnformatted("Items");
-							ImGui::TableSetColumnIndex(1);
-							int removeIdx = -1;
-							for (int i = 0; i < (int)data.Items.size(); i++)
-							{
-								ImGui::PushID(i);
-								char buf[256];
-								strncpy(buf, data.Items[i].c_str(), sizeof(buf) - 1);
-								buf[sizeof(buf) - 1] = 0;
-								if (ImGui::InputText("##item", buf, sizeof(buf)))
-								{
-									data.Items[i] = buf;
-									changed = true;
-								}
-								ImGui::SameLine();
-								if (ImGui::SmallButton(ICON_FA_TRASH))
-								{
-									removeIdx = i;
-									changed = true;
-								}
-								ImGui::PopID();
-							}
-							if (removeIdx >= 0)
-							{
-								data.Items.erase(data.Items.begin() + removeIdx);
-							}
-							if (ImGui::SmallButton(ICON_FA_PLUS " Add Item"))
-							{
-								data.Items.push_back("");
-								changed = true;
-							}
+							changed = DrawComboBoxData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, InputTextData>)
 						{
-							if (ui.Property("Text", data.Text))
-							{
-								data.InputBuffer.clear();
-								changed = true;
-							}
-							if (ui.Property("Placeholder", data.Placeholder))
-							{
-								changed = true;
-							}
-							if (ui.Property("Max Length", data.MaxLength, PropertyMeta(1, 1024, 1)))
-							{
-								changed = true;
-							}
-							if (ui.Property("Multiline", data.Multiline))
-							{
-								changed = true;
-							}
-							if (ui.Property("Read Only", data.ReadOnly))
-							{
-								changed = true;
-							}
-							if (ui.Property("Password", data.Password))
-							{
-								changed = true;
-							}
+							changed = DrawInputTextData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, ImageButtonData>)
 						{
-							if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
-							{
-								changed = true;
-							}
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
+							changed = DrawImageButtonData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, RadioButtonData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (!data.Options.empty())
-							{
-								if (ui.Property("Selected", data.SelectedIndex,
-												PropertyMeta(0, (int)data.Options.size() - 1, 1)))
-								{
-									changed = true;
-								}
-							}
-							if (ui.Property("Horizontal", data.Horizontal))
-							{
-								changed = true;
-							}
+							changed = DrawRadioButtonData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, DragFloatData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, data.Speed)))
-							{
-								changed = true;
-							}
-							if (ui.Property("Min", data.Min))
-							{
-								changed = true;
-							}
-							if (ui.Property("Max", data.Max))
-							{
-								changed = true;
-							}
+							changed = DrawDragFloatData(data, ui);
 						}
 						else if constexpr (std::is_same_v<T, DragIntData>)
 						{
-							if (ui.Property("Label", data.Label))
-							{
-								changed = true;
-							}
-							if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 1)))
-							{
-								changed = true;
-							}
-							if (ui.Property("Min", data.Min))
-							{
-								changed = true;
-							}
-							if (ui.Property("Max", data.Max))
-							{
-								changed = true;
-							}
-						}
-						else
-						{
-							// Default fallback for other/future widget data types
+							changed = DrawDragIntData(data, ui);
 						}
 					},
 					comp.Data);
