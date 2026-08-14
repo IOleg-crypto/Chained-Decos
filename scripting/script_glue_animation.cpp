@@ -44,13 +44,13 @@ namespace Chained
 			entity.GetComponent<AnimationComponent>().IsPlaying = isPlaying != 0;
 		}
 	}
-	bool AnimationComponent_GetIsLooping(uint64_t entityID)
+	uint8_t AnimationComponent_GetIsLooping(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<AnimationComponent>() ? entity.GetComponent<AnimationComponent>().IsLooping
 																   : false;
 	}
-	void AnimationComponent_SetIsLooping(uint64_t entityID, bool isLooping)
+	void AnimationComponent_SetIsLooping(uint64_t entityID, uint8_t isLooping)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<AnimationComponent>())
@@ -58,7 +58,7 @@ namespace Chained
 			entity.GetComponent<AnimationComponent>().IsLooping = isLooping;
 		}
 	}
-	bool AnimationComponent_GetIsFinished(uint64_t entityID)
+	uint8_t AnimationComponent_GetIsFinished(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<AnimationComponent>()
@@ -125,7 +125,7 @@ namespace Chained
 		}
 	}
 
-	void AnimationComponent_SetBool(uint64_t entityID, const Coral::UCChar* name, bool value)
+	void AnimationComponent_SetBool(uint64_t entityID, const Coral::UCChar* name, uint8_t value)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<AnimationComponent>())

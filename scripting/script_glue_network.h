@@ -16,11 +16,11 @@ namespace Chained
 
 	CH_SCRIPT_FUNC void Network_Disconnect();
 
-	CH_SCRIPT_FUNC bool Network_IsHost();
+	CH_SCRIPT_FUNC uint8_t Network_IsHost();
 
-	CH_SCRIPT_FUNC bool Network_IsClient();
+	CH_SCRIPT_FUNC uint8_t Network_IsClient();
 
-	CH_SCRIPT_FUNC bool Network_IsConnected();
+	CH_SCRIPT_FUNC uint8_t Network_IsConnected();
 
 	CH_SCRIPT_FUNC int Network_GetClientCount();
 
@@ -32,7 +32,7 @@ namespace Chained
 
 	CH_SCRIPT_FUNC void Network_BroadcastSceneChange(const Coral::UCChar* scenePath);
 
-	CH_SCRIPT_FUNC bool Network_HasPendingSceneChange();
+	CH_SCRIPT_FUNC uint8_t Network_HasPendingSceneChange();
 
 	CH_SCRIPT_FUNC void Network_GetPendingSceneChange(char* outBuffer, int bufferSize);
 
@@ -47,7 +47,7 @@ namespace Chained
 
 	// Chat
 	CH_SCRIPT_FUNC void Network_SendChatMessage(const Coral::UCChar* message);
-	CH_SCRIPT_FUNC bool Network_HasPendingChat();
+	CH_SCRIPT_FUNC uint8_t Network_HasPendingChat();
 	CH_SCRIPT_FUNC void Network_GetPendingChatJSON(char* outBuffer, int bufferSize);
 	CH_SCRIPT_FUNC void Network_ClearPendingChat();
 

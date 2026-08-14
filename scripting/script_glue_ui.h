@@ -9,13 +9,13 @@ namespace Chained
 {
 
 	// ── UI Controls ───────────────────────────────────────────────────────
-	CH_SCRIPT_FUNC bool ButtonControl_IsClicked(uint64_t entityID);
-	CH_SCRIPT_FUNC bool ButtonControl_IsDown(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t ButtonControl_IsClicked(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t ButtonControl_IsDown(uint64_t entityID);
 	CH_SCRIPT_FUNC const Coral::UCChar* ButtonControl_GetLabel(uint64_t entityID);
 	CH_SCRIPT_FUNC void ButtonControl_SetLabel(uint64_t entityID, const Coral::UCChar* label);
 
-	CH_SCRIPT_FUNC bool CheckboxControl_GetChecked(uint64_t entityID);
-	CH_SCRIPT_FUNC void CheckboxControl_SetChecked(uint64_t entityID, bool checked);
+	CH_SCRIPT_FUNC uint8_t CheckboxControl_GetChecked(uint64_t entityID);
+	CH_SCRIPT_FUNC void CheckboxControl_SetChecked(uint64_t entityID, uint8_t checked);
 
 	CH_SCRIPT_FUNC const Coral::UCChar* LabelControl_GetText(uint64_t entityID);
 	CH_SCRIPT_FUNC void LabelControl_SetText(uint64_t entityID, const Coral::UCChar* text);
@@ -33,11 +33,11 @@ namespace Chained
 	CH_SCRIPT_FUNC void ProgressBarControl_SetProgress(uint64_t entityID, float progress);
 	CH_SCRIPT_FUNC const Coral::UCChar* ProgressBarControl_GetOverlayText(uint64_t entityID);
 	CH_SCRIPT_FUNC void ProgressBarControl_SetOverlayText(uint64_t entityID, const Coral::UCChar* text);
-	CH_SCRIPT_FUNC bool ProgressBarControl_GetShowPercentage(uint64_t entityID);
-	CH_SCRIPT_FUNC void ProgressBarControl_SetShowPercentage(uint64_t entityID, bool show);
+	CH_SCRIPT_FUNC uint8_t ProgressBarControl_GetShowPercentage(uint64_t entityID);
+	CH_SCRIPT_FUNC void ProgressBarControl_SetShowPercentage(uint64_t entityID, uint8_t show);
 
-	CH_SCRIPT_FUNC bool WidgetControl_GetActive(uint64_t entityID);
-	CH_SCRIPT_FUNC void WidgetControl_SetActive(uint64_t entityID, bool active);
+	CH_SCRIPT_FUNC uint8_t WidgetControl_GetActive(uint64_t entityID);
+	CH_SCRIPT_FUNC void WidgetControl_SetActive(uint64_t entityID, uint8_t active);
 	CH_SCRIPT_FUNC const Coral::UCChar* WidgetControl_GetTextColor(uint64_t entityID);
 	CH_SCRIPT_FUNC void WidgetControl_SetTextColorRGBA(uint64_t entityID, int r, int g, int b, int a);
 
@@ -55,12 +55,12 @@ namespace Chained
 
 	CH_SCRIPT_FUNC const Coral::UCChar* InputTextControl_GetText(uint64_t entityID);
 	CH_SCRIPT_FUNC void InputTextControl_SetText(uint64_t entityID, const Coral::UCChar* text);
-	CH_SCRIPT_FUNC bool InputTextControl_HasChanged(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t InputTextControl_HasChanged(uint64_t entityID);
 	CH_SCRIPT_FUNC void InputTextControl_ClearChanged(uint64_t entityID);
 
 	CH_SCRIPT_FUNC void UI_Text(const Coral::UCChar* text);
 
-	CH_SCRIPT_FUNC bool UI_Button(const Coral::UCChar* label);
+	CH_SCRIPT_FUNC uint8_t UI_Button(const Coral::UCChar* label);
 
 } // namespace Chained
 #endif

@@ -12,9 +12,9 @@ namespace Chained
         internal static unsafe delegate* unmanaged<ulong, float*, float*, float*, void> Camera_GetOrbit_Ptr;
         internal static unsafe delegate* unmanaged<ulong, float, float, float, void> Camera_SetOrbit_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> Camera_GetPrimary_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetPrimary_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> Camera_SetPrimary_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> Camera_GetIsOrbit_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> Camera_SetIsOrbit_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> Camera_SetIsOrbit_Ptr;
         internal static unsafe delegate* unmanaged<ulong, char*> Camera_GetTargetTag_Ptr;
         internal static unsafe delegate* unmanaged<ulong, char*, void> Camera_SetTargetTag_Ptr;
 #pragma warning restore 0649
@@ -58,13 +58,13 @@ namespace Chained
         public bool Primary
         {
             get { unsafe { return Camera_GetPrimary_Ptr(Entity.ID) != 0; } }
-            set { unsafe { Camera_SetPrimary_Ptr(Entity.ID, value); } }
+            set { unsafe { Camera_SetPrimary_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public bool IsOrbitCamera
         {
             get { unsafe { return Camera_GetIsOrbit_Ptr(Entity.ID) != 0; } }
-            set { unsafe { Camera_SetIsOrbit_Ptr(Entity.ID, value); } }
+            set { unsafe { Camera_SetIsOrbit_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public string TargetEntityTag

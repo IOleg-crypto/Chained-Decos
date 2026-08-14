@@ -147,13 +147,13 @@ namespace Chained
 			}
 		}
 	}
-	bool Camera_GetPrimary(uint64_t entityID)
+	uint8_t Camera_GetPrimary(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().Primary
 																: false;
 	}
-	void Camera_SetPrimary(uint64_t entityID, bool primary)
+	void Camera_SetPrimary(uint64_t entityID, uint8_t primary)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<CameraComponent>())
@@ -162,7 +162,7 @@ namespace Chained
 			entity.GetComponent<CameraComponent>().Primary = primary;
 		}
 	}
-	void Camera_SetIsOrbit(uint64_t entityID, bool isOrbit)
+	void Camera_SetIsOrbit(uint64_t entityID, uint8_t isOrbit)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<CameraComponent>())
@@ -187,7 +187,7 @@ namespace Chained
 		}
 	}
 
-	bool Camera_GetIsOrbit(uint64_t entityID)
+	uint8_t Camera_GetIsOrbit(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<CameraComponent>() ? entity.GetComponent<CameraComponent>().IsOrbitCamera

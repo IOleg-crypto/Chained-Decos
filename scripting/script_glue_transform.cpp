@@ -164,13 +164,13 @@ namespace Chained
 			}
 		}
 	}
-	bool Shader_GetEnabled(uint64_t entityID)
+	uint8_t Shader_GetEnabled(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<ShaderComponent>() ? entity.GetComponent<ShaderComponent>().Enabled
 																: false;
 	}
-	void Shader_SetEnabled(uint64_t entityID, bool enabled)
+	void Shader_SetEnabled(uint64_t entityID, uint8_t enabled)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<ShaderComponent>())
@@ -189,7 +189,7 @@ namespace Chained
 				   : 0;
 	}
 
-	bool NetworkIdentityComponent_GetIsOwner(uint64_t entityID)
+	uint8_t NetworkIdentityComponent_GetIsOwner(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<Chained::NetworkIdentityComponent>()
