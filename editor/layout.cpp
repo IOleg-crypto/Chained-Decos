@@ -7,14 +7,19 @@
 #include "imgui_internal.h"
 #include "engine/core/log.h"
 #include <filesystem>
-#include <fstream>
 
 namespace Chained
 {
 
+	constexpr float kLeftDockRatio = 0.20f;
+
 	EditorLayout::EditorLayout(EditorPanels& panels)
 		: m_Panels(panels)
 	{
+		// Rebuild the default DockBuilder arrangement only when no saved layout exists.
+		// If imgui.ini is present, honor it so the user's arrangement persists across launches.
+		const char* iniPath = ImGui::GetIO().IniFilename;
+		m_NeedsRebuild = !(iniPath != nullptr && std::filesystem::exists(iniPath));
 	}
 
 	void EditorLayout::ResetLayout()
@@ -26,102 +31,6 @@ namespace Chained
 			std::filesystem::remove(iniPath);
 		}
 		m_NeedsRebuild = true;
-	}
-
-	void EditorLayout::LoadPreset(const std::string& filepath)
-	{
-		if (std::filesystem::exists(filepath))
-		{
-			CH_CORE_INFO("EditorLayout: Loading from preset: {}", filepath);
-			std::ifstream f(filepath);
-			if (f.is_open())
-			{
-				std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
-				ImGui::LoadIniSettingsFromMemory(content.c_str(), content.size());
-				return;
-			}
-		}
-		else
-		{
-			CH_CORE_WARN("EditorLayout: Preset not found at {}", filepath);
-		}
-	}
-
-	void EditorLayout::SaveCurrent(const std::string& filepath)
-	{
-		size_t size = 0;
-		const char* settings = ImGui::SaveIniSettingsToMemory(&size);
-		if (settings)
-		{
-			std::ofstream file(filepath);
-			if (file.is_open())
-			{
-				file.write(settings, size);
-				CH_CORE_INFO("EditorLayout: Saved current layout to: {}", filepath);
-			}
-			else
-			{
-				CH_CORE_ERROR("EditorLayout: Failed to open {} for writing!", filepath);
-			}
-		}
-	}
-
-	std::string EditorLayout::GetPresetDirectory() const
-	{
-		return "presets";
-	}
-
-	std::string EditorLayout::GetPresetPath(const std::string& name) const
-	{
-		return GetPresetDirectory() + "/" + name + ".ini";
-	}
-
-	void EditorLayout::SavePreset(const std::string& name)
-	{
-		std::string dir = GetPresetDirectory();
-		if (!std::filesystem::exists(dir))
-		{
-			std::filesystem::create_directories(dir);
-		}
-
-		std::string path = GetPresetPath(name);
-		SaveCurrent(path);
-		m_ActivePreset = name;
-		CH_CORE_INFO("EditorLayout: Saved preset '{}' to {}", name, path);
-	}
-
-	void EditorLayout::LoadPresetByName(const std::string& name)
-	{
-		std::string path = GetPresetPath(name);
-		if (std::filesystem::exists(path))
-		{
-			LoadPreset(path);
-			m_ActivePreset = name;
-			// Apply loaded settings on next frame
-			m_NeedsRebuild = false;
-			CH_CORE_INFO("EditorLayout: Loaded preset '{}'", name);
-		}
-		else
-		{
-			CH_CORE_WARN("EditorLayout: Preset '{}' not found at {}", name, path);
-		}
-	}
-
-	std::vector<std::string> EditorLayout::GetPresetNames() const
-	{
-		std::vector<std::string> names;
-		std::string dir = GetPresetDirectory();
-		if (std::filesystem::exists(dir))
-		{
-			for (const auto& entry : std::filesystem::directory_iterator(dir))
-			{
-				if (entry.is_regular_file() && entry.path().extension() == ".ini")
-				{
-					names.push_back(entry.path().stem().string());
-				}
-			}
-		}
-		return names;
 	}
 
 	void EditorLayout::OnImGuiRender()
@@ -173,7 +82,7 @@ namespace Chained
 
 				// Build the layout splits
 				ImGuiID dock_left =
-					ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, 0.20f, nullptr, &dock_main_id);
+					ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Left, kLeftDockRatio, nullptr, &dock_main_id);
 				ImGuiID dock_right =
 					ImGui::DockBuilderSplitNode(dock_main_id, ImGuiDir_Right, 0.25f, nullptr, &dock_main_id);
 				ImGuiID dock_bottom =
