@@ -8,7 +8,7 @@ namespace Chained
     {
 #pragma warning disable 0649
         internal static unsafe delegate* unmanaged<ulong, float, void> AudioComponent_SetVolume_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> AudioComponent_SetLoop_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> AudioComponent_SetLoop_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> AudioComponent_IsPlaying_Ptr;
         internal static unsafe delegate* unmanaged<ulong, char*> AudioComponent_GetSoundPath_Ptr;
         internal static unsafe delegate* unmanaged<ulong, void> AudioComponent_Play_Ptr;
@@ -16,7 +16,7 @@ namespace Chained
 #pragma warning restore 0649
 
         private static unsafe void SetVolume(ulong entityID, float volume) => AudioComponent_SetVolume_Ptr(entityID, volume);
-        private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, loop);
+        private static unsafe void SetLoop(ulong entityID, bool loop) => AudioComponent_SetLoop_Ptr(entityID, (byte)(loop ? 1 : 0));
         private static unsafe bool IsPlaying_Native(ulong entityID) => AudioComponent_IsPlaying_Ptr(entityID) != 0;
         private static unsafe string GetSoundPath(ulong entityID) => Marshal.PtrToStringUni(new IntPtr(AudioComponent_GetSoundPath_Ptr(entityID))) ?? string.Empty;
 

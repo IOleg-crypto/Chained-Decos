@@ -8,9 +8,9 @@ namespace Chained
     {
 #pragma warning disable 0649
         internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_GetIsActive_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> SpawnComponent_SetIsActive_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> SpawnComponent_SetIsActive_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_IsCheckpoint_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> SpawnComponent_SetIsCheckpoint_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> SpawnComponent_SetIsCheckpoint_Ptr;
         internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_GetSpawnPoint_Ptr;
         internal static unsafe delegate* unmanaged<ulong, Vector3*, void> SpawnComponent_SetSpawnPoint_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> SpawnComponent_GetRenderSpawnZoneInScene_Ptr;
@@ -20,13 +20,13 @@ namespace Chained
         public bool IsActive
         {
             get { unsafe { return SpawnComponent_GetIsActive_Ptr != null && SpawnComponent_GetIsActive_Ptr(Entity.ID) != 0; } }
-            set { unsafe { if (SpawnComponent_SetIsActive_Ptr != null) SpawnComponent_SetIsActive_Ptr(Entity.ID, value); } }
+            set { unsafe { if (SpawnComponent_SetIsActive_Ptr != null) SpawnComponent_SetIsActive_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public bool IsCheckpoint
         {
             get { unsafe { return SpawnComponent_IsCheckpoint_Ptr != null && SpawnComponent_IsCheckpoint_Ptr(Entity.ID) != 0; } }
-            set { unsafe { if (SpawnComponent_SetIsCheckpoint_Ptr != null) SpawnComponent_SetIsCheckpoint_Ptr(Entity.ID, value); } }
+            set { unsafe { if (SpawnComponent_SetIsCheckpoint_Ptr != null) SpawnComponent_SetIsCheckpoint_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public Vector3 SpawnPoint

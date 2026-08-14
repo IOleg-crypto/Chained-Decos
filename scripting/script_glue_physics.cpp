@@ -76,7 +76,7 @@ namespace Chained
 			}
 		}
 	}
-	bool RigidBody_IsGrounded(uint64_t entityID)
+	uint8_t RigidBody_IsGrounded(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		if (!entity || !entity.HasComponent<RigidBodyComponent>())
@@ -95,7 +95,7 @@ namespace Chained
 				   ? 1u
 				   : 0u;
 	}
-	void RigidBody_SetKinematic(uint64_t entityID, bool isKinematic)
+	void RigidBody_SetKinematic(uint64_t entityID, uint8_t isKinematic)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<RigidBodyComponent>())

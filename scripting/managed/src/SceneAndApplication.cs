@@ -84,7 +84,7 @@ namespace Chained
     public static class Audio
     {
 #pragma warning disable 0649
-        internal static unsafe delegate* unmanaged<char*, float, float, bool, void> Audio_Play_Ptr;
+        internal static unsafe delegate* unmanaged<char*, float, float, byte, void> Audio_Play_Ptr;
         internal static unsafe delegate* unmanaged<char*, void> Audio_Stop_Ptr;
         internal static unsafe delegate* unmanaged<void> Audio_StopAll_Ptr;
 #pragma warning restore 0649
@@ -93,7 +93,7 @@ namespace Chained
         public static unsafe void Play(string path, float volume = 1.0f, float pitch = 1.0f, bool loop = false)
         {
             if (Audio_Play_Ptr == null) return;
-            fixed (char* ptr = path) Audio_Play_Ptr(ptr, volume, pitch, loop);
+            fixed (char* ptr = path) Audio_Play_Ptr(ptr, volume, pitch, (byte)(loop ? 1 : 0));
         }
 
         /// <summary>Stops playback for one clip.</summary>
@@ -152,9 +152,9 @@ namespace Chained
     {
 #pragma warning disable 0649
         internal static unsafe delegate* unmanaged<int, int, void> Window_SetSize_Ptr;
-        internal static unsafe delegate* unmanaged<bool, void> Window_SetFullscreen_Ptr;
-        internal static unsafe delegate* unmanaged<bool, void> Window_SetVSync_Ptr;
-        internal static unsafe delegate* unmanaged<bool, void> Window_SetAntialiasing_Ptr;
+        internal static unsafe delegate* unmanaged<byte, void> Window_SetFullscreen_Ptr;
+        internal static unsafe delegate* unmanaged<byte, void> Window_SetVSync_Ptr;
+        internal static unsafe delegate* unmanaged<byte, void> Window_SetAntialiasing_Ptr;
         internal static unsafe delegate* unmanaged<int, void> Window_SetAntiAliasingSamples_Ptr;
         internal static unsafe delegate* unmanaged<char*> Window_GetSupportedResolution_Ptr;
 #pragma warning restore 0649
@@ -170,21 +170,21 @@ namespace Chained
         public static unsafe void SetFullscreen(bool enabled)
         {
             if (Window_SetFullscreen_Ptr == null) return;
-            Window_SetFullscreen_Ptr(enabled);
+            Window_SetFullscreen_Ptr((byte)(enabled ? 1 : 0));
         }
 
         /// <summary>Toggles vertical sync.</summary>
         public static unsafe void SetVSync(bool enabled)
         {
             if (Window_SetVSync_Ptr == null) return;
-            Window_SetVSync_Ptr(enabled);
+            Window_SetVSync_Ptr((byte)(enabled ? 1 : 0));
         }
 
         /// <summary>Toggles multisampling.</summary>
         public static unsafe void SetAntialiasing(bool enabled)
         {
             if (Window_SetAntialiasing_Ptr == null) return;
-            Window_SetAntialiasing_Ptr(enabled);
+            Window_SetAntialiasing_Ptr((byte)(enabled ? 1 : 0));
         }
 
         /// <summary>Sets the MSAA sample count (0, 2, 4, or 8). Recreates the HDR framebuffer with the new sample count.</summary>

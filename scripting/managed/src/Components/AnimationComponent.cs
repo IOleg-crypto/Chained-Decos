@@ -12,7 +12,7 @@ namespace Chained
         internal static unsafe delegate* unmanaged<ulong, uint> AnimationComponent_GetIsPlaying_Ptr;
         internal static unsafe delegate* unmanaged<ulong, uint, void> AnimationComponent_SetIsPlaying_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> AnimationComponent_GetIsLooping_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, bool, void> AnimationComponent_SetIsLooping_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, byte, void> AnimationComponent_SetIsLooping_Ptr;
         internal static unsafe delegate* unmanaged<ulong, byte> AnimationComponent_GetIsFinished_Ptr;
         internal static unsafe delegate* unmanaged<ulong, float> AnimationComponent_GetDuration_Ptr;
         internal static unsafe delegate* unmanaged<ulong, float> AnimationComponent_GetNormalizedTime_Ptr;
@@ -20,7 +20,7 @@ namespace Chained
         internal static unsafe delegate* unmanaged<ulong, float, void> AnimationComponent_SetBlendDuration_Ptr;
         internal static unsafe delegate* unmanaged<ulong, int, float, void> AnimationComponent_CrossFade_Ptr;
         internal static unsafe delegate* unmanaged<ulong, char*, float, void> AnimationComponent_SetFloat_Ptr;
-        internal static unsafe delegate* unmanaged<ulong, char*, bool, void> AnimationComponent_SetBool_Ptr;
+        internal static unsafe delegate* unmanaged<ulong, char*, byte, void> AnimationComponent_SetBool_Ptr;
         internal static unsafe delegate* unmanaged<ulong, char*, float> AnimationComponent_GetFloat_Ptr;
 #pragma warning restore 0649
 
@@ -39,7 +39,7 @@ namespace Chained
         public bool IsLooping
         {
             get { unsafe { return AnimationComponent_GetIsLooping_Ptr != null && AnimationComponent_GetIsLooping_Ptr(Entity.ID) != 0; } }
-            set { unsafe { if (AnimationComponent_SetIsLooping_Ptr != null) AnimationComponent_SetIsLooping_Ptr(Entity.ID, value); } }
+            set { unsafe { if (AnimationComponent_SetIsLooping_Ptr != null) AnimationComponent_SetIsLooping_Ptr(Entity.ID, (byte)(value ? 1 : 0)); } }
         }
 
         public bool IsFinished
@@ -86,7 +86,7 @@ namespace Chained
         {
             if (AnimationComponent_SetBool_Ptr != null)
                 fixed (char* ptr = name)
-                    AnimationComponent_SetBool_Ptr(Entity.ID, ptr, value);
+                    AnimationComponent_SetBool_Ptr(Entity.ID, ptr, (byte)(value ? 1 : 0));
         }
 
         public unsafe float GetFloat(string name)

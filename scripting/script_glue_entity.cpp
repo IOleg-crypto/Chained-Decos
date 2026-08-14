@@ -58,7 +58,7 @@ namespace Chained
 		}
 		return 0;
 	}
-	bool Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName)
+	uint8_t Entity_HasComponent(uint64_t entityID, const Coral::UCChar* componentName)
 	{
 		Entity entity = GetEntity(entityID);
 		if (!entity)

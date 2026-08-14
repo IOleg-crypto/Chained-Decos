@@ -2,7 +2,7 @@
 
 namespace Chained
 {
-	bool ButtonControl_IsClicked(uint64_t entityID)
+	uint8_t ButtonControl_IsClicked(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<UIControlComponent>())
@@ -17,7 +17,7 @@ namespace Chained
 		return false;
 	}
 
-	bool ButtonControl_IsDown(uint64_t entityID)
+	uint8_t ButtonControl_IsDown(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<UIControlComponent>() ? entity.GetComponent<UIControlComponent>().IsDown
@@ -50,7 +50,7 @@ namespace Chained
 		}
 	}
 
-	void CheckboxControl_SetChecked(uint64_t entityID, bool checked)
+	void CheckboxControl_SetChecked(uint64_t entityID, uint8_t checked)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<UIControlComponent>())
@@ -240,7 +240,7 @@ namespace Chained
 			}
 		}
 	}
-	bool ProgressBarControl_GetShowPercentage(uint64_t entityID)
+	uint8_t ProgressBarControl_GetShowPercentage(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<UIControlComponent>())
@@ -253,7 +253,7 @@ namespace Chained
 		}
 		return false;
 	}
-	void ProgressBarControl_SetShowPercentage(uint64_t entityID, bool show)
+	void ProgressBarControl_SetShowPercentage(uint64_t entityID, uint8_t show)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<UIControlComponent>())
@@ -266,13 +266,13 @@ namespace Chained
 		}
 	}
 
-	bool WidgetControl_GetActive(uint64_t entityID)
+	uint8_t WidgetControl_GetActive(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		return entity && entity.HasComponent<ControlComponent>() ? entity.GetComponent<ControlComponent>().IsActive
 																 : false;
 	}
-	void WidgetControl_SetActive(uint64_t entityID, bool active)
+	void WidgetControl_SetActive(uint64_t entityID, uint8_t active)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<ControlComponent>())
@@ -307,7 +307,7 @@ namespace Chained
 		}
 	}
 
-	bool CheckboxControl_GetChecked(uint64_t entityID)
+	uint8_t CheckboxControl_GetChecked(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<UIControlComponent>())
@@ -437,7 +437,7 @@ namespace Chained
 		}
 	}
 
-	bool InputTextControl_HasChanged(uint64_t entityID)
+	uint8_t InputTextControl_HasChanged(uint64_t entityID)
 	{
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<UIControlComponent>())
@@ -476,7 +476,7 @@ namespace Chained
 		}
 	}
 
-	bool UI_Button(const Coral::UCChar* label)
+	uint8_t UI_Button(const Coral::UCChar* label)
 	{
 		if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope || !label)
 		{
