@@ -1,4 +1,4 @@
-#version 450 core
+#version 430 core
 #include "../include/color_space.glsl"
 
 in vec3 v_Position;
@@ -10,10 +10,7 @@ uniform float u_Exposure;
 uniform float u_Brightness;
 uniform float u_Contrast;
 
-// Fog uniforms
-uniform int fogEnabled;
-uniform vec4 fogColor;
-uniform float fogDensity;
+#include "../include/fog_skybox.glsl"
 
 layout(location = 0) out vec4 finalColor;
 

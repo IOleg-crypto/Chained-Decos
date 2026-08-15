@@ -32,7 +32,7 @@ vec3 CalcSpotLight(Light light, vec3 normal, vec3 fragPos, vec3 viewDir,
     vec3 L = normalize(lightVector);
     float cosTheta = dot(L, normalize(-light.direction));
 
-    float epsilon = cos(radians(light.innerCutoff)) - cos(radians(light.outerCutoff));
+    float epsilon = max(cos(radians(light.innerCutoff)) - cos(radians(light.outerCutoff)), 0.001);
     float spotIntensity = clamp((cosTheta - cos(radians(light.outerCutoff))) / epsilon, 0.0, 1.0);
 
     if (spotIntensity <= 0.0) return vec3(0.0);

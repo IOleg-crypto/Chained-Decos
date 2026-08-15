@@ -99,7 +99,7 @@ namespace Chained
 		if (ImGui::BeginMenu("View"))
 		{
 			panels.ForEach([](const std::shared_ptr<Panel>& panel) {
-				if (panel->GetName() != "Viewport" && panel->GetName() != "Project Browser")
+				if (panel->GetName() != "Project Browser")
 				{
 					ImGui::MenuItem(panel->GetName().c_str(), nullptr, &panel->IsOpen());
 				}
@@ -108,11 +108,6 @@ namespace Chained
 			if (ImGui::MenuItem(ICON_FA_EXPAND " Fullscreen", "F11"))
 			{
 				Application::Get().GetWindow().ToggleFullscreen();
-			}
-			if (ImGui::MenuItem(ICON_FA_ARROWS_ROTATE " Reset Layout"))
-			{
-				AppResetLayoutEvent e;
-				Application::Get().OnEvent(e);
 			}
 			ImGui::EndMenu();
 		}

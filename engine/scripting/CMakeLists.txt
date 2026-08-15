@@ -19,8 +19,9 @@ add_library(engine_scripting STATIC
     script_glue_entity.cpp
     script_glue_transform.cpp
     script_glue_physics.cpp
-    script_glue_player.cpp
     script_glue_animation.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/generated/script_glue_generated.h
+    ${CMAKE_CURRENT_SOURCE_DIR}/generated/script_glue_generated.cpp
     script_glue_camera.h
     script_glue_camera.cpp
     script_glue_ui.h
@@ -111,3 +112,26 @@ if(TARGET Coral.Native)
 endif()
 
 add_dependencies(engine_scripting Chained_Managed)
+
+# ── Auto-generate C++ glue from C# component wrappers ────────────────────────
+set(GLUE_GENERATOR_SCRIPT "${CMAKE_SOURCE_DIR}/tools/generate_glue.py")
+set(GLUE_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
+set(GLUE_OUTPUTS
+    "${GLUE_OUTPUT_DIR}/script_glue_generated.h"
+    "${GLUE_OUTPUT_DIR}/script_glue_generated.cpp"
+)
+
+add_custom_command(
+    OUTPUT  ${GLUE_OUTPUTS}
+    COMMAND Python3::Interpreter "${GLUE_GENERATOR_SCRIPT}"
+            --cs-dir "${MANAGED_PROJECT_DIR}/src/Components"
+            --output-dir "${GLUE_OUTPUT_DIR}"
+            --classes PlayerComponent SpawnComponent NetworkIdentityComponent
+    DEPENDS ${GLUE_GENERATOR_SCRIPT}
+            ${MANAGED_SOURCES}
+    COMMENT "Generating C++ glue from C# [NativeProperty]/[NativeCall] attributes"
+    VERBATIM
+)
+
+add_custom_target(GlueGenerated DEPENDS ${GLUE_OUTPUTS})
+add_dependencies(engine_scripting GlueGenerated)

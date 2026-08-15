@@ -1,11 +1,28 @@
 #include "ui_layout_system.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/components/core/hierarchy_component.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/components/ui/control_component.h"
 #include "imgui.h"
+#include <glm/glm.hpp>
 
 namespace Chained
 {
+	namespace
+	{
+		UIRect CalculateRect(const RectTransform& rt, glm::vec2 viewportSize, glm::vec2 viewportOffset = {0.0f, 0.0f})
+		{
+			glm::vec2 clAnchMin = glm::clamp(rt.AnchorMin, 0.0f, 1.0f);
+			glm::vec2 clAnchMax = glm::clamp(rt.AnchorMax, 0.0f, 1.0f);
+
+			glm::vec2 anchorMinPos = {viewportSize.x * clAnchMin.x, viewportSize.y * clAnchMin.y};
+			glm::vec2 anchorMaxPos = {viewportSize.x * clAnchMax.x, viewportSize.y * clAnchMax.y};
+
+			glm::vec2 pMin = {anchorMinPos.x + rt.OffsetMin.x, anchorMinPos.y + rt.OffsetMin.y};
+			glm::vec2 pMax = {anchorMaxPos.x + rt.OffsetMax.x, anchorMaxPos.y + rt.OffsetMax.y};
+
+			return UIRect{viewportOffset.x + pMin.x, viewportOffset.y + pMin.y, pMax.x - pMin.x, pMax.y - pMin.y};
+		}
+	} // namespace
 
 	void UILayoutSystem::Update(Scene* scene, const ImVec2& viewportSize, const ImVec2& viewportPos)
 	{
@@ -105,8 +122,8 @@ namespace Chained
 			}
 		}
 
-		UIRect r = ComponentUtils::CalculateRect(control.Transform, {parentRect.width, parentRect.height},
-												 {parentRect.x, parentRect.y});
+		UIRect r =
+			CalculateRect(control.Transform, {parentRect.width, parentRect.height}, {parentRect.x, parentRect.y});
 
 		m_RectCache[id] = r;
 		return r;

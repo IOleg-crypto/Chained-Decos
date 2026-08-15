@@ -1,7 +1,7 @@
 #include "hierarchy_system.h"
 #include "engine/core/profiler.h"
 #include "engine/scene/components.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/systems/transform_system.h"
 
 namespace Chained::Hierarchy
 {
@@ -35,7 +35,7 @@ namespace Chained::Hierarchy
 
 			if (needsUpdate)
 			{
-				tc.WorldTransform = task.ParentTransform * ComponentUtils::GetTransform(tc);
+				tc.WorldTransform = task.ParentTransform * TransformSystem::ComputeLocalMatrix(tc);
 				tc.InverseWorldTransform = glm::inverse(tc.WorldTransform);
 				tc.TransformChanged = false;
 			}

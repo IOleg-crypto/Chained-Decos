@@ -4,6 +4,7 @@
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/systems/physics_body_system.h"
+#include "engine/scene/systems/transform_system.h"
 #include "iphysics_world.h"
 #include "jolt_physics_world.h"
 
@@ -45,10 +46,7 @@ namespace Chained
 
 	void Physics::ResetWorld(Scene* scene)
 	{
-		if (m_World)
-		{
-			static_cast<JoltPhysicsWorld*>(m_World.get())->ClearShapeCache();
-		}
+		auto oldJoltWorld = dynamic_cast<JoltPhysicsWorld*>(m_World.get());
 
 		// Invalidate all rigid body handles before destroying the world
 		if (scene)
@@ -63,8 +61,12 @@ namespace Chained
 			registry.ctx().erase<Physics*>();
 		}
 
-		m_World.reset();
-		m_World = std::make_unique<JoltPhysicsWorld>();
+		auto newWorld = std::make_unique<JoltPhysicsWorld>();
+		if (oldJoltWorld)
+		{
+			newWorld->PreserveShapeCacheFrom(*oldJoltWorld);
+		}
+		m_World = std::move(newWorld);
 
 		if (auto project = Project::GetActive())
 		{
@@ -72,7 +74,7 @@ namespace Chained
 			m_World->SetGravity(gravity);
 		}
 
-		CH_CORE_INFO("Physics: World reset — fresh Jolt world created.");
+		CH_CORE_INFO("Physics: World reset — fresh Jolt world created (shape cache preserved).");
 	}
 
 	void Physics::InitializeBodies(Scene* scene)
@@ -253,13 +255,11 @@ namespace Chained
 			glm::quat rot;
 			world->GetTransform(rb.Handle, pos, rot);
 
-			transform.Translation = pos;
+			TransformSystem::SetTranslation(transform, pos);
 			if (!rb.IsFixedRotation)
 			{
-				transform.RotationQuat = rot;
-				transform.Rotation = glm::eulerAngles(rot);
+				TransformSystem::SetRotationQuat(transform, rot);
 			}
-			transform.TransformChanged = true;
 
 			rb.Velocity = world->GetVelocity(rb.Handle);
 			rb.IsGrounded = world->IsBodyGrounded(rb.Handle);

@@ -2,6 +2,7 @@
 set(INTEGRATION_SOURCES
     scene_tests.cpp
     scene_serialization_tests.cpp
+    async_scene_loader_tests.cpp
     physics_tests.cpp
     scriptengine_tests.cpp
     renderer_tests.cpp
