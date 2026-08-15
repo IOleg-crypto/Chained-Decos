@@ -16,6 +16,7 @@
 #include "engine/scene/systems/audio_system.h"
 #include "engine/scene/systems/scene_transition_system.h"
 #include "engine/scene/systems/network_system.h"
+#include "engine/scene/systems/transform_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "engine/scripting/scriptengine.h"
@@ -65,7 +66,7 @@ namespace Chained
 		Entity camera = scene->CreateEntity("Main Camera");
 		auto& cameraEntity = camera.AddComponent<CameraComponent>();
 		cameraEntity.Primary = true;
-		camera.GetComponent<TransformComponent>().Translation = {0, 5, 10};
+		TransformSystem::SetTranslation(camera.GetComponent<TransformComponent>(), {0, 5, 10});
 
 		return scene;
 	}

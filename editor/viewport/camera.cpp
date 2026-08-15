@@ -3,7 +3,7 @@
 #include "engine/app/application.h"
 #include "engine/core/input.h"
 #include "engine/scene/components/render/camera_component.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/systems/transform_system.h"
 #include "engine/scene/components/core/transform_component.h"
 
 #include <algorithm>
@@ -183,8 +183,8 @@ namespace Chained
 		if (hasEntity)
 		{
 			auto& tc = cameraEntity.GetComponent<TransformComponent>();
-			ComponentUtils::SetRotation(tc, glm::vec3(m_Pitch, m_Yaw, 0.0f));
-			ComponentUtils::SetTranslation(tc, CalculatePosition());
+			TransformSystem::SetRotation(tc, glm::vec3(m_Pitch, m_Yaw, 0.0f));
+			TransformSystem::SetTranslation(tc, CalculatePosition());
 		}
 	}
 

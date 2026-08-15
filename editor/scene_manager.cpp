@@ -390,15 +390,24 @@ namespace Chained
 		if (!m_Transition.sceneReady)
 		{
 			auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
-			if (assetMgr && assetMgr->HasBackgroundWork())
+			if (assetMgr)
 			{
-				m_AssetWaitLogTimer += 0.016f;
-				if (m_AssetWaitLogTimer > 1.0f)
+				assetMgr->Update(0.016f);
+
+				if (assetMgr->HasBackgroundWork())
 				{
-					CH_CORE_INFO("Editor: Waiting for {} assets...", assetMgr->GetPendingFinalizeCount());
-					m_AssetWaitLogTimer = 0.0f;
+					m_AssetWaitLogTimer += 0.016f;
+					if (m_AssetWaitLogTimer > 1.0f)
+					{
+						uint32_t pendingCount = assetMgr->GetPendingFinalizeCount();
+						if (pendingCount > 0)
+						{
+							CH_CORE_INFO("Editor: Waiting for {} assets...", pendingCount);
+						}
+						m_AssetWaitLogTimer = 0.0f;
+					}
+					return;
 				}
-				return;
 			}
 			m_Transition.sceneReady = true;
 		}

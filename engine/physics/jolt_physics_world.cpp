@@ -161,6 +161,11 @@ namespace Chained
 		m_ConvexHullCache.clear();
 	}
 
+	void JoltPhysicsWorld::PrebuildShape(const PhysicsBodyDesc& desc)
+	{
+		BuildShape(desc);
+	}
+
 	JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
 	{
 		JPH::ShapeRefC shape;
@@ -195,12 +200,6 @@ namespace Chained
 			break;
 		}
 		case ColliderType::Mesh: {
-			if (desc.Triangles.empty())
-			{
-				shape = FallbackUnitBox("MeshShape requested but no triangles provided");
-				break;
-			}
-
 			if (!desc.IsStatic)
 			{
 				// Convex hull path for dynamic meshes — check cache first
@@ -225,6 +224,12 @@ namespace Chained
 						CH_CORE_TRACE("Physics: Reused cached convex hull [key='{}']", convexKey);
 						break;
 					}
+				}
+
+				if (desc.Triangles.empty())
+				{
+					shape = FallbackUnitBox("Dynamic MeshShape requested but no triangles provided and not in cache");
+					break;
 				}
 
 				constexpr float kGridCell = 0.05f;
@@ -325,7 +330,33 @@ namespace Chained
 				}
 			}
 
-			if (!cached)
+			if (cached)
+			{
+				shape = baseShape;
+				if (desc.MeshScale != glm::vec3(1.0f))
+				{
+					JPH::ScaledShapeSettings scaledSettings(
+						baseShape, JPH::Vec3(desc.MeshScale.x, desc.MeshScale.y, desc.MeshScale.z));
+					auto scaledResult = scaledSettings.Create();
+					if (!scaledResult.HasError())
+					{
+						shape = scaledResult.Get();
+					}
+					else
+					{
+						CH_CORE_WARN(
+							"Physics: ScaledShape build failed for cached shape: {} — using unscaled base shape.",
+							scaledResult.GetError().c_str());
+					}
+				}
+				break;
+			}
+
+			if (desc.Triangles.empty())
+			{
+				shape = FallbackUnitBox("Static MeshShape requested but no triangles provided and not in cache");
+				break;
+			}
 			{
 				const auto buildStart = std::chrono::steady_clock::now();
 				JPH::TriangleList joltTris;

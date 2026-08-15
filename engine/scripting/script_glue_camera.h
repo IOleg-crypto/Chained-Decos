@@ -1,7 +1,7 @@
 #ifndef SCRIPT_GLUE_CAMERA_H
 #define SCRIPT_GLUE_CAMERA_H
 #include "script_glue_internal.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/systems/transform_system.h"
 
 namespace Chained
 {

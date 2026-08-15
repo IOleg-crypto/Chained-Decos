@@ -67,6 +67,9 @@ namespace Chained
 		/// Use to skip triangle extraction on cache hits.
 		virtual bool HasCachedMeshShape(const std::string& key) const = 0;
 
+		/// Pre-builds and caches a collision shape (BVH or Convex Hull) thread-safely on a worker thread.
+		virtual void PrebuildShape(const PhysicsBodyDesc& desc) = 0;
+
 		virtual void SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot) = 0;
 		virtual void GetTransform(PhysicsBodyHandle handle, glm::vec3& pos, glm::quat& rot) = 0;
 

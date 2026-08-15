@@ -52,9 +52,19 @@ namespace Chained
 		virtual void ClearGroundedState() override;
 
 		virtual bool HasCachedMeshShape(const std::string& key) const override;
+		virtual void PrebuildShape(const PhysicsBodyDesc& desc) override;
 
-		/// Clear the cached mesh shapes (call on world reset).
+		/// Clear the cached mesh shapes.
 		void ClearShapeCache();
+
+		/// Preserves the compiled BVH mesh shape cache from a previous world instance.
+		void PreserveShapeCacheFrom(const JoltPhysicsWorld& otherWorld)
+		{
+			std::lock_guard<std::mutex> lock1(m_CacheMutex);
+			std::lock_guard<std::mutex> lock2(otherWorld.m_CacheMutex);
+			m_MeshShapeCache = otherWorld.m_MeshShapeCache;
+			m_ConvexHullCache = otherWorld.m_ConvexHullCache;
+		}
 
 		/// Builds a Jolt shape from a PhysicsBodyDesc (used by CreateBody and CreateBodies).
 		JPH::ShapeRefC BuildShape(const PhysicsBodyDesc& desc);

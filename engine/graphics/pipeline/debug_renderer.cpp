@@ -264,7 +264,7 @@ namespace Chained
 		if (options.DrawGrid)
 		{
 			auto& grid = settings.Grid;
-			DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 1.0f}, renderer);
+			DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 0.4f}, renderer);
 		}
 
 		Flush(renderer);
