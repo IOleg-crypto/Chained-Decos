@@ -48,22 +48,6 @@
       }
     },
     {
-      "name": "windows-msvc",
-      "displayName": "Windows Ninja MSVC",
-      "inherits": "ninja-base",
-      "architecture": { "value": "x64", "strategy": "external" },
-      "toolset": { "value": "host=x64", "strategy": "external" },
-      "cacheVariables": {
-        "CMAKE_C_COMPILER": "cl",
-        "CMAKE_CXX_COMPILER": "cl"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Windows"
-      }
-    },
-    {
       "name": "windows-gcc",
       "displayName": "Windows Ninja GCC (MinGW)",
       "inherits": "ninja-base",
@@ -103,6 +87,32 @@
         "type": "equals",
         "lhs": "${hostSystemName}",
         "rhs": "Linux"
+      }
+    },
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows Ninja MSVC",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-vs2022",
+      "displayName": "Windows Visual Studio 2022",
+      "inherits": "base",
+      "generator": "Visual Studio 18 2026",
+      "architecture": { "value": "x64", "strategy": "set" },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
       }
     }
   ],
