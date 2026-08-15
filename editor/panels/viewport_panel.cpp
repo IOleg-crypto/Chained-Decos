@@ -268,15 +268,21 @@ namespace Chained
 
 		ImGui::Image((ImTextureID)(uintptr_t)finalTextureID, viewportSize, {0, 1}, {1, 0});
 
-		if (activeScene->IsStartingUp())
+		bool isTransitioning = EditorLayer::Get().GetSceneManager().IsTransitioning();
+		if (activeScene->IsStartingUp() || isTransitioning)
 		{
 			ImDrawList* drawList = ImGui::GetWindowDrawList();
 			ImVec2 p0 = ImGui::GetItemRectMin();
 			ImVec2 p1 = ImGui::GetItemRectMax();
 
-			drawList->AddRectFilled(p0, p1, IM_COL32(0, 0, 0, 180));
+			drawList->AddRectFilled(p0, p1, IM_COL32(15, 15, 20, 200));
 
-			const char* text = "Loading Physics...";
+			std::string status = EditorLayer::Get().GetSceneManager().GetLoadingStatus();
+			if (status.empty())
+			{
+				status = "Loading Scene...";
+			}
+			const char* text = status.c_str();
 			ImVec2 textSize = ImGui::CalcTextSize(text);
 			ImVec2 textPos = ImVec2(p0.x + (p1.x - p0.x - textSize.x) * 0.5f, p0.y + (p1.y - p0.y - textSize.y) * 0.5f);
 			drawList->AddText(textPos, IM_COL32(255, 255, 255, 255), text);
@@ -752,6 +758,11 @@ namespace Chained
 
 	void ViewportPanel::HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
 	{
+		if (EditorLayer::Get().GetSceneManager().IsTransitioning())
+		{
+			return;
+		}
+
 		// Object picking logic
 		bool isUIChildHovered =
 			ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
@@ -921,15 +932,16 @@ namespace Chained
 		}
 
 		ImGui::SameLine(0, 5);
-		float gridSize = m_Gizmo.GetGridSize();
-		ImGui::SetNextItemWidth(45);
-		if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 10.0f, "%.1f"))
+		auto scene = EditorLayer::Get().GetActiveScene();
+		float gridSize = scene->GetSettings().Grid.Spacing;
+		ImGui::SetNextItemWidth(60);
+		if (ImGui::DragFloat("##SnapValue", &gridSize, 0.1f, 0.1f, 50.0f, "%.1f"))
 		{
-			m_Gizmo.SetGridSize(gridSize);
+			scene->GetSettings().Grid.Spacing = gridSize;
 		}
 		if (ImGui::IsItemHovered())
 		{
-			ImGui::SetTooltip("Grid Snap Size");
+			ImGui::SetTooltip("Grid Snap Size (synced with visual grid)");
 		}
 	}
 
@@ -1002,28 +1014,6 @@ namespace Chained
 				if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
 				{
 					debugRenderer->DrawLine(iconPos, iconPos + dir, lightTint);
-				}
-			}
-			else if (light.Type == LightType::Point)
-			{
-				if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
-				{
-					if (auto* renderer = ServiceLocator::TryGet<Renderer>())
-					{
-						debugRenderer->DrawSphereWires(transform.WorldTransform, light.Radius * 0.1f, lightTint,
-													   *renderer);
-					}
-				}
-			}
-			else if (light.Type == LightType::Spot)
-			{
-				if (auto* debugRenderer = ServiceLocator::TryGet<DebugRenderer>())
-				{
-					if (auto* renderer = ServiceLocator::TryGet<Renderer>())
-					{
-						debugRenderer->DrawSphereWires(transform.WorldTransform, light.Radius * 0.05f, lightTint,
-													   *renderer);
-					}
 				}
 			}
 		}

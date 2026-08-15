@@ -192,3 +192,4 @@ See the [Component Reference](COMPONENTS.md) for the full guide. In short:
 2. Register it in `component_registry.cpp`.
 3. Add a system in `engine/scene/systems/`.
 4. Hook the system into the scene update loop.
+5. Add `[NativeProperty]` attributes on the C# wrapper and register in `CMakeLists.txt --classes` to expose fields to scripts (auto-generated glue).

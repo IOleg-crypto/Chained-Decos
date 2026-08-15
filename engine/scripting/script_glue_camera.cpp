@@ -123,8 +123,8 @@ namespace Chained
 			//     }
 			// }
 
-			ComponentUtils::SetTranslation(tc, newPos);
-			ComponentUtils::SetRotationQuat(tc, rotation);
+			TransformSystem::SetTranslation(tc, newPos);
+			TransformSystem::SetRotationQuat(tc, rotation);
 		}
 	}
 	void Camera_GetOrbit(uint64_t entityID, float* yaw, float* pitch, float* distance)

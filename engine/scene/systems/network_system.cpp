@@ -1,6 +1,7 @@
 #include "network_system.h"
 #include "engine/scene/components/gameplay/network_identity_component.h"
 #include "engine/scene/components/core/transform_component.h"
+#include "engine/scene/systems/transform_system.h"
 #include "engine/scene/components/gameplay/player_component.h"
 #include "engine/scene/components/physics/physics_component.h"
 #include "engine/scene/components/render/camera_component.h"
@@ -138,8 +139,7 @@ namespace Chained
 			if (avatar.HasComponent<TransformComponent>())
 			{
 				auto& transform = avatar.GetComponent<TransformComponent>();
-				transform.Translation = FindSpawnPosition(scene->GetRegistry());
-				transform.TransformChanged = true;
+				TransformSystem::SetTranslation(transform, FindSpawnPosition(scene->GetRegistry()));
 			}
 		}
 
@@ -516,14 +516,12 @@ namespace Chained
 
 			if (netID.IsOwner)
 			{
-				float dist = glm::length(transform.Translation - target.TargetPosition);
+				float dist = glm::length(TransformSystem::GetTranslation(transform) - target.TargetPosition);
 
 				if (dist > NetworkSystem::kMaxCorrectionDistance)
 				{
-					transform.Translation = target.TargetPosition;
-					transform.RotationQuat = glm::normalize(target.TargetRotation);
-					transform.Rotation = glm::eulerAngles(transform.RotationQuat);
-					transform.TransformChanged = true;
+					TransformSystem::SetTranslation(transform, target.TargetPosition);
+					TransformSystem::SetRotationQuat(transform, glm::normalize(target.TargetRotation));
 
 					if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
 					{
@@ -533,14 +531,13 @@ namespace Chained
 				continue;
 			}
 
-			transform.Translation = glm::mix(transform.Translation, target.TargetPosition, t);
+			TransformSystem::SetTranslation(
+				transform, glm::mix(TransformSystem::GetTranslation(transform), target.TargetPosition, t));
 
-			glm::quat currentQuat = glm::quat_cast(glm::mat4(transform.WorldTransform));
+			glm::quat currentQuat = glm::quat_cast(transform.WorldTransform);
 			glm::quat targetQuat = glm::normalize(target.TargetRotation);
 			glm::quat blended = glm::slerp(currentQuat, targetQuat, t);
-			transform.Rotation = glm::eulerAngles(blended);
-			transform.RotationQuat = blended;
-			transform.TransformChanged = true;
+			TransformSystem::SetRotationQuat(transform, blended);
 
 			if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
 			{
@@ -576,7 +573,7 @@ namespace Chained
 
 			EntityNetState s;
 			s.NetworkID = netID.NetworkID;
-			s.Position = transform.Translation;
+			s.Position = TransformSystem::GetTranslation(transform);
 			s.Rotation = glm::quat_cast(transform.WorldTransform);
 			s.Velocity = reg.try_get<RigidBodyComponent>(entity) ? reg.get<RigidBodyComponent>(entity).Velocity
 																 : glm::vec3{0, 0, 0};
@@ -673,8 +670,7 @@ namespace Chained
 			if (reg.all_of<TransformComponent>(entity))
 			{
 				auto& transform = reg.get<TransformComponent>(entity);
-				transform.Translation = FindSpawnPosition(reg);
-				transform.TransformChanged = true;
+				TransformSystem::SetTranslation(transform, FindSpawnPosition(reg));
 			}
 
 			CH_CORE_INFO("Network: Tagged host player with netID={}.", HostAvatarNetworkID);
@@ -695,8 +691,7 @@ namespace Chained
 				if (hostAvatar.HasComponent<TransformComponent>())
 				{
 					auto& transform = hostAvatar.GetComponent<TransformComponent>();
-					transform.Translation = FindSpawnPosition(reg);
-					transform.TransformChanged = true;
+					TransformSystem::SetTranslation(transform, FindSpawnPosition(reg));
 				}
 
 				auto& netID = hostAvatar.AddOrReplaceComponent<NetworkIdentityComponent>();
@@ -773,8 +768,7 @@ namespace Chained
 				auto& transform = avatar.GetComponent<TransformComponent>();
 				glm::vec3 spawnPos = FindSpawnPosition(scene->GetRegistry());
 				spawnPos.x += static_cast<float>(networkID - 1) * 1.5f;
-				transform.Translation = spawnPos;
-				transform.TransformChanged = true;
+				TransformSystem::SetTranslation(transform, spawnPos);
 			}
 
 			auto& netID = avatar.AddOrReplaceComponent<NetworkIdentityComponent>();
