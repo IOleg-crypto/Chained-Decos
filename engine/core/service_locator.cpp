@@ -3,7 +3,7 @@
 
 namespace Chained
 {
-	inline ServiceRegistry& ServiceLocator::GetRegistry()
+	ServiceRegistry& ServiceLocator::GetRegistry()
 	{
 		static ServiceRegistry registry;
 		return registry;
