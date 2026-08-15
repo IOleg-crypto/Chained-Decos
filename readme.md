@@ -77,8 +77,8 @@ cmake --build --preset windows-clang --parallel
 cmake --preset windows-msvc
 cmake --build --preset windows-msvc --parallel
 
-# Windows (VS 2022 .sln)
-cmake --preset windows-vs2022
+# Windows (VS 2026 .sln)
+cmake --preset windows-vs2026
 ```
 
 > **Editor play mode:** Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
@@ -90,8 +90,8 @@ cmake --preset windows-vs2022
 | Preset | Generator | Compiler | Use case |
 | :--- | :--- | :--- | :--- |
 | `windows-clang` | Ninja Multi-Config | Clang (MSYS2) | Primary dev |
-| `windows-msvc` | Ninja Multi-Config | MSVC (cl) | MSVC CI |
-| `windows-vs2022` | Visual Studio 18 2026 | MSVC | VS solution |
+| `windows-msvc` | Ninja Multi-Config | MSVC (cl) | MSVC Ninja |
+| `windows-vs2026` | Visual Studio 18 2026 | MSVC | VS solution / CI |
 | `linux-clang` | Ninja Multi-Config | Clang | Linux CI |
 | `linux-gcc` | Ninja Multi-Config | GCC | Linux |
 | `windows-gcc` | Ninja Multi-Config | GCC (MinGW) | MinGW |
