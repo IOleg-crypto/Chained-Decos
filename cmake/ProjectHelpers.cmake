@@ -69,54 +69,39 @@ function(chained_add_game TARGET_NAME)
         set(HAS_ENTRY_POINT ON)
     endif()
 
-    # 2. Compile sources once using an OBJECT library (saves RAM and compile time)
+    # 2. Compile game sources as a static library (saves RAM and compile time)
     if(GAME_SOURCES)
-        foreach(LIB_TARGET IN ITEMS ${TARGET_NAME} ${TARGET_NAME}Module)
-            if(LIB_TARGET STREQUAL ${TARGET_NAME})
-                add_library(${LIB_TARGET} STATIC ${GAME_SOURCES})
-                # Rename static lib so its .lib doesn't clash with the IMPLIB generated
-                # by the exe on MSVC (both would be ChainedDecos.lib otherwise → LNK1181).
-                set_target_properties(${LIB_TARGET} PROPERTIES OUTPUT_NAME "${TARGET_NAME}Game")
-            else()
-                add_library(${LIB_TARGET} SHARED ${GAME_SOURCES})
-                target_compile_definitions(${LIB_TARGET} PRIVATE GAME_BUILD_DLL)
-                # Avoid conflict with static library .lib on Windows
-                set_target_properties(${LIB_TARGET} PROPERTIES OUTPUT_NAME "${TARGET_NAME}Module")
-            endif()
-            target_link_libraries(${LIB_TARGET} PUBLIC ChainedEngine::Framework)
-            _chained_configure_game_target(${LIB_TARGET})
-        endforeach()
+        add_library(${TARGET_NAME} STATIC ${GAME_SOURCES})
+        # Rename static lib so its .lib doesn't clash with the IMPLIB generated
+        # by the exe on MSVC (both would be ChainedDecos.lib otherwise → LNK1181).
+        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${TARGET_NAME}Game")
+        target_link_libraries(${TARGET_NAME} PUBLIC ChainedEngine::Framework)
+        _chained_configure_game_target(${TARGET_NAME})
     endif()
-
-    # Create a wrapper target for the game to attach commands to
-    add_custom_target(${TARGET_NAME}GameTarget)
 
     # 3. Create the EXECUTABLE target
     if(HAS_ENTRY_POINT)
         add_executable(${TARGET_NAME}Exe ${ENTRY_SOURCE})
         target_link_libraries(${TARGET_NAME}Exe PRIVATE engine_runtime_core)
-        
+
         if(GAME_SOURCES)
              target_link_libraries(${TARGET_NAME}Exe PRIVATE ${TARGET_NAME})
         endif()
-        
-        set_target_properties(${TARGET_NAME}Exe PROPERTIES 
+
+        set_target_properties(${TARGET_NAME}Exe PROPERTIES
             OUTPUT_NAME "${TARGET_NAME}"
             VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
-        
-        target_compile_definitions(${TARGET_NAME}Exe PRIVATE 
+
+        target_compile_definitions(${TARGET_NAME}Exe PRIVATE
             GAME_BUILD_EXE
         )
         _chained_configure_game_target(${TARGET_NAME}Exe)
-
-        add_dependencies(${TARGET_NAME}GameTarget ${TARGET_NAME}Exe)
     endif()
 
     # 4. Handle C# Script Building
     if(GAME_CSHARP_PROJECT)
         chained_add_csharp_scripts(${TARGET_NAME} "${GAME_CSHARP_PROJECT}")
-        add_dependencies(${TARGET_NAME}GameTarget "BuildScripts_${TARGET_NAME}")
         if(HAS_ENTRY_POINT)
             add_dependencies(${TARGET_NAME}Exe "BuildScripts_${TARGET_NAME}")
         endif()
@@ -128,14 +113,10 @@ function(chained_add_game TARGET_NAME)
         if(TARGET ${TARGET_NAME})
             list(APPEND INSTALL_TARGETS ${TARGET_NAME})
         endif()
-        if(TARGET ${TARGET_NAME}Module)
-            list(APPEND INSTALL_TARGETS ${TARGET_NAME}Module)
-        endif()
 
         install(TARGETS ${INSTALL_TARGETS}
             RUNTIME DESTINATION bin COMPONENT Runtime
             ARCHIVE DESTINATION lib COMPONENT Runtime
-            LIBRARY DESTINATION lib COMPONENT Runtime
         )
     endif()
 

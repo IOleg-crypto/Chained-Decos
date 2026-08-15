@@ -270,6 +270,68 @@ namespace Chained
 			}
 		}
 
+		// ── CMake scaffolding ──────────────────────────────────────────────
+		// Create CMakeLists.txt at project root (enables standalone builds;
+		// place the project folder under `game/` for auto-discovery by the
+		// root CMakeLists.txt).
+		{
+			std::filesystem::path cmakeListsPath = std::filesystem::path(path) / "CMakeLists.txt";
+			std::ofstream cmakeOut(cmakeListsPath);
+			if (cmakeOut.is_open())
+			{
+				cmakeOut << R"(
+chained_add_game($TARGET_NAME
+    PROJECT_GAME $GAME_DIR
+    CSHARP_PROJECT "assets/scripts/$TARGET_NAME.Scripts.csproj"
+    SOURCES
+)
+)";
+				cmakeOut.close();
+			}
+			else
+			{
+				CH_CORE_ERROR("NewProject: Failed to create CMakeLists.txt '{}'", cmakeListsPath.string());
+			}
+		}
+
+		// Create src/main.cpp entry point
+		{
+			std::filesystem::path srcDir = std::filesystem::path(path) / "src";
+			std::filesystem::create_directories(srcDir);
+			std::filesystem::path mainPath = srcDir / "main.cpp";
+			std::ofstream mainOut(mainPath);
+			if (mainOut.is_open())
+			{
+				mainOut << R"(
+#include "engine/app/entry_point.h"
+#include "engine/core/platform.h"
+#include "engine/runtime/runtime_layer.h"
+
+namespace Chained
+{
+extern void RegisterGameComponents();
+
+Application* CreateApplication(ApplicationCommandLineArgs args)
+{
+    RegisterGameComponents();
+
+    ApplicationSpecification spec;
+    spec.Name = "$PROJECT_NAME";
+    spec.CommandLineArgs = args;
+    spec.EnableScripting = true;
+    spec.EngineRoot = Platform::GetExecutableDirectory();
+    spec.WorkingDirectory = Platform::GetExecutableDirectory().string();
+
+    auto* app = new Application(spec);
+    app->PushLayer(std::make_unique<RuntimeLayer>(spec.WorkingDirectory));
+    return app;
+}
+} // namespace Chained
+)";
+				mainOut.close();
+			}
+		}
+
 		// Generate starter script
 		{
 			std::string scriptContent = "using Chained;\n"

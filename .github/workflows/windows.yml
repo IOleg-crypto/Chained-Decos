@@ -181,7 +181,7 @@ jobs:
       - name: Build
         run: |
           set -euo pipefail
-          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} \
+          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} --parallel \
             2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
 
       - name: Test
