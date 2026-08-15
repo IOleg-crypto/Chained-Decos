@@ -9,7 +9,6 @@
 #include "../include/material_pbr.glsl"
 #include "../include/albedo_sampling.glsl"
 #include "../include/normal_sampling.glsl"
-#include "../include/tonemap.glsl"
 #include "../include/debug_modes.glsl"
 #include "../include/shadow.glsl"
 

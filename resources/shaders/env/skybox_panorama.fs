@@ -1,4 +1,4 @@
-#version 450 core
+#version 430 core
 
 // Input vertex attributes (from vertex shader)
 layout(location = 0) in vec3 fragPosition;
@@ -13,12 +13,7 @@ uniform float contrast;
 uniform float uTime;
 uniform int isHDR;
 
-// Fog data
-uniform int fogEnabled;
-uniform vec4 fogColor;
-uniform float fogDensity;
-uniform float fogStart;
-uniform float fogEnd;
+#include "../include/fog_skybox.glsl"
 
 // Output fragment color
 layout(location = 0) out vec4 finalColor;

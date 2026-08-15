@@ -87,7 +87,8 @@ namespace Chained
 			m_DrawnEntities.clear();
 			m_EntitiesToDestroyPending.clear();
 
-			ImGui::BeginDisabled(readOnly);
+			bool isTransitioning = EditorLayer::Get().GetSceneManager().IsTransitioning();
+			ImGui::BeginDisabled(readOnly || isTransitioning);
 
 			std::string filter = m_SearchBuffer;
 			std::transform(filter.begin(), filter.end(), filter.begin(), ::tolower);

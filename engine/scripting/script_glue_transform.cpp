@@ -2,7 +2,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/systems/transform_system.h"
 #include "engine/scene/entity.h"
 
 namespace Chained
@@ -63,7 +63,7 @@ namespace Chained
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<TransformComponent>() && inRotation)
 		{
-			ComponentUtils::SetRotation(entity.GetComponent<TransformComponent>(), *inRotation);
+			TransformSystem::SetRotation(entity.GetComponent<TransformComponent>(), *inRotation);
 		}
 	}
 	void Transform_GetScale(uint64_t entityID, glm::vec3* outScale)
@@ -83,7 +83,7 @@ namespace Chained
 		Entity entity = GetEntity(entityID);
 		if (entity && entity.HasComponent<TransformComponent>() && inScale)
 		{
-			ComponentUtils::SetScale(entity.GetComponent<TransformComponent>(), *inScale);
+			TransformSystem::SetScale(entity.GetComponent<TransformComponent>(), *inScale);
 		}
 	}
 
@@ -177,24 +177,6 @@ namespace Chained
 		{
 			entity.GetComponent<ShaderComponent>().Enabled = enabled;
 		}
-	}
-
-	// ── NetworkIdentity ──────────────────────────────────────────────────
-
-	uint64_t NetworkIdentityComponent_GetNetworkID(uint64_t entityID)
-	{
-		Entity entity = GetEntity(entityID);
-		return entity && entity.HasComponent<Chained::NetworkIdentityComponent>()
-				   ? entity.GetComponent<Chained::NetworkIdentityComponent>().NetworkID
-				   : 0;
-	}
-
-	uint8_t NetworkIdentityComponent_GetIsOwner(uint64_t entityID)
-	{
-		Entity entity = GetEntity(entityID);
-		return entity && entity.HasComponent<Chained::NetworkIdentityComponent>()
-				   ? entity.GetComponent<Chained::NetworkIdentityComponent>().IsOwner
-				   : true;
 	}
 
 } // namespace Chained

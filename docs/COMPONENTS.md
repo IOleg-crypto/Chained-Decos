@@ -149,11 +149,11 @@ Chained Engine uses a pure ECS (Entity Component System) architecture powered by
 
 ## Adding a Native Component (C++)
 
-Need performance that scripting can't provide, or want to create a brand new foundational component? Here is the flow for a native ECS update:
+Need performance that scripting can't provide, or want to create a brand new foundational component? Here is the full workflow:
 
 ### 1. Define the Component
 
-Add a fast `struct` in `engine/scene/components/`. We use `EnTT`, so components are simple structs.
+Add a fast `struct` in `engine/scene/components/`. We use `EnTT`, so components are plain structs — no methods on the component itself.
 
 ```cpp
 // engine/scene/components/parkour_component.h
@@ -191,25 +191,47 @@ Serialization and the editor inspector work automatically through the reflection
 
 ### 3. Create a System
 
-Implement the logic as a free function in a namespace:
+Implement the logic as a free function in a namespace. **Always use `TransformSystem::` functions** to read/write transforms — never access `TransformComponent` fields directly.
 
 ```cpp
 // engine/scene/systems/parkour_system.h
-namespace Chained::Parkour {
+#pragma once
+#include "engine/scene/scene_fwd.h"
+
+namespace Chained::Parkour
+{
     void Update(entt::registry& reg, Timestep ts);
 }
 
 // engine/scene/systems/parkour_system.cpp
-void Parkour::Update(entt::registry& reg, Timestep ts) {
-    auto view = reg.view<ParkourComponent, TransformComponent>();
-    for (auto entity : view) {
-        auto& [parkour, transform] = view.get<ParkourComponent, TransformComponent>(entity);
-        if (parkour.IsWallRunning) {
-            // Apply wallrun physics logic...
+#include "parkour_system.h"
+#include "engine/scene/components.h"
+#include "engine/scene/entity.h"
+#include "engine/scene/systems/transform_system.h"
+
+namespace Chained::Parkour
+{
+    void Update(entt::registry& reg, Timestep ts)
+    {
+        auto view = reg.view<ParkourComponent, TransformComponent>();
+        for (auto entity : view)
+        {
+            auto& parkour = view.get<ParkourComponent>(entity);
+            auto& tc = view.get<TransformComponent>(entity);
+
+            if (parkour.IsWallRunning)
+            {
+                // Use TransformSystem — never write tc.Translation directly
+                auto pos = TransformSystem::GetTranslation(tc);
+                pos.y += 2.0f * ts;
+                TransformSystem::SetTranslation(tc, pos);
+            }
         }
     }
 }
 ```
+
+> **Note**: `component_utils.h` was removed. All transform utilities live in `TransformSystem::` — see `engine/scene/systems/transform_system.h` for the full list (ComputeLocalMatrix, GetTranslation, GetRotation, GetScale, SetTranslation, SetRotation, SetScale, etc.).
 
 ### 4. Hook into the Scene
 
@@ -218,8 +240,48 @@ Add one call in `engine/scene/scene.cpp` in the appropriate update method:
 ```cpp
 #include "engine/scene/systems/parkour_system.h"
 
-void Scene::OnUpdateRuntime(Timestep ts) {
+void Scene::OnUpdateRuntime(Timestep ts)
+{
     // ...existing systems...
     Parkour::Update(*m_Registry, ts);
 }
 ```
+
+### 5. Expose to Scripting (C# Glue)
+
+To make the component's fields accessible from C# scripts, add a `[NativeProperty]` attribute on the C# wrapper class. The C++ glue code is generated automatically.
+
+**Step A — Create the C# wrapper** (if it doesn't exist):
+
+```csharp
+// engine/scripting/managed/src/Components/ParkourComponent.cs
+using System;
+
+namespace Chained
+{
+    [NativeProperty("Stamina", "float", "ParkourComponent_GetStamina", "ParkourComponent_SetStamina")]
+    [NativeProperty("IsWallRunning", "bool", "ParkourComponent_IsWallRunning", "ParkourComponent_SetIsWallRunning")]
+    public partial class ParkourComponent : Component
+    {
+    }
+}
+```
+
+**Step B — Register the class for glue generation** in `engine/scripting/CMakeLists.txt`:
+
+```cmake
+--classes PlayerComponent SpawnComponent NetworkIdentityComponent ParkourComponent
+```
+
+**Step C — Build**:
+
+```bash
+cmake --build --preset windows-clang-debug --parallel
+```
+
+The `tools/generate_glue.py` script runs automatically during the build and generates:
+- `engine/scripting/generated/script_glue_generated.h` — function declarations
+- `engine/scripting/generated/script_glue_generated.cpp` — getter/setter implementations
+- `engine/scripting/generated/script_glue_generated_reg.cpp` — `AddInternalCall` registrations
+
+No manual C++ glue code is needed for simple property get/set. For complex logic (physics sync, string conversion, etc.), use `[NativeCall]` instead and write hand-written glue in `script_glue_*.cpp` — see [Scripting Interop](SCRIPTING_INTEROP.md).

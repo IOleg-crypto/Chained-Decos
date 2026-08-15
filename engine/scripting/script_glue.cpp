@@ -21,6 +21,7 @@
 #include "script_glue_audio.h"
 #include "script_glue_input.h"
 #include "script_glue_network.h"
+#include "generated/script_glue_generated.h"
 #include <Coral/Assembly.hpp>
 
 namespace Chained
@@ -134,20 +135,6 @@ namespace Chained
 		assembly.AddInternalCall("Chained.CameraComponent", "Camera_GetTargetTag_Ptr", (void*)&Camera_GetTargetTag);
 		assembly.AddInternalCall("Chained.CameraComponent", "Camera_SetTargetTag_Ptr", (void*)&Camera_SetTargetTag);
 
-		// ── PlayerComponent ───────────────────────────────────────────────
-		assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_GetMovementSpeed_Ptr",
-								 (void*)&PlayerComponent_GetMovementSpeed);
-		assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_SetMovementSpeed_Ptr",
-								 (void*)&PlayerComponent_SetMovementSpeed);
-		assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_GetJumpForce_Ptr",
-								 (void*)&PlayerComponent_GetJumpForce);
-		assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_SetJumpForce_Ptr",
-								 (void*)&PlayerComponent_SetJumpForce);
-		assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_GetLookSensitivity_Ptr",
-								 (void*)&PlayerComponent_GetLookSensitivity);
-		assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_SetLookSensitivity_Ptr",
-								 (void*)&PlayerComponent_SetLookSensitivity);
-
 		// ── AudioComponent ────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.AudioComponent", "AudioComponent_SetVolume_Ptr",
 								 (void*)&AudioComponent_SetVolume);
@@ -256,24 +243,6 @@ namespace Chained
 								 (void*)&InputTextControl_HasChanged);
 		assembly.AddInternalCall("Chained.InputTextControl", "InputTextControl_ClearChanged_Ptr",
 								 (void*)&InputTextControl_ClearChanged);
-
-		// ── SpawnComponent ────────────────────────────────────────────────
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetIsActive_Ptr",
-								 (void*)&SpawnComponent_GetIsActive);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_SetIsActive_Ptr",
-								 (void*)&SpawnComponent_SetIsActive);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_IsCheckpoint_Ptr",
-								 (void*)&SpawnComponent_IsCheckpoint);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_SetIsCheckpoint_Ptr",
-								 (void*)&SpawnComponent_SetIsCheckpoint);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetSpawnPoint_Ptr",
-								 (void*)&SpawnComponent_GetSpawnPoint);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_SetSpawnPoint_Ptr",
-								 (void*)&SpawnComponent_SetSpawnPoint);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetRenderSpawnZoneInScene_Ptr",
-								 (void*)&SpawnComponent_GetRenderSpawnZoneInScene);
-		assembly.AddInternalCall("Chained.SpawnComponent", "SpawnComponent_GetZoneSize_Ptr",
-								 (void*)&SpawnComponent_GetZoneSize);
 
 		// ── AnimationComponent ──────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.AnimationComponent", "AnimationComponent_GetCurrentAnimationIndex_Ptr",
@@ -402,11 +371,8 @@ namespace Chained
 		// New: Prefab
 		assembly.AddInternalCall("Chained.Network", "Network_SetPlayerPrefab_Ptr", (void*)&Network_SetPlayerPrefab);
 
-		// ── NetworkIdentityComponent ──────────────────────────────────────
-		assembly.AddInternalCall("Chained.NetworkIdentityComponent", "NetworkIdentityComponent_GetNetworkID_Ptr",
-								 (void*)&NetworkIdentityComponent_GetNetworkID);
-		assembly.AddInternalCall("Chained.NetworkIdentityComponent", "NetworkIdentityComponent_GetIsOwner_Ptr",
-								 (void*)&NetworkIdentityComponent_GetIsOwner);
+		// ── Auto-generated: Player, Spawn, NetworkIdentity properties ──────
+#include "generated/script_glue_generated_reg.cpp"
 
 		assembly.UploadInternalCalls();
 		CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.", 172, (std::string)assembly.GetName());
