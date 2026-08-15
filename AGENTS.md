@@ -4,7 +4,7 @@
 
 Submodules required: `git submodule update --init --recursive`
 
-Presets: `windows-clang`, `windows-msvc`, `linux-clang`, `linux-gcc`.
+Presets: `windows-clang`, `windows-msvc` (Ninja), `windows-vs2022` (VS .sln), `linux-clang`, `linux-gcc`.
 
 ```bash
 cmake --preset windows-clang
@@ -57,7 +57,9 @@ CI format check only runs on files changed relative to the PR base — not the e
 - `CH_ACTIVE_GAME` CMake var = build-time (which game folder compiles)
 - `.chproject` YAML = runtime (which scene/assets the editor/runtime loads)
 
-**Adding a native component:** struct in `engine/scene/components.h`, YAML in `scene_serializer.cpp`, inspector in `editor/editor_panels.cpp`, logic in a `SceneSystem`. See `docs/COMPONENTS.md`.
+**Adding a native component:** struct in `engine/scene/components.h`, YAML in `scene_serializer.cpp`, inspector in `editor/editor_panels.cpp`, logic in a `SceneSystem`. Always use `TransformSystem::` for transform operations (never write fields directly). Scripting glue auto-generated from `[NativeProperty]` C# attributes via `tools/generate_glue.py` — add class to `--classes` in CMakeLists.txt. See `docs/COMPONENTS.md`.
+
+**Creating a new game:** `python tools/create_game.py MyGame` scaffolds `game/mygame/` with CMakeLists.txt, main.cpp, and .chproject. New games auto-discovered by root CMakeLists.txt under `game/*/`.
 
 **Scripting bridge:** C++/C# via Coral (.NET). `ScriptTypeRegistry::Discover()` scans game assembly for `Chained.Script` subclasses. `SceneScripting` instantiates and calls `__Init()`. Managed API: `scripting/managed/src/` (`Script.cs`, `Entity.cs`, `Input.cs`, `UI.cs`, etc.). Unmanaged function pointers (`_Ptr` fields) and C# getters/setters are auto-generated at C# compile time via Roslyn Source Generator (`Chained.Managed.Generator` with `[NativeProperty]` / `[NativeCall]` attributes). See `docs/SCRIPTING_INTEROP.md`.
 
