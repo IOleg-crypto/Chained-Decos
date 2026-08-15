@@ -9,7 +9,6 @@ add_library(engine_scene_core STATIC
     components/core/id_component.h
     components/core/tag_component.h
     components/core/hierarchy_component.h
-    components/core/component_utils.h
     components/render/camera_component.h
     components/render/light_component.h
     components/render/model_component.h
@@ -51,8 +50,12 @@ add_library(engine_scene STATIC
     prefab_serializer.cpp
     scene.cpp
     scene_serializer.cpp
+    async_scene_loader.h
+    async_scene_loader.cpp
     systems/hierarchy_system.h
     systems/hierarchy_system.cpp
+    systems/transform_system.h
+    systems/transform_system.cpp
     systems/animation_system.h
     systems/animation_system.cpp
     systems/audio_system.h

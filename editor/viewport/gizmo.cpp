@@ -1,8 +1,9 @@
 #include "editor/viewport/gizmo.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/systems/transform_system.h"
 #include "engine/scene/components/core/hierarchy_component.h"
 #include "gui.h"
 #include "imgui_internal.h"
+#include "editor/scene_manager.h"
 #include "layer.h"
 #include "undo/modify_component_command.h"
 #include <glm/gtc/matrix_transform.hpp>
@@ -19,7 +20,7 @@ namespace Chained
 		Entity entity = layer.GetSelectedEntity();
 
 		if (!scene || !entity || !entity.HasComponent<TransformComponent>() || type == GizmoType::NONE ||
-			layer.GetSceneState() == SceneState::Play)
+			layer.GetSceneState() == SceneState::Play || layer.GetSceneManager().IsTransitioning())
 		{
 			return false;
 		}
@@ -40,46 +41,21 @@ namespace Chained
 		// Ensure we are using absolute screen coordinates for SetRect
 		ImGuizmo::SetRect(viewportPos.x, viewportPos.y, viewportSize.x, viewportSize.y);
 
-		// 2. Prepare View/Projection matrices
-		glm::vec3 up = camera.Up;
-		if (glm::dot(up, up) <= 0.000001f)
-		{
-			up = {0.0f, 1.0f, 0.0f};
-		}
+		// 2. Use the pre-built View/Projection matrices from Camera3D so that the gizmo
+		//    is pixel-perfectly aligned with the renderer's own matrices.
+		const glm::mat4& view = camera.ViewMatrix;
+		const glm::mat4& projection = camera.ProjectionMatrix;
 
-		glm::vec3 forward = camera.Target - camera.Position;
-		if (glm::dot(forward, forward) <= 0.000001f)
-		{
-			forward = {0.0f, 0.0f, -1.0f};
-		}
-		else
-		{
-			forward = glm::normalize(forward);
-		}
-
-		glm::mat4 view = glm::lookAt(camera.Position, camera.Position + forward, up);
-		glm::mat4 projection;
-
-		const float aspect = viewportSize.x / viewportSize.y;
-		if (camera.Projection == ProjectionType::Perspective)
-		{
-			projection = glm::perspective(glm::radians(camera.FovDegrees), aspect, camera.NearClip, camera.FarClip);
-		}
-		else
-		{
-			float top = camera.OrthographicSize * 0.5f;
-			float right = top * aspect;
-			projection = glm::ortho(-right, right, -top, top, camera.NearClip, camera.FarClip);
-		}
-
+		// Read snap value from scene grid settings (always in sync with visual grid)
 		float currentSnapValues[3] = {0.0f, 0.0f, 0.0f};
 		if (m_SnappingEnabled)
 		{
+			const float snapValue = scene->GetSettings().Grid.Spacing;
 			if (type == GizmoType::TRANSLATE)
 			{
-				currentSnapValues[0] = m_TranslationSnap;
-				currentSnapValues[1] = m_TranslationSnap;
-				currentSnapValues[2] = m_TranslationSnap;
+				currentSnapValues[0] = snapValue;
+				currentSnapValues[1] = snapValue;
+				currentSnapValues[2] = snapValue;
 			}
 			else if (type == GizmoType::ROTATE)
 			{
@@ -145,9 +121,11 @@ namespace Chained
 			ImGuizmo::DecomposeMatrixToComponents(glm::value_ptr(localMat), glm::value_ptr(translation),
 												  glm::value_ptr(rotation), glm::value_ptr(scale));
 
-			ComponentUtils::SetTranslation(transform, translation);
-			ComponentUtils::SetRotation(transform, glm::radians(rotation));
-			ComponentUtils::SetScale(transform, scale);
+			TransformSystem::SetTranslation(transform, translation);
+			TransformSystem::SetRotation(transform, glm::radians(rotation));
+			TransformSystem::SetScale(transform, scale);
+			transform.WorldTransform = modelMat;
+			transform.InverseWorldTransform = glm::inverse(modelMat);
 		}
 		else if (m_WasUsing && !isUsingNow)
 		{

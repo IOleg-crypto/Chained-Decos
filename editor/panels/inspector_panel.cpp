@@ -35,7 +35,8 @@ namespace Chained
 		if (m_SelectedEntity)
 		{
 
-			DrawComponents(m_SelectedEntity, readOnly);
+			bool isTransitioning = EditorLayer::Get().GetSceneManager().IsTransitioning();
+			DrawComponents(m_SelectedEntity, readOnly || isTransitioning);
 		}
 		else
 		{

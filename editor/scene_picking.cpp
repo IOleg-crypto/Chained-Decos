@@ -5,7 +5,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
-#include "engine/scene/components/core/component_utils.h"
+#include "engine/scene/systems/transform_system.h"
 #include "engine/scene/scene.h"
 #include <algorithm>
 #include <cmath>
@@ -56,8 +56,55 @@ namespace Chained
 
 		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{
-			finalResult = physics->Raycast(ray);
+			RaycastResult physResult = physics->Raycast(ray);
+			if (physResult.Hit)
+			{
+				finalResult = physResult;
+			}
 		}
+
+		// Primitive Component picking
+		auto primitiveView = scene->GetRegistry().view<TransformComponent, PrimitiveComponent>();
+		primitiveView.each([&](entt::entity entityID, TransformComponent& tc, PrimitiveComponent& primComp) {
+			if (finalResult.Hit && finalResult.Entity == entityID)
+			{
+				return;
+			}
+			if (primComp.Type == PrimitiveType::None)
+			{
+				return;
+			}
+
+			glm::mat4 modelTransform = TransformSystem::ComputeLocalMatrix(tc);
+			glm::mat4 invTransform = glm::inverse(modelTransform);
+
+			Ray localRay;
+			localRay.position = glm::vec3(invTransform * glm::vec4(ray.position, 1.0f));
+			glm::vec3 localTarget = glm::vec3(invTransform * glm::vec4(ray.position + ray.direction, 1.0f));
+			localRay.direction = glm::normalize(localTarget - localRay.position);
+
+			glm::vec3 halfSize = primComp.Dimensions * 0.5f;
+			if (primComp.Type == PrimitiveType::Sphere)
+			{
+				halfSize = glm::vec3(primComp.Radius);
+			}
+
+			float t = 0.0f;
+			if (RayAABBInternal(localRay.position, localRay.direction, -halfSize, halfSize, t))
+			{
+				glm::vec3 hitPosLocal = localRay.position + localRay.direction * t;
+				glm::vec3 hitPosWorld = glm::vec3(modelTransform * glm::vec4(hitPosLocal, 1.0f));
+				float distWorld = glm::distance(ray.position, hitPosWorld);
+
+				if (distWorld < finalResult.Distance)
+				{
+					finalResult.Distance = distWorld;
+					finalResult.Hit = true;
+					finalResult.Entity = entityID;
+					finalResult.Position = hitPosWorld;
+				}
+			}
+		});
 
 		auto modelView = scene->GetRegistry().view<TransformComponent, ModelComponent>();
 		modelView.each([&](entt::entity entityID, TransformComponent& tc, ModelComponent& modelComp) {
@@ -82,7 +129,7 @@ namespace Chained
 				return;
 			}
 
-			glm::mat4 modelTransform = ComponentUtils::GetTransform(tc);
+			glm::mat4 modelTransform = TransformSystem::ComputeLocalMatrix(tc);
 			glm::mat4 invTransform = glm::inverse(modelTransform);
 
 			Ray localRay;
@@ -214,22 +261,7 @@ namespace Chained
 		float ndc_x = (2.0f * mousePosition.x) / viewportSize.x - 1.0f;
 		float ndc_y = 1.0f - (2.0f * mousePosition.y) / viewportSize.y;
 
-		glm::mat4 projection;
-		if (camera.Projection == ProjectionType::Perspective)
-		{
-			projection =
-				glm::perspective(glm::radians(camera.FovDegrees), viewportSize.x / viewportSize.y, 0.01f, 1000.0f);
-		}
-		else
-		{
-			float aspect = viewportSize.x / viewportSize.y;
-			float h = camera.OrthographicSize * 0.5f;
-			float w = h * aspect;
-			projection = glm::ortho(-w, w, -h, h, 0.01f, 1000.0f);
-		}
-
-		glm::mat4 view = glm::lookAt(camera.Position, camera.Target, camera.Up);
-		glm::mat4 invVP = glm::inverse(projection * view);
+		glm::mat4 invVP = glm::inverse(camera.ProjectionMatrix * camera.ViewMatrix);
 
 		auto Unproject = [&](float x, float y, float z) -> glm::vec3 {
 			glm::vec4 ndc(x, y, z, 1.0f);
@@ -241,7 +273,12 @@ namespace Chained
 			return glm::vec3(0.0f);
 		};
 
-		glm::vec3 nearPoint = Unproject(ndc_x, ndc_y, -1.0f);
+#ifdef GLM_FORCE_DEPTH_ZERO_TO_ONE
+		float nearZ = 0.0f;
+#else
+		float nearZ = -1.0f;
+#endif
+		glm::vec3 nearPoint = Unproject(ndc_x, ndc_y, nearZ);
 		glm::vec3 farPoint = Unproject(ndc_x, ndc_y, 1.0f);
 
 		Ray ray;

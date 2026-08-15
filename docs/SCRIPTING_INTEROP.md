@@ -87,11 +87,92 @@ The C++ glue functions and C# generator follow strict ABI type mapping rules:
 
 ---
 
-## 4. Step-by-Step Tutorial: Adding a New Native Call / Property
+## 4. Glue Generation Pipeline
+
+For simple property get/set, you don't need to write any C++ glue code. The `tools/generate_glue.py` script scans C# `[NativeProperty]` attributes and generates everything automatically.
+
+### How it works
+
+```
+C# [NativeProperty]          Python generator              C++ build
+    attribute          ───>   tools/generate_glue.py   ───>   auto-compiled
+                                                       │
+CMakeLists.txt --classes ──────────────────────────────┘
+```
+
+1. **`tools/generate_glue.py`** reads `engine/scripting/managed/src/Components/*.cs`
+2. Filters by `--classes` parameter (e.g. `PlayerComponent SpawnComponent`)
+3. Generates three files in `engine/scripting/generated/`:
+   - `script_glue_generated.h` — `CH_SCRIPT_FUNC` declarations
+   - `script_glue_generated.cpp` — getter/setter implementations
+   - `script_glue_generated_reg.cpp` — `AddInternalCall` registrations (included by `script_glue.cpp`)
+4. CMake custom command runs the generator automatically when C# sources change
+
+### Usage
+
+Add your class to the `--classes` list in `engine/scripting/CMakeLists.txt`:
+
+```cmake
+COMMAND Python3::Interpreter "${GLUE_GENERATOR_SCRIPT}"
+        --cs-dir "${MANAGED_PROJECT_DIR}/src/Components"
+        --output-dir "${GLUE_OUTPUT_DIR}"
+        --classes PlayerComponent SpawnComponent NetworkIdentityComponent YourComponent
+```
+
+Then build normally — the generator runs as part of the build.
+
+### Limitations
+
+The generator handles **simple field access only**: reading/writing a single field on a component. It does NOT handle:
+- Physics synchronization (e.g. updating Jolt body when translation changes)
+- String conversion (e.g. `Coral::UCChar*` ↔ `std::string`)
+- Complex logic (e.g. finding entities by tag, conditional behavior)
+
+For these cases, use `[NativeCall]` and write hand-written glue in `script_glue_*.cpp` — see the manual tutorial below.
+
+---
+
+## 5. Step-by-Step Tutorial: Adding a New Native Property
+
+### Automatic (recommended for simple properties)
 
 Suppose you want to expose a new `Stamina` property on `PlayerComponent`.
 
-### Step 1: Declare & Implement C++ Glue Function
+**Step 1: Add `[NativeProperty]` to C# Component**
+
+In `scripting/managed/src/Components/PlayerComponent.cs`:
+
+```csharp
+namespace Chained
+{
+    [NativeProperty("MovementSpeed", "float", "PlayerComponent_GetMovementSpeed", "PlayerComponent_SetMovementSpeed")]
+    [NativeProperty("Stamina", "float", "PlayerComponent_GetStamina", "PlayerComponent_SetStamina")]
+    public partial class PlayerComponent : Component
+    {
+    }
+}
+```
+
+**Step 2: Register the class** in `engine/scripting/CMakeLists.txt`:
+
+```cmake
+--classes PlayerComponent SpawnComponent NetworkIdentityComponent
+```
+
+**Step 3: Build**:
+
+```bash
+cmake --build --preset windows-clang-debug --parallel
+```
+
+Done. The generator creates the C++ getter, setter, and registration automatically. The Roslyn Source Generator on the C# side creates the `_Ptr` fields and property body.
+
+### Manual (for complex glue logic)
+
+If your property needs physics sync, string conversion, or other complex behavior, write the C++ glue by hand.
+
+**Step 1: Implement C++ Glue Function**
+
 In `scripting/script_glue_player.cpp`:
 
 ```cpp
@@ -111,7 +192,8 @@ CH_SCRIPT_FUNC void PlayerComponent_SetStamina(uint64_t entityID, float stamina)
 }
 ```
 
-### Step 2: Register in `script_glue.cpp`
+**Step 2: Register in `script_glue.cpp`**
+
 In `scripting/script_glue.cpp` under `ScriptGlue::RegisterInternalCalls()`:
 
 ```cpp
@@ -119,25 +201,22 @@ assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_GetStamina_
 assembly.AddInternalCall("Chained.PlayerComponent", "PlayerComponent_SetStamina_Ptr", (void*)&PlayerComponent_SetStamina);
 ```
 
-### Step 3: Add `[NativeProperty]` to C# Component
-In `scripting/managed/src/Components/PlayerComponent.cs`:
+**Step 3: Declare in header**
 
-```csharp
-namespace Chained
-{
-    [NativeProperty("MovementSpeed", "float", "PlayerComponent_GetMovementSpeed", "PlayerComponent_SetMovementSpeed")]
-    [NativeProperty("Stamina", "float", "PlayerComponent_GetStamina", "PlayerComponent_SetStamina")]
-    public partial class PlayerComponent : Component
-    {
-    }
-}
+In `scripting/script_glue_entity.h` (or the relevant `script_glue_*.h`):
+
+```cpp
+CH_SCRIPT_FUNC float PlayerComponent_GetStamina(uint64_t entityID);
+CH_SCRIPT_FUNC void PlayerComponent_SetStamina(uint64_t entityID, float stamina);
 ```
 
-That's it! Upon compilation, Roslyn generates the function pointers and getter/setter property automatically.
+**Step 4: Add `[NativeProperty]` to C# Component**
+
+Same as the automatic path — the C# Roslyn generator needs the attribute to create the `_Ptr` fields and property body.
 
 ---
 
-## 5. Troubleshooting & Generated Files
+## 6. Troubleshooting & Generated Files
 
 - **Viewing Generated Code**: During compilation with MSBuild (`/p:EmitCompilerGeneratedFiles=true`), generated C# files are saved under `scripting/managed/obj/GeneratedFiles/Chained.Managed.Generator/`.
 - **Component Must Be `partial`**: Any C# class decorated with `[NativeCall]` or `[NativeProperty]` **must** have the `partial` keyword.

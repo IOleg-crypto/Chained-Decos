@@ -8,7 +8,9 @@
 #include "engine/scene/components/physics/physics_component.h"
 #include "engine/scene/components/render/model_component.h"
 #include "engine/scene/components/core/transform_component.h"
+#include "engine/common/thread_pool.h"
 #include <algorithm>
+#include <future>
 
 namespace Chained::PhysicsBodySystem
 {
@@ -342,6 +344,24 @@ namespace Chained::PhysicsBodySystem
 		{
 			sortedDescs.push_back(std::move(descs[i]));
 			sortedEntities.push_back(entities[i]);
+		}
+
+		// Pre-build un-cached mesh shapes in parallel on worker threads
+		if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+		{
+			std::vector<std::future<void>> futures;
+			for (const auto& desc : sortedDescs)
+			{
+				if (desc.Shape == ColliderType::Mesh && !desc.CacheKey.empty() &&
+					!world->HasCachedMeshShape(desc.CacheKey))
+				{
+					futures.push_back(tp->Enqueue([world, desc]() { world->PrebuildShape(desc); }));
+				}
+			}
+			for (auto& f : futures)
+			{
+				f.get();
+			}
 		}
 
 		auto handles = world->CreateBodies(sortedDescs);

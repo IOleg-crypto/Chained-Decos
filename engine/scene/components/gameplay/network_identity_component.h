@@ -18,7 +18,7 @@ namespace Chained
 
 		struct UI
 		{
-			UIMeta NetworkID = {.Tooltip = "Unique network entity ID", .ReadOnly = true};
+			UIMeta NetworkID = {.ReadOnly = true, .Tooltip = "Unique network entity ID"};
 			UIMeta IsOwner = {.Tooltip = "Whether this client owns this entity"};
 		};
 	};
