@@ -27,14 +27,12 @@ jobs:
           - preset: windows-clang
             compiler: clang
             build_type: Debug
-          - preset: windows-msvc
-            compiler: cl
+          - preset: windows-vs2026
+            compiler: vs2026
             build_type: Release
-            use_lld: true
-          - preset: windows-msvc
-            compiler: cl
+          - preset: windows-vs2026
+            compiler: vs2026
             build_type: Debug
-            use_lld: true
           - preset: windows-gcc
             compiler: gcc
             build_type: Release
@@ -67,7 +65,7 @@ jobs:
         run: git submodule update --init --recursive --depth 1
 
       - name: Setup MSYS2
-        if: "contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc') || contains(matrix.preset, 'gcc') && !contains(matrix.preset, 'linux')"
+        if: "contains(matrix.preset, 'clang') || contains(matrix.preset, 'gcc')"
         uses: msys2/setup-msys2@v2
         with:
           msystem: MINGW64
@@ -76,7 +74,7 @@ jobs:
           install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-gdb
 
       - name: Setup MSVC
-        if: contains(matrix.preset, 'msvc')
+        if: "contains(matrix.preset, 'msvc') || contains(matrix.preset, 'vs')"
         uses: ilammy/msvc-dev-cmd@v1
 
       - name: Setup lld-link (MSVC only)
@@ -100,7 +98,7 @@ jobs:
           lld-link --version
 
       - name: Prefer MSYS2 toolchain over preinstalled MinGW
-        if: "contains(matrix.preset, 'clang') && !contains(matrix.preset, 'msvc') || contains(matrix.preset, 'gcc') && !contains(matrix.preset, 'linux')"
+        if: "contains(matrix.preset, 'clang') || contains(matrix.preset, 'gcc')"
         shell: msys2 {0}
         run: |
           # The windows-latest image preinstalls a MinGW-Builds GCC at C:\mingw64
@@ -145,7 +143,7 @@ jobs:
           dotnet --info
           if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
             clang --version | head -n 1
-          elif [[ "${{ matrix.preset }}" == *"msvc"* ]]; then
+          elif [[ "${{ matrix.preset }}" == *"msvc"* || "${{ matrix.preset }}" == *"vs"* ]]; then
             cl || true
           elif [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
             gcc --version | head -n 1
