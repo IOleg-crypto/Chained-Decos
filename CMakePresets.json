@@ -104,8 +104,8 @@
       }
     },
     {
-      "name": "windows-vs2022",
-      "displayName": "Windows Visual Studio 2022",
+      "name": "windows-vs2026",
+      "displayName": "Windows Visual Studio 2026",
       "inherits": "base",
       "generator": "Visual Studio 18 2026",
       "architecture": { "value": "x64", "strategy": "set" },
@@ -121,6 +121,8 @@
     { "name": "windows-clang-release", "configurePreset": "windows-clang", "configuration": "Release" },
     { "name": "windows-msvc-debug", "configurePreset": "windows-msvc", "configuration": "Debug" },
     { "name": "windows-msvc-release", "configurePreset": "windows-msvc", "configuration": "Release" },
+    { "name": "windows-vs2026-debug", "configurePreset": "windows-vs2026", "configuration": "Debug" },
+    { "name": "windows-vs2026-release", "configurePreset": "windows-vs2026", "configuration": "Release" },
     { "name": "windows-gcc-debug", "configurePreset": "windows-gcc", "configuration": "Debug" },
     { "name": "windows-gcc-release", "configurePreset": "windows-gcc", "configuration": "Release" },
     { "name": "linux-clang-debug", "configurePreset": "linux-clang", "configuration": "Debug" },
