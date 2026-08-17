@@ -16,6 +16,8 @@ include(stb)
 # zstd is provided by pack — no separate include needed.
 include(spdlog)
 include(jolt)
+include(freetype)
+include(freetype_gl)
 
 # Platform & Graphics (independent)
 include(glfw)
@@ -48,8 +50,7 @@ foreach(_ext_target
     GTest gmock
     Coral.Native
     assimp
-
-
+    freetype engine_freetype_gl
 )
     if(TARGET ${_ext_target})
         set_target_properties(${_ext_target} PROPERTIES UNITY_BUILD OFF)

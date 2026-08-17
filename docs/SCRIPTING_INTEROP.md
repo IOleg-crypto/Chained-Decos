@@ -105,7 +105,7 @@ CMakeLists.txt --classes ──────────────────�
 3. Generates three files in `engine/scripting/generated/`:
    - `script_glue_generated.h` — `CH_SCRIPT_FUNC` declarations
    - `script_glue_generated.cpp` — getter/setter implementations
-   - `script_glue_generated_reg.cpp` — `AddInternalCall` registrations (included by `script_glue.cpp`)
+   - `script_glue_generated_reg.inl` — `AddInternalCall` registrations (included by `script_glue.cpp`)
 4. CMake custom command runs the generator automatically when C# sources change
 
 ### Usage

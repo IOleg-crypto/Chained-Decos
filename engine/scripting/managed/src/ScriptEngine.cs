@@ -80,6 +80,19 @@ namespace Chained
                 // Initialize the base struct entity ID and C++ bindings
                 script.__Init(entityId);
 
+                // Check if an instance of this type is already registered for this entity
+                if (s_EntityScripts.TryGetValue(entityId, out var existingList))
+                {
+                    foreach (var existing in existingList)
+                    {
+                        if (existing.GetType() == type)
+                        {
+                            // Already instantiated for this entity
+                            return 1;
+                        }
+                    }
+                }
+
                 // Add to collections
                 if (!s_EntityScripts.TryGetValue(entityId, out var scriptList))
                 {
@@ -178,6 +191,14 @@ namespace Chained
         public static void ClearAll()
         {
             foreach (var script in s_ActiveScripts)
+            {
+                try { script.OnDestroy(); } catch {}
+            }
+            foreach (var script in s_ScriptsNeedingCreate)
+            {
+                try { script.OnDestroy(); } catch {}
+            }
+            foreach (var script in s_ScriptsNeedingStart)
             {
                 try { script.OnDestroy(); } catch {}
             }

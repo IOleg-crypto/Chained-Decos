@@ -16,10 +16,11 @@ namespace ChainedDecos.Scripts
         public float CrossFadeTime = 8.5f;
 
         private bool m_DebugLogged = false;
+        private bool m_WasConnected = false;
         // NetworkIdentityComponent is injected by C++ after the first OnUpdate,
         // so we allow a short grace period before enforcing the "no netId = skip" rule.
         private int m_NetIdWaitFrames = 0;
-        private const int NetIdGraceFrames = 10;
+        private const int NetIdGraceFrames = 60;
 
         private RigidBodyComponent? _rb;
         private TransformComponent? _transform;
@@ -43,7 +44,10 @@ namespace ChainedDecos.Scripts
                 if (Entity.HasComponent<NetworkIdentityComponent>())
                 {
                     var netComp = Entity.GetComponent<NetworkIdentityComponent>();
-                    Log.Info("[PlayerController] NetID=" + netComp.NetworkID + " IsOwner=" + netComp.IsOwner);
+                    if (netComp != null)
+                    {
+                        Log.Info("[PlayerController] NetID=" + netComp.NetworkID + " IsOwner=" + netComp.IsOwner);
+                    }
                 }
                 m_DebugLogged = true;
             }
@@ -57,6 +61,15 @@ namespace ChainedDecos.Scripts
                 Scene.LoadScene(MenuScene);
                 return;
             }
+
+            // Detect host disconnect — return to main menu
+            if (m_WasConnected && !Network.IsConnected)
+            {
+                Log.Info("[PlayerController] Host disconnected — returning to menu.");
+                Scene.LoadScene(MenuScene);
+                return;
+            }
+            if (Network.IsConnected) m_WasConnected = true;
 
             // Retry every frame: physics body (Jolt) may not be ready immediately after prefab spawn
             _rb        = Entity.GetComponent<RigidBodyComponent>();
@@ -88,10 +101,12 @@ namespace ChainedDecos.Scripts
                 // Not our avatar — just update animation from replicated velocity
                 if (_anim != null)
                 {
-                    bool isMoving = _rb.Velocity.LengthSquared() > 0.1f;
+                    bool isMoving = _rb.Velocity.LengthSquared() > 0.05f || (netId.RemoteActionFlags & 0x01) != 0;
+                    bool isSprinting = (netId.RemoteActionFlags & 0x02) != 0;
+                    _anim.IsPlaying = true;
                     _anim.SetBool("isMoving", isMoving);
                     _anim.SetBool("isGrounded", _rb.IsGrounded);
-                    _anim.SetFloat("speed", isMoving ? 0.5f : 0.0f);
+                    _anim.SetFloat("speed", isMoving ? (isSprinting ? 1.0f : 0.5f) : 0.0f);
                 }
                 return;
             }

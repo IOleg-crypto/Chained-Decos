@@ -59,8 +59,14 @@ namespace Chained
 	CH_SCRIPT_FUNC void InputTextControl_ClearChanged(uint64_t entityID);
 
 	CH_SCRIPT_FUNC void UI_Text(const Coral::UCChar* text);
-
+	CH_SCRIPT_FUNC void UI_TextColored(const Coral::UCChar* text, float r, float g, float b, float a);
 	CH_SCRIPT_FUNC uint8_t UI_Button(const Coral::UCChar* label);
+	CH_SCRIPT_FUNC void UI_BeginWindow(const Coral::UCChar* title, float x, float y, float w, float h, float bgAlpha);
+	CH_SCRIPT_FUNC void UI_EndWindow();
+	CH_SCRIPT_FUNC uint8_t UI_InputText(const Coral::UCChar* label, Coral::UCChar* buffer, int maxLen);
+	CH_SCRIPT_FUNC void UI_SetKeyboardFocusHere();
+	CH_SCRIPT_FUNC void UI_SetScrollHereY(float centerYRatio);
+	CH_SCRIPT_FUNC void UI_GetDisplaySize(float* outW, float* outH);
 
 } // namespace Chained
 #endif

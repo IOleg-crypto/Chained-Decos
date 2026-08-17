@@ -48,24 +48,48 @@ namespace Chained
 
 		if (ImGui::Begin("##EditorLoadingOverlay", nullptr, flags))
 		{
-			ImGui::SetCursorPosY(ImGui::GetWindowHeight() * 0.45f);
+			float windowWidth = ImGui::GetWindowWidth();
+			float windowHeight = ImGui::GetWindowHeight();
 
-			ImVec2 titleSize = ImGui::CalcTextSize(title);
-			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - titleSize.x) * 0.5f);
-			ImGui::TextUnformatted(title);
+			ImGui::SetCursorPosY(windowHeight * 0.42f);
 
-			ImVec2 statusSize = ImGui::CalcTextSize(status);
-			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - statusSize.x) * 0.5f);
-			ImGui::TextUnformatted(status);
+			if (title && title[0] != '\0')
+			{
+				ImVec2 titleSize = ImGui::CalcTextSize(title);
+				ImGui::SetCursorPosX((windowWidth - titleSize.x) * 0.5f);
+				ImGui::TextUnformatted(title);
+				ImGui::Spacing();
+			}
+
+			if (status && status[0] != '\0')
+			{
+				ImVec2 statusSize = ImGui::CalcTextSize(status);
+				ImGui::SetCursorPosX((windowWidth - statusSize.x) * 0.5f);
+				ImGui::TextColored(ImVec4(0.75f, 0.75f, 0.75f, 1.0f), "%s", status);
+				ImGui::Spacing();
+			}
+
+			// Animated progress bar
+			float barWidth = std::min(320.0f, windowWidth * 0.4f);
+			float barHeight = 4.0f;
+			ImGui::SetCursorPosX((windowWidth - barWidth) * 0.5f);
+
+			float time = (float)ImGui::GetTime();
+			float animFraction = fmodf(time * 0.8f, 1.0f);
+			ImGui::ProgressBar(animFraction, ImVec2(barWidth, barHeight), "");
 
 			auto* assetManager = ServiceLocator::TryGet<AssetManager>();
 			uint32_t totalPending = assetManager ? (uint32_t)assetManager->GetPendingFinalizeCount() : 0;
-			char pendingBuffer[64];
-			snprintf(pendingBuffer, sizeof(pendingBuffer), "Pending assets: %u", totalPending);
+			if (totalPending > 0)
+			{
+				ImGui::Spacing();
+				char pendingBuffer[64];
+				snprintf(pendingBuffer, sizeof(pendingBuffer), "Finalizing assets: %u", totalPending);
 
-			ImVec2 pendingSize = ImGui::CalcTextSize(pendingBuffer);
-			ImGui::SetCursorPosX((ImGui::GetWindowWidth() - pendingSize.x) * 0.5f);
-			ImGui::TextUnformatted(pendingBuffer);
+				ImVec2 pendingSize = ImGui::CalcTextSize(pendingBuffer);
+				ImGui::SetCursorPosX((windowWidth - pendingSize.x) * 0.5f);
+				ImGui::TextColored(ImVec4(0.55f, 0.55f, 0.55f, 1.0f), "%s", pendingBuffer);
+			}
 		}
 
 		ImGui::End();

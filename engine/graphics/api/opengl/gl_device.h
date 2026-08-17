@@ -25,6 +25,7 @@ namespace Chained
 		virtual void SetBlendEnabled(bool enabled) override;
 
 		virtual bool IsDepthTestEnabled() const override;
+		virtual bool IsDepthMaskEnabled() const override;
 		virtual bool IsBlendEnabled() const override;
 		virtual bool IsCullFaceEnabled() const override;
 		virtual PolygonMode GetPolygonMode() const override;
