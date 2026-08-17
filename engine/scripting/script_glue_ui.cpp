@@ -456,6 +456,9 @@ namespace Chained
 		}
 	}
 
+	static int s_LastOverlayFrame = -1;
+	static float s_OverlayCursorY = 10.0f;
+
 	void UI_Text(const Coral::UCChar* text)
 	{
 		if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope || !text)
@@ -472,7 +475,44 @@ namespace Chained
 		}
 		else
 		{
-			ImGui::GetForegroundDrawList()->AddText({10, 10}, IM_COL32(255, 255, 0, 255), strText.c_str());
+			int currentFrame = ImGui::GetFrameCount();
+			if (currentFrame != s_LastOverlayFrame)
+			{
+				s_LastOverlayFrame = currentFrame;
+				s_OverlayCursorY = 10.0f;
+			}
+
+			ImGui::GetForegroundDrawList()->AddText({10.0f, s_OverlayCursorY}, IM_COL32(255, 255, 255, 255),
+													strText.c_str());
+			s_OverlayCursorY += ImGui::GetFontSize() + 4.0f;
+		}
+	}
+
+	void UI_TextColored(const Coral::UCChar* text, float r, float g, float b, float a)
+	{
+		if (ImGui::GetCurrentContext() == nullptr || !ImGui::GetCurrentContext()->WithinFrameScope || !text)
+		{
+			return;
+		}
+
+		std::string strText = ch_u16_to_string(text);
+		auto window = ImGui::GetCurrentContext()->CurrentWindow;
+		if (window && !window->SkipItems)
+		{
+			ImGui::TextColored(ImVec4(r, g, b, a), "%s", strText.c_str());
+		}
+		else
+		{
+			int currentFrame = ImGui::GetFrameCount();
+			if (currentFrame != s_LastOverlayFrame)
+			{
+				s_LastOverlayFrame = currentFrame;
+				s_OverlayCursorY = 10.0f;
+			}
+
+			ImU32 col = ImGui::ColorConvertFloat4ToU32(ImVec4(r, g, b, a));
+			ImGui::GetForegroundDrawList()->AddText({10.0f, s_OverlayCursorY}, col, strText.c_str());
+			s_OverlayCursorY += ImGui::GetFontSize() + 4.0f;
 		}
 	}
 
@@ -485,6 +525,110 @@ namespace Chained
 
 		std::string strLabel = ch_u16_to_string(label);
 		return ImGui::Button(strLabel.c_str());
+	}
+
+	void UI_BeginWindow(const Coral::UCChar* title, float x, float y, float w, float h, float bgAlpha)
+	{
+		if (ImGui::GetCurrentContext() == nullptr || !title)
+		{
+			return;
+		}
+
+		std::string strTitle = ch_u16_to_string(title);
+
+		// Offset position by the main viewport origin so coords are relative to game window
+		ImGuiViewport* vp = ImGui::GetMainViewport();
+		float vpX = vp ? vp->Pos.x : 0.0f;
+		float vpY = vp ? vp->Pos.y : 0.0f;
+
+		if (x >= 0.0f && y >= 0.0f)
+		{
+			ImGui::SetNextWindowPos(ImVec2(vpX + x, vpY + y), ImGuiCond_Always);
+		}
+		if (w > 0.0f && h > 0.0f)
+		{
+			ImGui::SetNextWindowSize(ImVec2(w, h), ImGuiCond_Always);
+		}
+		ImGui::SetNextWindowBgAlpha(bgAlpha);
+
+		ImGuiWindowFlags flags = ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove |
+								 ImGuiWindowFlags_NoSavedSettings;
+		ImGui::Begin(strTitle.c_str(), nullptr, flags);
+	}
+
+	void UI_EndWindow()
+	{
+		if (ImGui::GetCurrentContext())
+		{
+			ImGui::End();
+		}
+	}
+
+	uint8_t UI_InputText(const Coral::UCChar* label, Coral::UCChar* buffer, int maxLen)
+	{
+		if (ImGui::GetCurrentContext() == nullptr || !label || !buffer || maxLen <= 0)
+		{
+			return false;
+		}
+
+		std::string strLabel = ch_u16_to_string(label);
+		std::string strBuf = ch_u16_to_string(buffer);
+
+		char localBuf[512] = {0};
+		std::strncpy(localBuf, strBuf.c_str(), sizeof(localBuf) - 1);
+
+		bool changed =
+			ImGui::InputText(strLabel.c_str(), localBuf, sizeof(localBuf), ImGuiInputTextFlags_EnterReturnsTrue);
+
+		auto wide = ToWide(localBuf);
+		int copyLen = std::min((int)wide.size(), maxLen - 1);
+		for (int i = 0; i < copyLen; ++i)
+		{
+			buffer[i] = wide[i];
+		}
+		buffer[copyLen] = 0;
+
+		return changed ? 1 : 0;
+	}
+
+	void UI_SetKeyboardFocusHere()
+	{
+		if (ImGui::GetCurrentContext())
+		{
+			ImGui::SetKeyboardFocusHere();
+		}
+	}
+
+	void UI_SetScrollHereY(float centerYRatio)
+	{
+		if (ImGui::GetCurrentContext())
+		{
+			ImGui::SetScrollHereY(centerYRatio);
+		}
+	}
+
+	void UI_GetDisplaySize(float* outW, float* outH)
+	{
+		if (!outW || !outH)
+		{
+			return;
+		}
+		ImGuiViewport* vp = ImGui::GetMainViewport();
+		if (vp)
+		{
+			*outW = vp->Size.x;
+			*outH = vp->Size.y;
+		}
+		else if (ImGui::GetCurrentContext())
+		{
+			*outW = ImGui::GetIO().DisplaySize.x;
+			*outH = ImGui::GetIO().DisplaySize.y;
+		}
+		else
+		{
+			*outW = 1280.0f;
+			*outH = 720.0f;
+		}
 	}
 
 } // namespace Chained

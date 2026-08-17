@@ -2,6 +2,14 @@
 #include "net_packet.h"
 #include "engine/core/log.h"
 
+// Force IPv4-only ENet sockets.
+// ENet defaults to AF_INET6 dual-stack, which fails to bind on some Windows
+// systems even when IPv6 is technically installed.  Defining ENET_IPV4_ONLY
+// switches the socket creation and bind paths to plain AF_INET, which is
+// reliable on all supported platforms.
+#ifndef ENET_IPV4_ONLY
+#define ENET_IPV4_ONLY 1
+#endif
 #include <enet.h>
 #include <sodium.h>
 
@@ -94,7 +102,12 @@ namespace Chained
 		}
 
 		std::memcpy(m_SessionKey, kSessionKey, 32);
-		m_CryptoEnabled = true;
+		// NOTE: Crypto is disabled until a proper per-direction nonce scheme is
+		// implemented. The current sequential counter is shared between both send
+		// and receive directions per peerIndex, causing counter desync as soon as
+		// both sides send concurrently, which produces "Decryption failed" spam and
+		// dropped packets (leading to crashes in the network system).
+		m_CryptoEnabled = false;
 
 		m_Role = Role::Offline;
 		CH_CORE_INFO("Network: ENet initialized successfully.");
@@ -103,6 +116,9 @@ namespace Chained
 	void Network::Shutdown()
 	{
 		m_ShuttingDown.store(true, std::memory_order_release);
+
+		// Capture port before Disconnect() clears it.
+		uint16_t portToUnmap = m_Port;
 
 		Disconnect();
 
@@ -119,9 +135,9 @@ namespace Chained
 		m_SendCounters.clear();
 		m_RecvCounters.clear();
 
-		if (m_UpnpMapper.IsAvailable())
+		if (m_UpnpMapper.IsAvailable() && portToUnmap != 0)
 		{
-			m_UpnpMapper.RemoveMapping(m_Port, "UDP");
+			m_UpnpMapper.RemoveMapping(portToUnmap, "UDP");
 			m_UpnpMapper.Shutdown();
 		}
 
@@ -138,6 +154,12 @@ namespace Chained
 			return;
 		}
 
+		if (m_Host)
+		{
+			enet_host_destroy(m_Host);
+			m_Host = nullptr;
+		}
+
 		ENetAddress address;
 		address.host = ENET_HOST_ANY;
 		address.port = port;
@@ -146,7 +168,6 @@ namespace Chained
 		if (!m_Host)
 		{
 			CH_CORE_ERROR("Network: Failed to create ENet host on port {}.", port);
-			SetEnabled(false);
 			return;
 		}
 
@@ -164,7 +185,30 @@ namespace Chained
 		self.Ping = 0;
 		m_PlayerList.push_back(self);
 
-		m_CachedPublicAddress = "127.0.0.1:" + std::to_string(port);
+		// Try UPnP port forwarding so LAN clients can reach us from the internet.
+		if (!m_UpnpMapper.IsAvailable())
+		{
+			m_UpnpMapper.Initialize(); // blocks ~2s; acceptable at session start
+		}
+		if (m_UpnpMapper.IsAvailable())
+		{
+			m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
+			std::string wan = m_UpnpMapper.GetPublicIP();
+			if (!wan.empty())
+			{
+				m_CachedPublicAddress = wan + ":" + std::to_string(port);
+				CH_CORE_INFO("Network: UPnP mapping added — public address: {}", m_CachedPublicAddress);
+			}
+			else
+			{
+				m_CachedPublicAddress = "?:" + std::to_string(port);
+			}
+		}
+		else
+		{
+			CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
+			m_CachedPublicAddress = "127.0.0.1:" + std::to_string(port);
+		}
 		m_PublicAddressFetched.store(true, std::memory_order_release);
 
 		CH_CORE_INFO("Network: Hosting on port {} (max {} clients).", m_Port, maxClients);
@@ -178,11 +222,16 @@ namespace Chained
 			return;
 		}
 
+		if (m_Host)
+		{
+			enet_host_destroy(m_Host);
+			m_Host = nullptr;
+		}
+
 		m_Host = enet_host_create(nullptr, 1, 2, 0, 0);
 		if (!m_Host)
 		{
 			CH_CORE_ERROR("Network: Failed to create ENet client host.");
-			SetEnabled(false);
 			return;
 		}
 
@@ -196,7 +245,6 @@ namespace Chained
 			CH_CORE_ERROR("Network: Failed to connect to {}:{}.", ip, port);
 			enet_host_destroy(m_Host);
 			m_Host = nullptr;
-			SetEnabled(false);
 			return;
 		}
 
@@ -214,12 +262,17 @@ namespace Chained
 			m_ServerPeer = nullptr;
 		}
 
-		if (m_Host && m_Role == Role::Host)
+		if (m_Host)
 		{
-			for (auto& [idx, peer] : m_PeerMap)
+			if (m_Role == Role::Host)
 			{
-				enet_peer_disconnect_now(peer, 0);
+				for (auto& [idx, peer] : m_PeerMap)
+				{
+					enet_peer_disconnect_now(peer, 0);
+				}
 			}
+			enet_host_destroy(m_Host);
+			m_Host = nullptr;
 		}
 
 		m_PeerMap.clear();
@@ -231,6 +284,11 @@ namespace Chained
 		m_NextNetworkID = 2;
 		m_SendCounters.clear();
 		m_RecvCounters.clear();
+
+		// Reset role so HostGame()/ConnectTo() can be called again cleanly
+		m_Role = Role::Offline;
+		// Clear stale callback
+		m_PacketCallback = nullptr;
 
 		CH_CORE_INFO("Network: Disconnected.");
 	}
@@ -264,7 +322,11 @@ namespace Chained
 			case ENET_EVENT_TYPE_CONNECT: {
 				if (m_Role == Role::Host)
 				{
-					int clientIndex = static_cast<int>(m_PeerMap.size());
+					int clientIndex = 0;
+					while (m_PeerMap.find(clientIndex) != m_PeerMap.end())
+					{
+						++clientIndex;
+					}
 					m_PeerMap[clientIndex] = event.peer;
 					event.peer->data = reinterpret_cast<void*>(static_cast<intptr_t>(clientIndex));
 					OnClientConnected(clientIndex);
@@ -295,6 +357,7 @@ namespace Chained
 				{
 					CH_CORE_INFO("Network: Disconnected from server.");
 					m_ServerPeer = nullptr;
+					m_Role = Role::Offline;
 				}
 				break;
 			}

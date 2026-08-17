@@ -38,8 +38,8 @@ namespace Chained
 
 		if (std::filesystem::exists(fontPath))
 		{
-			imguiLayer->AddFontFromFile(fontPath, fontSize);
-			CH_CORE_INFO("Loaded editor font: {} @ {}px", fontPath, fontSize);
+			imguiLayer->AddFontFromFile(fontPath, fontSize, nullptr, ImGui::GetIO().Fonts->GetGlyphRangesCyrillic());
+			CH_CORE_INFO("Loaded editor font: {} @ {}px (with Cyrillic)", fontPath, fontSize);
 			baseFontLoaded = true;
 		}
 		else

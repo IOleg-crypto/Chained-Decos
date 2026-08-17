@@ -25,11 +25,13 @@ public class Entity
     internal static unsafe delegate* unmanaged<ulong, char*, void> Entity_AddComponent_Ptr;
 #pragma warning restore 0649
 
+    public const ulong NullID = 0xFFFFFFFF;
+
     /// <summary>Wraps a native entity ID.</summary>
     public Entity(ulong id) { ID = id; }
 
     /// <summary>True when the entity handle is valid.</summary>
-    public bool IsValid => ID != 0;
+    public bool IsValid => ID != NullID && ID != ulong.MaxValue && ID != (ulong)uint.MaxValue;
 
     /// <summary>Quick access to the TransformComponent, or null if absent.</summary>
     public TransformComponent? Transform => GetComponent<TransformComponent>();

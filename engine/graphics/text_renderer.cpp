@@ -1,11 +1,59 @@
 #include "engine/graphics/text_renderer.h"
 #include "engine/graphics/api/texture.h"
+#include "engine/graphics/freetype_gl_atlas.h"
+#include "engine/assets/types/font_asset.h"
 #include <vector>
 #include <algorithm>
 #include <cstring>
 
 namespace Chained
 {
+
+	static std::vector<uint32_t> DecodeUTF8(const std::string& text)
+	{
+		std::vector<uint32_t> codepoints;
+		codepoints.reserve(text.size());
+		size_t i = 0;
+		const size_t len = text.size();
+		while (i < len)
+		{
+			uint32_t cp = 0;
+			unsigned char c = static_cast<unsigned char>(text[i]);
+			if (c < 0x80)
+			{
+				cp = c;
+				i += 1;
+			}
+			else if ((c & 0xE0) == 0xC0 && (i + 1 < len))
+			{
+				cp = (c & 0x1F) << 6;
+				cp |= (static_cast<unsigned char>(text[i + 1]) & 0x3F);
+				i += 2;
+			}
+			else if ((c & 0xF0) == 0xE0 && (i + 2 < len))
+			{
+				cp = (c & 0x0F) << 12;
+				cp |= (static_cast<unsigned char>(text[i + 1]) & 0x3F) << 6;
+				cp |= (static_cast<unsigned char>(text[i + 2]) & 0x3F);
+				i += 3;
+			}
+			else if ((c & 0xF8) == 0xF0 && (i + 3 < len))
+			{
+				cp = (c & 0x07) << 18;
+				cp |= (static_cast<unsigned char>(text[i + 1]) & 0x3F) << 12;
+				cp |= (static_cast<unsigned char>(text[i + 2]) & 0x3F) << 6;
+				cp |= (static_cast<unsigned char>(text[i + 3]) & 0x3F);
+				i += 4;
+			}
+			else
+			{
+				cp = '?';
+				i += 1;
+			}
+			codepoints.push_back(cp);
+		}
+		return codepoints;
+	}
 
 	void TextRenderer::Init()
 	{
@@ -18,10 +66,101 @@ namespace Chained
 		m_Initialized = false;
 	}
 
+	// ── glyph layout ────────────────────────────────────────────────────────
+
+	void TextRenderer::Measure(const std::string& text, const NativeFont& font, float fontSize, float& outWidth,
+							   float& outHeight) const
+	{
+		if (text.empty())
+		{
+			outWidth = 0;
+			outHeight = 0;
+			return;
+		}
+		float scale = (font.fontSize > 0.0f) ? (fontSize / font.fontSize) : 1.0f;
+		std::vector<uint32_t> codepoints = DecodeUTF8(text);
+
+		float cursorX = 0.0f;
+		float maxH = 0.0f;
+		for (uint32_t cp : codepoints)
+		{
+			const auto& ch = font.GetChar(cp);
+			if (ch.xadvance > 0.0f)
+			{
+				cursorX += ch.xadvance * scale;
+			}
+			else
+			{
+				cursorX += fontSize * 0.5f;
+			}
+			float glyphH = (ch.y1 - ch.y0) * font.atlasHeight * scale;
+			if (glyphH > maxH)
+			{
+				maxH = glyphH;
+			}
+		}
+		if (maxH <= 0.0f)
+		{
+			maxH = fontSize;
+		}
+		outWidth = cursorX;
+		outHeight = maxH;
+	}
+
+	std::vector<GlyphQuad> TextRenderer::LayoutGlyphs(const std::string& text, const NativeFont& font,
+													  float fontSize) const
+	{
+		std::vector<GlyphQuad> quads;
+		if (text.empty())
+		{
+			return quads;
+		}
+
+		float scale = (font.fontSize > 0.0f) ? (fontSize / font.fontSize) : 1.0f;
+		std::vector<uint32_t> codepoints = DecodeUTF8(text);
+		quads.reserve(codepoints.size());
+
+		float cursorX = 0.0f;
+
+		for (uint32_t cp : codepoints)
+		{
+			const auto& ch = font.GetChar(cp);
+
+			float gw = (ch.x1 - ch.x0) * font.atlasWidth * scale;
+			float gh = (ch.y1 - ch.y0) * font.atlasHeight * scale;
+
+			if (gw > 0.0f && gh > 0.0f)
+			{
+				GlyphQuad q;
+				q.x = cursorX + ch.xoff * scale;
+				q.y = fontSize + ch.yoff * scale; // y-off from baseline
+				q.w = gw;
+				q.h = gh;
+				q.s0 = ch.x0;
+				q.t0 = ch.y0;
+				q.s1 = ch.x1;
+				q.t1 = ch.y1;
+				q.advance = ch.xadvance * scale;
+				quads.push_back(q);
+			}
+
+			if (ch.xadvance > 0.0f)
+			{
+				cursorX += ch.xadvance * scale;
+			}
+			else
+			{
+				cursorX += fontSize * 0.5f;
+			}
+		}
+		return quads;
+	}
+
+	// ── legacy per-string texture (unchanged interface for compatibility) ────
+
 	static void RasterizeGlyph(uint8_t* dest, int destW, int destH, int x, int y, const uint8_t* atlas, int atlasW,
 							   int atlasH, const NativeFontChar& ch, int glyphW, int glyphH)
 	{
-		// UV -> pixel coordinates in atlas
 		int srcX0 = static_cast<int>(ch.x0 * atlasW);
 		int srcY0 = static_cast<int>(ch.y0 * atlasH);
 		int srcX1 = static_cast<int>(ch.x1 * atlasW);
@@ -52,7 +191,6 @@ namespace Chained
 				int srcIdx = ((srcY0 + srcRow) * atlasW + (srcX0 + srcCol)) * 4;
 				int dstIdx = ((y + row) * destW + (x + col)) * 4;
 
-				// Atlas is white RGB with alpha — copy alpha into dest (which starts as white)
 				dest[dstIdx + 3] = atlas[srcIdx + 3];
 			}
 		}
@@ -77,37 +215,28 @@ namespace Chained
 			return it->second.gpuTexture ? it->second.gpuTexture->GetNativeHandle() : 0;
 		}
 
-		float scale = (font.fontSize > 0.0f) ? (fontSize / font.fontSize) : 1.0f;
-
-		// Calculate total width and max height
 		float totalWidth = 0.0f;
 		float maxHeight = 0.0f;
+		std::vector<uint32_t> codepoints = DecodeUTF8(text);
 
-		for (char c : text)
+		for (uint32_t cp : codepoints)
 		{
-			unsigned char uc = static_cast<unsigned char>(c);
-			if (uc >= 128)
-			{
-				uc = '?';
-			}
-
-			const auto& ch = font.chars[uc];
+			const auto& ch = font.GetChar(cp);
 			if (ch.xadvance > 0.0f)
 			{
-				totalWidth += ch.xadvance * scale;
+				totalWidth += ch.xadvance * ((font.fontSize > 0.0f) ? (fontSize / font.fontSize) : 1.0f);
 			}
 			else
 			{
 				totalWidth += fontSize * 0.5f;
 			}
-
-			float glyphH = (ch.y1 - ch.y0) * font.atlasHeight * scale;
+			float glyphH =
+				(ch.y1 - ch.y0) * font.atlasHeight * ((font.fontSize > 0.0f) ? (fontSize / font.fontSize) : 1.0f);
 			if (glyphH > maxHeight)
 			{
 				maxHeight = glyphH;
 			}
 		}
-
 		if (maxHeight <= 0.0f)
 		{
 			maxHeight = fontSize;
@@ -116,23 +245,23 @@ namespace Chained
 		int width = std::max(1, static_cast<int>(totalWidth) + padding * 2);
 		int height = std::max(1, static_cast<int>(maxHeight) + padding * 2);
 
-		// Create white RGBA texture
-		std::vector<uint8_t> pixels(width * height * 4, 255);
+		std::vector<uint8_t> pixels(width * height * 4);
+		for (size_t i = 0; i < pixels.size(); i += 4)
+		{
+			pixels[i + 0] = 255;
+			pixels[i + 1] = 255;
+			pixels[i + 2] = 255;
+			pixels[i + 3] = 0;
+		}
 
-		// Rasterize glyphs if atlas data is available
 		if (!font.atlasPixels.empty() && font.atlasWidth > 0 && font.atlasHeight > 0)
 		{
+			float scale = (font.fontSize > 0.0f) ? (fontSize / font.fontSize) : 1.0f;
 			float cursorX = 0.0f;
 
-			for (char c : text)
+			for (uint32_t cp : codepoints)
 			{
-				unsigned char uc = static_cast<unsigned char>(c);
-				if (uc >= 128)
-				{
-					uc = '?';
-				}
-
-				const auto& ch = font.chars[uc];
+				const auto& ch = font.GetChar(cp);
 
 				int glyphW = static_cast<int>((ch.x1 - ch.x0) * font.atlasWidth * scale);
 				int glyphH = static_cast<int>((ch.y1 - ch.y0) * font.atlasHeight * scale);
@@ -142,7 +271,6 @@ namespace Chained
 					continue;
 				}
 
-				// yoff is the offset from the baseline; place glyph so baseline sits at fontSize
 				int glyphX = padding + static_cast<int>(cursorX) + static_cast<int>(ch.xoff * scale);
 				int glyphY = padding + static_cast<int>(fontSize) + static_cast<int>(ch.yoff * scale);
 

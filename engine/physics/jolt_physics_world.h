@@ -52,7 +52,10 @@ namespace Chained
 		virtual void ClearGroundedState() override;
 
 		virtual bool HasCachedMeshShape(const std::string& key) const override;
+		virtual bool IsShapeBaking(const std::string& key) const override;
+		virtual bool HasPendingShapeBakes() const override;
 		virtual void PrebuildShape(const PhysicsBodyDesc& desc) override;
+		virtual void QueuePrebuildShape(const PhysicsBodyDesc& desc) override;
 
 		/// Clear the cached mesh shapes.
 		void ClearShapeCache();
@@ -98,6 +101,7 @@ namespace Chained
 		// so that multiple bodies using the same mesh share a single BVH build.
 		mutable std::mutex m_CacheMutex;
 		std::unordered_map<std::string, JPH::RefConst<JPH::Shape>> m_MeshShapeCache;
+		std::unordered_set<std::string> m_InFlightMeshBakes;
 
 		// ── Convex hull shape cache ─────────────────────────────────────────────
 		// For dynamic meshes, a ConvexHull is built from deduped vertices. Cache it

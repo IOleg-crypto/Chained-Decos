@@ -33,10 +33,18 @@ namespace Chained
 	}
 	int Input_IsKeyPressed(int keyCode)
 	{
+		if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureKeyboard)
+		{
+			return 0;
+		}
 		return Core::Input::IsKeyPressed(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 	}
 	int Input_IsKeyDown(int keyCode)
 	{
+		if (ImGui::GetCurrentContext() && ImGui::GetIO().WantCaptureKeyboard)
+		{
+			return 0;
+		}
 		return Core::Input::IsKeyDown(static_cast<KeyCode>(keyCode)) ? 1 : 0;
 	}
 

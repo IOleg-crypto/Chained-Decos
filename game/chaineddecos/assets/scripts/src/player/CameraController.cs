@@ -47,6 +47,9 @@ public class CameraController : Script
 
     public override void OnUpdate(float deltaTime)
     {
+        var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+        if (netComp != null && !netComp.IsOwner) return;
+
         Entity? camEntity = Scene.GetMainCamera();
         if (camEntity == null)
             return;

@@ -28,6 +28,7 @@ namespace Chained
 		MessageType_PlayerInfo,
 		MessageType_PlayerList,
 		MessageType_ChatMessage,
+		MessageType_SceneLoaded,
 		MessageType_Count
 	};
 
@@ -261,6 +262,8 @@ namespace Chained
 		float Position[3] = {0, 0, 0};
 		float Rotation[4] = {1, 0, 0, 0};
 		float Velocity[3] = {0, 0, 0};
+		uint8_t IsGrounded = 0;
+		uint8_t ActionFlags = 0;
 
 		void Encode(ByteWriter& w) const
 		{
@@ -278,6 +281,8 @@ namespace Chained
 			{
 				w.WriteFloat(Velocity[i]);
 			}
+			w.WriteU8(IsGrounded);
+			w.WriteU8(ActionFlags);
 		}
 
 		bool Decode(ByteReader& r)
@@ -307,6 +312,8 @@ namespace Chained
 					return false;
 				}
 			}
+			r.ReadU8(IsGrounded);
+			r.ReadU8(ActionFlags);
 			return true;
 		}
 	};
@@ -447,6 +454,17 @@ namespace Chained
 		{
 			return r.ReadU64(SenderNetworkID) && r.ReadString(SenderName, sizeof(SenderName)) &&
 				   r.ReadString(Message, sizeof(Message));
+		}
+	};
+
+	struct SceneLoadedMessage
+	{
+		void Encode(ByteWriter& w) const
+		{
+		}
+		bool Decode(ByteReader& r)
+		{
+			return true;
 		}
 	};
 

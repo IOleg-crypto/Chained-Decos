@@ -11,6 +11,14 @@
 namespace Chained
 {
 
+	struct GlyphQuad
+	{
+		float x, y;			  // top-left in pixels
+		float w, h;			  // quad size in pixels
+		float s0, t0, s1, t1; // UV into atlas
+		float advance;		  // horizontal advance for next glyph
+	};
+
 	class TextRenderer
 	{
 	public:
@@ -23,6 +31,7 @@ namespace Chained
 		void Init();
 		void Shutdown();
 
+		/// Create / return a GPU texture of the whole text string (legacy path, kept for compat).
 		uint32_t GetOrCreateTexture(const std::string& text, const NativeFont& font, float fontSize = 32.0f,
 									int padding = 4);
 
@@ -34,6 +43,15 @@ namespace Chained
 		{
 			return m_LastHeight;
 		}
+
+		/// Layout glyphs without rasterising a texture.
+		/// Returns quads positioned relative to the top-left of the text region.
+		std::vector<GlyphQuad> LayoutGlyphs(const std::string& text, const NativeFont& font,
+											float fontSize = 32.0f) const;
+
+		/// Measure text extents without generating quads.
+		void Measure(const std::string& text, const NativeFont& font, float fontSize, float& outWidth,
+					 float& outHeight) const;
 
 	private:
 		struct CachedText

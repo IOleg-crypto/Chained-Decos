@@ -134,6 +134,13 @@ namespace Chained
 				continue;
 			}
 
+			// Network-driven bodies are controlled by NetworkSystem::InterpolateEntities.
+			// Do not let Jolt overwrite their transform or apply simulated velocity.
+			if (rb.IsNetworkDriven)
+			{
+				continue;
+			}
+
 			if (rb.Type == RigidBodyComponent::BodyType::Dynamic)
 			{
 				// 1. Apply transform update FIRST (if script changed it)
@@ -222,6 +229,10 @@ namespace Chained
 			auto& rb = view.get<RigidBodyComponent>(entity);
 
 			if (rb.Handle == kInvalidPhysicsBody)
+			{
+				continue;
+			}
+			if (rb.IsNetworkDriven)
 			{
 				continue;
 			}
