@@ -162,42 +162,44 @@ namespace Chained
 
 			CancelTransition();
 
-			try
+			m_Transition = {};
+			m_Transition.state = TransitionState::PlayStarting;
+			m_Transition.targetState = state;
+			m_Transition.forPlayMode = true;
+			m_Transition.targetPath = m_EditorScene->GetSettings().ScenePath;
+			m_LoadingStatus = (state == SceneState::Play) ? "Preparing Play Mode..." : "Preparing Simulation...";
+
+			auto editorScene = m_EditorScene;
+			if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
 			{
-				m_RuntimeScene = Scene::Copy(m_EditorScene);
-				if (!m_RuntimeScene)
-				{
-					CH_CORE_ERROR("Editor: Failed to copy scene for play mode.");
-					return;
-				}
-
-				if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
-				{
-					uiRenderer->ResetButtonStates(m_RuntimeScene.get());
-				}
-
-				// Map SelectedEntity to the play/simulate scene so the Inspector shows and modifies running state!
-				auto& editorState = EditorLayer::Get().GetEditorState();
-				if (editorState.SelectedEntity)
-				{
-					UUID uuid = editorState.SelectedEntity.GetUUID();
-					Entity playEntity = m_RuntimeScene->GetEntityByUUID(uuid);
-					if (playEntity)
+				m_Transition.future = tp->Enqueue([editorScene]() -> SceneLoadResult {
+					try
 					{
-						editorState.SelectedEntity = playEntity;
+						auto runtimeScene = Scene::Copy(editorScene);
+						if (!runtimeScene)
+						{
+							return SceneLoadResult{nullptr, "Failed to copy scene for play mode."};
+						}
+						return SceneLoadResult{runtimeScene, {}};
+					} catch (const std::exception& e)
+					{
+						return SceneLoadResult{nullptr, e.what()};
 					}
-				}
-
-				m_Transition.state = TransitionState::Finalizing;
-				m_Transition.targetState = state;
-				m_Transition.forPlayMode = true;
-				m_Transition.sceneReady = true;
-
-				m_LoadingStatus = "Preparing Play Mode...";
-			} catch (const std::exception& e)
+				});
+			}
+			else
 			{
-				CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
-				CancelTransition();
+				try
+				{
+					auto runtimeScene = Scene::Copy(editorScene);
+					m_RuntimeScene = runtimeScene;
+					m_Transition.state = TransitionState::Finalizing;
+					m_Transition.sceneReady = true;
+				} catch (const std::exception& e)
+				{
+					CH_CORE_ERROR("Editor: Exception copying scene: {}", e.what());
+					CancelTransition();
+				}
 			}
 		}
 		else
@@ -241,8 +243,8 @@ namespace Chained
 		switch (m_Transition.state)
 		{
 		case TransitionState::None:
-		case TransitionState::PlayStarting:
 			break;
+		case TransitionState::PlayStarting:
 		case TransitionState::SceneLoading:
 			UpdateSceneLoading();
 			break;
@@ -364,8 +366,6 @@ namespace Chained
 			return;
 		}
 
-		EditorLayer::Get().GetEditorState().SelectedEntity = {};
-
 		if (m_Transition.forPlayMode)
 		{
 			if (m_RuntimeScene)
@@ -374,9 +374,27 @@ namespace Chained
 				m_RuntimeScene->OnRuntimeStop();
 			}
 			m_RuntimeScene = loadResult.scene;
+
+			if (auto* uiRenderer = ServiceLocator::TryGet<WidgetRenderer>())
+			{
+				uiRenderer->ResetButtonStates(m_RuntimeScene.get());
+			}
+
+			// Map SelectedEntity to the play/simulate scene so the Inspector shows and modifies running state!
+			auto& editorState = EditorLayer::Get().GetEditorState();
+			if (editorState.SelectedEntity)
+			{
+				UUID uuid = editorState.SelectedEntity.GetUUID();
+				Entity playEntity = m_RuntimeScene->GetEntityByUUID(uuid);
+				if (playEntity)
+				{
+					editorState.SelectedEntity = playEntity;
+				}
+			}
 		}
 		else
 		{
+			EditorLayer::Get().GetEditorState().SelectedEntity = {};
 			m_EditorScene = loadResult.scene;
 		}
 

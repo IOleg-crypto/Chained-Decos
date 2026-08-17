@@ -1,5 +1,7 @@
 #include "jolt_physics_world.h"
 #include "engine/core/log.h"
+#include "engine/core/service_locator.h"
+#include "engine/common/thread_pool.h"
 
 #include <Jolt/Core/Factory.h>
 #include <Jolt/Geometry/Triangle.h>
@@ -164,6 +166,38 @@ namespace Chained
 	void JoltPhysicsWorld::PrebuildShape(const PhysicsBodyDesc& desc)
 	{
 		BuildShape(desc);
+	}
+
+	void JoltPhysicsWorld::QueuePrebuildShape(const PhysicsBodyDesc& desc)
+	{
+		if (desc.CacheKey.empty())
+		{
+			return;
+		}
+
+		{
+			std::lock_guard lock(m_CacheMutex);
+			if (m_MeshShapeCache.count(desc.CacheKey) > 0 || m_InFlightMeshBakes.count(desc.CacheKey) > 0)
+			{
+				return;
+			}
+			m_InFlightMeshBakes.insert(desc.CacheKey);
+		}
+
+		if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+		{
+			tp->QueueTask([this, desc]() {
+				PrebuildShape(desc);
+				std::lock_guard lock(m_CacheMutex);
+				m_InFlightMeshBakes.erase(desc.CacheKey);
+			});
+		}
+		else
+		{
+			PrebuildShape(desc);
+			std::lock_guard lock(m_CacheMutex);
+			m_InFlightMeshBakes.erase(desc.CacheKey);
+		}
 	}
 
 	JPH::ShapeRefC JoltPhysicsWorld::BuildShape(const PhysicsBodyDesc& desc)
@@ -646,6 +680,22 @@ namespace Chained
 		}
 		std::lock_guard lock(m_CacheMutex);
 		return m_MeshShapeCache.count(key) > 0;
+	}
+
+	bool JoltPhysicsWorld::IsShapeBaking(const std::string& key) const
+	{
+		if (key.empty())
+		{
+			return false;
+		}
+		std::lock_guard lock(m_CacheMutex);
+		return m_InFlightMeshBakes.count(key) > 0;
+	}
+
+	bool JoltPhysicsWorld::HasPendingShapeBakes() const
+	{
+		std::lock_guard lock(m_CacheMutex);
+		return !m_InFlightMeshBakes.empty();
 	}
 
 	void JoltPhysicsWorld::SetTransform(PhysicsBodyHandle handle, const glm::vec3& pos, const glm::quat& rot)

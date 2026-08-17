@@ -40,6 +40,7 @@ namespace ChainedDecos.Scripts
             }
 
             Log.Info($"[StartServerButton] Hosting on port {port}");
+            Network.SetPlayerPrefab(PlayerPrefabPath);
             Network.SetLocalPlayerInfo(PlayerSettings.Nickname, (byte)LobbyManager.SelectedSkinIndex);
             Network.HostGame(port);
 

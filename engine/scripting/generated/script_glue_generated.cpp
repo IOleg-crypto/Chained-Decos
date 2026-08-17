@@ -23,6 +23,14 @@ namespace Chained
 				   : false;
 	}
 
+	CH_SCRIPT_FUNC uint8_t NetworkIdentityComponent_GetRemoteActionFlags(uint64_t entityID)
+	{
+		Entity entity = GetEntity(entityID);
+		return entity && entity.HasComponent<Chained::NetworkIdentityComponent>()
+				   ? entity.GetComponent<Chained::NetworkIdentityComponent>().RemoteActionFlags
+				   : 0;
+	}
+
 	// ── PlayerComponent ──────────────────────────────────────────────
 	CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID)
 	{

@@ -344,6 +344,11 @@ namespace Chained
 		return m_StateCache.DepthTest;
 	}
 
+	bool GLDevice::IsDepthMaskEnabled() const
+	{
+		return m_StateCache.DepthMask;
+	}
+
 	bool GLDevice::IsBlendEnabled() const
 	{
 		return m_StateCache.Blend;

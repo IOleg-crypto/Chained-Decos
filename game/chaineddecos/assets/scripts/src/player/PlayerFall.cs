@@ -48,6 +48,9 @@ public class PlayerFall : Script
 
     public override void OnUpdate(float deltaTime)
     {
+        var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+        if (netComp != null && !netComp.IsOwner) return;
+
         RigidBodyComponent? rb = Entity.GetComponent<RigidBodyComponent>();
         if (rb == null) return;
 

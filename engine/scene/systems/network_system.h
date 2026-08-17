@@ -22,9 +22,12 @@ namespace Chained
 	struct PendingNetworkState
 	{
 		uint64_t NetworkID = 0;
+		uint32_t LastTick = 0;
 		glm::vec3 TargetPosition = {0, 0, 0};
 		glm::quat TargetRotation = {1, 0, 0, 0};
 		glm::vec3 TargetVelocity = {0, 0, 0};
+		bool IsGrounded = false;
+		uint8_t ActionFlags = 0;
 	};
 
 	struct ProcessedInput
@@ -50,8 +53,14 @@ namespace Chained
 		// run. Must be called early in the frame so PlayerController etc. can find it.
 		void EnsureLocalIdentity(Scene* scene);
 
-		void Update(Scene* scene, Timestep ts);
+		// Resets all per-session state. Must be called from OnRuntimeStop.
+		void Reset();
+
+		void PollNetwork(Scene* scene, Timestep ts);
+		void FinalizeFrame(Scene* scene, Timestep ts);
 		void ApplyHostInputs(entt::registry& reg, Timestep ts);
+		void InterpolateEntities(entt::registry& reg, float dt);
+		void CheckAndPropagateSceneChange(Scene* scene);
 
 		const std::vector<ProcessedInput>& GetPendingInputs();
 		void ClearPendingInputs();
@@ -90,10 +99,10 @@ namespace Chained
 		void BroadcastWorldState(entt::registry& reg);
 		void SendEntitySpawn(Network* net, uint64_t networkID, const std::string& prefabPath, int clientIndex);
 		void SendEntityDestroy(Network* net, uint64_t networkID);
+		void ResyncClientEntities(int clientIndex, Scene* scene);
 
 		// ---- Client-side helpers ----
 		void CollectAndSendInput(Network* net, float dt);
-		void InterpolateEntities(entt::registry& reg, float dt);
 
 		// ---- Packet callback installer ----
 		void InstallPacketCallback();
@@ -102,6 +111,7 @@ namespace Chained
 		std::unordered_map<uint64_t, PendingNetworkState> m_PendingStates;
 		std::vector<ProcessedInput> m_PendingInputs;
 		uint32_t m_ClientTick = 0;
+		uint32_t m_HostTick = 0;
 		std::unordered_map<int, uint64_t> m_PeerToNetworkID;
 		Role m_CallbackRole = Role::Offline;
 		std::string m_PlayerPrefab = "prefab/player.chprefab";
@@ -109,7 +119,11 @@ namespace Chained
 		std::vector<ChatMessagePacket> m_PendingChatMessages;
 		std::unordered_map<uint64_t, UUID> m_NetworkIDToEntity;
 		uint64_t m_LocalNetworkID = 0;
+		std::unordered_map<int, std::pair<std::string, uint8_t>> m_PendingPlayerInfo;
+		std::unordered_map<uint64_t, uint8_t> m_LastActionFlags;
 		Scene* m_ReplicationScene = nullptr;
+		bool m_PrefabWarnedOnce = false;
+		bool m_SceneLoadedPending = false;
 
 		static constexpr uint64_t HostAvatarNetworkID = 1;
 	};

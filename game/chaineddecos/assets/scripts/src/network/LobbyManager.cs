@@ -46,6 +46,11 @@ namespace ChainedDecos.Scripts
                 Network.SetLocalPlayerInfo(hostName, (byte)SelectedSkinIndex);
                 Log.Info($"LobbyManager: Host ready (name='{hostName}', skin={SelectedSkinIndex})");
             }
+            else if (Network.IsClient)
+            {
+                Network.SendPlayerInfo(PlayerSettings.Nickname, (byte)SelectedSkinIndex);
+                Log.Info($"LobbyManager: Client sent player info (name='{PlayerSettings.Nickname}', skin={SelectedSkinIndex})");
+            }
         }
 
         public override void OnUpdate(float deltaTime)
@@ -58,15 +63,10 @@ namespace ChainedDecos.Scripts
                 RefreshAvatars();
             }
 
-            // Check for scene change from host (client side)
-            if (Network.IsClient && Network.HasPendingSceneChange)
-            {
-                string path = Network.GetPendingSceneChange();
-                Network.ClearPendingSceneChange();
-                Log.Info($"LobbyManager: Received scene change -> {path}");
-                Scene.LoadScene(path);
-                return;
-            }
+            // Scene change is handled by NetworkSystem::CheckAndPropagateSceneChange
+            // in C++, which sets Scene.PendingScenePath after net->Update() processes
+            // the SceneChangeMessage packet. This avoids the timing issue where C# OnUpdate
+            // ran before net->Update() could process incoming packets.
         }
 
         private void RefreshAvatars()

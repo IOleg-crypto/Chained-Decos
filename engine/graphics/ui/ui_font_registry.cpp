@@ -324,16 +324,34 @@ namespace Chained
 		}
 
 		// Pick the first discovered font that is truly a project font (font/ or fonts/ prefix).
-		// No hardcoded names — whatever the project has in its fonts directory is used.
+		// Prioritize a regular/standard font variant if available.
 		std::string chosen;
 		for (const auto& [name, absPath] : m_KnownPaths)
 		{
 			if (name.rfind("font/", 0) == 0 || name.rfind("fonts/", 0) == 0)
 			{
-				if (IsSupportedFontFormat(std::filesystem::path(absPath)))
+				if (name.find("regular") != std::string::npos || name.find("alansans") != std::string::npos)
 				{
-					chosen = name;
-					break;
+					if (IsSupportedFontFormat(std::filesystem::path(absPath)))
+					{
+						chosen = name;
+						break;
+					}
+				}
+			}
+		}
+
+		if (chosen.empty())
+		{
+			for (const auto& [name, absPath] : m_KnownPaths)
+			{
+				if (name.rfind("font/", 0) == 0 || name.rfind("fonts/", 0) == 0)
+				{
+					if (IsSupportedFontFormat(std::filesystem::path(absPath)))
+					{
+						chosen = name;
+						break;
+					}
 				}
 			}
 		}
@@ -355,15 +373,23 @@ namespace Chained
 				"UIFontRegistry: EnsureDefaultProjectFont — GetFont('{}', {}) returned nullptr after PreloadFonts.",
 				chosen, size);
 		}
+		if (result && !m_DefaultFont)
+		{
+			m_DefaultFont = result;
+		}
 		return result;
 	}
 
 	ImFont* UIFontRegistry::GetFont(const std::string& relativeName, float pixelSize)
 	{
 		const std::string normalizedName = NormalizeFontName(relativeName);
-		if (normalizedName.empty() || normalizedName == "Default")
+		if (normalizedName.empty() || normalizedName == "Default" || normalizedName == "default")
 		{
-			return nullptr;
+			if (m_DefaultFont)
+			{
+				return m_DefaultFont;
+			}
+			return EnsureDefaultProjectFont(pixelSize, true);
 		}
 
 		// Fonts are keyed by name only — with ImGui 1.92 dynamic fonts, one ImFont*
@@ -522,8 +548,8 @@ namespace Chained
 					cfg.FontDataOwnedByAtlas = false;
 					const float defaultSize = (pixelSize > 0.0f) ? pixelSize : 16.0f;
 					ImGuiIO& io = ImGui::GetIO();
-					ImFont* font =
-						io.Fonts->AddFontFromMemoryTTF(buf.data(), static_cast<int>(buf.size()), defaultSize, &cfg);
+					ImFont* font = io.Fonts->AddFontFromMemoryTTF(buf.data(), static_cast<int>(buf.size()), defaultSize,
+																  &cfg, io.Fonts->GetGlyphRangesCyrillic());
 					if (font)
 					{
 						return CommitFont(normalizedName, font);
@@ -548,7 +574,8 @@ namespace Chained
 		const float defaultSize = (pixelSize > 0.0f) ? pixelSize : 16.0f;
 
 		ImGuiIO& io = ImGui::GetIO();
-		ImFont* font = io.Fonts->AddFontFromFileTTF(absolutePath.c_str(), defaultSize);
+		ImFont* font = io.Fonts->AddFontFromFileTTF(absolutePath.c_str(), defaultSize, nullptr,
+													io.Fonts->GetGlyphRangesCyrillic());
 		if (!font)
 		{
 			CH_CORE_ERROR("UIFontRegistry: Failed to load font '{}'", absolutePath);

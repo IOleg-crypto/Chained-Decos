@@ -11,7 +11,6 @@
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
 #include "engine/core/service_locator.h"
-#include "engine/scene/systems/nametag_system.h"
 #include "engine/graphics/api/framebuffer.h"
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/pipeline/debug_renderer.h"
@@ -631,14 +630,6 @@ namespace Chained
 				activeScene->OnRenderUI();
 			}
 			ImGui::End();
-		}
-
-		if (activeScene && (sceneState == SceneState::Play || sceneState == SceneState::Simulate))
-		{
-			if (auto* ren = ServiceLocator::TryGet<Renderer>())
-			{
-				NametagSystem::DrawNametags(activeScene, ren);
-			}
 		}
 
 		// 3. Selection Highlight

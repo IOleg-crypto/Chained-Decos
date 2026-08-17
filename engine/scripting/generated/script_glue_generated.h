@@ -13,6 +13,7 @@ namespace Chained
 	// ── NetworkIdentityComponent ──────────────────────────────────────────────
 	CH_SCRIPT_FUNC uint64_t NetworkIdentityComponent_GetNetworkID(uint64_t entityID);
 	CH_SCRIPT_FUNC uint8_t NetworkIdentityComponent_GetIsOwner(uint64_t entityID);
+	CH_SCRIPT_FUNC uint8_t NetworkIdentityComponent_GetRemoteActionFlags(uint64_t entityID);
 
 	// ── PlayerComponent ──────────────────────────────────────────────
 	CH_SCRIPT_FUNC float PlayerComponent_GetMovementSpeed(uint64_t entityID);

@@ -1,11 +1,16 @@
-#define STB_TRUETYPE_IMPLEMENTATION
 #include "engine/assets/loaders/font_loader.h"
 #include "engine/assets/types/font_asset.h"
+#include "engine/graphics/freetype_gl_atlas.h"
 #include "engine/core/log.h"
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include <vector>
 #include <glad/gl.h>
+
+// Provide stb_truetype symbols for ui_font_registry.cpp (font validation).
+// ImGui's imgui_draw.cpp normally provides these via imstb_truetype.h, but
+// thin LTO can strip them when no intra-TU reference exists.
+#define STB_TRUETYPE_IMPLEMENTATION
 #include <stb_truetype.h>
 
 namespace Chained
@@ -36,62 +41,64 @@ namespace Chained
 			return fail("empty path", false);
 		}
 
-		// Read font data (pack or disk)
 		auto* assetManager = ServiceLocator::TryGet<AssetManager>();
 		auto data = assetManager ? assetManager->ReadAssetData(resolvedPath) : std::vector<uint8_t>{};
 		if (data.empty())
 		{
 			return fail("font not found '" + resolvedPath + "'");
 		}
-		std::vector<unsigned char> fontFileData(data.begin(), data.end());
 
 		NativeFont font;
 		font.fontSize = 24.0f;
-		font.atlasWidth = 512;
-		font.atlasHeight = 512;
+		font.atlasWidth = 1024;
+		font.atlasHeight = 1024;
 
-		std::vector<unsigned char> pixels(font.atlasWidth * font.atlasHeight);
-		stbtt_bakedchar chardata[128];
-
-		int charsBaked = stbtt_BakeFontBitmap(fontFileData.data(), 0, font.fontSize, pixels.data(), font.atlasWidth,
-											  font.atlasHeight, 32, 128, chardata);
-		if (charsBaked <= 0)
+		auto* ftAtlas = new FreeTypeGLAtlas();
+		if (!ftAtlas->InitFromMemory(data.data(), data.size(), font.fontSize, font.atlasWidth, font.atlasHeight))
 		{
-			return fail("stbtt_BakeFontBitmap failed for '" + resolvedPath + "'");
+			delete ftAtlas;
+			return fail("FreeTypeGLAtlas::InitFromMemory failed for '" + resolvedPath + "'");
 		}
 
-		std::vector<unsigned char> rgbaPixels(font.atlasWidth * font.atlasHeight * 4);
-		for (size_t i = 0; i < pixels.size(); i++)
+		// Build RGBA8 atlasPixels from the alpha-only atlas
+		const uint8_t* alphaData = ftAtlas->GetAlphaData();
+		std::vector<uint8_t> rgbaPixels(font.atlasWidth * font.atlasHeight * 4);
+		if (alphaData)
 		{
-			rgbaPixels[i * 4 + 0] = 255;	   // R
-			rgbaPixels[i * 4 + 1] = 255;	   // G
-			rgbaPixels[i * 4 + 2] = 255;	   // B
-			rgbaPixels[i * 4 + 3] = pixels[i]; // A
+			for (size_t i = 0; i < static_cast<size_t>(font.atlasWidth) * font.atlasHeight; ++i)
+			{
+				rgbaPixels[i * 4 + 0] = 255;
+				rgbaPixels[i * 4 + 1] = 255;
+				rgbaPixels[i * 4 + 2] = 255;
+				rgbaPixels[i * 4 + 3] = alphaData[i];
+			}
 		}
 
 		font.textureAtlas = Texture::Create(font.atlasWidth, font.atlasHeight, TextureFormat::RGBA8);
 		font.textureAtlas->SetData(rgbaPixels.data(), rgbaPixels.size());
 		font.atlasPixels = std::move(rgbaPixels);
 
-		float invWidth = 1.0f / font.atlasWidth;
-		float invHeight = 1.0f / font.atlasHeight;
-
-		for (int i = 0; i < 128; i++)
+		// Populate chars map from the atlas wrapper's cached glyphs
+		// (PreloadRange already populated them during InitFromMemory)
+		const auto& cachedGlyphs = ftAtlas->GetCachedGlyphs();
+		for (const auto& [codepoint, glyph] : cachedGlyphs)
 		{
-			font.chars[i].x0 = chardata[i].x0 * invWidth;
-			font.chars[i].y0 = chardata[i].y0 * invHeight;
-			font.chars[i].x1 = chardata[i].x1 * invWidth;
-			font.chars[i].y1 = chardata[i].y1 * invHeight;
-			font.chars[i].xoff = chardata[i].xoff;
-			font.chars[i].yoff = chardata[i].yoff;
-			font.chars[i].xadvance = chardata[i].xadvance;
+			NativeFontChar c;
+			c.x0 = glyph.s0;
+			c.y0 = glyph.t0;
+			c.x1 = glyph.s1;
+			c.y1 = glyph.t1;
+			c.xoff = static_cast<float>(glyph.offsetX);
+			c.yoff = static_cast<float>(glyph.offsetY);
+			c.xadvance = glyph.advanceX;
+			font.chars[codepoint] = c;
 		}
+
+		font.freeTypeAtlas = ftAtlas;
 
 		std::static_pointer_cast<FontAsset>(asset)->SetFont(font);
 
-		// Fallback to NativeHandle just for logging
-		uint32_t handleId = font.textureAtlas ? font.textureAtlas->GetNativeHandle() : 0;
-		CH_CORE_INFO("FontLoader: Imported font atlas for {} (ID={})", resolvedPath, handleId);
+		CH_CORE_INFO("FontLoader: Imported font atlas for {} (glyphs={})", resolvedPath, font.chars.size());
 
 		return true;
 	}

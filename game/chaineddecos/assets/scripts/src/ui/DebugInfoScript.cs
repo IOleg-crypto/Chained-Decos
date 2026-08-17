@@ -12,6 +12,9 @@ namespace ChainedDecos.Scripts
 
         public override void OnUpdate(float ts)
         {
+            var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+            if (netComp != null && !netComp.IsOwner) return;
+
             if (Input.IsKeyPressed(ToggleKey))
             {
                 m_ShowDebug = !m_ShowDebug;
@@ -20,6 +23,9 @@ namespace ChainedDecos.Scripts
 
         public override void OnGUI()
         {
+            var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+            if (netComp != null && !netComp.IsOwner) return;
+
             if (m_ShowDebug)
             {
                 UI.Text($"FPS: {Time.FPS}");

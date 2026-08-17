@@ -152,8 +152,10 @@ namespace Chained
 		while (m_Running && (!m_Window || !m_Window->ShouldClose()))
 		{
 			float time = Platform::GetTime();
-			m_Timer.DeltaTime = Timestep(time - m_Timer.LastFrameTime);
+			float rawDelta = time - m_Timer.LastFrameTime;
 			m_Timer.LastFrameTime = time;
+			float clampedDelta = (rawDelta > 0.0f) ? std::min(rawDelta, 0.1f) : 0.0f;
+			m_Timer.DeltaTime = Timestep(clampedDelta);
 
 			Instrumentor::Get().BeginFrame();
 
@@ -173,6 +175,7 @@ namespace Chained
 					am->Update(m_Timer.DeltaTime);
 				}
 				m_Timer.Accumulator += (float)m_Timer.DeltaTime;
+				m_Timer.Accumulator = std::min(m_Timer.Accumulator, 0.1f);
 				while (m_Timer.Accumulator >= m_Timer.FixedStepCount)
 				{
 					for (auto& layer : *m_LayerStack)

@@ -56,6 +56,8 @@ add_library(engine_graphics STATIC
     pipeline/shader_uniform_utils.h
     text_renderer.h
     text_renderer.cpp
+    freetype_gl_atlas.h
+    freetype_gl_atlas.cpp
     pipeline/passes/composite_pass.h
     pipeline/passes/composite_pass.cpp
     pipeline/passes/geometry_pass.h
@@ -108,6 +110,7 @@ target_link_libraries(engine_graphics PUBLIC
     engine_external_imgui
     engine_external_glad
     assimp
+    engine_freetype_gl
 )
 
 if(TARGET engine_pch)
