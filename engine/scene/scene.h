@@ -178,6 +178,10 @@ namespace Chained
 		{
 			m_PendingScenePath.clear();
 		}
+		void SetPendingScenePath(const std::string& path)
+		{
+			m_PendingScenePath = path;
+		}
 
 	private:
 		void InitializePhysicsStartup();

@@ -119,6 +119,7 @@ set(GLUE_OUTPUT_DIR "${CMAKE_CURRENT_SOURCE_DIR}/generated")
 set(GLUE_OUTPUTS
     "${GLUE_OUTPUT_DIR}/script_glue_generated.h"
     "${GLUE_OUTPUT_DIR}/script_glue_generated.cpp"
+    "${GLUE_OUTPUT_DIR}/script_glue_generated_reg.inl"
 )
 
 add_custom_command(

@@ -16,6 +16,11 @@ namespace Chained
 		if (entity && entity.HasComponent<RigidBodyComponent>() && outVelocity)
 		{
 			auto& rb = entity.GetComponent<RigidBodyComponent>();
+			if (rb.IsNetworkDriven)
+			{
+				*outVelocity = rb.Velocity;
+				return;
+			}
 			if (rb.Handle != kInvalidPhysicsBody)
 			{
 				auto* physics = ServiceLocator::TryGet<Physics>();

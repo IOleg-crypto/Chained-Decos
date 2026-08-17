@@ -12,9 +12,12 @@ namespace Chained
 		if (scene && tag)
 		{
 			auto entity = scene->FindEntityByTag(ch_u16_to_string(tag));
-			return entity ? static_cast<uint64_t>(entity) : 0;
+			if (entity)
+			{
+				return static_cast<uint32_t>(static_cast<entt::entity>(entity));
+			}
 		}
-		return 0;
+		return static_cast<uint64_t>(entt::null);
 	}
 
 	CH_SCRIPT_FUNC uint64_t Scene_CopyEntity(uint64_t entityID)

@@ -286,7 +286,14 @@ namespace Chained
 
 		// ── UI static ─────────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.UI", "UI_Text_Ptr", (void*)&UI_Text);
+		assembly.AddInternalCall("Chained.UI", "UI_TextColored_Ptr", (void*)&UI_TextColored);
 		assembly.AddInternalCall("Chained.UI", "UI_Button_Ptr", (void*)&UI_Button);
+		assembly.AddInternalCall("Chained.UI", "UI_BeginWindow_Ptr", (void*)&UI_BeginWindow);
+		assembly.AddInternalCall("Chained.UI", "UI_EndWindow_Ptr", (void*)&UI_EndWindow);
+		assembly.AddInternalCall("Chained.UI", "UI_InputText_Ptr", (void*)&UI_InputText);
+		assembly.AddInternalCall("Chained.UI", "UI_SetKeyboardFocusHere_Ptr", (void*)&UI_SetKeyboardFocusHere);
+		assembly.AddInternalCall("Chained.UI", "UI_SetScrollHereY_Ptr", (void*)&UI_SetScrollHereY);
+		assembly.AddInternalCall("Chained.UI", "UI_GetDisplaySize_Ptr", (void*)&UI_GetDisplaySize);
 
 		// ── Input ─────────────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.Input", "Input_IsKeyDown_Ptr", (void*)&Input_IsKeyDown);
@@ -372,7 +379,7 @@ namespace Chained
 		assembly.AddInternalCall("Chained.Network", "Network_SetPlayerPrefab_Ptr", (void*)&Network_SetPlayerPrefab);
 
 		// ── Auto-generated: Player, Spawn, NetworkIdentity properties ──────
-#include "generated/script_glue_generated_reg.cpp"
+#include "generated/script_glue_generated_reg.inl"
 
 		assembly.UploadInternalCalls();
 		CH_CORE_INFO("[ScriptGlue] Registered {} internal calls for '{}'.", 172, (std::string)assembly.GetName());

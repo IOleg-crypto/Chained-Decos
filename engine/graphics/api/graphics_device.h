@@ -102,6 +102,7 @@ namespace Chained
 		virtual void SetBlendEnabled(bool enabled) = 0;
 
 		virtual bool IsDepthTestEnabled() const = 0;
+		virtual bool IsDepthMaskEnabled() const = 0;
 		virtual bool IsBlendEnabled() const = 0;
 		virtual bool IsCullFaceEnabled() const = 0;
 		virtual PolygonMode GetPolygonMode() const = 0;
@@ -153,6 +154,7 @@ namespace Chained
 	public:
 		PipelineStateGuard()
 			: m_DepthTest(GraphicsDevice::Get().IsDepthTestEnabled()),
+			  m_DepthMask(GraphicsDevice::Get().IsDepthMaskEnabled()),
 			  m_Blend(GraphicsDevice::Get().IsBlendEnabled()),
 			  m_Cull(GraphicsDevice::Get().IsCullFaceEnabled()),
 			  m_PolyMode(GraphicsDevice::Get().GetPolygonMode())
@@ -167,6 +169,7 @@ namespace Chained
 		~PipelineStateGuard()
 		{
 			GraphicsDevice::Get().SetDepthTest(m_DepthTest);
+			GraphicsDevice::Get().SetDepthMask(m_DepthMask);
 			GraphicsDevice::Get().SetBlendEnabled(m_Blend);
 			GraphicsDevice::Get().SetCullMode(m_Cull ? GraphicsDevice::CullMode::Back : GraphicsDevice::CullMode::None);
 			GraphicsDevice::Get().SetPolygonMode(m_PolyMode);
@@ -179,6 +182,12 @@ namespace Chained
 		PipelineStateGuard& WithDepthTest()
 		{
 			GraphicsDevice::Get().EnableDepthTest();
+			return *this;
+		}
+		PipelineStateGuard& WithoutDepthTest()
+		{
+			GraphicsDevice::Get().DisableDepthTest();
+			GraphicsDevice::Get().DisableDepthMask();
 			return *this;
 		}
 		PipelineStateGuard& WithBlend()
@@ -201,6 +210,7 @@ namespace Chained
 
 	private:
 		bool m_DepthTest;
+		bool m_DepthMask;
 		bool m_Blend;
 		bool m_Cull;
 		GraphicsDevice::PolygonMode m_PolyMode;

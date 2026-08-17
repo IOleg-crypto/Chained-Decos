@@ -24,7 +24,18 @@ namespace Chained
 
 		static TextRenderer s_TextRenderer;
 		static std::shared_ptr<VertexArray> s_QuadVAO;
+		static std::shared_ptr<VertexBuffer> s_DynVBO;
 		static bool s_Initialized = false;
+
+		static constexpr int kMaxGlyphs = 256;
+		static constexpr int kVertsPerGlyph = 4;
+		static constexpr int kIndicesPerGlyph = 6;
+
+		struct GlyphVertex
+		{
+			float x, y;
+			float u, v;
+		};
 
 		static void EnsureInitialized()
 		{
@@ -35,27 +46,46 @@ namespace Chained
 
 			s_TextRenderer.Init();
 
-			// Create a unit quad [0,1] x [0,1] with matching UVs
-			float vertices[] = {
-				// pos      // uv
-				0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, 0.0f, 1.0f,
-			};
-			uint32_t indices[] = {0, 1, 2, 2, 3, 0};
-
-			auto vbo = VertexBuffer::Create(vertices, sizeof(vertices));
-			vbo->SetLayout({{VertexAttributeType::Float2, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoords"}});
+			// Pre-allocate a dynamic VBO large enough for up to kMaxGlyphs
+			uint32_t vboSize = kMaxGlyphs * kVertsPerGlyph * static_cast<uint32_t>(sizeof(GlyphVertex));
+			s_DynVBO = VertexBuffer::Create(vboSize);
+			s_DynVBO->SetLayout(
+				{{VertexAttributeType::Float2, "a_Position"}, {VertexAttributeType::Float2, "a_TexCoords"}});
 
 			s_QuadVAO = VertexArray::Create();
-			s_QuadVAO->AddVertexBuffer(vbo);
-			auto ibo = IndexBuffer::Create(indices, 6);
+			s_QuadVAO->AddVertexBuffer(s_DynVBO);
+
+			// Index buffer for up to kMaxGlyphs quads
+			std::vector<uint32_t> indices;
+			indices.reserve(kMaxGlyphs * kIndicesPerGlyph);
+			for (int i = 0; i < kMaxGlyphs; ++i)
+			{
+				uint32_t base = i * kVertsPerGlyph;
+				indices.push_back(base + 0);
+				indices.push_back(base + 1);
+				indices.push_back(base + 2);
+				indices.push_back(base + 2);
+				indices.push_back(base + 3);
+				indices.push_back(base + 0);
+			}
+			auto ibo = IndexBuffer::Create(indices.data(), static_cast<uint32_t>(indices.size()));
 			s_QuadVAO->SetIndexBuffer(ibo);
 
 			s_Initialized = true;
 		}
 
-		void DrawNametags(Scene* scene, Renderer* renderer)
+		void DrawNametags(Scene* scene, Renderer* renderer, const Camera3D& camera)
 		{
-			if (!scene || !renderer)
+			if (!scene)
+			{
+				return;
+			}
+			DrawNametags(scene->GetRegistry(), renderer, camera);
+		}
+
+		void DrawNametags(entt::registry& registry, Renderer* renderer, const Camera3D& camera)
+		{
+			if (!renderer)
 			{
 				return;
 			}
@@ -68,7 +98,6 @@ namespace Chained
 
 			EnsureInitialized();
 
-			// Load the Nametag billboard shader via the Renderer's shader library
 			auto& shaderStorage = renderer->GetShaderLibrary();
 			auto shaderAsset =
 				shaderStorage.LoadOrGet("Nametag", "engine/resources/shaders/materials/nametag.chshader");
@@ -82,8 +111,6 @@ namespace Chained
 				return;
 			}
 
-			// Get a font for text rendering — "Default" is a sentinel that only
-			// UIFontRegistry understands; AssetManager needs a real file path.
 			auto* am = ServiceLocator::TryGet<AssetManager>();
 			if (!am)
 			{
@@ -91,44 +118,52 @@ namespace Chained
 			}
 
 			auto fontAsset = am->Get<FontAsset>("font/lato/lato-regular.ttf");
-			if (!fontAsset)
+			if (!fontAsset || !fontAsset->IsReady())
 			{
 				return;
 			}
 			const auto& font = fontAsset->GetFont();
+			if (!font.textureAtlas)
+			{
+				return;
+			}
 
-			const auto& frame = renderer->GetFrame();
 			const auto& players = net->GetPlayerList();
 			uint64_t localID = net->GetLocalNetworkID();
 
-			auto& reg = scene->GetRegistry();
-			auto view = reg.view<NetworkIdentityComponent, TransformComponent>();
+			auto view = registry.view<NetworkIdentityComponent, TransformComponent>();
 
 			shader->Bind();
-			shader->SetMatrix("projection", frame.Proj);
-			shader->SetMatrix("view", frame.View);
-			shader->SetFloat("useBackground", 1.0f);
-			shader->SetVec4("backgroundColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.55f));
+			shader->SetMatrix("projection", camera.ProjectionMatrix);
+			shader->SetMatrix("view", camera.ViewMatrix);
+			shader->SetFloat("useBackground", 0.0f);
+			shader->SetVec4("backgroundColor", glm::vec4(0.0f, 0.0f, 0.0f, 0.7f));
+			shader->SetVec2("size", glm::vec2(1.0f, 1.0f));
 
-			GraphicsDevice::Get().SetTexture(0, 0); // ensure slot 0 is free
+			// Bind atlas texture once for all nametags
+			GraphicsDevice::Get().SetTexture(0, font.textureAtlas->GetNativeHandle());
+			shader->SetInt("textTexture", 0);
 
 			PipelineStateGuard stateGuard;
-			stateGuard.WithBlend().WithCullNone();
+			stateGuard.WithoutDepthTest().WithBlend().WithCullNone();
 
-			s_QuadVAO->Bind();
+			constexpr float nametagScale = 0.007f; // world units per pixel (approx. 0.35m height)
 
 			for (auto entity : view)
 			{
-				const auto& netId = view.get<NetworkIdentityComponent>(entity);
-				const auto& tc = view.get<TransformComponent>(entity);
+				if (!registry.valid(entity))
+				{
+					continue;
+				}
 
-				// Skip local player — don't draw your own nametag
+				const auto& netId = view.get<NetworkIdentityComponent>(entity);
 				if (netId.NetworkID == localID)
 				{
 					continue;
 				}
 
-				// Find player name
+				const auto& tc = view.get<TransformComponent>(entity);
+
 				std::string name;
 				bool isHost = false;
 
@@ -143,53 +178,103 @@ namespace Chained
 				}
 				if (name.empty())
 				{
-					continue;
+					name = "Player " + std::to_string(netId.NetworkID);
 				}
 
-				// Build label: "Name" or "Name ★" for host
 				std::string label = name;
-				if (isHost)
-				{
-					label += " \xe2\x98\x85"; // UTF-8 ★
-				}
 
-				// Get or create text texture
-				uint32_t texId = s_TextRenderer.GetOrCreateTexture(label, font, 32, 4);
-				if (texId == 0)
+				// Layout glyphs
+				auto quads = s_TextRenderer.LayoutGlyphs(label, font, 48.0f);
+				if (quads.empty())
 				{
 					continue;
 				}
 
-				int texW = s_TextRenderer.GetLastWidth();
-				int texH = s_TextRenderer.GetLastHeight();
-				if (texW <= 0 || texH <= 0)
+				// Clamp to kMaxGlyphs
+				if (static_cast<int>(quads.size()) > kMaxGlyphs)
+				{
+					quads.resize(kMaxGlyphs);
+				}
+
+				// Measure tight bounding box for exact centering
+				float minX = 1e9f, maxX = -1e9f;
+				float minY = 1e9f, maxY = -1e9f;
+				for (const auto& q : quads)
+				{
+					if (q.x < minX)
+					{
+						minX = q.x;
+					}
+					if (q.x + q.w > maxX)
+					{
+						maxX = q.x + q.w;
+					}
+					if (q.y < minY)
+					{
+						minY = q.y;
+					}
+					if (q.y + q.h > maxY)
+					{
+						maxY = q.y + q.h;
+					}
+				}
+
+				float centerX = (minX + maxX) * 0.5f;
+				float centerY = (minY + maxY) * 0.5f;
+
+				// Position above avatar head in world space
+				glm::vec3 worldPos = tc.Translation;
+				if (tc.WorldTransform != glm::mat4(1.0f) && tc.WorldTransform != glm::mat4(0.0f))
+				{
+					worldPos = glm::vec3(tc.WorldTransform[3]);
+				}
+
+				// Distance-compensated scaling: scales with distance so names remain legible from far away
+				float distToCamera = glm::length(worldPos - camera.Position);
+				float distanceScaleFactor = glm::clamp(distToCamera / 8.0f, 1.0f, 6.0f);
+				float currentScale = nametagScale * distanceScaleFactor;
+
+				float heightOffset = 2.2f + (distanceScaleFactor - 1.0f) * 0.35f;
+				glm::vec3 pos = worldPos + glm::vec3(0.0f, heightOffset, 0.0f);
+
+				// Build vertex data centered at origin in View Space (+Y is UP, -Y is DOWN)
+				std::vector<GlyphVertex> verts;
+				verts.reserve(quads.size() * kVertsPerGlyph);
+
+				for (const auto& q : quads)
+				{
+					float lx = (q.x - centerX) * currentScale;
+					float rx = (q.x + q.w - centerX) * currentScale;
+					float topY = -(q.y - centerY) * currentScale;
+					float botY = -(q.y + q.h - centerY) * currentScale;
+
+					verts.push_back({lx, topY, q.s0, q.t0}); // TL
+					verts.push_back({rx, topY, q.s1, q.t0}); // TR
+					verts.push_back({rx, botY, q.s1, q.t1}); // BR
+					verts.push_back({lx, botY, q.s0, q.t1}); // BL
+				}
+
+				if (verts.empty())
 				{
 					continue;
 				}
 
-				// Billboard size: scale to world units based on texture aspect ratio
-				float quadHeight = 0.35f;
-				float quadWidth = quadHeight * (static_cast<float>(texW) / static_cast<float>(texH));
+				// Upload glyph vertices to dynamic VBO
+				s_DynVBO->SetData(verts.data(), static_cast<uint32_t>(verts.size() * sizeof(GlyphVertex)));
 
-				// Position above avatar head
-				glm::vec3 pos = tc.Translation + glm::vec3(0.0f, 2.2f, 0.0f);
-
-				// Set per-nametag uniforms
 				shader->SetVec3("modelPosition", pos);
-				shader->SetVec2("size", glm::vec2(quadWidth, quadHeight));
-
-				// Bind text texture and set color
-				GraphicsDevice::Get().SetTexture(0, texId);
-				shader->SetInt("textTexture", 0);
 
 				bool isLocal = (netId.NetworkID == localID);
-				shader->SetVec4("textColor", isLocal ? glm::vec4(1.0f, 0.86f, 0.0f, 1.0f)  // gold for local
-													 : glm::vec4(1.0f, 1.0f, 1.0f, 0.9f)); // white for remote
+				shader->SetVec4("textColor", isLocal ? glm::vec4(1.0f, 0.86f, 0.0f, 1.0f)
+													 : (isHost ? glm::vec4(0.4f, 0.8f, 1.0f, 1.0f)
+															   : glm::vec4(1.0f, 1.0f, 1.0f, 1.0f)));
 
-				GraphicsDevice::Get().DrawIndexed(s_QuadVAO, 6);
+				uint32_t idxCount = static_cast<uint32_t>(quads.size() * kIndicesPerGlyph);
+				s_QuadVAO->Bind();
+				GraphicsDevice::Get().DrawIndexed(s_QuadVAO, idxCount);
+				s_QuadVAO->Unbind();
 			}
 
-			s_QuadVAO->Unbind();
 			shader->Unbind();
 		}
 
@@ -200,6 +285,7 @@ namespace Chained
 				return;
 			}
 			s_TextRenderer.Shutdown();
+			s_DynVBO.reset();
 			s_QuadVAO.reset();
 			s_Initialized = false;
 		}
