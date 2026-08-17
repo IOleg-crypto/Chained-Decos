@@ -1,6 +1,7 @@
 #include "network_system.h"
 #include "engine/scene/components/gameplay/network_identity_component.h"
 #include "engine/scene/components/core/transform_component.h"
+#include "engine/scene/components/core/hierarchy_component.h"
 #include "engine/scene/systems/transform_system.h"
 #include "engine/scene/components/gameplay/player_component.h"
 #include "engine/scene/components/physics/physics_component.h"
@@ -9,6 +10,8 @@
 #include "engine/networking/network_service.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/prefab_serializer.h"
+#include "engine/scene/scene_events.h"
+#include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/core/input.h"
@@ -57,11 +60,21 @@ namespace Chained
 			return;
 		}
 
+		auto it = m_PendingStates.find(msg->NetworkID);
+		if (it != m_PendingStates.end() && msg->Tick < it->second.LastTick &&
+			(it->second.LastTick - msg->Tick) < 100000)
+		{
+			return; // Drop out-of-order / older state
+		}
+
 		PendingNetworkState state;
 		state.NetworkID = msg->NetworkID;
+		state.LastTick = msg->Tick;
 		state.TargetPosition = {msg->Position[0], msg->Position[1], msg->Position[2]};
 		state.TargetRotation = {msg->Rotation[0], msg->Rotation[1], msg->Rotation[2], msg->Rotation[3]};
 		state.TargetVelocity = {msg->Velocity[0], msg->Velocity[1], msg->Velocity[2]};
+		state.IsGrounded = (msg->IsGrounded != 0);
+		state.ActionFlags = msg->ActionFlags;
 
 		m_PendingStates[state.NetworkID] = state;
 	}
@@ -134,7 +147,18 @@ namespace Chained
 			return;
 		}
 
-		if (m_LocalNetworkID != 0 && msg->NetworkID == m_LocalNetworkID)
+		auto* net = ServiceLocator::TryGet<Network>();
+		uint64_t localNetID = m_LocalNetworkID;
+		if (localNetID == 0 && net)
+		{
+			localNetID = net->GetLocalNetworkID();
+			if (localNetID != 0)
+			{
+				m_LocalNetworkID = localNetID;
+			}
+		}
+
+		if (localNetID != 0 && msg->NetworkID == localNetID)
 		{
 			if (avatar.HasComponent<TransformComponent>())
 			{
@@ -145,15 +169,25 @@ namespace Chained
 
 		auto& netID = avatar.AddOrReplaceComponent<NetworkIdentityComponent>();
 		netID.NetworkID = msg->NetworkID;
-		if (m_LocalNetworkID != 0)
+		netID.PrefabPath = msg->PrefabPath;
+		if (localNetID != 0)
 		{
-			netID.IsOwner = (msg->NetworkID == m_LocalNetworkID);
+			netID.IsOwner = (msg->NetworkID == localNetID);
 		}
 		else
 		{
 			netID.IsOwner = false;
 			CH_CORE_WARN("Network: EntitySpawn for netID={} arrived before PlayerAssign — IsOwner deferred.",
 						 msg->NetworkID);
+		}
+
+		// Mark remote entities as network-driven so physics doesn't fight interpolation.
+		if (!netID.IsOwner)
+		{
+			if (avatar.HasComponent<RigidBodyComponent>())
+			{
+				avatar.GetComponent<RigidBodyComponent>().IsNetworkDriven = true;
+			}
 		}
 
 		m_NetworkIDToEntity[msg->NetworkID] = avatar.GetUUID();
@@ -207,6 +241,10 @@ namespace Chained
 				if (entity && entity.HasComponent<NetworkIdentityComponent>())
 				{
 					entity.GetComponent<NetworkIdentityComponent>().IsOwner = true;
+					if (entity.HasComponent<RigidBodyComponent>())
+					{
+						entity.GetComponent<RigidBodyComponent>().IsNetworkDriven = false;
+					}
 				}
 			}
 		}
@@ -264,7 +302,8 @@ namespace Chained
 		const uint64_t networkID = net->GetNetworkIDForConnection(clientIndex);
 		if (networkID == 0)
 		{
-			CH_CORE_WARN("Network: PlayerInfo from unknown client {} — ignored.", clientIndex);
+			CH_CORE_WARN("Network: PlayerInfo from client {} arrived before PlayerAssign — deferring.", clientIndex);
+			m_PendingPlayerInfo[clientIndex] = {std::string(msg->Name), msg->SkinIndex};
 			return;
 		}
 
@@ -365,6 +404,7 @@ namespace Chained
 
 			if (targetEntity == entt::null || !reg.valid(targetEntity))
 			{
+				CH_CORE_WARN("Network: ApplyHostInputs — no entity for netID={}", input.NetworkID);
 				continue;
 			}
 
@@ -388,11 +428,28 @@ namespace Chained
 				float moveZ = input.MoveZ * speed;
 				rb.Velocity = glm::vec3(moveX, rb.Velocity.y, moveZ);
 
+				// Rotate remote avatar to face movement direction
+				if (auto* tc = reg.try_get<TransformComponent>(targetEntity))
+				{
+					if (std::abs(moveX) > 0.001f || std::abs(moveZ) > 0.001f)
+					{
+						float yaw = std::atan2(moveX, moveZ);
+						TransformSystem::SetRotation(*tc, glm::vec3(0.0f, yaw, 0.0f));
+					}
+				}
+
 				if ((input.ActionFlags & InputAction_Jump) && rb.IsGrounded)
 				{
 					rb.Velocity.y = player.JumpForce;
 					rb.VelocityForced = true;
 				}
+
+				m_LastActionFlags[input.NetworkID] = input.ActionFlags;
+			}
+			else
+			{
+				CH_CORE_WARN("Network: ApplyHostInputs — entity netID={} missing PlayerComponent/RigidBodyComponent",
+							 input.NetworkID);
 			}
 		}
 
@@ -490,7 +547,7 @@ namespace Chained
 
 		ByteWriter w;
 		msg.Encode(w);
-		net->SendToServer(MessageType_InputState, w.Data().data(), w.Data().size(), false);
+		net->SendToServer(MessageType_InputState, w.Data().data(), w.Data().size(), true);
 	}
 
 	// ---- Client-side: interpolate towards server state ----
@@ -509,13 +566,26 @@ namespace Chained
 			auto it = m_PendingStates.find(netID.NetworkID);
 			if (it == m_PendingStates.end())
 			{
+				// No pending state: for non-owned entities, keep NetworkDriven so
+				// physics doesn't interfere; for owned, let physics run.
+				if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+				{
+					rb->IsNetworkDriven = !netID.IsOwner;
+				}
 				continue;
 			}
 
 			auto& target = it->second;
+			bool changed = false;
 
 			if (netID.IsOwner)
 			{
+				// Owned entity — physics runs locally, network only snap-corrects.
+				if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+				{
+					rb->IsNetworkDriven = false;
+				}
+
 				float dist = glm::length(TransformSystem::GetTranslation(transform) - target.TargetPosition);
 
 				if (dist > NetworkSystem::kMaxCorrectionDistance)
@@ -527,21 +597,59 @@ namespace Chained
 					{
 						rb->Velocity = target.TargetVelocity;
 					}
+					changed = true;
 				}
-				continue;
+			}
+			else
+			{
+				// Remote entity — fully driven by network interpolation.
+				if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+				{
+					rb->IsNetworkDriven = true;
+				}
+
+				TransformSystem::SetTranslation(
+					transform, glm::mix(TransformSystem::GetTranslation(transform), target.TargetPosition, t));
+
+				// Use the local RotationQuat for slerp (not WorldTransform which may be stale).
+				glm::quat currentQuat = transform.RotationQuat;
+				glm::quat targetQuat = glm::normalize(target.TargetRotation);
+				glm::quat blended = glm::slerp(currentQuat, targetQuat, t);
+				TransformSystem::SetRotationQuat(transform, blended);
+
+				if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+				{
+					rb->Velocity = target.TargetVelocity;
+					rb->IsGrounded = target.IsGrounded;
+				}
+				if (auto* netID = reg.try_get<NetworkIdentityComponent>(entity))
+				{
+					netID->RemoteActionFlags = target.ActionFlags;
+				}
+				changed = true;
 			}
 
-			TransformSystem::SetTranslation(
-				transform, glm::mix(TransformSystem::GetTranslation(transform), target.TargetPosition, t));
-
-			glm::quat currentQuat = glm::quat_cast(transform.WorldTransform);
-			glm::quat targetQuat = glm::normalize(target.TargetRotation);
-			glm::quat blended = glm::slerp(currentQuat, targetQuat, t);
-			TransformSystem::SetRotationQuat(transform, blended);
-
-			if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+			if (changed)
 			{
-				rb->Velocity = target.TargetVelocity;
+				glm::mat4 localMatrix = TransformSystem::ComputeLocalMatrix(transform);
+				if (reg.all_of<HierarchyComponent>(entity))
+				{
+					auto& hc = reg.get<HierarchyComponent>(entity);
+					if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<TransformComponent>(hc.Parent))
+					{
+						transform.WorldTransform = reg.get<TransformComponent>(hc.Parent).WorldTransform * localMatrix;
+					}
+					else
+					{
+						transform.WorldTransform = localMatrix;
+					}
+				}
+				else
+				{
+					transform.WorldTransform = localMatrix;
+				}
+				transform.InverseWorldTransform = glm::inverse(transform.WorldTransform);
+				transform.TransformChanged = false;
 			}
 		}
 	}
@@ -562,6 +670,8 @@ namespace Chained
 			glm::vec3 Position;
 			glm::quat Rotation;
 			glm::vec3 Velocity;
+			bool IsGrounded;
+			uint8_t ActionFlags;
 		};
 
 		std::vector<EntityNetState> states;
@@ -575,16 +685,31 @@ namespace Chained
 			s.NetworkID = netID.NetworkID;
 			s.Position = TransformSystem::GetTranslation(transform);
 			s.Rotation = glm::quat_cast(transform.WorldTransform);
-			s.Velocity = reg.try_get<RigidBodyComponent>(entity) ? reg.get<RigidBodyComponent>(entity).Velocity
-																 : glm::vec3{0, 0, 0};
+			if (auto* rb = reg.try_get<RigidBodyComponent>(entity))
+			{
+				s.Velocity = rb->Velocity;
+				s.IsGrounded = rb->IsGrounded;
+			}
+			else
+			{
+				s.Velocity = {0, 0, 0};
+				s.IsGrounded = false;
+			}
+			auto flagIt = m_LastActionFlags.find(netID.NetworkID);
+			s.ActionFlags = (flagIt != m_LastActionFlags.end()) ? flagIt->second : 0;
 			states.push_back(s);
+		}
+
+		if (!states.empty())
+		{
+			CH_CORE_INFO("Network: Broadcasting WorldState for {} entities (tick={}).", states.size(), m_HostTick);
 		}
 
 		for (auto& s : states)
 		{
-			net->BroadcastPacket(MessageType_WorldState, false, [this, &s](ByteWriter& bw) {
+			net->BroadcastPacket(MessageType_WorldState, true, [this, &s](ByteWriter& bw) {
 				WorldStateMessage msg;
-				msg.Tick = m_ClientTick;
+				msg.Tick = m_HostTick++;
 				msg.NetworkID = s.NetworkID;
 				msg.Position[0] = s.Position.x;
 				msg.Position[1] = s.Position.y;
@@ -596,6 +721,8 @@ namespace Chained
 				msg.Velocity[0] = s.Velocity.x;
 				msg.Velocity[1] = s.Velocity.y;
 				msg.Velocity[2] = s.Velocity.z;
+				msg.IsGrounded = s.IsGrounded ? 1 : 0;
+				msg.ActionFlags = s.ActionFlags;
 				msg.Encode(bw);
 			});
 		}
@@ -637,6 +764,52 @@ namespace Chained
 		});
 	}
 
+	void NetworkSystem::ResyncClientEntities(int clientIndex, Scene* scene)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !scene)
+		{
+			return;
+		}
+
+		uint64_t clientNetID = 0;
+		auto it = m_PeerToNetworkID.find(clientIndex);
+		if (it != m_PeerToNetworkID.end())
+		{
+			clientNetID = it->second;
+		}
+		else
+		{
+			clientNetID = net->GetNetworkIDForConnection(clientIndex);
+		}
+
+		int count = 0;
+		if (clientNetID != 0)
+		{
+			PlayerAssignMessage assignMsg;
+			assignMsg.NetworkID = clientNetID;
+			ByteWriter w;
+			assignMsg.Encode(w);
+			net->SendPacket(clientIndex, MessageType_PlayerAssign, w.Data().data(), w.Data().size(), true);
+		}
+
+		entt::registry& reg = scene->GetRegistry();
+		auto view = reg.view<NetworkIdentityComponent>();
+		for (auto entity : view)
+		{
+			auto& netID = view.get<NetworkIdentityComponent>(entity);
+			if (netID.NetworkID == 0)
+			{
+				continue;
+			}
+			std::string prefabPath = netID.PrefabPath.empty() ? m_PlayerPrefab : netID.PrefabPath;
+			SendEntitySpawn(net, netID.NetworkID, prefabPath, clientIndex);
+			count++;
+		}
+
+		CH_CORE_INFO("Network: Resynced {} entities for client {} (netID={}).", count, clientIndex, clientNetID);
+	}
+
 	void NetworkSystem::EnsureHostIdentity(Scene* scene)
 	{
 		if (!scene || scene->GetSettings().Type == SceneType::UI)
@@ -666,6 +839,7 @@ namespace Chained
 			auto& netID = reg.emplace<NetworkIdentityComponent>(entity);
 			netID.NetworkID = HostAvatarNetworkID;
 			netID.IsOwner = true;
+			netID.PrefabPath = m_PlayerPrefab;
 
 			if (reg.all_of<TransformComponent>(entity))
 			{
@@ -697,6 +871,7 @@ namespace Chained
 				auto& netID = hostAvatar.AddOrReplaceComponent<NetworkIdentityComponent>();
 				netID.NetworkID = HostAvatarNetworkID;
 				netID.IsOwner = true;
+				netID.PrefabPath = m_PlayerPrefab;
 
 				bool hasRB = hostAvatar.HasComponent<RigidBodyComponent>();
 				bool hasCollider = hostAvatar.HasComponent<ColliderComponent>();
@@ -719,10 +894,9 @@ namespace Chained
 
 		if (m_PlayerPrefab.empty())
 		{
-			static bool warned = false;
-			if (!warned && net->GetClientCount() > 0)
+			if (!m_PrefabWarnedOnce && net->GetClientCount() > 0)
 			{
-				warned = true;
+				m_PrefabWarnedOnce = true;
 				CH_CORE_ERROR("Network: No player prefab configured — clients will connect without an avatar. "
 							  "Call NetworkSystem::SetPlayerPrefab().");
 			}
@@ -774,6 +948,7 @@ namespace Chained
 			auto& netID = avatar.AddOrReplaceComponent<NetworkIdentityComponent>();
 			netID.NetworkID = networkID;
 			netID.IsOwner = false;
+			netID.PrefabPath = m_PlayerPrefab;
 
 			m_PeerToAvatar[clientIndex] = avatar.GetUUID();
 			CH_CORE_INFO("Network: Spawned avatar (netID={}) for client {}.", networkID, clientIndex);
@@ -827,7 +1002,12 @@ namespace Chained
 	void NetworkSystem::InstallPacketCallback()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
-		if (!net || m_CallbackRole == net->GetRole())
+		if (!net)
+		{
+			return;
+		}
+		// Re-install whenever the role has changed (including Offline→Host on each new session)
+		if (m_CallbackRole == net->GetRole() && net->GetRole() != Role::Offline)
 		{
 			return;
 		}
@@ -861,12 +1041,22 @@ namespace Chained
 					if (msg.Decode(r))
 					{
 						ProcessChatMessageMessage(&msg);
+						ChatMessagePacket pkt;
+						pkt.SenderNetworkID = msg.SenderNetworkID;
+						pkt.SenderName = msg.SenderName;
+						pkt.Message = msg.Message;
+						net->StorePendingChatMessage(pkt);
 						if (net->IsHost())
 						{
 							net->BroadcastPacket(MessageType_ChatMessage, true,
 												 [&msg](ByteWriter& bw) { msg.Encode(bw); });
 						}
 					}
+					break;
+				}
+				case MessageType_SceneLoaded: {
+					CH_CORE_INFO("Network: Client {} loaded scene — resyncing entities.", clientIndex);
+					ResyncClientEntities(clientIndex, m_ReplicationScene);
 					break;
 				}
 				default:
@@ -961,9 +1151,66 @@ namespace Chained
 		}
 	}
 
+	// ---- Per-session reset ----
+
+	void NetworkSystem::Reset()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (net && net->IsClient() && net->GetLocalNetworkID() != 0)
+		{
+			m_LocalNetworkID = net->GetLocalNetworkID();
+		}
+		else
+		{
+			m_LocalNetworkID = 0;
+		}
+
+		m_ClientTick = 0;
+		m_CallbackRole = Role::Offline; // forces callback re-install on next session
+		m_PeerToNetworkID.clear();
+		m_PeerToAvatar.clear();
+		m_PendingStates.clear();
+		m_PendingInputs.clear();
+		m_PendingChatMessages.clear();
+		m_PendingPlayerInfo.clear();
+		m_NetworkIDToEntity.clear();
+		m_LastActionFlags.clear();
+		m_ReplicationScene = nullptr;
+		m_PrefabWarnedOnce = false;
+		m_SceneLoadedPending = false;
+
+		if (net)
+		{
+			net->ClearPendingSceneChange();
+		}
+
+		CH_CORE_INFO("NetworkSystem: session state reset (localNetID={}).", m_LocalNetworkID);
+	}
+
 	// ---- Main update ----
 
-	void NetworkSystem::Update(Scene* scene, Timestep ts)
+	void NetworkSystem::CheckAndPropagateSceneChange(Scene* scene)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !scene)
+		{
+			return;
+		}
+		if (!net->HasPendingSceneChange())
+		{
+			return;
+		}
+
+		std::string path = net->GetPendingSceneChange();
+		CH_CORE_INFO("CheckAndPropagateSceneChange: propagating '{}' to Scene", path);
+		scene->SetPendingScenePath(path);
+		net->ClearPendingSceneChange();
+
+		SceneChangeRequestEvent e(path);
+		Application::Get().OnEvent(e);
+	}
+
+	void NetworkSystem::PollNetwork(Scene* scene, Timestep ts)
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
 		if (!net || net->GetRole() == Role::Offline || !scene)
@@ -973,30 +1220,91 @@ namespace Chained
 
 		entt::registry& reg = scene->GetRegistry();
 
+		// Scene pointer changed → new Play Mode session, reset lookup tables
 		if (m_ReplicationScene != scene)
 		{
 			m_ReplicationScene = scene;
 			m_NetworkIDToEntity.clear();
 			m_PeerToAvatar.clear();
 			m_PendingStates.clear();
+			if (net->IsClient())
+			{
+				m_SceneLoadedPending = true;
+			}
 		}
 
 		InstallPacketCallback();
+
+		if (m_SceneLoadedPending && net->IsClient())
+		{
+			m_SceneLoadedPending = false;
+			SceneLoadedMessage msg;
+			ByteWriter w;
+			msg.Encode(w);
+			net->SendToServer(MessageType_SceneLoaded, w.Data().data(), w.Data().size(), true);
+			CH_CORE_INFO("Network: Sent SceneLoaded to host.");
+		}
+
+		EnsureLocalIdentity(scene); // BUG4 fix: must run before scripts
 
 		float dt = static_cast<float>(ts);
 
 		net->Update(dt);
 
+		// Check for pending scene change AFTER processing ENet packets.
+		// This avoids the C# polling timing issue where OnUpdate runs before
+		// net->Update processes incoming SceneChangeMessage packets.
+		if (net->IsClient())
+		{
+			CheckAndPropagateSceneChange(scene);
+		}
+
 		if (net->IsHost())
 		{
+			// Flush any deferred PlayerInfoMessages (race: PlayerInfo arrived before PlayerAssign).
+			for (auto it = m_PendingPlayerInfo.begin(); it != m_PendingPlayerInfo.end();)
+			{
+				int clientIndex = it->first;
+				uint64_t netId = net->GetNetworkIDForConnection(clientIndex);
+				if (netId != 0)
+				{
+					const auto& info = it->second;
+					PlayerInfoMessage deferredMsg;
+					std::strncpy(deferredMsg.Name, info.first.c_str(), sizeof(deferredMsg.Name) - 1);
+					deferredMsg.Name[sizeof(deferredMsg.Name) - 1] = '\0';
+					deferredMsg.SkinIndex = info.second;
+					ProcessPlayerInfoMessage(&deferredMsg, clientIndex);
+					it = m_PendingPlayerInfo.erase(it);
+				}
+				else
+				{
+					++it;
+				}
+			}
+
 			EnsureHostIdentity(scene);
 			SyncPeerAvatars(scene, net);
+		}
+	}
+
+	void NetworkSystem::FinalizeFrame(Scene* scene, Timestep ts)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || net->GetRole() == Role::Offline || !scene)
+		{
+			return;
+		}
+
+		entt::registry& reg = scene->GetRegistry();
+
+		if (net->IsHost())
+		{
 			BroadcastWorldState(reg);
 		}
 		else if (net->IsClient())
 		{
+			float dt = static_cast<float>(ts);
 			CollectAndSendInput(net, dt);
-			InterpolateEntities(reg, dt);
 		}
 	}
 

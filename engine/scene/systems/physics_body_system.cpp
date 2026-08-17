@@ -142,12 +142,21 @@ namespace Chained::PhysicsBodySystem
 
 			if (auto* physicsPtr = reg.ctx().find<Physics*>())
 			{
-				if (*physicsPtr && (*physicsPtr)->GetWorld() &&
-					(*physicsPtr)->GetWorld()->HasCachedMeshShape(modelPath))
+				if (*physicsPtr && (*physicsPtr)->GetWorld())
 				{
-					desc.CacheKey = modelPath;
-					desc.MeshScale = transform.Scale;
-					break;
+					auto* world = (*physicsPtr)->GetWorld();
+					if (world->HasCachedMeshShape(modelPath))
+					{
+						desc.CacheKey = modelPath;
+						desc.MeshScale = transform.Scale;
+						break;
+					}
+					if (world->IsShapeBaking(modelPath))
+					{
+						desc.CacheKey = modelPath;
+						desc.MeshScale = transform.Scale;
+						return false;
+					}
 				}
 			}
 
@@ -265,6 +274,13 @@ namespace Chained::PhysicsBodySystem
 			return;
 		}
 
+		if (desc.Shape == ColliderType::Mesh && !desc.CacheKey.empty() && !world->HasCachedMeshShape(desc.CacheKey))
+		{
+			world->QueuePrebuildShape(desc);
+			// Defer body creation until background mesh baking finishes
+			return;
+		}
+
 		rb.Handle = world->CreateBody(desc);
 		if (rb.Handle == kInvalidPhysicsBody)
 		{
@@ -314,6 +330,14 @@ namespace Chained::PhysicsBodySystem
 				continue;
 			}
 
+			// If mesh shape is not yet baked, dispatch to background ThreadPool and defer body creation
+			if (desc.Shape == ColliderType::Mesh && !desc.CacheKey.empty() && !world->HasCachedMeshShape(desc.CacheKey))
+			{
+				world->QueuePrebuildShape(desc);
+				// Will be picked up on a subsequent frame once the shape is cached
+				continue;
+			}
+
 			entities.push_back(entity);
 			descs.push_back(std::move(desc));
 		}
@@ -344,24 +368,6 @@ namespace Chained::PhysicsBodySystem
 		{
 			sortedDescs.push_back(std::move(descs[i]));
 			sortedEntities.push_back(entities[i]);
-		}
-
-		// Pre-build un-cached mesh shapes in parallel on worker threads
-		if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
-		{
-			std::vector<std::future<void>> futures;
-			for (const auto& desc : sortedDescs)
-			{
-				if (desc.Shape == ColliderType::Mesh && !desc.CacheKey.empty() &&
-					!world->HasCachedMeshShape(desc.CacheKey))
-				{
-					futures.push_back(tp->Enqueue([world, desc]() { world->PrebuildShape(desc); }));
-				}
-			}
-			for (auto& f : futures)
-			{
-				f.get();
-			}
 		}
 
 		auto handles = world->CreateBodies(sortedDescs);

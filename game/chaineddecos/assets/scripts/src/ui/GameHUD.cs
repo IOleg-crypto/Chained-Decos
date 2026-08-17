@@ -9,6 +9,9 @@ public class GameHUD : Script
 
     public override void OnUpdate(float deltaTime)
     {
+        var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+        if (netComp != null && !netComp.IsOwner) return;
+
         m_Timer += deltaTime;
 
         if (Input.IsKeyPressed(Key.R))
@@ -20,6 +23,9 @@ public class GameHUD : Script
 
     public override void OnGUI()
     {
+        var netComp = Entity.GetComponent<NetworkIdentityComponent>();
+        if (netComp != null && !netComp.IsOwner) return;
+
         TransformComponent? transform = Entity.GetComponent<TransformComponent>();
         float altitude = transform != null ? transform.Translation.Y : 0.0f;
 

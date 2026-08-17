@@ -241,6 +241,8 @@ namespace Chained
 
 		AudioSystem::OnRuntimeStop(*m_Registry);
 
+		NetworkSystem::GetInstance().Reset();
+
 		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{
 			physics->ClearContext(this);
@@ -262,28 +264,44 @@ namespace Chained
 			return;
 		}
 
+		auto& netSys = NetworkSystem::GetInstance();
+		netSys.PollNetwork(this, ts);
+
+		// Interpolate remote entities BEFORE scripts so PlayerController
+		// reads the correct velocity/grounded values for animation.
+		if (auto* net = ServiceLocator::TryGet<Network>())
+		{
+			if (net->IsClient())
+			{
+				float dt = static_cast<float>(ts);
+				netSys.InterpolateEntities(*m_Registry, dt);
+			}
+		}
+
 		if (m_ScriptingManager)
 		{
 			m_ScriptingManager->OnUpdate(ts);
 		}
 
+		// 1st world transform — processes entities spawned by SyncPeerAvatars
 		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
 
 		AssetResolutionSystem::Update(*m_Registry);
 		AnimationSystem::Update(*m_Registry, ts);
 		AudioSystem::Update(*m_Registry);
 
-		auto& netSys = NetworkSystem::GetInstance();
-		netSys.ApplyHostInputs(*m_Registry, ts);
-
 		PhysicsBodySystem::Update(*m_Registry);
+
+		netSys.ApplyHostInputs(*m_Registry, ts);
 
 		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{
 			physics->Update(this, ts, true);
 		}
 
-		netSys.Update(this, ts);
+		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		netSys.FinalizeFrame(this, ts);
 
 		if (auto target = SceneTransitionSystem::Update(*m_Registry))
 		{
@@ -515,6 +533,7 @@ namespace Chained
 		entity.AddComponent<IDComponent>(uuid);
 		entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
 		entity.AddComponent<TransformComponent>();
+		m_RootsDirty = true;
 		return entity;
 	}
 
@@ -524,6 +543,7 @@ namespace Chained
 		entity.AddComponent<IDComponent>();
 		entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
 		entity.AddComponent<TransformComponent>();
+		m_RootsDirty = true;
 		return entity;
 	}
 

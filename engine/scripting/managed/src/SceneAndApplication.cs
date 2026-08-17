@@ -32,7 +32,9 @@ namespace Chained
     fixed (char* ptr = tag)
     {
         ulong entityId = Scene_FindEntityByTag_Ptr(ptr);
-        return entityId != 0 ? new Entity(entityId) : null;
+        return (entityId != Entity.NullID && entityId != ulong.MaxValue && entityId != (ulong)uint.MaxValue)
+            ? new Entity(entityId)
+            : null;
     }
 }
 

@@ -5,6 +5,10 @@
 #include "upnp_port_mapper.h"
 #include "engine/core/service.h"
 
+// Force IPv4-only ENet sockets — see network_service.cpp for rationale.
+#ifndef ENET_IPV4_ONLY
+#define ENET_IPV4_ONLY 1
+#endif
 #include <enet.h>
 
 #include <functional>

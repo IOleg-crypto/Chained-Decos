@@ -89,6 +89,10 @@ namespace Chained
 		glm::vec3 Velocity = glm::vec3(0.0f);
 		bool IsGrounded = false;
 		bool VelocityForced = false;
+		// When true, the network system owns this body's position/velocity.
+		// Physics::Update and UpdateColliders must not overwrite the transform
+		// or apply Jolt-simulated velocity — the network interpolation does.
+		bool IsNetworkDriven = false;
 
 		static const char* GetStaticName()
 		{

@@ -20,7 +20,7 @@
 #include "engine/scene/scene_events.h"
 #include "engine/scene/scene_serializer.h"
 #include "imgui.h"
-#include "engine/scene/systems/nametag_system.h"
+#include "engine/scene/systems/asset_resolution_system.h"
 #include "engine/scripting/scene_scripting_manager.h"
 #include "engine/scripting/scriptengine.h"
 #include <algorithm>
@@ -126,6 +126,7 @@ namespace Chained
 
 		if (m_Scene && m_LoadState.State == RuntimeLoadState::LoadingScene)
 		{
+			AssetResolutionSystem::Update(m_Scene->GetRegistry());
 			m_LoadState.OverlayElapsed += (float)ts;
 
 			if (IsSceneReadyToStart() && m_LoadState.OverlayElapsed >= m_LoadState.MinOverlayDuration)
@@ -247,14 +248,6 @@ namespace Chained
 				}
 			}
 
-			if (IsRunning())
-			{
-				if (auto* ren = ServiceLocator::TryGet<Renderer>())
-				{
-					NametagSystem::DrawNametags(m_Scene.get(), ren);
-				}
-			}
-
 			ImGui::End();
 			ImGui::PopStyleVar(2);
 
@@ -280,6 +273,19 @@ namespace Chained
 				m_Scene->OnViewportResize(ev.GetWidth(), ev.GetHeight());
 			}
 			return false;
+		});
+
+		// Allow C# scripts (and any engine code) to request a scene change at runtime
+		// by firing SceneChangeRequestEvent via Application::Get().OnEvent().
+		dispatcher.Dispatch<SceneChangeRequestEvent>([this](SceneChangeRequestEvent& ev) {
+			std::filesystem::path scenePath = ev.GetPath();
+			if (scenePath.is_relative() && Project::GetActive())
+			{
+				scenePath = Project::GetActive()->GetAssetPath(ev.GetPath());
+			}
+			m_PendingScenePath = scenePath.string();
+			CH_CORE_INFO("RuntimeLayer: Scene change requested → '{}'", m_PendingScenePath);
+			return true;
 		});
 	}
 
@@ -727,6 +733,11 @@ namespace Chained
 	void RuntimeLayer::BeginSceneLoading()
 	{
 		m_LoadState.SuppressNextUIInput = true;
+
+		if (m_Scene)
+		{
+			AssetResolutionSystem::Update(m_Scene->GetRegistry());
+		}
 
 		PreloadSceneFonts(ImGui::GetFrameCount() > 0);
 

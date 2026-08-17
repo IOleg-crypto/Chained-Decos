@@ -94,3 +94,9 @@
 [submodule "thirdparty/enet"]
 	path = thirdparty/enet
 	url = https://github.com/zpl-c/enet.git
+[submodule "thirdparty/freetype"]
+	path = thirdparty/freetype
+	url = https://github.com/freetype/freetype.git
+[submodule "thirdparty/freetype-gl"]
+	path = thirdparty/freetype-gl
+	url = https://github.com/rougier/freetype-gl.git
