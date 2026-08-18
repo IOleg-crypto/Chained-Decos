@@ -74,17 +74,9 @@ namespace Chained
 			s_Initialized = true;
 		}
 
-		void DrawNametags(Scene* scene, Renderer* renderer, const Camera3D& camera)
+		void DrawNametags(entt::registry& registry, const Camera3D& camera)
 		{
-			if (!scene)
-			{
-				return;
-			}
-			DrawNametags(scene->GetRegistry(), renderer, camera);
-		}
-
-		void DrawNametags(entt::registry& registry, Renderer* renderer, const Camera3D& camera)
-		{
+			auto* renderer = ServiceLocator::TryGet<Renderer>();
 			if (!renderer)
 			{
 				return;

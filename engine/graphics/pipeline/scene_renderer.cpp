@@ -14,7 +14,7 @@
 #include "engine/graphics/pipeline/material_manager.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
-#include "engine/scene/systems/nametag_system.h"
+#include "engine/graphics/nametag_system.h"
 #include "engine/core/platform.h"
 #include <algorithm>
 #include <glm/gtc/matrix_transform.hpp>
@@ -186,7 +186,7 @@ namespace Chained
 			dbg->RenderDebug(registry, settings, camera, options, *renderer);
 		}
 
-		NametagSystem::DrawNametags(registry, renderer, camera);
+		NametagSystem::DrawNametags(registry, camera);
 
 		renderer->EndScene();
 
