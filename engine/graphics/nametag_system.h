@@ -6,13 +6,9 @@
 
 namespace Chained
 {
-	class Scene;
-	class Renderer;
-
 	namespace NametagSystem
 	{
-		void DrawNametags(entt::registry& registry, Renderer* renderer, const Camera3D& camera);
-		void DrawNametags(Scene* scene, Renderer* renderer, const Camera3D& camera);
+		void DrawNametags(entt::registry& registry, const Camera3D& camera);
 		void Shutdown();
 	} // namespace NametagSystem
 } // namespace Chained
