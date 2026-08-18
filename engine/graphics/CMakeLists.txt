@@ -91,6 +91,8 @@ add_library(engine_graphics STATIC
     ui/ui_types.h
     ui/widget_renderer.h
     ui/widget_renderer.cpp
+    nametag_system.h
+    nametag_system.cpp
 )
 
 target_include_directories(engine_graphics PUBLIC
@@ -103,6 +105,7 @@ target_link_libraries(engine_graphics PUBLIC
     engine_core
     engine_project
     engine_assets
+    engine_network
     yaml-cpp
     engine_external_entt
     glm

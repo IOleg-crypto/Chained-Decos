@@ -68,8 +68,6 @@ add_library(engine_scene STATIC
     systems/scene_transition_system.cpp
     systems/network_system.h
     systems/network_system.cpp
-    systems/nametag_system.h
-    systems/nametag_system.cpp
     systems/system_manager.h
     systems/system_manager.cpp
     components/scripting/scripting_components.cpp
