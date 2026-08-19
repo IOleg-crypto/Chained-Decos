@@ -17,11 +17,11 @@
 #include "engine/scene/systems/scene_transition_system.h"
 #include "engine/scene/systems/network_system.h"
 #include "engine/scene/systems/transform_system.h"
+#include "engine/scene/systems/primitive_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "engine/scripting/scriptengine.h"
 #include "engine/scene/prefab_serializer.h"
-#include <entt/entt.hpp>
 
 namespace Chained
 {
@@ -41,6 +41,7 @@ namespace Chained
 		reg.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
 
 		AssetResolutionSystem::RegisterObservers(reg);
+		PrimitiveSystem::RegisterObservers(reg, "");
 
 		m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 		m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
@@ -184,6 +185,7 @@ namespace Chained
 	{
 		CH_CORE_INFO("Scene::OnRuntimeStart - Starting activation for state: {}", (int)m_State);
 		m_IsStartingUp = true;
+		m_PhysicsStartupInitialized = false;
 	}
 
 	void Scene::FinishRuntimeStart()
@@ -233,6 +235,7 @@ namespace Chained
 		CH_CORE_INFO("Scene::OnRuntimeStop - Stopping lifecycle...");
 
 		m_IsStartingUp = false;
+		m_PhysicsStartupInitialized = false;
 
 		if (m_ScriptingManager)
 		{
@@ -337,9 +340,32 @@ namespace Chained
 	{
 		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{
-			physics->ResetWorld(this);
-			physics->ResetAccumulator(this);
-			physics->InitializeBodies(this);
+			if (!m_PhysicsStartupInitialized)
+			{
+				physics->ResetWorld(this);
+				physics->ResetAccumulator(this);
+				physics->InitializeBodies(this);
+				m_PhysicsStartupInitialized = true;
+			}
+
+			PhysicsBodySystem::Update(*m_Registry);
+
+			auto* world = physics->GetWorld();
+			if (world && world->HasPendingShapeBakes())
+			{
+				return;
+			}
+
+			auto bodyView = m_Registry->view<RigidBodyComponent, ColliderComponent>();
+			for (auto entity : bodyView)
+			{
+				auto& rigidBody = bodyView.get<RigidBodyComponent>(entity);
+				auto& collider = bodyView.get<ColliderComponent>(entity);
+				if (collider.Enabled && rigidBody.Handle == kInvalidPhysicsBody)
+				{
+					return;
+				}
+			}
 		}
 		m_IsStartingUp = false;
 		FinishRuntimeStart();
