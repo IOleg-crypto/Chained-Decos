@@ -4,7 +4,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/imgui/imgui_layer.h"
 #include "engine/physics/physics.h"
 #include "engine/platform/dialogs/dialogs.h"

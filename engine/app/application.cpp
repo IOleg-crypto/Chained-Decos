@@ -6,14 +6,13 @@
 #include "engine/core/events/window_events.h"
 #include "engine/core/service_locator.h"
 #include "engine/scene/component_registry.h"
-#include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "engine/common/thread_pool.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/audio/audio.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/ui/widget_renderer.h"
-#include "engine/graphics/ui/ui_font_registry.h"
+#include "engine/ui/widget_renderer.h"
+#include "engine/ui/ui_font_registry.h"
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/core/input.h"
@@ -22,8 +21,6 @@
 
 namespace Chained
 {
-	Application* Application::s_Instance = nullptr;
-
 	std::filesystem::path Application::GetExecutableDirectory()
 	{
 		return Platform::GetExecutableDirectory();
@@ -43,8 +40,39 @@ namespace Chained
 			std::filesystem::current_path(m_Specification.WorkingDirectory);
 		}
 
-		// Window creation (not a Service — owns the OpenGL context)
+		InitializePlatform();
+		RegisterCoreServices();
+		RegisterRuntimeServices();
+		RegisterGameplayServices();
+
+		// Freeze the locator, then initialize all modules.
+		ServiceLocator::Lock();
+		ServiceLocator::InitializeModule();
+
+		if (m_Window)
+		{
+			if (auto* renderer = ServiceLocator::TryGet<Renderer>())
+			{
+				renderer->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
+			}
+		}
+
+		m_LayerStack = std::make_unique<LayerStack>();
+		m_Timer.LastFrameTime = Platform::GetTime();
+		m_Running = true;
+
 		if (!m_Specification.Headless)
+		{
+			auto imguiLayer = std::make_unique<ImGuiLayer>();
+			m_ImGuiLayer = imguiLayer.get();
+			PushOverlay(std::move(imguiLayer));
+		}
+	}
+
+	void Application::InitializePlatform()
+	{
+		const bool isHeadless = m_Specification.Headless;
+		if (!isHeadless)
 		{
 			m_Window = Window::Create(m_Specification.Window);
 			m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
@@ -53,8 +81,10 @@ namespace Chained
 		{
 			GraphicsDevice::SetAPI(GraphicsDevice::API::None);
 		}
+	}
 
-		// Service registration - explicit order
+	void Application::RegisterCoreServices()
+	{
 		unsigned int threads = std::thread::hardware_concurrency();
 		if (threads == 0)
 		{
@@ -62,13 +92,6 @@ namespace Chained
 		}
 		unsigned int workerCount = (threads > 1) ? (threads - 1) : 1;
 
-		// Determine an optional explicit resources-directory override.
-		// When ApplicationSpecification::ResourcesDir is set (e.g. via CMake for a
-		// packaged/installed build), asset paths resolve there instead of the
-		// default EngineRoot/ProjectDirectory search. When empty, the original
-		// resolution is preserved: we must NOT call SetAssetDirectory, because asset
-		// references already include the "resources/" prefix and would otherwise
-		// double up (e.g. ".../resources/resources/...").
 		std::filesystem::path resourcesDir;
 		if (!m_Specification.ResourcesDir.empty() && std::filesystem::exists(m_Specification.ResourcesDir))
 		{
@@ -91,45 +114,30 @@ namespace Chained
 			}
 			return am;
 		});
+	}
 
-		// 4. Renderer (only when not headless)
-		if (!m_Specification.Headless)
+	void Application::RegisterRuntimeServices()
+	{
+		const bool isHeadless = m_Specification.Headless;
+		if (!isHeadless)
 		{
 			ServiceLocator::Provide<Renderer>([] { return std::make_unique<Renderer>(); });
 			ServiceLocator::Provide<UIFontRegistry>([] { return std::make_unique<UIFontRegistry>(); });
 			ServiceLocator::Provide<WidgetRenderer>([] { return std::make_unique<WidgetRenderer>(); });
 			ServiceLocator::Provide<DebugRenderer>([] { return std::make_unique<DebugRenderer>(); });
 		}
+	}
 
-		// 5. Audio, Physics, ScriptEngine, Network
+	void Application::RegisterGameplayServices()
+	{
 		ServiceLocator::Provide<Audio>([] { return std::make_unique<Audio>(); });
 		ServiceLocator::Provide<Physics>([] { return std::make_unique<Physics>(); });
-		ServiceLocator::Provide<ScriptEngine>(
-			[=] { return std::make_unique<ScriptEngine>(m_Specification.EnableScripting); });
+		if (m_Specification.EnableScripting)
+		{
+			ServiceLocator::Provide<ScriptEngine>(
+				[=] { return std::make_unique<ScriptEngine>(m_Specification.EnableScripting); });
+		}
 		ServiceLocator::Provide<Network>([] { return std::make_unique<Network>(); });
-
-		// 6. Freeze the locator, then initialize all modules
-		ServiceLocator::Lock();
-		ServiceLocator::InitializeModule();
-
-		if (m_Window)
-		{
-			if (auto* renderer = ServiceLocator::TryGet<Renderer>())
-			{
-				renderer->SetViewportSize(m_Window->GetWidth(), m_Window->GetHeight());
-			}
-		}
-
-		m_LayerStack = std::make_unique<LayerStack>();
-		m_Timer.LastFrameTime = Platform::GetTime();
-		m_Running = true;
-
-		if (!m_Specification.Headless)
-		{
-			auto imguiLayer = std::make_unique<ImGuiLayer>();
-			m_ImGuiLayer = imguiLayer.get();
-			PushOverlay(std::move(imguiLayer));
-		}
 	}
 
 	Application::~Application()

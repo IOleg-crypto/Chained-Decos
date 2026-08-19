@@ -2,7 +2,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/common/thread_pool.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/platform/dialogs/dialogs.h"
 #include "engine/project/project.h"
 #include "engine/scene/scene.h"
