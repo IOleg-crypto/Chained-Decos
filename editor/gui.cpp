@@ -9,6 +9,7 @@
 #include "engine/project/project.h"
 #include "events.h"
 #include "thirdparty/IconsFontAwesome6.h"
+#include "misc/cpp/imgui_stdlib.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "engine/common/thread_pool.h"
@@ -112,26 +113,14 @@ namespace Chained
 		}
 		DrawPropertyLabel(label);
 		ImGui::PushID(label);
-		char inputTextBuf[1024];
-		memset(inputTextBuf, 0, sizeof(inputTextBuf));
-		strncpy(inputTextBuf, value.c_str(), sizeof(inputTextBuf) - 1);
-		bool changed = false;
+		bool changed;
 		if (multiline)
 		{
-			if (ImGui::InputTextMultiline("##prop", inputTextBuf, sizeof(inputTextBuf),
-										  ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 3)))
-			{
-				value = inputTextBuf;
-				changed = true;
-			}
+			changed = ImGui::InputTextMultiline("##prop", &value, ImVec2(0, ImGui::GetTextLineHeightWithSpacing() * 3));
 		}
 		else
 		{
-			if (ImGui::InputText("##prop", inputTextBuf, sizeof(inputTextBuf)))
-			{
-				value = inputTextBuf;
-				changed = true;
-			}
+			changed = ImGui::InputText("##prop", &value);
 		}
 		ImGui::PopID();
 		return changed;
