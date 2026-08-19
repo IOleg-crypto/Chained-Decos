@@ -3,8 +3,8 @@
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/ui/ui_font_registry.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/ui_font_registry.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/imgui/imgui_layer.h"
 #include "thirdparty/IconsFontAwesome6.h"
 

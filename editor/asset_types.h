@@ -8,27 +8,27 @@
 namespace Chained
 {
 
-enum class EditorAssetType
-{
-    Directory,
-    Scene,
-    Script,
-    Model,
-    Texture,
-    Audio,
-    Prefab,
-    Shader,
-    Other
-};
+	enum class EditorAssetType
+	{
+		Directory,
+		Scene,
+		Script,
+		Model,
+		Texture,
+		Audio,
+		Prefab,
+		Shader,
+		Other
+	};
 
-struct AssetEntry
-{
-    std::string name;
-    std::filesystem::path path;
-    EditorAssetType type;
-    uint32_t icon = 0;
-    bool isDirectory = false;
-};
+	struct AssetEntry
+	{
+		std::string name;
+		std::filesystem::path path;
+		EditorAssetType type;
+		uint32_t icon = 0;
+		bool isDirectory = false;
+	};
 
 } // namespace Chained
 

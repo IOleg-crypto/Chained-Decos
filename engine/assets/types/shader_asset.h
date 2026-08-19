@@ -8,36 +8,36 @@
 namespace Chained
 {
 
-class ShaderAsset : public Asset
-{
-public:
-    ShaderAsset()
-        : Asset(GetStaticType())
-    {
-    }
-    virtual ~ShaderAsset() = default;
+	class ShaderAsset : public Asset
+	{
+	public:
+		ShaderAsset()
+			: Asset(GetStaticType())
+		{
+		}
+		virtual ~ShaderAsset() = default;
 
-    static AssetType GetStaticType()
-    {
-        return AssetType::Shader;
-    }
+		static AssetType GetStaticType()
+		{
+			return AssetType::Shader;
+		}
 
-    void OnLoaded() override
-    {
-    } // Shaders are usually loaded synchronously on GPU
+		void OnLoaded() override
+		{
+		} // Shaders are usually loaded synchronously on GPU
 
-    std::shared_ptr<Shader> GetShader() const
-    {
-        return m_Shader;
-    }
-    void SetShader(const std::shared_ptr<Shader>& shader)
-    {
-        m_Shader = shader;
-    }
+		std::shared_ptr<Shader> GetShader() const
+		{
+			return m_Shader;
+		}
+		void SetShader(const std::shared_ptr<Shader>& shader)
+		{
+			m_Shader = shader;
+		}
 
-private:
-    std::shared_ptr<Shader> m_Shader;
-};
+	private:
+		std::shared_ptr<Shader> m_Shader;
+	};
 
 } // namespace Chained
 

@@ -8,35 +8,35 @@
 
 namespace Chained
 {
-class EditorProjectManager
-{
-public:
-    EditorProjectManager();
-    ~EditorProjectManager() = default;
+	class EditorProjectManager
+	{
+	public:
+		EditorProjectManager();
+		~EditorProjectManager() = default;
 
-    void NewProject();
-    void NewProject(const std::string& name, const std::string& path);
-    void OpenProject();
-    void OpenProject(const std::filesystem::path& path);
-    void SaveProject();
-    void LaunchStandalone(std::shared_ptr<Scene> editorScene);
+		void NewProject();
+		void NewProject(const std::string& name, const std::string& path);
+		void OpenProject();
+		void OpenProject(const std::filesystem::path& path);
+		void SaveProject();
+		void LaunchStandalone(std::shared_ptr<Scene> editorScene);
 
-    bool OnProjectOpened(ProjectOpenedEvent& e);
+		bool OnProjectOpened(ProjectOpenedEvent& e);
 
-    // Runs the deferred part of project opening (font atlas rebuild, scene load).
-    // Must be called outside the ImGui frame — see EditorLayer::OnUpdate().
-    void ProcessPendingProjectOpen();
+		// Runs the deferred part of project opening (font atlas rebuild, scene load).
+		// Must be called outside the ImGui frame — see EditorLayer::OnUpdate().
+		void ProcessPendingProjectOpen();
 
-    const std::string& GetLastProjectPath() const;
-    void RestoreLastProjectPath(const std::string& path);
+		const std::string& GetLastProjectPath() const;
+		void RestoreLastProjectPath(const std::string& path);
 
-    // Returns the pending project path and clears it (consume-once).
-    std::string ConsumePendingProjectPath();
+		// Returns the pending project path and clears it (consume-once).
+		std::string ConsumePendingProjectPath();
 
-private:
-    std::string m_LastProjectPath;
-    std::string m_PendingOpenedProjectPath;
-};
+	private:
+		std::string m_LastProjectPath;
+		std::string m_PendingOpenedProjectPath;
+	};
 
 } // namespace Chained
 

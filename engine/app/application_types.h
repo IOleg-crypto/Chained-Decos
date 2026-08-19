@@ -12,7 +12,6 @@ namespace Chained
 		int Count = 0;
 		char** Args = nullptr;
 	};
-
 	struct ApplicationSpecification
 	{
 		std::string Name;
@@ -24,6 +23,7 @@ namespace Chained
 		bool Headless = false;
 		bool EnableScripting = true;
 	};
+
 } // namespace Chained
 
 #endif // CH_APPLICATION_TYPES_H

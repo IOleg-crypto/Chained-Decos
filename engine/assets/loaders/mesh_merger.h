@@ -9,12 +9,12 @@
 namespace Chained
 {
 
-class MeshMerger
-{
-public:
-    static void Process(const std::filesystem::path& modelPath, std::vector<MeshData>& meshes,
-                        std::vector<MaterialData>& materials, std::vector<MeshInstance>& instances);
-};
+	class MeshMerger
+	{
+	public:
+		static void Process(const std::filesystem::path& modelPath, std::vector<MeshData>& meshes,
+							std::vector<MaterialData>& materials, std::vector<MeshInstance>& instances);
+	};
 
 } // namespace Chained
 
