@@ -360,3 +360,47 @@ Entities:
       Label: Options
       Interactable: true
       Auto Size: false
+  - Entity: 12345678901234567890
+    TransformComponent:
+      Translation: [0, 0, 10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: MenuCamera2D
+    IDComponent:
+      {}
+    CameraComponent:
+      Primary: false
+      FixedAspectRatio: false
+      IsOrbitCamera: false
+      TargetEntityTag: ""
+      OrbitDistance: 10
+      OrbitYaw: 0
+      OrbitPitch: 20
+      LookSensitivity: 0.9
+      nearClip: -1
+      farClip: 1
+      verticalFov: 60
+      orthographicSize: 10
+  - Entity: 12345678901234567891
+    TransformComponent:
+      Translation: [0, 0, 10]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: MenuCamera3D
+    IDComponent:
+      {}
+    CameraComponent:
+      Primary: false
+      FixedAspectRatio: false
+      IsOrbitCamera: false
+      TargetEntityTag: ""
+      OrbitDistance: 10
+      OrbitYaw: 0
+      OrbitPitch: 20
+      LookSensitivity: 0.9
+      nearClip: 0.1
+      farClip: 1000
+      verticalFov: 60
+      orthographicSize: 10

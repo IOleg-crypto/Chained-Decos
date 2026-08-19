@@ -234,6 +234,17 @@ namespace Chained
 
 			ImGui::Separator();
 
+			if (net->IsUpnpAvailable())
+			{
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "UPnP: Active — port forwarded automatically");
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "UPnP: Not available — manual forwarding required");
+			}
+
+			ImGui::Separator();
+
 			if (ImGui::Button("Stop Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
 			{
 				net->Shutdown();
