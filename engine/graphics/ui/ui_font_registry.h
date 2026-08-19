@@ -6,6 +6,7 @@
 #include <string>
 #include <utility>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
 namespace Chained
@@ -94,8 +95,12 @@ namespace Chained
 
 		// Keyed by normalized relative name, e.g. "fonts/Roboto.ttf". One ImFont* per
 		// file — with ImGui 1.92 dynamic fonts any render size works from a single entry
-		// (pass the size to PushFont()/ImDrawList::AddText()). nullptr = cached failure.
+		// (pass the size to PushFont()/ImDrawList::AddText()).
 		std::unordered_map<std::string, ImFont*> m_Fonts;
+
+		// Failed font names are tracked separately so the registry can retry pack/file loads
+		// instead of permanently caching a null font pointer from a transient failure.
+		std::unordered_set<std::string> m_FailedFonts;
 
 		// Tracks which relative paths have been discovered (name -> absolute path)
 		std::unordered_map<std::string, std::string> m_KnownPaths;

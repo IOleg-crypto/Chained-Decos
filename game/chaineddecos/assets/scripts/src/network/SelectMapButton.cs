@@ -5,7 +5,7 @@ namespace ChainedDecos.Scripts
 {
     /// <summary>
     /// Attach directly to a map-selection Button entity.
-    /// When clicked, stores the SelectedMap for LobbyManager.
+    /// When clicked, stores the SelectedMap for LobbyManager and optionally loads the next scene.
     /// </summary>
     public class SelectMapButton : Script
     {
@@ -14,11 +14,11 @@ namespace ChainedDecos.Scripts
         public override void OnUpdate(float deltaTime)
         {
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
-            if (btn != null && btn.IsClicked)
-            {
-                LobbyManager.SelectedMap = MapScene;
-                Log.Info($"[SelectMapButton] Selected map: {MapScene}");
-            }
+            if (btn == null || !btn.IsClicked)
+                return;
+
+            LobbyManager.SelectedMap = MapScene;
+            Log.Info($"[SelectMapButton] Selected map: {MapScene}");
         }
     }
 }

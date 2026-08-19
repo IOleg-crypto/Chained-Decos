@@ -346,7 +346,7 @@ namespace Chained
 		ImGui::SetNextWindowSize(ImVec2(420, 0), ImGuiCond_Once);
 		if (ImGui::Begin("Export Project", &m_ExportDialog.Open))
 		{
-			ImGui::Text("Choose export mode:");
+			ImGui::TextUnformatted("Choose export mode:");
 			ImGui::Spacing();
 
 			struct ModeInfo
@@ -356,26 +356,44 @@ namespace Chained
 				const char* desc;
 			};
 			ModeInfo modes[] = {
-				{PackMode::Fast, "Fast", "LZ4 HC compression. Faster export, larger pack file."},
-				{PackMode::Balanced, "Balanced", "ZSTD compression. Slower export, smaller pack file."},
-				{PackMode::Raw, "Raw", "No compression. Stored as-is."},
+				{PackMode::Fast, "Fast", "LZ4 HC compression\nFaster export, larger pack."},
+				{PackMode::Balanced, "Balanced", "ZSTD compression\nSlower export, smaller pack."},
+				{PackMode::Raw, "Raw", "No compression\nStored as-is."},
 			};
 
-			for (const auto& m : modes)
+			const float modeWidth = (ImGui::GetContentRegionAvail().x - ImGui::GetStyle().ItemSpacing.x * 2.0f) / 3.0f;
+			for (size_t i = 0; i < std::size(modes); ++i)
 			{
-				bool selected = (m_ExportDialog.SelectedMode == m.mode);
-				if (ImGui::RadioButton(m.label, selected))
+				const auto& m = modes[i];
+				const bool selected = (m_ExportDialog.SelectedMode == m.mode);
+				ImGui::PushID(static_cast<int>(m.mode));
+				ImGui::PushStyleColor(ImGuiCol_Button,
+									  selected ? ImVec4(0.20f, 0.62f, 0.78f, 1.0f) : ImVec4(0.18f, 0.20f, 0.24f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered,
+									  selected ? ImVec4(0.28f, 0.72f, 0.88f, 1.0f) : ImVec4(0.22f, 0.24f, 0.29f, 1.0f));
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive,
+									  selected ? ImVec4(0.16f, 0.52f, 0.68f, 1.0f) : ImVec4(0.14f, 0.16f, 0.20f, 1.0f));
+				ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(10.0f, 10.0f));
+				if (ImGui::Button(m.label, ImVec2(modeWidth, 54.0f)))
 				{
 					m_ExportDialog.SelectedMode = m.mode;
 				}
-				ImGui::SameLine();
-				ImGui::TextDisabled("%s", m.desc);
+				ImGui::PopStyleVar();
+				ImGui::PopStyleColor(3);
+				ImGui::TextColored(selected ? ImVec4(0.75f, 0.92f, 1.0f, 1.0f) : ImVec4(0.75f, 0.75f, 0.75f, 1.0f),
+								   "%s", m.desc);
+				ImGui::PopID();
+				if (i + 1 < std::size(modes))
+				{
+					ImGui::SameLine();
+				}
 			}
 
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
 
+			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
 			ImGui::SliderFloat("Compression Threshold", &m_ExportDialog.ZipThreshold, 0.0f, 1.0f, "%.2f");
 			if (ImGui::IsItemHovered())
 			{
@@ -402,11 +420,13 @@ namespace Chained
 				ImGui::SetTooltip("Rebuild resources.pack even when it is already up to date.\nBy default the pack is "
 								  "reused if no source file changed.");
 			}
+			ImGui::PopStyleVar();
 
 			ImGui::Spacing();
 			ImGui::Separator();
 			ImGui::Spacing();
 
+			ImGui::TextDisabled("Output folder");
 			if (ImGui::Button("Browse Output Folder...", ImVec2(-1, 0)))
 			{
 				auto outDir = Dialogs::PickFolder();
