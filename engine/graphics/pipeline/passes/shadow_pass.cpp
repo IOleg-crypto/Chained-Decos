@@ -4,7 +4,6 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
 #include "engine/project/project.h"
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace Chained
 {

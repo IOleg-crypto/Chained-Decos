@@ -33,18 +33,8 @@ namespace Chained
 		int Stacks = 16;
 		glm::vec3 Dimensions = {1.0f, 1.0f, 1.0f};
 
-		// Material Properties (Serialized)
-		std::string AlbedoPath;
-		glm::vec4 AlbedoColor = {1.0f, 1.0f, 1.0f, 1.0f};
-		std::string NormalPath;
-		std::string MetallicRoughnessPath;
-		std::string EmissivePath;
-		glm::vec4 EmissiveColor = {0.0f, 0.0f, 0.0f, 1.0f};
-		float EmissiveIntensity = 0.0f;
-		float Metalness = 0.0f;
-		float Roughness = 0.5f;
-		bool Transparent = false;
-		float Alpha = 1.0f;
+		/// Path to the generated .chmesh file (managed by PrimitiveSystem, not edited by user).
+		std::string MeshPath;
 
 		static const char* GetStaticName()
 		{
@@ -60,50 +50,20 @@ namespace Chained
 			UIMeta Slices;
 			UIMeta Stacks;
 			UIMeta Dimensions;
-			// Material properties are edited in the Material Editor; serialized but hidden in the component inspector.
-			UIMeta AlbedoPath = {.Hidden = true};
-			UIMeta AlbedoColor = {.Hidden = true};
-			UIMeta NormalPath = {.Hidden = true};
-			UIMeta MetallicRoughnessPath = {.Hidden = true};
-			UIMeta EmissivePath = {.Hidden = true};
-			UIMeta EmissiveColor = {.Hidden = true};
-			UIMeta EmissiveIntensity = {.Hidden = true};
-			UIMeta Metalness = {.Hidden = true};
-			UIMeta Roughness = {.Hidden = true};
-			UIMeta Transparent = {.Hidden = true};
-			UIMeta Alpha = {.Hidden = true};
+			// MeshPath is managed by PrimitiveSystem — not shown in inspector.
+			UIMeta MeshPath = {.Hidden = true};
 		};
+	};
 
-		Material GetMaterial() const
+	template <> struct FieldVisibilityOverride<PrimitiveComponent>
+	{
+		static bool IsVisible(std::string_view field, const PrimitiveComponent& comp)
 		{
-			Material mat;
-			mat.AlbedoPath = AlbedoPath;
-			mat.AlbedoColor = AlbedoColor;
-			mat.NormalPath = NormalPath;
-			mat.MetallicRoughnessPath = MetallicRoughnessPath;
-			mat.EmissivePath = EmissivePath;
-			mat.EmissiveColor = EmissiveColor;
-			mat.EmissiveIntensity = EmissiveIntensity;
-			mat.Metalness = Metalness;
-			mat.Roughness = Roughness;
-			mat.Transparent = Transparent;
-			mat.Alpha = Alpha;
-			return mat;
-		}
-
-		void SetMaterial(const Material& mat)
-		{
-			AlbedoPath = mat.AlbedoPath;
-			AlbedoColor = mat.AlbedoColor;
-			NormalPath = mat.NormalPath;
-			MetallicRoughnessPath = mat.MetallicRoughnessPath;
-			EmissivePath = mat.EmissivePath;
-			EmissiveColor = mat.EmissiveColor;
-			EmissiveIntensity = mat.EmissiveIntensity;
-			Metalness = mat.Metalness;
-			Roughness = mat.Roughness;
-			Transparent = mat.Transparent;
-			Alpha = mat.Alpha;
+			if (field == "Dimensions")
+			{
+				return comp.Type == PrimitiveType::Cube || comp.Type == PrimitiveType::Plane;
+			}
+			return true;
 		}
 	};
 

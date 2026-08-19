@@ -1,5 +1,5 @@
 #include "physics.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
@@ -9,8 +9,6 @@
 #include "jolt_physics_world.h"
 
 #include "engine/project/project.h"
-
-#include <memory>
 
 namespace Chained
 {

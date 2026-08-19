@@ -9,7 +9,15 @@
 namespace Chained
 {
 
-	struct RawImage
+	enum class TextureUsage
+	{
+		Scene,
+		UI,
+		Skybox,
+		Cubemap,
+	};
+
+	struct DecodedImage
 	{
 		void* data = nullptr;
 		int width = 0;
@@ -53,7 +61,7 @@ namespace Chained
 			return m_IsHDR;
 		}
 
-		void SetPendingImage(const RawImage& image)
+		void SetPendingImage(const DecodedImage& image)
 		{
 			m_PendingImage = image;
 			m_HasPendingImage = true;
@@ -66,13 +74,31 @@ namespace Chained
 		{
 			m_IsHDR = isHDR;
 		}
+		void SetUsage(TextureUsage usage)
+		{
+			m_Usage = usage;
+		}
+		TextureUsage GetUsage() const
+		{
+			return m_Usage;
+		}
+		void SetFlipYOnLoad(bool flipY)
+		{
+			m_FlipYOnLoad = flipY;
+		}
+		bool ShouldFlipYOnLoad() const
+		{
+			return m_FlipYOnLoad;
+		}
 
 	private:
 		std::shared_ptr<Texture> m_Texture;
-		RawImage m_PendingImage = {0};
+		DecodedImage m_PendingImage = {0};
 		bool m_HasPendingImage = false;
 		bool m_IsCubemap = false;
 		bool m_IsHDR = false;
+		bool m_FlipYOnLoad = true;
+		TextureUsage m_Usage = TextureUsage::Scene;
 	};
 
 } // namespace Chained

@@ -9,7 +9,7 @@
 #include "engine/scene/components/render/model_component.h"
 #include "engine/scene/components/core/transform_component.h"
 #include "engine/common/thread_pool.h"
-#include <algorithm>
+
 #include <future>
 
 namespace Chained::PhysicsBodySystem

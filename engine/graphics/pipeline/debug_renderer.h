@@ -57,7 +57,7 @@ namespace Chained
 							  Renderer& renderer, bool useWireframe = true);
 		void DrawSphereWires(const glm::mat4& transform, float radius, const glm::vec4& color, Renderer& renderer,
 							 bool useWireframe = true);
-		void DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color, Renderer& renderer);
+		void DrawInfiniteGrid(const Camera3D& camera, const GridSettings& grid, Renderer& renderer);
 
 		// High-level debug overlay: sets up pipeline state, draws colliders + grid, flushes lines.
 		void RenderDebug(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera,

@@ -3,7 +3,6 @@
 #include "component_registry.h"
 #include "engine/reflection/reflection_rfl_impl.h"
 #include "components/scripting/scripting_components.h"
-#include <yaml-cpp/yaml.h>
 
 namespace Chained
 {

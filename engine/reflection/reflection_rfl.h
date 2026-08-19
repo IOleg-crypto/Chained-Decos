@@ -39,6 +39,15 @@ namespace Chained
 		const char* Extensions = nullptr;
 	};
 
+	// Per-component field visibility override. Specialise to hide/show fields at runtime.
+	template <typename T> struct FieldVisibilityOverride
+	{
+		static bool IsVisible(std::string_view /*field*/, const T&)
+		{
+			return true;
+		}
+	};
+
 #define CH_MARK_RFL(Type)                                                                                              \
 	template <> struct is_rfl_component<Type> : std::true_type                                                         \
 	{                                                                                                                  \

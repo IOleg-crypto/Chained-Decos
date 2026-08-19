@@ -1,4 +1,5 @@
 #include "engine/app/application.h"
+#include "engine/graphics/api/graphics_device.h"
 #include "engine/core/profiler.h"
 #include "engine/core/platform.h"
 #include "engine/imgui/imgui_layer.h"
@@ -47,6 +48,10 @@ namespace Chained
 		{
 			m_Window = Window::Create(m_Specification.Window);
 			m_Window->SetEventCallback(CH_BIND_EVENT_FN(Application::OnEvent));
+		}
+		else
+		{
+			GraphicsDevice::SetAPI(GraphicsDevice::API::None);
 		}
 
 		// Service registration - explicit order

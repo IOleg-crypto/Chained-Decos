@@ -45,7 +45,7 @@ add_library(engine_assets STATIC
     loaders/model_loader.cpp
     loaders/shader_loader.h
     loaders/shader_loader.cpp
-    loaders/stb_image.cpp
+    loaders/stb_image_impl.h
     loaders/texture_loader.h
     loaders/texture_loader.cpp
 )

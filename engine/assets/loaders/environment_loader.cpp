@@ -1,14 +1,10 @@
 #include "engine/assets/loaders/environment_loader.h"
-#include "engine/core/log.h"
+
 #include "engine/assets/types/environment_asset.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 #include "engine/scene/yaml.h"
-#include "engine/common/color.h"
 #include "yaml-cpp/yaml.h"
-#include <filesystem>
-#include <fstream>
-#include <sstream>
 
 namespace Chained
 {

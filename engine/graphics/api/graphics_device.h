@@ -140,6 +140,10 @@ namespace Chained
 		{
 			return s_API;
 		}
+		static void SetAPI(API api)
+		{
+			s_API = api;
+		}
 		static std::unique_ptr<GraphicsDevice> Create();
 
 	private:

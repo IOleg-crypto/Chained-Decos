@@ -154,11 +154,7 @@ namespace ChainedDecos.Scripts
             if (avatar == null || !avatar.IsValid)
                 return;
 
-            PrimitiveComponent? prim = avatar.GetComponent<PrimitiveComponent>();
-            if (prim != null)
-            {
-                prim.AlbedoColor = SkinDatabase.GetColor(skinIndex);
-            }
+            // Primitive materials are now managed via Material Editor (.chmat)
         }
 
         private void SetSlotHidden(int slot)

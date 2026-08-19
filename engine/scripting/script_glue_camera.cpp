@@ -1,5 +1,5 @@
 #include "script_glue_camera.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/physics/raycast_result.h"

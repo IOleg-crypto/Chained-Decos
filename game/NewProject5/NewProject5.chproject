@@ -1,0 +1,41 @@
+Project:
+  Name: NewProject5
+  IconPath: ""
+  StartScene: ""
+  AssetDirectory: assets
+  ActiveScene: assets/scenes/start_world
+  Physics:
+    Gravity: 20
+    FixedTimestep: 0.0166666675
+  Animation:
+    TargetFPS: 30
+  Render:
+    ShadowResolution: 2048
+    EnableShadows: true
+    AntiAliasingSamples: 4
+  Mesh:
+    ImportMaterials: true
+    CalculateTangents: true
+    FlipUVs: true
+  Window:
+    Width: 1280
+    Height: 720
+    VSync: true
+  Audio:
+    MasterVolume: 1
+    MusicVolume: 1
+    SFXVolume: 1
+  Runtime:
+    Fullscreen: false
+    ShowStats: true
+    EnableConsole: false
+    TargetFPS: 0
+  Scripting:
+    ModuleName: NewProject5.Scripts.dll
+    ModuleDirectory: assets/bin
+    AutoLoad: true
+  Export:
+    Mode: 1
+    ZipThreshold: 0.0500000007
+    DataVersion: 0
+  BuildConfig: 0

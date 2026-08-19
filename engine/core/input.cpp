@@ -1,5 +1,5 @@
 #include "input.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 
 namespace Chained::Core

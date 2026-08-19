@@ -31,6 +31,11 @@ namespace Chained
 	{
 		int Slices = 20;
 		float Spacing = 1.0f;
+		float SecondarySpacing = 10.0f;
+		glm::vec4 Color = {1.0f, 1.0f, 1.0f, 0.4f};
+		float FadeStart = 0.0f;
+		float FadeEnd = 8000.0f;
+		float PlaneSize = 15000.0f;
 	};
 
 	enum class SceneType

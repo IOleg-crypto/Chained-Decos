@@ -12,6 +12,5 @@ namespace Chained
 	{
 		ComponentRegistry::RegisterReflective<RigidBodyComponent>("Rigid Body", ICON_FA_CUBES, "Physics");
 		ComponentRegistry::RegisterReflective<ColliderComponent>("Collider", ICON_FA_SHIELD, "Physics");
-		ComponentRegistry::RegisterReflective<PrimitiveComponent>("Primitive", nullptr, "Physics");
 	}
 } // namespace Chained

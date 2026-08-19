@@ -1,5 +1,5 @@
 #include "engine/assets/types/texture_asset.h"
-#include "engine/core/log.h"
+
 #include "engine/core/profiler.h"
 #include <stb_image.h>
 
