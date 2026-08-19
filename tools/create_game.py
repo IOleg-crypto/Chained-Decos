@@ -10,8 +10,7 @@ Generated:
     ├── CMakeLists.txt          # chained_add_game() boilerplate
     ├── <Name>.chproject        # project metadata (YAML)
     ├── src/
-    │   ├── main.cpp            # CreateApplication entry point
-    │   └── game_module.cpp     # RegisterGameComponents stub
+    │   └── main.cpp            # CreateApplication entry point
     └── assets/
         └── scripts/            # empty, for C# scripts
 """
@@ -28,14 +27,10 @@ from pathlib import Path
 # After .substitute(), we do .replace() to turn them into real CMake syntax.
 _TEMPLATE_CMAKELISTS = """\
 # Game: $PYDISPLAY_NAME
-set(GAME_SOURCES
-    src/game_module.cpp
-)
 
 chained_add_game($PYTARGET_NAME
     PROJECT_GAME $PYGAME_DIR
-    $PYCSHARP_LINE    SOURCES ${GAME_SOURCES}
-)
+    $PYCSHARP_LINE)
 
 # Copy game assets (only if source files changed)
 set(GAME_ASSET_SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/assets")
@@ -66,12 +61,8 @@ _TEMPLATE_MAIN_CPP = """\
 
 namespace Chained
 {
-extern void RegisterGameComponents();
-
 Application* CreateApplication(ApplicationCommandLineArgs args)
 {
-    RegisterGameComponents();
-
     ApplicationSpecification spec;
     spec.Name = "$PYDISPLAY_NAME";
     spec.CommandLineArgs = args;
@@ -99,21 +90,6 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
     auto* app = new Application(spec);
     app->PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));
     return app;
-}
-} // namespace Chained
-"""
-
-# ── game_module.cpp template (no placeholders) ──
-_TEMPLATE_GAME_MODULE_CPP = """\
-#include "engine/scene/component_registry.h"
-#include <entt/entt.hpp>
-
-namespace Chained
-{
-void RegisterGameComponents()
-{
-    // Register custom game components here, e.g.:
-    // ComponentRegistry::RegisterReflective<MyComponent>("MyComponent");
 }
 } // namespace Chained
 """
@@ -187,7 +163,6 @@ def main():
         sys.exit(1)
 
     # Create directory structure
-    (root / "src").mkdir(parents=True)
     (root / "assets" / "scripts").mkdir(parents=True)
 
     # CMakeLists.txt — substitute placeholders then replace CMake syntax
@@ -203,9 +178,6 @@ def main():
     main_cpp = _TEMPLATE_MAIN_CPP.replace("$PYDISPLAY_NAME", display_name)
     (root / "src" / "main.cpp").write_text(main_cpp)
 
-    # src/game_module.cpp (no substitution needed)
-    (root / "src" / "game_module.cpp").write_text(_TEMPLATE_GAME_MODULE_CPP)
-
     # .chproject — substitute placeholders then replace CMake syntax
     scripts_dll = f"{target_name}.Scripts.dll"
     chproject_content = _TEMPLATE_CHPROJECT.replace(
@@ -216,7 +188,6 @@ def main():
     print(f"Created game project: {root}")
     print(f"  CMakeLists.txt      — chained_add_game({target_name})")
     print(f"  src/main.cpp        — CreateApplication entry point")
-    print(f"  src/game_module.cpp — RegisterGameComponents stub")
     print(f"  assets/scripts/     — for C# scripts")
     print(f"  {display_name}.chproject — project metadata")
     print()

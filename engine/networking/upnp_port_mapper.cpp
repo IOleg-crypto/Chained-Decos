@@ -1,11 +1,11 @@
 #include "upnp_port_mapper.h"
-#include "engine/core/log.h"
 
 #include <miniupnpc.h>
 #include <upnpcommands.h>
 #include <igd_desc_parse.h>
 
 #include <cstring>
+#include <string.h>
 #include <cstdlib>
 
 namespace Chained

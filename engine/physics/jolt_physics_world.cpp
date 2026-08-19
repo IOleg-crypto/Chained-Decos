@@ -1,5 +1,5 @@
 #include "jolt_physics_world.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/common/thread_pool.h"
 
@@ -18,11 +18,11 @@
 #include <Jolt/Physics/PhysicsSettings.h>
 #include <Jolt/RegisterTypes.h>
 
-#include <chrono>
 #include <cmath>
-#include <cstdint>
+#include <cstdarg>
 #include <future>
 #include <mutex>
+#include "engine/core/log.h"
 
 namespace Chained
 {
@@ -111,11 +111,35 @@ namespace Chained
 	static ObjectVsBroadPhaseLayerFilterImpl s_ObjVsBPFilter;
 	static ObjectLayerPairFilterImpl s_ObjVsObjFilter;
 
+	static void JoltTraceImpl(const char* inFMT, ...)
+	{
+		va_list list;
+		va_start(list, inFMT);
+		char buffer[1024];
+		vsnprintf(buffer, sizeof(buffer), inFMT, list);
+		va_end(list);
+		CH_CORE_INFO("[Jolt] {}", buffer);
+	}
+
+#ifdef JPH_ENABLE_ASSERTS
+	static bool JoltAssertFailedImpl(const char* inExpression, const char* inMessage, const char* inFile,
+									 JPH::uint inLine)
+	{
+		CH_CORE_ERROR("[Jolt Assert] {}:{} ({}) {}", inFile, inLine, inExpression, inMessage ? inMessage : "");
+		return false;
+	}
+#endif
+
 	// ─────────────────────────────────────────────────────────────────────────────
 	// JoltPhysicsWorld
 	// ─────────────────────────────────────────────────────────────────────────────
 	JoltPhysicsWorld::JoltPhysicsWorld()
 	{
+		JPH::Trace = JoltTraceImpl;
+#ifdef JPH_ENABLE_ASSERTS
+		JPH::AssertFailed = JoltAssertFailedImpl;
+#endif
+
 		// Jolt factory + type registration (owned by this world instance)
 		JPH::RegisterDefaultAllocator();
 		m_Factory = std::make_unique<JPH::Factory>();

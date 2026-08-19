@@ -216,12 +216,24 @@ namespace Chained
 		project->GetConfig().Name = name;
 		project->GetConfig().ProjectDirectory = path;
 
+		auto projectDir = std::filesystem::path(path);
+		auto assetsDir = projectDir / "assets";
+
 		// Create standard directory structure
-		auto scriptsDir = std::filesystem::path(path) / "assets" / "scripts";
-		std::filesystem::create_directories(scriptsDir / "src");
+		std::filesystem::create_directories(assetsDir / "scenes");
+		std::filesystem::create_directories(assetsDir / "materials");
+		std::filesystem::create_directories(assetsDir / "models");
+		std::filesystem::create_directories(assetsDir / "audio");
+		std::filesystem::create_directories(assetsDir / "animations");
+		std::filesystem::create_directories(assetsDir / "shaders");
+		std::filesystem::create_directories(assetsDir / "skyboxes");
+		std::filesystem::create_directories(assetsDir / "prefab");
+		std::filesystem::create_directories(assetsDir / "environments");
+		std::filesystem::create_directories(assetsDir / "scripts" / "src");
 
 		// Generate .csproj
 		{
+			auto scriptsDir = assetsDir / "scripts";
 			auto engineRoot = std::filesystem::path(PROJECT_ROOT_DIR);
 			auto managedCsproj = engineRoot / "scripting" / "managed" / "Chained.Managed.csproj";
 			auto relativeManaged = std::filesystem::relative(managedCsproj, scriptsDir);
@@ -275,17 +287,15 @@ namespace Chained
 		// place the project folder under `game/` for auto-discovery by the
 		// root CMakeLists.txt).
 		{
-			std::filesystem::path cmakeListsPath = std::filesystem::path(path) / "CMakeLists.txt";
+			std::filesystem::path cmakeListsPath = projectDir / "CMakeLists.txt";
 			std::ofstream cmakeOut(cmakeListsPath);
 			if (cmakeOut.is_open())
 			{
-				cmakeOut << R"(
-chained_add_game($TARGET_NAME
-    PROJECT_GAME $GAME_DIR
-    CSHARP_PROJECT "assets/scripts/$TARGET_NAME.Scripts.csproj"
-    SOURCES
-)
-)";
+				std::string gameDir = std::filesystem::path(path).filename().string();
+				cmakeOut << "chained_add_game(" + name + "\n"
+						 << "    PROJECT_GAME " << gameDir << "\n"
+						 << "    CSHARP_PROJECT \"assets/scripts/" << name << ".Scripts.csproj\"\n"
+						 << ")\n";
 				cmakeOut.close();
 			}
 			else
@@ -296,44 +306,57 @@ chained_add_game($TARGET_NAME
 
 		// Create src/main.cpp entry point
 		{
-			std::filesystem::path srcDir = std::filesystem::path(path) / "src";
+			std::filesystem::path srcDir = projectDir / "src";
 			std::filesystem::create_directories(srcDir);
 			std::filesystem::path mainPath = srcDir / "main.cpp";
 			std::ofstream mainOut(mainPath);
 			if (mainOut.is_open())
 			{
-				mainOut << R"(
-#include "engine/app/entry_point.h"
-#include "engine/core/platform.h"
-#include "engine/runtime/runtime_layer.h"
-
-namespace Chained
-{
-extern void RegisterGameComponents();
-
-Application* CreateApplication(ApplicationCommandLineArgs args)
-{
-    RegisterGameComponents();
-
-    ApplicationSpecification spec;
-    spec.Name = "$PROJECT_NAME";
-    spec.CommandLineArgs = args;
-    spec.EnableScripting = true;
-    spec.EngineRoot = Platform::GetExecutableDirectory();
-    spec.WorkingDirectory = Platform::GetExecutableDirectory().string();
-
-    auto* app = new Application(spec);
-    app->PushLayer(std::make_unique<RuntimeLayer>(spec.WorkingDirectory));
-    return app;
-}
-} // namespace Chained
-)";
+				mainOut << "#include \"engine/app/entry_point.h\"\n"
+						<< "#include \"engine/core/platform.h\"\n"
+						<< "#include \"engine/runtime/runtime_layer.h\"\n"
+						<< "\n"
+						<< "namespace Chained\n"
+						<< "{\n"
+						<< "Application* CreateApplication(ApplicationCommandLineArgs args)\n"
+						<< "{\n"
+						<< "    ApplicationSpecification spec;\n"
+						<< "    spec.Name = \"" << name << "\";\n"
+						<< "    spec.CommandLineArgs = args;\n"
+						<< "    spec.EnableScripting = true;\n"
+						<< "    spec.EngineRoot = Platform::GetExecutableDirectory();\n"
+						<< "    spec.WorkingDirectory = Platform::GetExecutableDirectory().string();\n"
+						<< "\n"
+						<< "    // Resolve project path: first CLI arg or default\n"
+						<< "    std::filesystem::path projectPath;\n"
+						<< "    for (int i = 0; i < args.Count; ++i)\n"
+						<< "    {\n"
+						<< "        std::string arg = args.Args[i];\n"
+						<< "        if (arg.ends_with(\".chproject\"))\n"
+						<< "        {\n"
+						<< "            projectPath = arg;\n"
+						<< "            break;\n"
+						<< "        }\n"
+						<< "    }\n"
+						<< "\n"
+						<< "    if (projectPath.empty() || !std::filesystem::exists(projectPath))\n"
+						<< "    {\n"
+						<< "        projectPath = std::filesystem::path(spec.WorkingDirectory) / (spec.Name + "
+						   "\".chproject\");\n"
+						<< "    }\n"
+						<< "\n"
+						<< "    auto* app = new Application(spec);\n"
+						<< "    app->PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));\n"
+						<< "    return app;\n"
+						<< "}\n"
+						<< "} // namespace Chained\n";
 				mainOut.close();
 			}
 		}
 
 		// Generate starter script
 		{
+			auto scriptsDir = assetsDir / "scripts";
 			std::string scriptContent = "using Chained;\n"
 										"\n"
 										"namespace " +
@@ -361,6 +384,39 @@ Application* CreateApplication(ApplicationCommandLineArgs args)
 			{
 				CH_CORE_ERROR("NewProject: Failed to create Starter.cs file '{}'",
 							  (scriptsDir / "src" / "Starter.cs").string());
+			}
+		}
+
+		// Create starter scene
+		{
+			auto scenePath = assetsDir / "scenes" / "untitled.chscene";
+			std::ofstream sceneOut(scenePath);
+			if (sceneOut.is_open())
+			{
+				sceneOut << "Scene: Untitled\n"
+						 << "Settings:\n"
+						 << "  Name: Untitled\n"
+						 << "  Type: 0\n"
+						 << "  Background:\n"
+						 << "    Mode: 2\n"
+						 << "Entities: []\n";
+			}
+		}
+
+		// Create .gitignore
+		{
+			auto gitignorePath = projectDir / ".gitignore";
+			std::ofstream gitignoreOut(gitignorePath);
+			if (gitignoreOut.is_open())
+			{
+				gitignoreOut << "build/\n"
+							 << "*.exe\n"
+							 << "*.dll\n"
+							 << "*.pdb\n"
+							 << "*.obj\n"
+							 << "assets/bin/\n"
+							 << "assets/scripts/bin/\n"
+							 << "assets/scripts/obj/\n";
 			}
 		}
 

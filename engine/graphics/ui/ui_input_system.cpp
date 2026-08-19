@@ -5,8 +5,6 @@
 #include "ui_input_system.h"
 #include "engine/scene/components/ui/control_component.h"
 #include "imgui.h"
-#include <algorithm>
-#include <vector>
 
 namespace Chained
 {

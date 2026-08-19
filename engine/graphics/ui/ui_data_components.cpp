@@ -1,6 +1,5 @@
 #include "ui_data_components.h"
 #include "engine/scene/yaml.h"
-#include <yaml-cpp/yaml.h>
 
 namespace Chained
 {
@@ -728,10 +727,9 @@ namespace Chained
 				return VerticalLayoutGroupData::Deserialize(widgetNode["VerticalLayoutGroupControl"]);
 			}
 
-			if (widgetNode["Box Style"] || widgetNode["Text Style"])
-			{
-				return PanelData::Deserialize(widgetNode);
-			}
+			// Explicit widget type is required here. Falling back to a generic panel
+			// causes unrelated widgets to reuse the wrong payload and look identical.
+			return std::monostate{};
 		}
 
 		auto getNode = [&widgetNode](const char* subkey) -> YAML::Node {

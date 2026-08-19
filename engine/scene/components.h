@@ -13,7 +13,6 @@
 #include "components/render/sprite_component.h"
 #include "components/render/shader_component.h"
 #include "components/render/primitive_component.h"
-#include "components/render/primitive_runtime.h"
 #include "components/physics/physics_component.h"
 #include "components/audio/audio_component.h"
 #include "components/animation/animation_component.h"

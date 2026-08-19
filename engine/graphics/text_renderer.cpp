@@ -2,8 +2,7 @@
 #include "engine/graphics/api/texture.h"
 #include "engine/graphics/freetype_gl_atlas.h"
 #include "engine/assets/types/font_asset.h"
-#include <vector>
-#include <algorithm>
+
 #include <cstring>
 
 namespace Chained
@@ -68,7 +67,7 @@ namespace Chained
 
 	// ── glyph layout ────────────────────────────────────────────────────────
 
-	void TextRenderer::Measure(const std::string& text, const NativeFont& font, float fontSize, float& outWidth,
+	void TextRenderer::Measure(const std::string& text, const Font& font, float fontSize, float& outWidth,
 							   float& outHeight) const
 	{
 		if (text.empty())
@@ -107,8 +106,7 @@ namespace Chained
 		outHeight = maxH;
 	}
 
-	std::vector<GlyphQuad> TextRenderer::LayoutGlyphs(const std::string& text, const NativeFont& font,
-													  float fontSize) const
+	std::vector<GlyphQuad> TextRenderer::LayoutGlyphs(const std::string& text, const Font& font, float fontSize) const
 	{
 		std::vector<GlyphQuad> quads;
 		if (text.empty())
@@ -159,7 +157,7 @@ namespace Chained
 	// ── legacy per-string texture (unchanged interface for compatibility) ────
 
 	static void RasterizeGlyph(uint8_t* dest, int destW, int destH, int x, int y, const uint8_t* atlas, int atlasW,
-							   int atlasH, const NativeFontChar& ch, int glyphW, int glyphH)
+							   int atlasH, const FontChar& ch, int glyphW, int glyphH)
 	{
 		int srcX0 = static_cast<int>(ch.x0 * atlasW);
 		int srcY0 = static_cast<int>(ch.y0 * atlasH);
@@ -196,8 +194,7 @@ namespace Chained
 		}
 	}
 
-	uint32_t TextRenderer::GetOrCreateTexture(const std::string& text, const NativeFont& font, float fontSize,
-											  int padding)
+	uint32_t TextRenderer::GetOrCreateTexture(const std::string& text, const Font& font, float fontSize, int padding)
 	{
 		if (text.empty())
 		{

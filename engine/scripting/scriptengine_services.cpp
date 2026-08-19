@@ -1,6 +1,5 @@
 #include "scriptengine_services.h"
 
-#include "engine/core/log.h"
 #include "engine/core/service_locator.h"
 #include "engine/project/project.h"
 #include "script_glue.h"
@@ -8,11 +7,9 @@
 #include "engine/scripting/scene_scripting_manager.h"
 #include "engine/scripting/scriptengine.h"
 #include <Coral/GC.hpp>
-#include <algorithm>
+
 #include <cctype>
 #include <exception>
-#include <filesystem>
-#include <vector>
 
 #include <Coral/HostInstance.hpp>
 
