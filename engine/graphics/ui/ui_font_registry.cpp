@@ -1,20 +1,17 @@
 #include "ui_font_registry.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/common/asset_path.h"
-#include "engine/common/base.h"
 #include "engine/core/service_locator.h"
 #include "engine/project/project.h"
 #include "thirdparty/imgui/imstb_truetype.h" // Або шлях, де у вас лежить stb_truetype.h
 #include "engine/platform/dialogs/dialogs.h"
-#include <algorithm>
+
 #include <array>
 #include <cmath>
 #include <cstdio>
 #include <cstdlib>
-#include <filesystem>
+
 #include <system_error>
-#include <unordered_set>
-#include <vector>
 #include <thread>
 
 namespace Chained
@@ -397,8 +394,14 @@ namespace Chained
 		auto it = m_Fonts.find(normalizedName);
 		if (it != m_Fonts.end())
 		{
-			return it->second;
+			if (it->second)
+			{
+				return it->second;
+			}
+			m_Fonts.erase(it);
 		}
+
+		m_FailedFonts.erase(normalizedName);
 
 		// Lazy registration. Safe at any time with the dynamic font atlas
 		// (ImGuiBackendFlags_RendererHasTextures) — glyphs bake on demand.
@@ -414,9 +417,8 @@ namespace Chained
 			return RegisterFont(normalizedName, directPath.string(), pixelSize);
 		}
 
-		// Warn once per missing name, then cache the failure so we don't spam per frame.
 		CH_CORE_WARN("UIFontRegistry: Font '{}' not discovered. Check assets/font or assets/fonts.", normalizedName);
-		m_Fonts[normalizedName] = nullptr;
+		m_FailedFonts.insert(normalizedName);
 		return nullptr;
 	}
 
@@ -552,12 +554,13 @@ namespace Chained
 																  &cfg, io.Fonts->GetGlyphRangesCyrillic());
 					if (font)
 					{
+						m_FailedFonts.erase(normalizedName);
 						return CommitFont(normalizedName, font);
 					}
 				}
 			}
 			CH_CORE_WARN("UIFontRegistry: Failed to load pack font '{}'", absolutePath);
-			m_Fonts[normalizedName] = nullptr;
+			m_FailedFonts.insert(normalizedName);
 			return nullptr;
 		}
 
@@ -565,7 +568,7 @@ namespace Chained
 		{
 			CH_CORE_WARN("UIFontRegistry: Skipped font '{}' (unsupported format or CFF/Variable outlines).",
 						 absolutePath);
-			m_Fonts[normalizedName] = nullptr;
+			m_FailedFonts.insert(normalizedName);
 			return nullptr;
 		}
 
@@ -579,16 +582,18 @@ namespace Chained
 		if (!font)
 		{
 			CH_CORE_ERROR("UIFontRegistry: Failed to load font '{}'", absolutePath);
-			m_Fonts[normalizedName] = nullptr;
+			m_FailedFonts.insert(normalizedName);
 			return nullptr;
 		}
 
+		m_FailedFonts.erase(normalizedName);
 		return CommitFont(normalizedName, font);
 	}
 
 	void UIFontRegistry::Clear()
 	{
 		m_Fonts.clear();
+		m_FailedFonts.clear();
 		m_KnownPaths.clear();
 		m_PackFontData.clear();
 		m_DefaultFont = nullptr;
@@ -605,5 +610,4 @@ namespace Chained
 		std::sort(names.begin(), names.end());
 		return names;
 	}
-
 } // namespace Chained

@@ -1,6 +1,7 @@
 #include "property_editor.h"
 #include "engine/reflection/reflection_rfl.h"
 #include "engine/reflection/reflection_rfl_impl.h"
+#include "engine/scene/components/render/primitive_component.h"
 #include "engine/scene/component_registry.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "editor/layer.h"
@@ -12,6 +13,7 @@
 #include "engine/physics/physics.h"
 #include "engine/scene/scene_settings.h"
 #include "imgui.h"
+#include "misc/cpp/imgui_stdlib.h"
 #include "ui_properties.h" // Included here to break circular dependency
 #include <memory>
 #include "engine/scripting/scriptengine.h"
@@ -170,12 +172,8 @@ namespace Chained
 		for (int i = 0; i < (int)data.Items.size(); i++)
 		{
 			ImGui::PushID(i);
-			char buf[256];
-			strncpy(buf, data.Items[i].c_str(), sizeof(buf) - 1);
-			buf[sizeof(buf) - 1] = 0;
-			if (ImGui::InputText("##item", buf, sizeof(buf)))
+			if (ImGui::InputText("##item", &data.Items[i]))
 			{
-				data.Items[i] = buf;
 				changed = true;
 			}
 			ImGui::SameLine();
@@ -468,6 +466,150 @@ namespace Chained
 	{
 		// --- Core Components ---
 		ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
+
+		// Custom drawer for PrimitiveComponent (shown in Inspector)
+		RegisterCustom<PrimitiveComponent>(
+			"Primitive",
+			[](PrimitiveComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+
+				static const char* primitiveTypes[] = {"None", "Cube",	"Sphere", "Plane",	   "Cylinder",
+													   "Cone", "Torus", "Knot",	  "Hemisphere"};
+				int typeIdx = static_cast<int>(comp.Type);
+				if (ui.Enum("Shape Type", typeIdx, primitiveTypes, 9))
+				{
+					comp.Type = static_cast<PrimitiveType>(typeIdx);
+					changed = true;
+				}
+
+				switch (comp.Type)
+				{
+				case PrimitiveType::Cube: {
+					if (ui.Property("Dimensions", comp.Dimensions, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Sphere: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Plane: {
+					if (ui.Property("Dimensions", comp.Dimensions, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Cylinder: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Height", comp.Height, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Cone: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Height", comp.Height, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Torus: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Inner Radius", comp.InnerRadius, PropertyMeta(0.01f, 50.0f, 0.01f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Knot: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Inner Radius", comp.InnerRadius, PropertyMeta(0.01f, 50.0f, 0.01f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Hemisphere: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				default:
+					break;
+				}
+
+				if (!comp.MeshPath.empty())
+				{
+					ImGui::Spacing();
+					ImGui::TextDisabled(ICON_FA_FILE " %s", comp.MeshPath.c_str());
+				}
+
+				return changed;
+			},
+			ICON_FA_SHAPES);
 		RegisterCustom<LightComponent>(
 			"Light",
 			[&](LightComponent& comp, Entity entity) {
@@ -839,56 +981,73 @@ namespace Chained
 					changed = true;
 				}
 
-				ui.Separator();
-				// Text Style
-				ui.Header("Text Style");
+				const bool needsTextStyle =
+					std::holds_alternative<ButtonData>(comp.Data) || std::holds_alternative<LabelData>(comp.Data) ||
+					std::holds_alternative<CheckboxData>(comp.Data) ||
+					std::holds_alternative<InputTextData>(comp.Data) ||
+					std::holds_alternative<ComboBoxData>(comp.Data) ||
+					std::holds_alternative<RadioButtonData>(comp.Data) ||
+					std::holds_alternative<ColorPickerData>(comp.Data) ||
+					std::holds_alternative<DragFloatData>(comp.Data) ||
+					std::holds_alternative<DragIntData>(comp.Data) || std::holds_alternative<TabBarData>(comp.Data) ||
+					std::holds_alternative<TabItemData>(comp.Data) ||
+					std::holds_alternative<CollapsingHeaderData>(comp.Data) ||
+					std::holds_alternative<PlotData>(comp.Data) || std::holds_alternative<ProgressBarData>(comp.Data) ||
+					std::holds_alternative<ImageButtonData>(comp.Data);
+
+				if (needsTextStyle)
 				{
-					auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>();
-					auto fontNames = fontRegistry ? fontRegistry->GetKnownFontNames() : std::vector<std::string>{};
-					fontNames.insert(fontNames.begin(), "Default");
-					if (ui.StringEnum("Font Name", comp.TextStyle.FontName, fontNames))
+					ui.Separator();
+					// Text Style
+					ui.Header("Text Style");
+					{
+						auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>();
+						auto fontNames = fontRegistry ? fontRegistry->GetKnownFontNames() : std::vector<std::string>{};
+						fontNames.insert(fontNames.begin(), "Default");
+						if (ui.StringEnum("Font Name", comp.TextStyle.FontName, fontNames))
+						{
+							changed = true;
+						}
+					}
+					if (ui.Property("Font Size", comp.TextStyle.FontSize, PropertyMeta(4.0f, 256.0f, 0.5f)))
 					{
 						changed = true;
 					}
-				}
-				if (ui.Property("Font Size", comp.TextStyle.FontSize, PropertyMeta(4.0f, 256.0f, 0.5f)))
-				{
-					changed = true;
-				}
-				if (ui.Property("Text Color", comp.TextStyle.TextColor))
-				{
-					changed = true;
-				}
-				if (ui.Property("Shadow", comp.TextStyle.Shadow))
-				{
-					changed = true;
-				}
-				if (comp.TextStyle.Shadow)
-				{
-					if (ui.Property("Shadow Offset", comp.TextStyle.ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.5f)))
+					if (ui.Property("Text Color", comp.TextStyle.TextColor))
 					{
 						changed = true;
 					}
-					if (ui.Property("Shadow Color", comp.TextStyle.ShadowColor))
+					if (ui.Property("Shadow", comp.TextStyle.Shadow))
 					{
 						changed = true;
 					}
-				}
-				if (ui.Property("Letter Spacing", comp.TextStyle.LetterSpacing, PropertyMeta(0.0f, 10.0f, 0.05f)))
-				{
-					changed = true;
-				}
-				if (ui.Property("Line Height", comp.TextStyle.LineHeight, PropertyMeta(0.0f, 5.0f, 0.05f)))
-				{
-					changed = true;
-				}
-				if (ui.Property("H Align", comp.TextStyle.Horizontal))
-				{
-					changed = true;
-				}
-				if (ui.Property("V Align", comp.TextStyle.Vertical))
-				{
-					changed = true;
+					if (comp.TextStyle.Shadow)
+					{
+						if (ui.Property("Shadow Offset", comp.TextStyle.ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.5f)))
+						{
+							changed = true;
+						}
+						if (ui.Property("Shadow Color", comp.TextStyle.ShadowColor))
+						{
+							changed = true;
+						}
+					}
+					if (ui.Property("Letter Spacing", comp.TextStyle.LetterSpacing, PropertyMeta(0.0f, 10.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Line Height", comp.TextStyle.LineHeight, PropertyMeta(0.0f, 5.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("H Align", comp.TextStyle.Horizontal))
+					{
+						changed = true;
+					}
+					if (ui.Property("V Align", comp.TextStyle.Vertical))
+					{
+						changed = true;
+					}
 				}
 
 				ui.Separator();
@@ -898,55 +1057,55 @@ namespace Chained
 						using T = std::decay_t<decltype(data)>;
 						if constexpr (std::is_same_v<T, ButtonData>)
 						{
-							changed = DrawButtonData(data, ui);
+							changed = DrawButtonData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, LabelData>)
 						{
-							changed = DrawLabelData(data, ui);
+							changed = DrawLabelData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, CheckboxData>)
 						{
-							changed = DrawCheckboxData(data, ui);
+							changed = DrawCheckboxData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, SliderData>)
 						{
-							changed = DrawSliderData(data, ui);
+							changed = DrawSliderData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, ProgressBarData>)
 						{
-							changed = DrawProgressBarData(data, ui);
+							changed = DrawProgressBarData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, ImageData>)
 						{
-							changed = DrawImageData(data, ui);
+							changed = DrawImageData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, PanelData>)
 						{
-							changed = DrawPanelData(data, ui);
+							changed = DrawPanelData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, ComboBoxData>)
 						{
-							changed = DrawComboBoxData(data, ui);
+							changed = DrawComboBoxData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, InputTextData>)
 						{
-							changed = DrawInputTextData(data, ui);
+							changed = DrawInputTextData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, ImageButtonData>)
 						{
-							changed = DrawImageButtonData(data, ui);
+							changed = DrawImageButtonData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, RadioButtonData>)
 						{
-							changed = DrawRadioButtonData(data, ui);
+							changed = DrawRadioButtonData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, DragFloatData>)
 						{
-							changed = DrawDragFloatData(data, ui);
+							changed = DrawDragFloatData(data, ui) || changed;
 						}
 						else if constexpr (std::is_same_v<T, DragIntData>)
 						{
-							changed = DrawDragIntData(data, ui);
+							changed = DrawDragIntData(data, ui) || changed;
 						}
 					},
 					comp.Data);

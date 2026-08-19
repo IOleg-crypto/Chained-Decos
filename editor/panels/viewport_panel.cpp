@@ -27,6 +27,7 @@
 #include "engine/scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "undo/entity_commands.h"
+#include <limits>
 
 namespace Chained
 {
@@ -755,18 +756,19 @@ namespace Chained
 		}
 
 		// Object picking logic
-		bool isUIChildHovered =
-			ImGui::IsWindowHovered(ImGuiHoveredFlags_ChildWindows | ImGuiHoveredFlags_AllowWhenBlockedByPopup);
 		bool isClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
 		bool isDragging = m_UIManipulator.IsActive();
 		bool isGizmoDragging = m_Gizmo.IsDragging();
 		bool isGizmoHovered = m_Gizmo.IsHovered();
 		SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
+		ImVec2 mousePos = ImGui::GetMousePos();
+		bool mouseInViewport =
+			(mousePos.x >= viewportScreenPos.x && mousePos.x <= viewportScreenPos.x + viewportSize.x &&
+			 mousePos.y >= viewportScreenPos.y && mousePos.y <= viewportScreenPos.y + viewportSize.y);
 
-		if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && isUIChildHovered && isClicked &&
+		if ((sceneState == SceneState::Edit || sceneState == SceneState::Simulate) && mouseInViewport && isClicked &&
 			!isGizmoDragging && !isGizmoHovered && !isDragging)
 		{
-			ImVec2 mousePos = ImGui::GetMousePos();
 			ImVec2 localMouseImGui = {mousePos.x - viewportScreenPos.x, mousePos.y - viewportScreenPos.y};
 
 			Ray ray = GetMouseRay({localMouseImGui.x, localMouseImGui.y});
@@ -775,6 +777,7 @@ namespace Chained
 
 			// UI Picking
 			auto uiView = activeScene->GetRegistry().view<ControlComponent>();
+			int bestZOrder = std::numeric_limits<int>::min();
 			for (auto entityID : uiView)
 			{
 				Entity entity(entityID, &activeScene->GetRegistry());
@@ -789,7 +792,11 @@ namespace Chained
 				if (mousePos.x >= rect.x && mousePos.x <= rect.x + rect.width && mousePos.y >= rect.y &&
 					mousePos.y <= rect.y + rect.height)
 				{
-					bestHit = entity;
+					if (cc.ZOrder >= bestZOrder)
+					{
+						bestZOrder = cc.ZOrder;
+						bestHit = entity;
+					}
 				}
 			}
 
@@ -816,10 +823,6 @@ namespace Chained
 			}
 			else
 			{
-				ImVec2 mousePos = ImGui::GetMousePos();
-				bool mouseInViewport =
-					(mousePos.x >= viewportScreenPos.x && mousePos.x <= viewportScreenPos.x + viewportSize.x &&
-					 mousePos.y >= viewportScreenPos.y && mousePos.y <= viewportScreenPos.y + viewportSize.y);
 				if (mouseInViewport)
 				{
 					DeselectEntity(activeScene);
