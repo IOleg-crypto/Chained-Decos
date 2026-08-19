@@ -2,7 +2,6 @@
 #define CH_SCENE_H
 
 #include <entt/entt.hpp>
-#include <functional>
 #include <memory>
 #include <string>
 #include <vector>
@@ -14,7 +13,11 @@
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
 #include "engine/scene/scene_state.h"
-#include "engine/scene/systems/system_manager.h"
+
+namespace Chained
+{
+	enum WidgetType : int;
+}
 
 namespace Chained
 {
@@ -47,7 +50,7 @@ namespace Chained
 	public: // Entity Management
 		Entity CreateEntity(const std::string& name = std::string());
 		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
-		Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
+		Entity CreateUIEntity(WidgetType type, const std::string& name = std::string());
 
 	public:
 		entt::entity CopyEntity(entt::entity copyEntity);
@@ -155,16 +158,6 @@ namespace Chained
 		void OnUpdateEditor(Timestep timestep);
 		void OnUpdateRuntime(Timestep timestep);
 
-		// System registration (called during Scene construction)
-		SystemManager& GetSystemManager()
-		{
-			return m_SystemManager;
-		}
-		const SystemManager& GetSystemManager() const
-		{
-			return m_SystemManager;
-		}
-
 		// Async scene loading
 		std::future<std::shared_ptr<Scene>> LoadSceneAsync(const std::string& path);
 		void SwapScene(std::shared_ptr<Scene> newScene);
@@ -206,8 +199,6 @@ namespace Chained
 
 		mutable std::vector<entt::entity> m_CachedRoots;
 		mutable bool m_RootsDirty = true;
-
-		SystemManager m_SystemManager;
 
 	private:
 		void OnIDConstruct(entt::registry& registry, entt::entity entity);

@@ -2,8 +2,8 @@
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/ui/ui_factory.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/ui_data_components.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components/animation/animation_component.h"
 #include "engine/scene/components/core/hierarchy_component.h"
@@ -15,6 +15,7 @@
 #include "engine/scene/systems/asset_resolution_system.h"
 #include "engine/scene/systems/audio_system.h"
 #include "engine/scene/systems/scene_transition_system.h"
+#include "engine/scene/systems/camera_auto_select_system.h"
 #include "engine/scene/systems/network_system.h"
 #include "engine/scene/systems/transform_system.h"
 #include "engine/scene/systems/primitive_system.h"
@@ -45,8 +46,6 @@ namespace Chained
 
 		m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 		m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
-
-		UIFactory::Initialize();
 	}
 
 	Scene::~Scene()
@@ -208,6 +207,8 @@ namespace Chained
 		}
 
 		AudioSystem::OnRuntimeStart(*m_Registry);
+
+		CameraAutoSelectSystem::OnRuntimeStart(*m_Registry);
 
 		auto transitionView = m_Registry->view<SceneTransitionComponent>();
 		for (auto entity : transitionView)
@@ -545,11 +546,12 @@ namespace Chained
 		return dstEntity;
 	}
 
-	Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
+	Entity Scene::CreateUIEntity(WidgetType type, const std::string& name)
 	{
-		Entity entity = CreateEntity(name.empty() ? type : name);
+		Entity entity = CreateEntity(name.empty() ? WidgetTypeName(type) : name);
 		entity.AddComponent<ControlComponent>();
-		UIFactory::Create(type, entity);
+		auto& comp = entity.AddComponent<UIControlComponent>();
+		comp.Data = CreateDefaultWidgetData(type);
 		return entity;
 	}
 
@@ -686,11 +688,17 @@ namespace Chained
 			return;
 		}
 
-		// Рушіймо стан (unique_ptr — move, а не copy)
-		m_Registry = std::move(newScene->m_Registry);
-		m_ScriptingManager = std::move(newScene->m_ScriptingManager);
-		m_Settings = newScene->m_Settings;
-		m_State = newScene->m_State;
+		// Swap ownership explicitly instead of stealing fields from another scene object.
+		// This keeps lifecycle ownership clear and avoids leaving a partially-moved scene behind.
+		std::swap(m_Registry, newScene->m_Registry);
+		std::swap(m_ScriptingManager, newScene->m_ScriptingManager);
+		std::swap(m_Settings, newScene->m_Settings);
+		std::swap(m_State, newScene->m_State);
+		std::swap(m_PendingScenePath, newScene->m_PendingScenePath);
+		std::swap(m_IsStartingUp, newScene->m_IsStartingUp);
+		std::swap(m_PhysicsStartupInitialized, newScene->m_PhysicsStartupInitialized);
+		std::swap(m_CachedRoots, newScene->m_CachedRoots);
+		std::swap(m_RootsDirty, newScene->m_RootsDirty);
 
 		CH_CORE_INFO("Scene: Swapped to '{}'", m_Settings.Name);
 	}

@@ -44,6 +44,7 @@ Chained Decos and Chained Engine target Windows and Linux.
 - YAML-based project and scene serialization
 - Editor with hierarchy/inspector/panels and in-editor play mode
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR)
+- UDP networking with client/server model, UPnP port forwarding, and encryption
 - Project export pipeline with compressed asset packs (ZSTD)
 - Visual Animation Graph system (`.chag`)
 
@@ -167,7 +168,7 @@ Each game has a YAML metadata file defining its entry scene, physics, rendering,
 
 ## Project Structure
 
-- `engine/` — core engine modules (graphics, scene, physics, audio, platform, assets)
+- `engine/` — core engine modules (graphics, scene, physics, audio, platform, assets, networking)
 - `editor/` — ChainedEditor application and editor panels/tools
 - `runtime/` — ChainedRuntime application and runtime layer
 - `engine/scripting/` — script host, glue bindings, and managed build integration
@@ -196,6 +197,9 @@ Each game has a YAML metadata file defining its entry scene, physics, rendering,
 | stb | Image loading |
 | cereal | Binary serialization |
 | reflect-cpp | Runtime reflection |
+| ENet | UDP networking |
+| libsodium | Encryption (xchacha20poly1305) |
+| miniupnpc | UPnP port forwarding |
 
 Always init submodules before building:
 ```bash

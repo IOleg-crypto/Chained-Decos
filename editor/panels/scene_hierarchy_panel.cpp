@@ -475,7 +475,7 @@ namespace Chained
 			struct WidgetEntry
 			{
 				const char* label;
-				const char* typeName;
+				WidgetType type;
 			};
 			struct WidgetCategory
 			{
@@ -485,30 +485,31 @@ namespace Chained
 			};
 
 			static const WidgetEntry basicWidgets[] = {
-				{"Panel", "Panel"},		  {"Button", "Button"},			  {"Label", "Label"},
-				{"Slider", "Slider"},	  {"Checkbox", "Checkbox"},		  {"InputText", "InputText"},
-				{"ComboBox", "ComboBox"}, {"ProgressBar", "ProgressBar"},
+				{"Panel", WidgetType_Panel},	   {"Button", WidgetType_Button},
+				{"Label", WidgetType_Label},	   {"Slider", WidgetType_Slider},
+				{"Checkbox", WidgetType_Checkbox}, {"InputText", WidgetType_InputText},
+				{"ComboBox", WidgetType_ComboBox}, {"ProgressBar", WidgetType_ProgressBar},
 			};
 			static const WidgetEntry visualWidgets[] = {
-				{"Image", "Image"},
-				{"Image Button", "ImageButton"},
-				{"Separator", "Separator"},
+				{"Image", WidgetType_Image},
+				{"Image Button", WidgetType_ImageButton},
+				{"Separator", WidgetType_Separator},
 			};
 			static const WidgetEntry inputWidgets[] = {
-				{"RadioButton", "RadioButton"},
-				{"ColorPicker", "ColorPicker"},
-				{"Drag Float", "DragFloat"},
-				{"Drag Int", "DragInt"},
+				{"RadioButton", WidgetType_RadioButton},
+				{"ColorPicker", WidgetType_ColorPicker},
+				{"Drag Float", WidgetType_DragFloat},
+				{"Drag Int", WidgetType_DragInt},
 			};
 			static const WidgetEntry structuralWidgets[] = {
-				{"Tree Node", "TreeNode"},
-				{"Tab Bar", "TabBar"},
-				{"Tab Item", "TabItem"},
-				{"Collapsing Header", "CollapsingHeader"},
+				{"Tree Node", WidgetType_TreeNode},
+				{"Tab Bar", WidgetType_TabBar},
+				{"Tab Item", WidgetType_TabItem},
+				{"Collapsing Header", WidgetType_CollapsingHeader},
 			};
 			static const WidgetEntry chartWidgets[] = {
-				{"Plot Lines", "PlotLines"},
-				{"Plot Histogram", "PlotHistogram"},
+				{"Plot Lines", WidgetType_PlotLines},
+				{"Plot Histogram", WidgetType_PlotHistogram},
 			};
 
 			static const WidgetCategory widgetCategories[] = {
@@ -529,7 +530,7 @@ namespace Chained
 						{
 							if (ImGui::MenuItem(cat.entries[i].label))
 							{
-								m_Context->CreateUIEntity(cat.entries[i].typeName);
+								m_Context->CreateUIEntity(cat.entries[i].type);
 							}
 						}
 						ImGui::EndMenu();
