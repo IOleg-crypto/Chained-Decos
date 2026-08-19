@@ -57,6 +57,6 @@
 
 // Bind event function helper
 #define CH_BIND_EVENT_FN(fn)                                                                                           \
-    [this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
+	[this](auto&&... args) -> decltype(auto) { return this->fn(std::forward<decltype(args)>(args)...); }
 
 #endif // CH_BASE_H

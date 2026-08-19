@@ -4,28 +4,28 @@
 
 namespace Chained
 {
-Application* CreateApplication(ApplicationCommandLineArgs args)
-{
-    ApplicationSpecification spec;
-    spec.Name = "ChainedEditor";
-    spec.CommandLineArgs = args;
+	Application* CreateApplication(ApplicationCommandLineArgs args)
+	{
+		ApplicationSpecification spec;
+		spec.Name = "ChainedEditor";
+		spec.CommandLineArgs = args;
+		spec.Headless = false;
 
-    // Default editor window settings
-    spec.Window.Width = 0;
-    spec.Window.Height = 0;
-    spec.Window.Fullscreen = false;
-    spec.Headless = false;
-    spec.EnableScripting = true;
+		// Default editor window settings
+		spec.Window.Width = 0;
+		spec.Window.Height = 0;
+		spec.Window.Fullscreen = false;
+		spec.EnableScripting = true;
 
-    // Set engine root to the executable directory so AssetManager can find
-    // resources/shaders, resources/icons, resources/font etc.
-    spec.EngineRoot = Platform::GetExecutableDirectory();
-    spec.WorkingDirectory = Platform::GetExecutableDirectory().string();
+		// Set engine root to the executable directory so AssetManager can find
+		// resources/shaders, resources/icons, resources/font etc.
+		spec.EngineRoot = Platform::GetExecutableDirectory();
+		spec.WorkingDirectory = Platform::GetExecutableDirectory().string();
 
-    auto* app = new Application(spec);
+		auto* app = new Application(spec);
 
-    app->PushLayer(std::make_unique<EditorLayer>());
+		app->PushLayer(std::make_unique<EditorLayer>());
 
-    return app;
-}
+		return app;
+	}
 } // namespace Chained

@@ -5,18 +5,18 @@
 
 namespace Chained
 {
-class ProjectSettingsPanel : public Panel
-{
-public:
-    ProjectSettingsPanel();
+	class ProjectSettingsPanel : public Panel
+	{
+	public:
+		ProjectSettingsPanel();
 
-public:
-    virtual void OnImGuiRender(bool readOnly = false) override;
+	public:
+		virtual void OnImGuiRender(bool readOnly = false) override;
 
-private:
-    int m_SelectedCategory = 0;
-    bool m_WidthSet = false;
-};
+	private:
+		int m_SelectedCategory = 0;
+		bool m_WidthSet = false;
+	};
 } // namespace Chained
 
 #endif // CH_PROJECT_SETTINGS_PANEL_H

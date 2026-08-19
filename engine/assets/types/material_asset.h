@@ -8,39 +8,39 @@
 namespace Chained
 {
 
-class MaterialAsset : public Asset
-{
-public:
-    MaterialAsset()
-        : Asset(GetStaticType())
-    {
-    }
-    virtual ~MaterialAsset() = default;
+	class MaterialAsset : public Asset
+	{
+	public:
+		MaterialAsset()
+			: Asset(GetStaticType())
+		{
+		}
+		virtual ~MaterialAsset() = default;
 
-    static AssetType GetStaticType()
-    {
-        return AssetType::Material;
-    }
+		static AssetType GetStaticType()
+		{
+			return AssetType::Material;
+		}
 
-    Material& GetMaterial()
-    {
-        return m_Material;
-    }
-    const Material& GetMaterial() const
-    {
-        return m_Material;
-    }
+		Material& GetMaterial()
+		{
+			return m_Material;
+		}
+		const Material& GetMaterial() const
+		{
+			return m_Material;
+		}
 
-    void SetMaterial(const Material& mat)
-    {
-        m_Material = mat;
-    }
+		void SetMaterial(const Material& mat)
+		{
+			m_Material = mat;
+		}
 
-    void SaveToFile(const std::string& path) const;
+		void SaveToFile(const std::string& path) const;
 
-private:
-    Material m_Material;
-};
+	private:
+		Material m_Material;
+	};
 
 } // namespace Chained
 

@@ -1,6 +1,6 @@
 #include "ui_manipulator.h"
 #include "engine/core/log.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/components/ui/control_component.h"
 #include "engine/scene/scene.h"

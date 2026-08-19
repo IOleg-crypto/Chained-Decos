@@ -6,17 +6,17 @@
 namespace Chained
 {
 
-class IEditorCommand
-{
-public:
-    virtual ~IEditorCommand() = default;
+	class IEditorCommand
+	{
+	public:
+		virtual ~IEditorCommand() = default;
 
-    virtual void Execute() = 0;
+		virtual void Execute() = 0;
 
-    virtual void Undo() = 0;
+		virtual void Undo() = 0;
 
-    virtual std::string GetName() const = 0;
-};
+		virtual std::string GetName() const = 0;
+	};
 } // namespace Chained
 
 #endif // CH_EDITOR_COMMAND_H

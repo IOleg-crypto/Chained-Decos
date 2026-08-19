@@ -16,7 +16,7 @@
 #include "engine/graphics/pipeline/debug_renderer.h"
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/graphics/pipeline/scene_renderer.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/project/project.h"
 #include "engine/scene/prefab_serializer.h"
 #include "engine/scene/scene.h"

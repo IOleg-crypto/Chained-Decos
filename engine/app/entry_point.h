@@ -7,14 +7,14 @@ extern Chained::Application* Chained::CreateApplication(Chained::ApplicationComm
 
 int main(int argc, char** argv)
 {
-    Chained::ApplicationCommandLineArgs args;
-    args.Count = argc;
-    args.Args = argv;
+	Chained::ApplicationCommandLineArgs args;
+	args.Count = argc;
+	args.Args = argv;
 
-    auto app = Chained::CreateApplication(args);
-    app->Run();
-    delete app;
-    return 0;
+	auto app = Chained::CreateApplication(args);
+	app->Run();
+	delete app;
+	return 0;
 }
 
 #endif // CH_ENTRY_POINT_H

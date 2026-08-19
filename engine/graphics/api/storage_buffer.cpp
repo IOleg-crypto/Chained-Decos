@@ -4,16 +4,16 @@
 
 namespace Chained
 {
-std::shared_ptr<StorageBuffer> StorageBuffer::Create(uint32_t size)
-{
-    switch (GraphicsDevice::GetAPI())
-    {
-    case GraphicsDevice::API::None:
-        return nullptr;
-    case GraphicsDevice::API::OpenGL:
-        return std::make_shared<GLStorageBuffer>(size);
-    default:
-        return nullptr;
-    }
-}
+	std::shared_ptr<StorageBuffer> StorageBuffer::Create(uint32_t size)
+	{
+		switch (GraphicsDevice::GetAPI())
+		{
+		case GraphicsDevice::API::None:
+			return nullptr;
+		case GraphicsDevice::API::OpenGL:
+			return std::make_shared<GLStorageBuffer>(size);
+		default:
+			return nullptr;
+		}
+	}
 } // namespace Chained

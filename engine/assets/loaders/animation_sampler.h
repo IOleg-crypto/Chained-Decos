@@ -10,18 +10,18 @@
 namespace Chained
 {
 
-class AnimationSampler
-{
-public:
-    static void Process(const aiScene* scene, int samplingFPS, const std::vector<std::string>& nodeNames,
-                        const std::unordered_map<std::string, int>& nameToIndex,
-                        std::vector<AnimationData>& animations);
+	class AnimationSampler
+	{
+	public:
+		static void Process(const aiScene* scene, int samplingFPS, const std::vector<std::string>& nodeNames,
+							const std::unordered_map<std::string, int>& nameToIndex,
+							std::vector<AnimationData>& animations);
 
-private:
-    static void SampleAnimation(aiAnimation* anim, int samplingFPS, const aiScene* scene,
-                                const std::vector<std::string>& nodeNames,
-                                const std::unordered_map<std::string, int>& nameToIndex, AnimationData& out);
-};
+	private:
+		static void SampleAnimation(aiAnimation* anim, int samplingFPS, const aiScene* scene,
+									const std::vector<std::string>& nodeNames,
+									const std::unordered_map<std::string, int>& nameToIndex, AnimationData& out);
+	};
 
 } // namespace Chained
 
