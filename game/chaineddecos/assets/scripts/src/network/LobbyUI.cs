@@ -149,7 +149,8 @@ namespace ChainedDecos.Scripts
                 string pub = Network.GetPublicAddress();
                 bool fetching = pub == "Fetching..." || pub == string.Empty;
                 string local = $"127.0.0.1:{LobbyManager.SelectedPort}";
-                text = $"[HOST] Local: {local}  |  Internet: {pub}";
+                string upnp = Network.IsUpnpAvailable ? "UPnP: Auto" : "UPnP: Manual";
+                text = $"[HOST] Local: {local}  |  Internet: {pub}  |  {upnp}";
                 if (!fetching && text == m_LastDisplayedInfo) return;
             }
             else if (Network.IsClient)

@@ -1,4 +1,11 @@
 add_library(engine_network STATIC
+    network_types.h
+    network_session.h
+    network_session.cpp
+    network_transport.h
+    network_transport.cpp
+    network_player_manager.h
+    network_player_manager.cpp
     network_service.h
     network_service.cpp
     net_packet.h
