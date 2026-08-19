@@ -32,8 +32,7 @@ namespace Chained
 		void Shutdown();
 
 		/// Create / return a GPU texture of the whole text string (legacy path, kept for compat).
-		uint32_t GetOrCreateTexture(const std::string& text, const NativeFont& font, float fontSize = 32.0f,
-									int padding = 4);
+		uint32_t GetOrCreateTexture(const std::string& text, const Font& font, float fontSize = 32.0f, int padding = 4);
 
 		int GetLastWidth() const
 		{
@@ -46,11 +45,10 @@ namespace Chained
 
 		/// Layout glyphs without rasterising a texture.
 		/// Returns quads positioned relative to the top-left of the text region.
-		std::vector<GlyphQuad> LayoutGlyphs(const std::string& text, const NativeFont& font,
-											float fontSize = 32.0f) const;
+		std::vector<GlyphQuad> LayoutGlyphs(const std::string& text, const Font& font, float fontSize = 32.0f) const;
 
 		/// Measure text extents without generating quads.
-		void Measure(const std::string& text, const NativeFont& font, float fontSize, float& outWidth,
+		void Measure(const std::string& text, const Font& font, float fontSize, float& outWidth,
 					 float& outHeight) const;
 
 	private:

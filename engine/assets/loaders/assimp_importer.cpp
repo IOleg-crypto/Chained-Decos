@@ -5,18 +5,16 @@
 #include "engine/assets/loaders/animation_sampler.h"
 #include "engine/assets/loaders/mesh_merger.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/log.h"
+
 #include "engine/core/profiler.h"
 #include "engine/common/thread_pool.h"
-#include <algorithm>
+
 #include <assimp/Importer.hpp>
 #include <assimp/postprocess.h>
 #include <assimp/scene.h>
 #include "engine/core/service_locator.h"
 #include <cstring>
-#include <fstream>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/quaternion.hpp>
+
 #include <stb_image.h>
 
 namespace Chained

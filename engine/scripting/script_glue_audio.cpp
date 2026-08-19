@@ -1,6 +1,6 @@
 #include "script_glue_audio.h"
 #include "engine/scene/components.h"
-#include <algorithm>
+
 namespace Chained
 {
 
@@ -197,29 +197,6 @@ namespace Chained
 		if (entity && entity.HasComponent<SpriteComponent>())
 		{
 			entity.GetComponent<SpriteComponent>().ZOrder = z;
-		}
-	}
-
-	// ---- PrimitiveComponent (AlbedoColor) ----
-
-	void PrimitiveComponent_GetAlbedoColor(uint64_t entityID, glm::vec4* outColor)
-	{
-		Entity entity = GetEntity(entityID);
-		if (entity && entity.HasComponent<PrimitiveComponent>() && outColor)
-		{
-			auto& color = entity.GetComponent<PrimitiveComponent>().AlbedoColor;
-			*outColor = color;
-		}
-	}
-
-	void PrimitiveComponent_SetAlbedoColor(uint64_t entityID, glm::vec4 color)
-	{
-		Entity entity = GetEntity(entityID);
-		if (entity && entity.HasComponent<PrimitiveComponent>())
-		{
-			auto& comp = entity.GetComponent<PrimitiveComponent>();
-			auto clamp01 = [](float v) { return std::max(0.0f, std::min(1.0f, v)); };
-			comp.AlbedoColor = {clamp01(color.r), clamp01(color.g), clamp01(color.b), clamp01(color.a)};
 		}
 	}
 

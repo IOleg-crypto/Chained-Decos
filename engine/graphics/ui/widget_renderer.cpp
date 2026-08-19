@@ -5,7 +5,6 @@
 #include "widget_renderer.h"
 #include "ui_font_registry.h"
 #include "engine/core/service_locator.h"
-#include <algorithm>
 
 #include "engine/scene/components/core/hierarchy_component.h"
 #include "engine/scene/components/core/tag_component.h"

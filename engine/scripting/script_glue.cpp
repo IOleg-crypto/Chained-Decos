@@ -11,7 +11,7 @@
 //    any reliance on marshaling semantics. Never return structs by value — use out-pointers.
 #include "script_glue.h"
 #include "script_interop_pointers.h"
-#include "engine/core/log.h"
+
 #include "script_glue_internal.h"
 #include "script_glue_system.h"
 #include "script_glue_scene.h"
@@ -168,12 +168,6 @@ namespace Chained
 								 (void*)&SpriteComponent_GetZOrder);
 		assembly.AddInternalCall("Chained.SpriteComponent", "SpriteComponent_SetZOrder_Ptr",
 								 (void*)&SpriteComponent_SetZOrder);
-
-		// ── PrimitiveComponent ─────────────────────────────────────────────
-		assembly.AddInternalCall("Chained.PrimitiveComponent", "PrimitiveComponent_GetAlbedoColor_Ptr",
-								 (void*)&PrimitiveComponent_GetAlbedoColor);
-		assembly.AddInternalCall("Chained.PrimitiveComponent", "PrimitiveComponent_SetAlbedoColor_Ptr",
-								 (void*)&PrimitiveComponent_SetAlbedoColor);
 
 		// ── UI Controls ───────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.ButtonControl", "ButtonControl_IsClicked_Ptr",

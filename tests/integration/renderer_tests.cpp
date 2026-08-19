@@ -6,7 +6,10 @@
 #include "engine/core/service_locator.h"
 #include "engine/common/base.h"
 #include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/ui/ui_data_components.h"
+#include "engine/scene/components/render/light_component.h"
 #include "gtest/gtest.h"
+#include "yaml-cpp/yaml.h"
 
 using namespace Chained;
 
@@ -92,6 +95,52 @@ TEST_F(RendererTest, LightManagement)
 
 	lm.Clear();
 	EXPECT_EQ(lm.GetLighting().LightCount, 0);
+}
+
+TEST_F(RendererTest, DirectionalLightTypeIsPreserved)
+{
+	auto* renderer = GetRenderer();
+	ASSERT_NE(renderer, nullptr);
+
+	auto& lm = renderer->GetLightingManager();
+	lm.Clear();
+
+	RenderLight light;
+	light.color = {1.0f, 1.0f, 1.0f, 1.0f};
+	light.intensity = 2.0f;
+	light.direction = {0.0f, -1.0f, 0.0f};
+	light.lightType = static_cast<int>(LightType::Directional);
+	light.enabled = 1;
+
+	lm.SetLight(0, light);
+	lm.SetLightCount(1);
+
+	EXPECT_EQ(lm.GetLighting().Lights[0].lightType, static_cast<int>(LightType::Directional));
+	EXPECT_EQ(lm.GetLighting().Lights[0].enabled, 1);
+	EXPECT_FLOAT_EQ(lm.GetLighting().Lights[0].direction.y, -1.0f);
+}
+
+TEST_F(RendererTest, WidgetDataDeserializationUsesExplicitType)
+{
+	YAML::Node node = YAML::Load(R"(
+WidgetComponent:
+  Box Style:
+    BG Color: [40, 40, 40, 255]
+    Hover Color: [60, 60, 60, 255]
+  Text Style:
+    Font Name: font/static/Figtree-Regular.ttf
+  Widget Type: 9
+  Texture Path: materials/logo.png
+  Tint Color: [255, 255, 255, 255]
+  Border Color: [0, 0, 0, 0]
+)");
+
+	auto data = DeserializeControlData(9, node["WidgetComponent"]);
+	ASSERT_TRUE(std::holds_alternative<ImageData>(data));
+	const auto& image = std::get<ImageData>(data);
+	EXPECT_EQ(image.TexturePath, "materials/logo.png");
+	EXPECT_EQ(image.TintColor.r, 255);
+	EXPECT_EQ(image.BorderColor.a, 0);
 }
 
 // Verifies that Frame.DiagnosticMode float can be pushed into the renderer's data block.

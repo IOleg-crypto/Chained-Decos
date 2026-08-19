@@ -1,12 +1,10 @@
 #include "engine/assets/loaders/shader_loader.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
-#include <filesystem>
-#include <ranges>
+
 #include <regex>
-#include <sstream>
-#include <yaml-cpp/yaml.h>
+
 #include "engine/assets/types/shader_asset.h"
 
 namespace Chained

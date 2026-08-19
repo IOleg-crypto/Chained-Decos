@@ -1,7 +1,5 @@
 #include "material_panel.h"
 #include "engine/scene/components/render/model_component.h"
-#include "engine/scene/components/render/primitive_component.h"
-#include "engine/scene/components/render/primitive_runtime.h"
 #include "engine/scene/scene_events.h"
 #include "imgui.h"
 #include "property_editor.h"
@@ -185,21 +183,6 @@ namespace Chained
 
 				materials = &m_Materials;
 			}
-			// Procedural primitives own their ModelAsset inside PrimitiveRuntimeState (not serialized),
-			// so edit its materials in place — the renderer reads the very same asset each frame.
-			else if (m_SelectedEntity.HasComponent<PrimitiveComponent>())
-			{
-				auto& prim = m_SelectedEntity.GetComponent<PrimitiveComponent>();
-				(void)prim; // prim fields still needed for SetMaterial below
-				if (m_SelectedEntity.HasComponent<PrimitiveRuntimeState>())
-				{
-					auto& rt = m_SelectedEntity.GetComponent<PrimitiveRuntimeState>();
-					if (rt.Asset && rt.Asset->IsReady())
-					{
-						materials = &rt.Asset->GetMaterials();
-					}
-				}
-			}
 
 			if (materials && !materials->empty())
 			{
@@ -270,11 +253,6 @@ namespace Chained
 					ImGui::Separator();
 					ImGui::Spacing();
 					DrawMaterialSlot(selected);
-					if (m_SelectedEntity.HasComponent<PrimitiveComponent>())
-					{
-						auto& prim = m_SelectedEntity.GetComponent<PrimitiveComponent>();
-						prim.SetMaterial(selected);
-					}
 				}
 				else
 				{
@@ -316,20 +294,6 @@ namespace Chained
 	{
 		if (!m_SelectedEntity || !m_SelectedEntity.IsValid())
 		{
-			return;
-		}
-
-		if (m_SelectedEntity.HasComponent<PrimitiveComponent>())
-		{
-			auto& prim = m_SelectedEntity.GetComponent<PrimitiveComponent>();
-			if (m_SelectedEntity.HasComponent<PrimitiveRuntimeState>())
-			{
-				auto& rt = m_SelectedEntity.GetComponent<PrimitiveRuntimeState>();
-				if (rt.Asset && !rt.Asset->GetMaterials().empty())
-				{
-					prim.SetMaterial(rt.Asset->GetMaterials()[0]);
-				}
-			}
 			return;
 		}
 

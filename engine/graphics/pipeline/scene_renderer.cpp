@@ -16,10 +16,6 @@
 #include "engine/scene/entity.h"
 #include "engine/graphics/nametag_system.h"
 #include "engine/core/platform.h"
-#include <algorithm>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 #include "engine/graphics/pipeline/passes/composite_pass.h"
 #include "engine/graphics/pipeline/passes/geometry_pass.h"

@@ -2,7 +2,6 @@
 #include "engine/core/service_locator.h"
 #include "engine/reflection/reflection.h"
 #include "engine/scripting/scriptengine.h"
-#include <algorithm>
 
 namespace Chained
 {

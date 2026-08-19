@@ -5,18 +5,15 @@
 #include "engine/graphics/api/renderer_types.h"
 #include "engine/graphics/pipeline/shader_storage.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/graphics/api/buffer.h"
 #include "engine/graphics/api/storage_buffer.h"
 #include "engine/graphics/api/vertex_array.h"
 #include "engine/assets/types/environment_asset.h"
 #include "engine/assets/types/shader_asset.h"
-#include <algorithm>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
+
 #include <variant> // Added for type-safe variant visitation
-#include <vector>
 
 namespace Chained
 {
@@ -25,6 +22,7 @@ namespace Chained
 	{
 		if (m_Headless)
 		{
+			GraphicsDevice::SetAPI(GraphicsDevice::API::None);
 			CH_CORE_INFO("[Renderer] Headless mode enabled, skipping OpenGL initialization.");
 			return;
 		}

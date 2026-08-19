@@ -1,6 +1,5 @@
 #include "network_service.h"
 #include "net_packet.h"
-#include "engine/core/log.h"
 
 // Force IPv4-only ENet sockets.
 // ENet defaults to AF_INET6 dual-stack, which fails to bind on some Windows
@@ -13,9 +12,8 @@
 #include <enet.h>
 #include <sodium.h>
 
-#include <chrono>
 #include <cstring>
-#include <algorithm>
+
 #include <random>
 
 namespace Chained

@@ -91,6 +91,9 @@ void main()
         else if (lights[i].type == 1)
             accumulatedLighting += CalcSpotLight(lights[i], normal, fragPosition, viewDir,
                                                  diffColor, specColor, shininess);
+        else if (lights[i].type == 2)
+            accumulatedLighting += CalcDirectionalLightFromLight(lights[i], normal, viewDir,
+                                                                diffColor, specColor, shininess);
     }
 
     vec3 emissiveComp = colEmissive.rgb;

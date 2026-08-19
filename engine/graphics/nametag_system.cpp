@@ -12,10 +12,6 @@
 #include "engine/scene/components/gameplay/network_identity_component.h"
 #include "engine/scene/components/core/transform_component.h"
 #include "engine/scene/scene.h"
-#include "engine/core/log.h"
-#include <glm/glm.hpp>
-#include <string>
-#include <memory>
 
 namespace Chained
 {

@@ -1,10 +1,8 @@
 #include "engine/assets/loaders/audio_loader.h"
 #include "engine/assets/asset_manager.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include <miniaudio.h>
-#include <filesystem>
-#include <vector>
 
 namespace Chained
 {

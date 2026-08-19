@@ -8,7 +8,6 @@
 #include "engine/graphics/pipeline/renderer.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace Chained
 {
@@ -177,8 +176,7 @@ namespace Chained
 		}
 	}
 
-	void DebugRenderer::DrawInfiniteGrid(const Camera3D& camera, float spacing, const glm::vec4& color,
-										 Renderer& renderer)
+	void DebugRenderer::DrawInfiniteGrid(const Camera3D& camera, const GridSettings& grid, Renderer& renderer)
 	{
 		const auto& frame = renderer.GetFrame();
 		(void)frame;
@@ -191,7 +189,8 @@ namespace Chained
 
 		auto guard = PipelineStateGuard::Capture();
 		GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::None);
-		GraphicsDevice::Get().DisableDepthTest();
+		GraphicsDevice::Get().EnableDepthTest();
+		GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::LEqual);
 		GraphicsDevice::Get().SetBlendEnabled(true);
 		GraphicsDevice::Get().SetBlendFunc(GraphicsDevice::BlendFactor::SrcAlpha,
 										   GraphicsDevice::BlendFactor::OneMinusSrcAlpha);
@@ -200,15 +199,16 @@ namespace Chained
 
 		glm::vec3 planePos = {camera.Position.x, -0.005f, camera.Position.z};
 		glm::mat4 model = glm::translate(glm::mat4(1.0f), planePos);
-		model = glm::scale(model, glm::vec3(15000.0f, 1.0f, 15000.0f));
+		model = glm::scale(model, glm::vec3(grid.PlaneSize, 1.0f, grid.PlaneSize));
 
 		shaderAsset->GetShader()->SetMatrix("u_ViewProjection", frame.Proj * frame.View);
 		shaderAsset->GetShader()->SetMatrix("u_Model", model);
 		shaderAsset->GetShader()->SetVec3("u_CameraPos", camera.Position);
-		shaderAsset->GetShader()->SetVec4("u_GridColor", color);
-		shaderAsset->GetShader()->SetFloat("u_GridSize", spacing);
-		shaderAsset->GetShader()->SetFloat("u_FadeStart", 0.0f);
-		shaderAsset->GetShader()->SetFloat("u_FadeEnd", 8000.0f);
+		shaderAsset->GetShader()->SetVec4("u_GridColor", grid.Color);
+		shaderAsset->GetShader()->SetFloat("u_GridSize", grid.Spacing);
+		shaderAsset->GetShader()->SetFloat("u_SecondarySpacing", grid.SecondarySpacing);
+		shaderAsset->GetShader()->SetFloat("u_FadeStart", grid.FadeStart);
+		shaderAsset->GetShader()->SetFloat("u_FadeEnd", grid.FadeEnd);
 
 		if (!m_GridPlaneVAO)
 		{
@@ -263,8 +263,7 @@ namespace Chained
 
 		if (options.DrawGrid)
 		{
-			auto& grid = settings.Grid;
-			DrawInfiniteGrid(camera, grid.Spacing, {1.0f, 1.0f, 1.0f, 0.4f}, renderer);
+			DrawInfiniteGrid(camera, settings.Grid, renderer);
 		}
 
 		Flush(renderer);

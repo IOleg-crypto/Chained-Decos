@@ -33,12 +33,12 @@ namespace Chained
 			out << YAML::EndMap;
 			m_SerializedData = out.c_str();
 
-			m_Scene->DestroyEntity(m_Entity);
-
-			if (EditorLayer::Get().GetSelectedEntity().GetUUID() == m_UUID)
+			if (EditorLayer::Get().GetSelectedEntity() == m_Entity)
 			{
 				EditorLayer::Get().SetSelectedEntity({});
 			}
+
+			m_Scene->DestroyEntity(m_Entity);
 		}
 
 		void Undo() override
@@ -87,11 +87,7 @@ namespace Chained
 				// Procedural primitive markers start with ':' — use PrimitiveComponent.
 				if (m_ModelPath.size() > 1 && m_ModelPath.front() == ':' && m_ModelPath.back() == ':')
 				{
-					auto& prim = m_Entity.AddComponent<PrimitiveComponent>();
-					// Dirty flag lives in PrimitiveRuntimeState (kept separate so reflect-cpp
-					// can aggregate-reflect PrimitiveComponent without a shared_ptr field).
-					m_Entity.AddOrReplaceComponent<PrimitiveRuntimeState>().Dirty = true;
-
+					PrimitiveComponent prim;
 					if (m_ModelPath == ":cube:")
 					{
 						prim.Type = PrimitiveType::Cube;
@@ -128,6 +124,7 @@ namespace Chained
 					{
 						prim.Type = PrimitiveType::Sphere; // fallback
 					}
+					m_Entity.AddComponent<PrimitiveComponent>(prim);
 				}
 				else
 				{

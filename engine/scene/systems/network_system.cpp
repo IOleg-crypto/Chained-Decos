@@ -16,7 +16,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/core/input.h"
 #include "engine/core/key_codes.h"
-#include "engine/core/log.h"
+
 #include <glm/gtc/quaternion.hpp>
 #include <cstring>
 
