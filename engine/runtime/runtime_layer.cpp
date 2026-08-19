@@ -23,11 +23,9 @@
 #include "engine/scene/systems/asset_resolution_system.h"
 #include "engine/scripting/scene_scripting_manager.h"
 #include "engine/scripting/scriptengine.h"
-#include <algorithm>
+
 #include <cctype>
 #include <cmath>
-#include <filesystem>
-#include <unordered_set>
 
 namespace Chained
 {
@@ -135,10 +133,23 @@ namespace Chained
 				{
 					wr->ResetButtonStates(m_Scene.get());
 				}
-				m_Scene->TransitionToState(SceneState::Play);
-				m_LoadState.State = RuntimeLoadState::Running;
-				m_LoadState.SuppressNextUIInput = true;
-				CH_CORE_INFO("RuntimeSystem: Scene assets are ready, entering runtime.");
+
+				if (m_Scene->GetSceneState() != SceneState::Play)
+				{
+					m_Scene->TransitionToState(SceneState::Play);
+				}
+
+				// Advance the scene startup while the loading overlay is still active.
+				// PhysicsBodySystem may still be waiting for an async mesh shape bake.
+				m_Scene->OnUpdateRuntime(ts);
+
+				if (!m_Scene->IsStartingUp())
+				{
+					m_LoadState.State = RuntimeLoadState::Running;
+					m_LoadState.SuppressNextUIInput = true;
+					CH_CORE_INFO("RuntimeSystem: Scene assets and physics are ready, entering runtime.");
+					return;
+				}
 			}
 		}
 
