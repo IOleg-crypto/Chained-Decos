@@ -6,16 +6,16 @@
 
 namespace Chained
 {
-class TextureAsset;
+	class TextureAsset;
 
-// Cached editor icon textures used during scene rendering.
-struct EditorIcons
-{
-    std::shared_ptr<TextureAsset> LightIcon;
-    std::shared_ptr<TextureAsset> SpawnIcon;
-    std::shared_ptr<TextureAsset> CameraIcon;
-    std::shared_ptr<TextureAsset> AudioIcon;
-};
+	// Cached editor icon textures used during scene rendering.
+	struct EditorIcons
+	{
+		std::shared_ptr<TextureAsset> LightIcon;
+		std::shared_ptr<TextureAsset> SpawnIcon;
+		std::shared_ptr<TextureAsset> CameraIcon;
+		std::shared_ptr<TextureAsset> AudioIcon;
+	};
 } // namespace Chained
 
 #endif // CH_EDITOR_ICONS_H

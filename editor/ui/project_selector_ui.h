@@ -8,29 +8,29 @@
 
 namespace Chained
 {
-class TextureAsset;
+	class TextureAsset;
 
-class ProjectSelectorUI
-{
-public:
-    ProjectSelectorUI(EditorProjectManager& projectManager);
+	class ProjectSelectorUI
+	{
+	public:
+		ProjectSelectorUI(EditorProjectManager& projectManager);
 
-    void OnImGuiRender();
+		void OnImGuiRender();
 
-private:
-    EditorProjectManager& m_ProjectManager;
+	private:
+		EditorProjectManager& m_ProjectManager;
 
-    std::shared_ptr<TextureAsset> m_NewProjectIcon = nullptr;
-    std::shared_ptr<TextureAsset> m_OpenProjectIcon = nullptr;
-    bool m_IconsLoaded = false;
+		std::shared_ptr<TextureAsset> m_NewProjectIcon = nullptr;
+		std::shared_ptr<TextureAsset> m_OpenProjectIcon = nullptr;
+		bool m_IconsLoaded = false;
 
-    bool m_ShowCreateDialog = false;
-    char m_ProjectNameBuffer[128] = "NewProject";
-    char m_ProjectLocationBuffer[256] = "";
-    bool m_Initialized = false;
+		bool m_ShowCreateDialog = false;
+		char m_ProjectNameBuffer[128] = "NewProject";
+		char m_ProjectLocationBuffer[256] = "";
+		bool m_Initialized = false;
 
-    void LoadEditorIcons();
-};
+		void LoadEditorIcons();
+	};
 
 } // namespace Chained
 

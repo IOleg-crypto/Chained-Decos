@@ -2,8 +2,8 @@
 #define CH_CONTROL_COMPONENT_H
 
 #include "engine/common/color.h"
-#include "engine/graphics/ui/ui_style.h"
-#include "engine/graphics/ui/ui_data_components.h"
+#include "engine/ui/ui_style.h"
+#include "engine/ui/ui_data_components.h"
 #include "engine/reflection/reflection_rfl.h"
 
 namespace Chained

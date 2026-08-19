@@ -23,8 +23,8 @@
 #include <yaml-cpp/yaml.h>
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
-#include "engine/graphics/ui/ui_font_registry.h"
-#include "engine/graphics/ui/widget_renderer.h"
+#include "engine/ui/ui_font_registry.h"
+#include "engine/ui/widget_renderer.h"
 
 namespace Chained
 {
