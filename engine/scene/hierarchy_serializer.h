@@ -6,19 +6,19 @@
 
 namespace Chained
 {
-struct HierarchyTask
-{
-    Entity entity;
-    uint64_t parent = 0;
-    std::vector<uint64_t> children;
-};
+	struct HierarchyTask
+	{
+		Entity entity;
+		uint64_t parent = 0;
+		std::vector<uint64_t> children;
+	};
 
-class HierarchySerializer
-{
-public:
-    static void Serialize(YAML::Emitter& out, Entity entity);
-    static void DeserializeTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
-};
+	class HierarchySerializer
+	{
+	public:
+		static void Serialize(YAML::Emitter& out, Entity entity);
+		static void DeserializeTask(Entity entity, YAML::Node node, HierarchyTask& outTask);
+	};
 
 } // namespace Chained
 

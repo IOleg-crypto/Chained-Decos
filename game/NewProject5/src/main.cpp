@@ -10,6 +10,7 @@ namespace Chained
 		ApplicationSpecification spec;
 		spec.Name = "$PROJECT_NAME";
 		spec.CommandLineArgs = args;
+		spec.Headless = false;
 		spec.EnableScripting = true;
 		spec.EngineRoot = Platform::GetExecutableDirectory();
 		spec.WorkingDirectory = Platform::GetExecutableDirectory().string();

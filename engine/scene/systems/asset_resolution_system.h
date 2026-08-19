@@ -5,11 +5,11 @@
 
 namespace Chained
 {
-namespace AssetResolutionSystem
-{
-void RegisterObservers(entt::registry& reg);
-void Update(entt::registry& reg);
-} // namespace AssetResolutionSystem
+	namespace AssetResolutionSystem
+	{
+		void RegisterObservers(entt::registry& reg);
+		void Update(entt::registry& reg);
+	} // namespace AssetResolutionSystem
 } // namespace Chained
 
 #endif // CH_ASSET_RESOLUTION_SYSTEM_H

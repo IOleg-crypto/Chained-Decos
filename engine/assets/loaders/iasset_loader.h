@@ -7,18 +7,18 @@
 
 namespace Chained
 {
-class IAssetLoader
-{
-public:
-    virtual ~IAssetLoader() = default;
+	class IAssetLoader
+	{
+	public:
+		virtual ~IAssetLoader() = default;
 
-    virtual bool IsAsync() const = 0;
+		virtual bool IsAsync() const = 0;
 
-    virtual std::shared_ptr<Asset> Create() = 0;
+		virtual std::shared_ptr<Asset> Create() = 0;
 
-    virtual bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath,
-                      std::string* outError = nullptr) = 0;
-};
+		virtual bool Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath,
+						  std::string* outError = nullptr) = 0;
+	};
 } // namespace Chained
 
 #endif // CH_IASSET_LOADER_H

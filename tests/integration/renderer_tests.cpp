@@ -6,7 +6,7 @@
 #include "engine/core/service_locator.h"
 #include "engine/common/base.h"
 #include "engine/graphics/pipeline/renderer.h"
-#include "engine/graphics/ui/ui_data_components.h"
+#include "engine/ui/ui_data_components.h"
 #include "engine/scene/components/render/light_component.h"
 #include "gtest/gtest.h"
 #include "yaml-cpp/yaml.h"

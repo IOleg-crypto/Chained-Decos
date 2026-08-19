@@ -66,31 +66,6 @@ add_library(engine_graphics STATIC
     pipeline/passes/shadow_pass.cpp
     pipeline/passes/skybox_pass.h
     pipeline/passes/skybox_pass.cpp
-    ui/ui_animation_system.h
-    ui/ui_animation_system.cpp
-    ui/ui_control_renderer.h
-    ui/ui_control_renderer.cpp
-    ui/ui_data_components.h
-    ui/ui_data_components.cpp
-    ui/ui_factory.h
-    ui/ui_factory.cpp
-    ui/ui_font_registry.h
-    ui/ui_font_registry.cpp
-    ui/ui_input_system.h
-    ui/ui_input_system.cpp
-    ui/ui_layout_system.h
-    ui/ui_layout_system.cpp
-    ui/ui_render_basic.cpp
-    ui/ui_render_container.cpp
-    ui/ui_render_helpers.h
-    ui/ui_render_image.cpp
-    ui/ui_render_input.cpp
-    ui/ui_render_plot.cpp
-    ui/ui_render_widgets.h
-    ui/ui_style.h
-    ui/ui_types.h
-    ui/widget_renderer.h
-    ui/widget_renderer.cpp
     nametag_system.h
     nametag_system.cpp
 )

@@ -7,6 +7,7 @@
 #include "engine/core/window.h"
 #include "engine/common/base.h"
 #include "engine/common/timestep.h"
+#include "engine/common/engine_assert.h"
 #include <filesystem>
 #include <memory>
 
@@ -23,6 +24,7 @@ namespace Chained
 
 		static Application& Get()
 		{
+			CH_CORE_ASSERT(s_Instance, "Application instance does not exist!");
 			return *s_Instance;
 		}
 
@@ -64,6 +66,12 @@ namespace Chained
 		static std::filesystem::path GetExecutableDirectory();
 
 	private:
+		void InitializePlatform();
+		void RegisterCoreServices();
+		void RegisterRuntimeServices();
+		void RegisterGameplayServices();
+
+	private:
 		ApplicationSpecification m_Specification;
 		std::unique_ptr<Window> m_Window;
 		std::unique_ptr<LayerStack> m_LayerStack;
@@ -79,7 +87,7 @@ namespace Chained
 		} m_Timer;
 
 	private:
-		static Application* s_Instance;
+		inline static Application* s_Instance = nullptr;
 	};
 
 	Application* CreateApplication(ApplicationCommandLineArgs args);
