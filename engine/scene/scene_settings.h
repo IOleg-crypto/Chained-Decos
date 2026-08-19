@@ -3,7 +3,7 @@
 
 #include "engine/assets/types/environment_asset.h"
 #include "engine/common/color.h"
-#include "engine/graphics/ui/ui_style.h"
+#include "engine/ui/ui_style.h"
 #include <memory>
 #include <string>
 

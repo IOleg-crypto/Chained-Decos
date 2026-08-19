@@ -42,6 +42,9 @@ namespace Chained
         // Prefab
         internal static unsafe delegate* unmanaged<char*, void> Network_SetPlayerPrefab_Ptr;
 
+        // UPnP
+        internal static unsafe delegate* unmanaged<byte> Network_IsUpnpAvailable_Ptr;
+
 #pragma warning restore 0649
 
         /// <summary>Starts a listen server on the given port.</summary>
@@ -204,5 +207,10 @@ namespace Chained
             if (Network_SetPlayerPrefab_Ptr == null || string.IsNullOrEmpty(path)) return;
             fixed (char* ptr = path) Network_SetPlayerPrefab_Ptr(ptr);
         }
+
+        // ── UPnP ─────────────────────────────────────────────────────────
+
+        /// <summary>True when UPnP port forwarding is available on the local network.</summary>
+        public static unsafe bool IsUpnpAvailable => Network_IsUpnpAvailable_Ptr != null && Network_IsUpnpAvailable_Ptr() != 0;
     }
 }

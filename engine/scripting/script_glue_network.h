@@ -54,5 +54,8 @@ namespace Chained
 	// Prefab
 	CH_SCRIPT_FUNC void Network_SetPlayerPrefab(const Coral::UCChar* path);
 
+	// UPnP
+	CH_SCRIPT_FUNC uint8_t Network_IsUpnpAvailable();
+
 } // namespace Chained
 #endif

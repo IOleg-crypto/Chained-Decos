@@ -340,4 +340,12 @@ namespace Chained
 		CH_CORE_INFO("[Script] Network.SetPlayerPrefab(path='{}')", pathStr);
 	}
 
+	// ---- UPnP ----
+
+	CH_SCRIPT_FUNC uint8_t Network_IsUpnpAvailable()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		return net && net->IsUpnpAvailable();
+	}
+
 } // namespace Chained

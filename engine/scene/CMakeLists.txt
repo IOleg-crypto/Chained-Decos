@@ -69,6 +69,8 @@ add_library(engine_scene STATIC
     systems/scene_transition_system.cpp
     systems/network_system.h
     systems/network_system.cpp
+    systems/camera_auto_select_system.h
+    systems/camera_auto_select_system.cpp
     systems/system_manager.h
     systems/system_manager.cpp
     components/scripting/scripting_components.cpp
@@ -84,6 +86,7 @@ target_link_libraries(engine_scene PUBLIC
     engine_reflection
     engine_core
     engine_graphics
+    engine_ui
     engine_project
     engine_physics
     engine_audio
