@@ -181,7 +181,7 @@ namespace Chained
 				}
 			}
 
-			if (ImGui::ImageButton("##NewProject", newProjTex, {kCardWidth, kCardHeight}, {0, 1}, {1, 0}))
+			if (ImGui::ImageButton("##NewProject", newProjTex, {kCardWidth, kCardHeight}, {0, 0}, {1, 1}))
 			{
 				m_ShowCreateDialog = true;
 			}
@@ -217,7 +217,7 @@ namespace Chained
 				}
 			}
 
-			if (ImGui::ImageButton("##OpenProject", openProjTex, {kCardWidth, kCardHeight}, {0, 1}, {1, 0}))
+			if (ImGui::ImageButton("##OpenProject", openProjTex, {kCardWidth, kCardHeight}, {0, 0}, {1, 1}))
 			{
 				m_ProjectManager.OpenProject();
 			}

@@ -3,7 +3,7 @@
 #include "engine/common/platform_detection.h"
 #include "engine/core/events/window_events.h"
 #include "engine/core/input.h"
-#include "engine/core/log.h"
+
 #include "engine/platform/backends/glfw/glfw_input_mapper.h"
 #include "imgui_impl_glfw.h"
 
@@ -71,6 +71,11 @@ namespace Chained
 			}
 		}
 
+		constexpr int minimumWidth = 800;
+		constexpr int minimumHeight = 600;
+		initialWidth = (initialWidth < minimumWidth) ? minimumWidth : initialWidth;
+		initialHeight = (initialHeight < minimumHeight) ? minimumHeight : initialHeight;
+
 		m_Width = (uint32_t)initialWidth;
 		m_Height = (uint32_t)initialHeight;
 		CH_CORE_INFO("Initializing Glfw Window: {} ({}x{})", m_Title, m_Width, m_Height);
@@ -91,6 +96,7 @@ namespace Chained
 
 		m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, nullptr);
 		CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
+		glfwSetWindowSizeLimits(m_WindowHandle, minimumWidth, minimumHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
 		glfwMakeContextCurrent(m_WindowHandle);
 		glfwSetWindowUserPointer(m_WindowHandle, this);

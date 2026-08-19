@@ -88,6 +88,106 @@ Entities:
       Label: Back
       Interactable: true
       Auto Size: false
+  - Entity: 9010000000000000001
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: preview_map_training
+    IDComponent:
+      {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-520, -100]
+        OffsetMax: [-120, 100]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [30, 33, 40, 255]
+        Pressed Color: [30, 33, 40, 255]
+        Rounding: 10
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 0
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.1
+      Text Style:
+        Font Name: font/static/Figtree-Regular.ttf
+        Font Size: 18
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 0
+        Line Height: 1.2
+        H Align: 1
+        V Align: 1
+      Widget Type: 9
+      Texture Path: map_previews/placeholder.jpg
+      Tint Color: [255, 255, 255, 255]
+      Border Color: [0, 0, 0, 0]
+  - Entity: 9010000000000000002
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: preview_map_laboratory
+    IDComponent:
+      {}
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [120, -100]
+        OffsetMax: [520, 100]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    WidgetComponent:
+      Box Style:
+        BG Color: [30, 33, 40, 255]
+        Hover Color: [30, 33, 40, 255]
+        Pressed Color: [30, 33, 40, 255]
+        Rounding: 10
+        Border Size: 1
+        Border Color: [255, 255, 255, 28]
+        Gradient: false
+        Gradient Color: [20, 20, 20, 255]
+        Padding: 0
+        Hover Scale: 1
+        Pressed Scale: 1
+        Transition Speed: 0.1
+      Text Style:
+        Font Name: font/static/Figtree-Regular.ttf
+        Font Size: 18
+        Text Color: [235, 238, 242, 255]
+        Shadow: false
+        Shadow Offset: 2
+        Shadow Color: [0, 0, 0, 255]
+        Letter Spacing: 0
+        Line Height: 1.2
+        H Align: 1
+        V Align: 1
+      Widget Type: 9
+      Texture Path: map_previews/placeholder.jpg
+      Tint Color: [255, 255, 255, 255]
+      Border Color: [0, 0, 0, 0]
   - Entity: 15983045709783596391
     TransformComponent:
       Translation: [0, 0, 0]
@@ -98,18 +198,18 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: scenes/test_platform_scene_mp.chscene
+      TargetScenePath: scenes/test_platform_scene.chscene
       Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-518.681274, -6.00951385]
-        OffsetMax: [-182.591827, 81.208374]
+        OffsetMin: [-520, 125]
+        OffsetMax: [-120, 181]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
+      ZOrder: 1
       IsActive: true
       HiddenInHierarchy: false
     WidgetComponent:
@@ -151,18 +251,18 @@ Entities:
     IDComponent:
       {}
     Scene TransitionComponent:
-      TargetScenePath: scenes/rpg_strategy_scene_mp.chscene
+      TargetScenePath: scenes/rpg_strategy_scene.chscene
       Triggered: false
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-520.430115, -151.160797]
-        OffsetMax: [-170.350159, -62.1941071]
+        OffsetMin: [120, 125]
+        OffsetMax: [520, 181]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
-      ZOrder: 0
+      ZOrder: 1
       IsActive: true
       HiddenInHierarchy: false
     WidgetComponent:
@@ -207,8 +307,8 @@ Entities:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-674.3255, -385.501434]
-        OffsetMax: [-391.005341, -345.501465]
+        OffsetMin: [-220, -385.501434]
+        OffsetMax: [220, -345.501465]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
