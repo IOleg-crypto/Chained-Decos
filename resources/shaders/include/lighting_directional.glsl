@@ -40,3 +40,14 @@ vec3 CalcDirectionalLight(vec3 lightDir, vec4 lightColor, vec3 normal, vec3 view
 
     return diffuse + specular;
 }
+
+vec3 CalcDirectionalLightFromLight(Light light, vec3 normal, vec3 viewDir,
+                                  vec3 diffuseColor, vec3 specularColor, float shininess)
+{
+    if (light.enabled == 0)
+        return vec3(0.0);
+
+    vec3 lightDir = length(light.direction) > 0.0001 ? normalize(light.direction) : vec3(0.0, -1.0, 0.0);
+    vec4 lightColor = light.color * light.intensity;
+    return CalcDirectionalLight(lightDir, lightColor, normal, viewDir, diffuseColor, specularColor, shininess);
+}

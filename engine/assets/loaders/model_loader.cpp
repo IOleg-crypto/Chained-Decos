@@ -12,9 +12,6 @@
 #include <cereal/types/vector.hpp>
 #include <cereal/types/unordered_map.hpp>
 #include "engine/common/zstd_compression.h"
-#include <fstream>
-
-#include <filesystem>
 
 namespace Chained
 {
@@ -59,7 +56,11 @@ namespace Chained
 	PendingModelData ModelLoader::LoadMeshDataFromDisk(const std::filesystem::path& path, int samplingFPS)
 	{
 		std::filesystem::path chassetPath = path;
-		chassetPath.replace_extension(".chasset");
+		bool isDirectMesh = (path.extension() == ".chmesh" || path.extension() == ".chasset");
+		if (!isDirectMesh)
+		{
+			chassetPath.replace_extension(".chasset");
+		}
 
 		auto* am = ServiceLocator::TryGet<AssetManager>();
 
@@ -99,21 +100,21 @@ namespace Chained
 
 				if (header.magic != currentHeader.magic)
 				{
-					CH_CORE_WARN("Invalid .chasset file format (magic mismatch) for: {}", chassetPath.string());
+					CH_CORE_WARN("Invalid .chasset/.chmesh format (magic mismatch) for: {}", chassetPath.string());
 				}
 				else if (header.version != currentHeader.version)
 				{
-					CH_CORE_WARN("Engine data structure changed! .chasset is outdated for: {}", chassetPath.string());
+					CH_CORE_WARN("Engine data structure changed! file is outdated for: {}", chassetPath.string());
 				}
 				else if (header.dataStructSize != sizeof(PendingModelData))
 				{
-					CH_CORE_WARN(".chasset struct size mismatch (got {}, expected {}), re-importing: {}",
-								 header.dataStructSize, sizeof(PendingModelData), chassetPath.string());
+					CH_CORE_WARN("struct size mismatch (got {}, expected {}), re-importing: {}", header.dataStructSize,
+								 sizeof(PendingModelData), chassetPath.string());
 				}
 				else
 				{
 					bool hashValid = true;
-					if (!am || !am->IsPacked())
+					if (!isDirectMesh && header.sourceHash != 0 && (!am || !am->IsPacked()))
 					{
 						uint64_t currentHash = MetaUtils::ComputeFileHash(path);
 						if (currentHash != 0 && header.sourceHash != currentHash)

@@ -1,6 +1,6 @@
 #include "script_glue_scene.h"
 #include "engine/app/application.h"
-#include "engine/core/log.h"
+
 #include "engine/scene/scene_events.h"
 #include "engine/scene/components.h"
 

@@ -5,7 +5,6 @@
 #include "engine/graphics/ui/ui_style.h"
 #include "engine/scene/yaml.h"
 #include "thirdparty/IconsFontAwesome6.h"
-#include <yaml-cpp/yaml.h>
 
 namespace Chained
 {

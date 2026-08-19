@@ -2,11 +2,6 @@
 #include "engine/scene/components/animation/animation_component.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
-#include <yaml-cpp/yaml.h>
-#include <fstream>
-#include <filesystem>
-#include <sstream>
-#include "engine/core/log.h"
 
 namespace Chained
 {

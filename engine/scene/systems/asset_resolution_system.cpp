@@ -4,15 +4,12 @@
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/shader_asset.h"
 #include "engine/assets/types/texture_asset.h"
-#include "engine/graphics/api/texture.h"
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
-#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/scene/components/render/model_component.h"
-#include "engine/scene/components/render/primitive_component.h"
-#include "engine/scene/components/render/primitive_runtime.h"
 #include "engine/scene/components/render/shader_component.h"
 #include "engine/scene/components/render/sprite_component.h"
+
 #include <filesystem>
 
 namespace Chained::AssetResolutionSystem
@@ -196,175 +193,6 @@ namespace Chained::AssetResolutionSystem
 		}
 	}
 
-	static void MarkPrimitiveDirty(entt::registry& reg, entt::entity e)
-	{
-		reg.get_or_emplace<PrimitiveRuntimeState>(e).Dirty = true;
-	}
-
-	static bool ResolveTexture(AssetManager* assets, const std::string& path, std::shared_ptr<Texture>& outMap)
-	{
-		if (path.empty())
-		{
-			return false;
-		}
-		assets->LoadAsset(path, TextureAsset::GetStaticType());
-		auto texAsset = assets->Get<TextureAsset>(path);
-		if (texAsset && texAsset->IsReady())
-		{
-			outMap = texAsset->GetTexture();
-			return false;
-		}
-		return true;
-	}
-
-	static void ResolvePrimitive(entt::registry& reg, entt::entity e)
-	{
-		auto& prim = reg.get<PrimitiveComponent>(e);
-		auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(e);
-
-		const char* typeMarker = nullptr;
-		switch (prim.Type)
-		{
-		case PrimitiveType::Cube:
-			typeMarker = ":cube:";
-			break;
-		case PrimitiveType::Sphere:
-			typeMarker = ":sphere:";
-			break;
-		case PrimitiveType::Plane:
-			typeMarker = ":plane:";
-			break;
-		case PrimitiveType::Cylinder:
-			typeMarker = ":cylinder:";
-			break;
-		case PrimitiveType::Cone:
-			typeMarker = ":cone:";
-			break;
-		case PrimitiveType::Torus:
-			typeMarker = ":torus:";
-			break;
-		case PrimitiveType::Knot:
-			typeMarker = ":knot:";
-			break;
-		case PrimitiveType::Hemisphere:
-			typeMarker = ":hemisphere:";
-			break;
-		case PrimitiveType::None:
-		default:
-			rt.Dirty = false;
-			return;
-		}
-
-		ProceduralParameters params;
-		params.Radius = prim.Radius;
-		params.InnerRadius = prim.InnerRadius;
-		params.Height = prim.Height;
-		params.Slices = prim.Slices;
-		params.Stacks = prim.Stacks;
-		params.Dimensions = prim.Dimensions;
-
-		PendingModelData data = GeometryGenerator::GeneratePrimitivePendingData(typeMarker, params);
-		if (!data.isValid)
-		{
-			rt.Dirty = false;
-			return;
-		}
-
-		bool hadAsset = (rt.Asset != nullptr);
-		std::vector<Material> editedMaterials;
-		if (hadAsset)
-		{
-			editedMaterials = rt.Asset->GetMaterials();
-		}
-
-		if (!rt.Asset)
-		{
-			rt.Asset = std::make_shared<ModelAsset>();
-		}
-		rt.Asset->SetPendingData(std::move(data));
-		rt.Asset->OnLoaded();
-
-		auto applyMaterialTextures = [&](Material& mat) -> bool {
-			bool anyPending = false;
-			if (auto* assets = ServiceLocator::TryGet<AssetManager>())
-			{
-				anyPending |= ResolveTexture(assets, mat.AlbedoPath, mat.AlbedoMap);
-				anyPending |= ResolveTexture(assets, mat.NormalPath, mat.NormalMap);
-				anyPending |= ResolveTexture(assets, mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
-				anyPending |= ResolveTexture(assets, mat.EmissivePath, mat.EmissiveMap);
-			}
-			return anyPending;
-		};
-
-		auto& regenerated = rt.Asset->GetMaterials();
-		bool anyPending = false;
-
-		if (!editedMaterials.empty())
-		{
-			for (size_t i = 0; i < regenerated.size() && i < editedMaterials.size(); ++i)
-			{
-				anyPending |= applyMaterialTextures(editedMaterials[i]);
-				regenerated[i] = editedMaterials[i];
-			}
-			if (!regenerated.empty())
-			{
-				prim.SetMaterial(regenerated[0]);
-			}
-		}
-		else
-		{
-			if (!regenerated.empty())
-			{
-				Material mat = prim.GetMaterial();
-				anyPending = applyMaterialTextures(mat);
-				regenerated[0] = mat;
-			}
-		}
-
-		if (anyPending)
-		{
-			rt.TexturesPending = true;
-			rt.Dirty = false;
-			return;
-		}
-
-		rt.TexturesPending = false;
-		rt.Dirty = false;
-	}
-
-	static void ApplyPrimitiveTextures(entt::registry& reg, entt::entity e)
-	{
-		auto* rt = reg.try_get<PrimitiveRuntimeState>(e);
-		auto* prim = reg.try_get<PrimitiveComponent>(e);
-		if (!rt || !rt->Asset || !prim)
-		{
-			return;
-		}
-
-		auto& mats = rt->Asset->GetMaterials();
-		if (mats.empty())
-		{
-			return;
-		}
-
-		auto* assets = ServiceLocator::TryGet<AssetManager>();
-		if (!assets)
-		{
-			return;
-		}
-
-		Material mat = mats[0];
-		bool anyPending = false;
-
-		anyPending |= ResolveTexture(assets, mat.AlbedoPath, mat.AlbedoMap);
-		anyPending |= ResolveTexture(assets, mat.NormalPath, mat.NormalMap);
-		anyPending |= ResolveTexture(assets, mat.MetallicRoughnessPath, mat.MetallicRoughnessMap);
-		anyPending |= ResolveTexture(assets, mat.EmissivePath, mat.EmissiveMap);
-
-		mats[0] = mat;
-		rt->TexturesPending = anyPending;
-	}
-
 	void RegisterObservers(entt::registry& reg)
 	{
 		reg.on_construct<SpriteComponent>().connect<&ResolveSprite>();
@@ -375,9 +203,6 @@ namespace Chained::AssetResolutionSystem
 
 		reg.on_construct<ModelComponent>().connect<&ResolveModel>();
 		reg.on_update<ModelComponent>().connect<&ResolveModel>();
-
-		reg.on_construct<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
-		reg.on_update<PrimitiveComponent>().connect<&MarkPrimitiveDirty>();
 	}
 
 	void Update(entt::registry& reg)
@@ -402,18 +227,6 @@ namespace Chained::AssetResolutionSystem
 			if (model.ModelHandle == AssetHandle(0) && (model.ModelUUID != 0 || !model.ModelPath.empty()))
 			{
 				ResolveModel(reg, entity);
-			}
-		});
-
-		reg.view<PrimitiveComponent>().each([&](auto entity, auto& prim) {
-			auto& rt = reg.get_or_emplace<PrimitiveRuntimeState>(entity);
-			if (prim.Type != PrimitiveType::None && (!rt.Asset || rt.Dirty))
-			{
-				ResolvePrimitive(reg, entity);
-			}
-			else if (rt.TexturesPending && rt.Asset)
-			{
-				ApplyPrimitiveTextures(reg, entity);
 			}
 		});
 	}

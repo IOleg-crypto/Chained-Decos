@@ -1,10 +1,9 @@
 #include "engine/assets/loaders/font_loader.h"
 #include "engine/assets/types/font_asset.h"
 #include "engine/graphics/freetype_gl_atlas.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
-#include <vector>
 #include <glad/gl.h>
 
 // Provide stb_truetype symbols for ui_font_registry.cpp (font validation).
@@ -42,13 +41,14 @@ namespace Chained
 		}
 
 		auto* assetManager = ServiceLocator::TryGet<AssetManager>();
+		// Try reading from pack first
 		auto data = assetManager ? assetManager->ReadAssetData(resolvedPath) : std::vector<uint8_t>{};
 		if (data.empty())
 		{
 			return fail("font not found '" + resolvedPath + "'");
 		}
 
-		NativeFont font;
+		Font font;
 		font.fontSize = 24.0f;
 		font.atlasWidth = 1024;
 		font.atlasHeight = 1024;
@@ -83,7 +83,7 @@ namespace Chained
 		const auto& cachedGlyphs = ftAtlas->GetCachedGlyphs();
 		for (const auto& [codepoint, glyph] : cachedGlyphs)
 		{
-			NativeFontChar c;
+			FontChar c;
 			c.x0 = glyph.s0;
 			c.y0 = glyph.t0;
 			c.x1 = glyph.s1;

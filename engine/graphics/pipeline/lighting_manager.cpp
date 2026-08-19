@@ -2,8 +2,6 @@
 #include "engine/graphics/api/graphics_device.h"
 #include "engine/graphics/api/shader.h"
 #include "engine/graphics/api/storage_buffer.h"
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtc/matrix_transform.hpp>
 
 namespace Chained
 {

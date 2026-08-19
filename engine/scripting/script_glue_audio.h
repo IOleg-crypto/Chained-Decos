@@ -45,10 +45,5 @@ namespace Chained
 
 	CH_SCRIPT_FUNC void SpriteComponent_SetZOrder(uint64_t entityID, int z);
 
-	// --- PrimitiveComponent ---
-	CH_SCRIPT_FUNC void PrimitiveComponent_GetAlbedoColor(uint64_t entityID, glm::vec4* outColor);
-
-	CH_SCRIPT_FUNC void PrimitiveComponent_SetAlbedoColor(uint64_t entityID, glm::vec4 color);
-
 } // namespace Chained
 #endif

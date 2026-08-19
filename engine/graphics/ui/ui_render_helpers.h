@@ -80,19 +80,23 @@ namespace Chained
 			return nullptr;
 		}
 
+		if (handle != 0)
+		{
+			auto asset = am->Get<TextureAsset>(handle);
+			if (asset)
+			{
+				return asset;
+			}
+		}
+
 		if (!path.empty())
 		{
 			auto asset = am->Get<TextureAsset>(path);
 			if (asset)
 			{
 				handle = static_cast<AssetHandle>(asset->GetID());
+				return asset;
 			}
-			return asset;
-		}
-
-		if (handle != 0)
-		{
-			return am->Get<TextureAsset>(handle);
 		}
 
 		return nullptr;

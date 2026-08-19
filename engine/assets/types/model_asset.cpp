@@ -1,13 +1,11 @@
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
-#include "engine/core/log.h"
+
 #include "engine/core/profiler.h"
 #include "engine/core/service_locator.h"
 #include "engine/project/project.h"
 #include <cstring>
-#include <glm/gtc/type_ptr.hpp>
-#include <glm/gtx/quaternion.hpp>
 
 namespace Chained
 {
@@ -275,54 +273,57 @@ namespace Chained
 			{
 				mesh.VAO = VertexArray::Create();
 
-				auto vboPos =
-					VertexBuffer::Create(rawMesh.vertices.data(), (uint32_t)rawMesh.vertices.size() * sizeof(float));
-				vboPos->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
-				mesh.VAO->AddVertexBuffer(vboPos);
-
-				if (!rawMesh.texcoords.empty())
+				if (mesh.VAO)
 				{
-					auto vboTex = VertexBuffer::Create(rawMesh.texcoords.data(),
-													   (uint32_t)rawMesh.texcoords.size() * sizeof(float));
-					vboTex->SetLayout({{VertexAttributeType::Float2, "a_TexCoord"}});
-					mesh.VAO->AddVertexBuffer(vboTex);
-				}
+					auto vboPos = VertexBuffer::Create(rawMesh.vertices.data(),
+													   (uint32_t)rawMesh.vertices.size() * sizeof(float));
+					vboPos->SetLayout({{VertexAttributeType::Float3, "a_Position"}});
+					mesh.VAO->AddVertexBuffer(vboPos);
 
-				if (!rawMesh.normals.empty())
-				{
-					auto vboNorm =
-						VertexBuffer::Create(rawMesh.normals.data(), (uint32_t)rawMesh.normals.size() * sizeof(float));
-					vboNorm->SetLayout({{VertexAttributeType::Float3, "a_Normal"}});
-					mesh.VAO->AddVertexBuffer(vboNorm);
-				}
-
-				if (!rawMesh.joints.empty())
-				{
-					std::vector<int32_t> jointsInt;
-					jointsInt.reserve(rawMesh.joints.size());
-					for (auto jointId : rawMesh.joints)
+					if (!rawMesh.texcoords.empty())
 					{
-						jointsInt.push_back(static_cast<int32_t>(jointId));
+						auto vboTex = VertexBuffer::Create(rawMesh.texcoords.data(),
+														   (uint32_t)rawMesh.texcoords.size() * sizeof(float));
+						vboTex->SetLayout({{VertexAttributeType::Float2, "a_TexCoord"}});
+						mesh.VAO->AddVertexBuffer(vboTex);
 					}
 
-					auto vboJoints =
-						VertexBuffer::Create((float*)jointsInt.data(), (uint32_t)jointsInt.size() * sizeof(int32_t));
-					vboJoints->SetLayout({{VertexAttributeType::Int4, "a_JointIDs"}});
-					mesh.VAO->AddVertexBuffer(vboJoints);
-				}
+					if (!rawMesh.normals.empty())
+					{
+						auto vboNorm = VertexBuffer::Create(rawMesh.normals.data(),
+															(uint32_t)rawMesh.normals.size() * sizeof(float));
+						vboNorm->SetLayout({{VertexAttributeType::Float3, "a_Normal"}});
+						mesh.VAO->AddVertexBuffer(vboNorm);
+					}
 
-				if (!rawMesh.weights.empty())
-				{
-					auto vboWeights =
-						VertexBuffer::Create(rawMesh.weights.data(), (uint32_t)rawMesh.weights.size() * sizeof(float));
-					vboWeights->SetLayout({{VertexAttributeType::Float4, "a_Weights"}});
-					mesh.VAO->AddVertexBuffer(vboWeights);
-				}
+					if (!rawMesh.joints.empty())
+					{
+						std::vector<int32_t> jointsInt;
+						jointsInt.reserve(rawMesh.joints.size());
+						for (auto jointId : rawMesh.joints)
+						{
+							jointsInt.push_back(static_cast<int32_t>(jointId));
+						}
 
-				if (!rawMesh.indices.empty())
-				{
-					auto ibo = IndexBuffer::Create(rawMesh.indices.data(), (uint32_t)rawMesh.indices.size());
-					mesh.VAO->SetIndexBuffer(ibo);
+						auto vboJoints = VertexBuffer::Create((float*)jointsInt.data(),
+															  (uint32_t)jointsInt.size() * sizeof(int32_t));
+						vboJoints->SetLayout({{VertexAttributeType::Int4, "a_JointIDs"}});
+						mesh.VAO->AddVertexBuffer(vboJoints);
+					}
+
+					if (!rawMesh.weights.empty())
+					{
+						auto vboWeights = VertexBuffer::Create(rawMesh.weights.data(),
+															   (uint32_t)rawMesh.weights.size() * sizeof(float));
+						vboWeights->SetLayout({{VertexAttributeType::Float4, "a_Weights"}});
+						mesh.VAO->AddVertexBuffer(vboWeights);
+					}
+
+					if (!rawMesh.indices.empty())
+					{
+						auto ibo = IndexBuffer::Create(rawMesh.indices.data(), (uint32_t)rawMesh.indices.size());
+						mesh.VAO->SetIndexBuffer(ibo);
+					}
 				}
 
 				mesh.MinBounds = {FLT_MAX, FLT_MAX, FLT_MAX};

@@ -1,5 +1,4 @@
 #include "script_glue_input.h"
-#include "engine/core/log.h"
 
 namespace Chained
 {

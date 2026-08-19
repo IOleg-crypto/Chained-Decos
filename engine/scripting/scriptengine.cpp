@@ -1,10 +1,9 @@
 #include "scriptengine.h"
 #include "engine/app/application.h"
-#include "engine/core/log.h"
+
 #include "engine/common/engine_assert.h"
 #include "engine/scene/scene.h"
 #include <exception>
-#include <filesystem>
 
 namespace Chained
 {

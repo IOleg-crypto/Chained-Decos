@@ -8,10 +8,7 @@
 #include "engine/assets/loaders/model_loader.h"
 #include "engine/assets/loaders/audio_loader.h"
 #include "engine/assets/loaders/material_loader.h"
-#include <algorithm>
-#include <chrono>
-#include <filesystem>
-#include <fstream>
+
 #include "engine/assets/loaders/texture_loader.h"
 #include "engine/assets/loaders/environment_loader.h"
 #include "engine/assets/loaders/shader_loader.h"
@@ -480,7 +477,6 @@ namespace Chained
 		AssetHandle handle = m_PathResolver.ResolveToHandle(resolved);
 		if (handle != AssetHandle(0))
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
 			m_AssetCache.erase(handle);
 		}
 		m_PathResolver.ResetPath(path);

@@ -79,6 +79,11 @@ namespace Chained
 				return;
 			}
 
+			if (props.GetMode() == ReflectionMode::UI && !FieldVisibilityOverride<T>::IsVisible(name, component))
+			{
+				return;
+			}
+
 			const char* name_cstr = field.name().data();
 
 			if constexpr (is_vector_v<FieldType>)

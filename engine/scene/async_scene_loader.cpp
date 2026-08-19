@@ -1,13 +1,12 @@
 #include "engine/scene/async_scene_loader.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/common/thread_pool.h"
-#include "engine/core/log.h"
+
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene_serializer.h"
 #include "engine/scene/systems/physics_body_system.h"
-#include <chrono>
 
 namespace Chained
 {

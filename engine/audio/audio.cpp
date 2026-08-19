@@ -4,10 +4,8 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/audio_asset.h"
 #include "engine/core/service_locator.h"
-#include "engine/core/log.h"
+
 #include "engine/project/project.h"
-#include <filesystem>
-#include <algorithm>
 
 namespace Chained
 {

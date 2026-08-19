@@ -1,5 +1,4 @@
 #include "engine/graphics/freetype_gl_atlas.h"
-#include "engine/core/log.h"
 
 namespace Chained
 {

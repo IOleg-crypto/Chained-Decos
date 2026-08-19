@@ -1,13 +1,8 @@
 # Define the Game module as a Standalone Executable
 # Signature: TARGET_NAME PROJECT_GAME [CSHARP_PROJECT_PATH] [native_sources...]
-set(GAME_SOURCES
-    src/game_module.cpp
-)
-
 chained_add_game(ChainedDecos
     PROJECT_GAME ChainedDecos
     CSHARP_PROJECT "assets/scripts/ChainedDecos.Scripts.csproj"
-    SOURCES ${GAME_SOURCES}
 )
 
 # Copy game assets (only if source files-- changed)

@@ -1,5 +1,4 @@
 #include "engine/scene/components/render/primitive_component.h"
-#include "engine/scene/components/render/primitive_runtime.h"
 #include "gtest/gtest.h"
 
 using namespace Chained;
@@ -17,11 +16,7 @@ TEST(PrimitiveTest, Defaults)
 	EXPECT_FLOAT_EQ(component.Dimensions.x, 1.0f);
 	EXPECT_FLOAT_EQ(component.Dimensions.y, 1.0f);
 	EXPECT_FLOAT_EQ(component.Dimensions.z, 1.0f);
-
-	// Runtime state is a separate component; check its defaults independently.
-	PrimitiveRuntimeState rt;
-	EXPECT_TRUE(rt.Dirty); // defaults to true so mesh is built on first frame
-	EXPECT_EQ(rt.Asset, nullptr);
+	EXPECT_TRUE(component.MeshPath.empty());
 }
 
 TEST(PrimitiveTest, TypeConstructorSetsRequestedPrimitiveType)
@@ -32,7 +27,6 @@ TEST(PrimitiveTest, TypeConstructorSetsRequestedPrimitiveType)
 	EXPECT_EQ(sphere.Type, PrimitiveType::Sphere);
 	EXPECT_FLOAT_EQ(sphere.Radius, 0.5f);
 	EXPECT_EQ(sphere.Slices, 16);
-	// Dirty flag is no longer on PrimitiveComponent -- it lives in PrimitiveRuntimeState.
 }
 
 TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
@@ -45,6 +39,7 @@ TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
 	source.Slices = 24;
 	source.Stacks = 12;
 	source.Dimensions = {2.0f, 3.0f, 4.0f};
+	source.MeshPath = "primitives/TestCube.chmesh";
 
 	PrimitiveComponent copy(source);
 
@@ -57,5 +52,31 @@ TEST(PrimitiveTest, CopyConstructorPreservesConfiguredValues)
 	EXPECT_FLOAT_EQ(copy.Dimensions.x, source.Dimensions.x);
 	EXPECT_FLOAT_EQ(copy.Dimensions.y, source.Dimensions.y);
 	EXPECT_FLOAT_EQ(copy.Dimensions.z, source.Dimensions.z);
-	// Dirty and Asset are runtime-only (PrimitiveRuntimeState) and not part of PrimitiveComponent copy.
+	EXPECT_EQ(copy.MeshPath, source.MeshPath);
+}
+
+#include "engine/scene/scene.h"
+#include "engine/scene/components/render/model_component.h"
+
+TEST(PrimitiveTest, PrimitiveSystemBakesMeshAndAttachesModelComponent)
+{
+	auto scene = Scene::CreateDefault();
+	Entity entity = scene->CreateEntity("TestCube");
+
+	PrimitiveComponent prim;
+	prim.Type = PrimitiveType::Cube;
+	prim.Dimensions = {2.0f, 2.0f, 2.0f};
+	entity.AddComponent<PrimitiveComponent>(prim);
+
+	// PrimitiveSystem should have baked the mesh and attached ModelComponent
+	EXPECT_TRUE(entity.HasComponent<ModelComponent>());
+	auto& mc = entity.GetComponent<ModelComponent>();
+	EXPECT_EQ(mc.ModelPath, "primitives/TestCube.chmesh");
+
+	auto& primComp = entity.GetComponent<PrimitiveComponent>();
+	EXPECT_EQ(primComp.MeshPath, mc.ModelPath);
+
+	// Removing PrimitiveComponent removes ModelComponent
+	entity.RemoveComponent<PrimitiveComponent>();
+	EXPECT_FALSE(entity.HasComponent<ModelComponent>());
 }

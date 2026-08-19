@@ -5,6 +5,7 @@ in vec3 v_WorldPos;
 uniform vec3 u_CameraPos;
 uniform vec4 u_GridColor;   // rgb = color, a = base alpha
 uniform float u_GridSize;   // primary spacing
+uniform float u_SecondarySpacing; // secondary spacing (major gridlines)
 uniform float u_FadeStart;  // distance where fade begins
 uniform float u_FadeEnd;    // distance where grid is fully invisible
 
@@ -29,7 +30,7 @@ void main()
     vec2 coord = v_WorldPos.xz;
 
     float g1 = grid(coord, u_GridSize, 0.8);
-    float g2 = grid(coord, u_GridSize * 10.0, 0.5);
+    float g2 = grid(coord, u_SecondarySpacing, 0.5);
 
     float dist = length(v_WorldPos - u_CameraPos);
     float fade_range = max(u_FadeEnd - u_FadeStart, 0.001);
