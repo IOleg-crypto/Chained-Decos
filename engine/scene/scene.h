@@ -202,6 +202,7 @@ namespace Chained
 		std::string m_PendingScenePath;
 
 		bool m_IsStartingUp = false;
+		bool m_PhysicsStartupInitialized = false;
 
 		mutable std::vector<entt::entity> m_CachedRoots;
 		mutable bool m_RootsDirty = true;
