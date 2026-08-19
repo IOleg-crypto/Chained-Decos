@@ -7,10 +7,6 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/core/service_locator.h"
 
-#include <fstream>
-#include <sstream>
-#include <yaml-cpp/yaml.h>
-
 namespace Chained
 {
 	static void SerializeEntityRecursive(YAML::Emitter& out, Entity entity)

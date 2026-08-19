@@ -3,7 +3,6 @@
 #include "engine/scene/components/core/hierarchy_component.h"
 #include "engine/scene/components/ui/control_component.h"
 #include "imgui.h"
-#include <glm/glm.hpp>
 
 namespace Chained
 {

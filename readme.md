@@ -147,7 +147,6 @@ python tools/create_game.py MyGame --csproj assets/scripts/MyGame.Scripts.csproj
 This creates `game/mygame/` with:
 - `CMakeLists.txt` — wired into the build via auto-discovery
 - `src/main.cpp` — `CreateApplication` entry point
-- `src/game_module.cpp` — component registration stub
 - `MyGame.chproject` — project metadata
 - `assets/scripts/` — for C# scripts
 

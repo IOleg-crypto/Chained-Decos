@@ -2,7 +2,7 @@
 #include "engine/scene/components/ui/control_component.h"
 #include "engine/scene/components/ui/ui_action_component.h"
 #include "engine/scene/components.h" // For ControlData types
-#include "engine/core/log.h"
+
 #include <mutex>
 
 namespace Chained

@@ -1,5 +1,4 @@
 #include "transform_system.h"
-#include <glm/gtx/quaternion.hpp>
 
 namespace Chained::TransformSystem
 {

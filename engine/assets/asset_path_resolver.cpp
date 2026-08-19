@@ -1,5 +1,4 @@
 #include "engine/assets/asset_path_resolver.h"
-#include <algorithm>
 
 namespace Chained
 {

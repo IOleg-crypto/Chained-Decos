@@ -8,9 +8,8 @@
 #include "engine/scene/yaml.h"
 #include "engine/scene/components/physics/physics_component.h"
 #include "scene.h"
-#include <fstream>
+
 #include <set>
-#include <sstream>
 
 namespace Chained
 {
@@ -107,6 +106,23 @@ namespace Chained
 			out << YAML::EndMap;
 		}
 
+		static void SerializeGridSettings(YAML::Emitter& out, const GridSettings& grid)
+		{
+			out << YAML::Key << "Grid" << YAML::Value << YAML::BeginMap;
+			out << YAML::Key << "Spacing" << YAML::Value << grid.Spacing;
+			out << YAML::Key << "SecondarySpacing" << YAML::Value << grid.SecondarySpacing;
+			out << YAML::Key << "Color" << YAML::Value << YAML::BeginMap;
+			out << YAML::Key << "r" << YAML::Value << grid.Color.x;
+			out << YAML::Key << "g" << YAML::Value << grid.Color.y;
+			out << YAML::Key << "b" << YAML::Value << grid.Color.z;
+			out << YAML::Key << "a" << YAML::Value << grid.Color.w;
+			out << YAML::EndMap;
+			out << YAML::Key << "FadeStart" << YAML::Value << grid.FadeStart;
+			out << YAML::Key << "FadeEnd" << YAML::Value << grid.FadeEnd;
+			out << YAML::Key << "PlaneSize" << YAML::Value << grid.PlaneSize;
+			out << YAML::EndMap;
+		}
+
 		static void DeserializeBackgroundSettings(const YAML::Node& sceneRoot, SceneSettings& settings)
 		{
 			if (!sceneRoot["Background"])
@@ -158,6 +174,29 @@ namespace Chained
 			settings.DebugFlags.DrawLights = ReadYamlValue(debugNode, "DrawLights", true);
 			settings.DebugFlags.DrawSpawnZones = ReadYamlValue(debugNode, "DrawSpawnZones", true);
 			settings.DebugFlags.SetCollisionWireframeMode = ReadYamlValue(debugNode, "CollisionWireframeMode", 0);
+		}
+
+		static void DeserializeGridSettings(const YAML::Node& sceneRoot, GridSettings& grid)
+		{
+			if (!sceneRoot["Grid"])
+			{
+				return;
+			}
+
+			auto gridNode = sceneRoot["Grid"];
+			grid.Spacing = ReadYamlValue(gridNode, "Spacing", grid.Spacing);
+			grid.SecondarySpacing = ReadYamlValue(gridNode, "SecondarySpacing", grid.SecondarySpacing);
+			grid.FadeStart = ReadYamlValue(gridNode, "FadeStart", grid.FadeStart);
+			grid.FadeEnd = ReadYamlValue(gridNode, "FadeEnd", grid.FadeEnd);
+			grid.PlaneSize = ReadYamlValue(gridNode, "PlaneSize", grid.PlaneSize);
+			if (gridNode["Color"])
+			{
+				auto colorNode = gridNode["Color"];
+				grid.Color.x = ReadYamlValue(colorNode, "r", grid.Color.x);
+				grid.Color.y = ReadYamlValue(colorNode, "g", grid.Color.y);
+				grid.Color.z = ReadYamlValue(colorNode, "b", grid.Color.z);
+				grid.Color.w = ReadYamlValue(colorNode, "a", grid.Color.w);
+			}
 		}
 
 		static void DeserializeEnvironmentSettings(const YAML::Node& sceneRoot, SceneSettings& settings)
@@ -247,6 +286,7 @@ namespace Chained
 			SerializeBackgroundSettings(out, settings);
 			SerializeCanvasSettings(out, settings);
 			SerializeEnvironmentSettings(out, settings);
+			SerializeGridSettings(out, settings.Grid);
 			SerializeDebugSettings(out, settings);
 		}
 
@@ -264,6 +304,7 @@ namespace Chained
 				static_cast<SceneType>(ReadYamlValue(sceneRoot, "SceneType", static_cast<int>(settings.Type)));
 			DeserializeBackgroundSettings(sceneRoot, settings);
 			DeserializeCanvasSettings(sceneRoot, settings);
+			DeserializeGridSettings(sceneRoot, settings.Grid);
 			DeserializeDebugSettings(sceneRoot, settings);
 			DeserializeEnvironmentSettings(sceneRoot, settings);
 			return true;

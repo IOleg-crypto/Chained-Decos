@@ -12,15 +12,15 @@ namespace Chained
 			delete m_Font.freeTypeAtlas;
 			m_Font.freeTypeAtlas = nullptr;
 		}
-		m_Font = NativeFont();
+		m_Font = Font();
 	}
 
-	NativeFont FontAsset::CreateFromFile(const std::string& path)
+	Font FontAsset::CreateFromFile(const std::string& path)
 	{
 		auto* am = ServiceLocator::TryGet<AssetManager>();
 		if (!am)
 		{
-			return NativeFont{};
+			return Font{};
 		}
 
 		auto asset = am->Get<FontAsset>(path);
@@ -28,6 +28,6 @@ namespace Chained
 		{
 			return asset->GetFont();
 		}
-		return NativeFont{};
+		return Font{};
 	}
 } // namespace Chained

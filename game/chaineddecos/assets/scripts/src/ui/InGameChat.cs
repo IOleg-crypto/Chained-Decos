@@ -61,7 +61,8 @@ namespace ChainedDecos.Scripts
             }
             else
             {
-                if (Input.IsKeyPressed(Key.Escape))
+                // To avoid conflict with PlayerController.cs 
+                if (Input.IsKeyPressed(Key.Delete))
                 {
                     IsOpen      = false;
                     m_InputText = "";

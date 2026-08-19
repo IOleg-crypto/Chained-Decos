@@ -1,14 +1,14 @@
 #include "entity_collector.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/assets/types/material_asset.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/shader_asset.h"
 #include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
 #include "engine/scene/entity.h"
-#include <algorithm>
+
 #include <cmath>
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/quaternion.hpp>
+
 #include <glm/gtx/matrix_decompose.hpp>
 
 namespace Chained
@@ -68,23 +68,6 @@ namespace Chained
 
 			EnqueueModelAsset(registry, entity, modelAsset.get(), transform.WorldTransform, frustum, cameraPos);
 		}
-
-		auto primView = registry.view<TransformComponent, PrimitiveComponent>();
-		for (auto entity : primView)
-		{
-			auto [transform, primitive] = primView.get<TransformComponent, PrimitiveComponent>(entity);
-			if (primitive.Type == PrimitiveType::None)
-			{
-				continue;
-			}
-			auto* rt = registry.try_get<PrimitiveRuntimeState>(entity);
-			if (!rt || !rt->Asset || rt->Asset->GetState() != AssetState::Ready)
-			{
-				continue;
-			}
-
-			EnqueueModelAsset(registry, entity, rt->Asset.get(), transform.WorldTransform, frustum, cameraPos);
-		}
 	}
 
 	bool EntityCollector::EnqueueModelAsset(entt::registry& registry, entt::entity entity, ModelAsset* modelAsset,
@@ -134,6 +117,30 @@ namespace Chained
 		}
 
 		std::vector<Material> materials = modelAsset->GetMaterials();
+		if (registry.all_of<ModelComponent>(entity))
+		{
+			auto& modelComponent = registry.get<ModelComponent>(entity);
+			if (auto* materialAssets = ServiceLocator::TryGet<AssetManager>())
+			{
+				for (size_t i = 0; i < modelComponent.MaterialPaths.size(); ++i)
+				{
+					if (modelComponent.MaterialPaths[i].empty())
+					{
+						continue;
+					}
+
+					auto materialAsset = materialAssets->Get<MaterialAsset>(modelComponent.MaterialPaths[i]);
+					if (materialAsset && materialAsset->IsReady())
+					{
+						if (i >= materials.size())
+						{
+							materials.resize(i + 1);
+						}
+						materials[i] = materialAsset->GetMaterial();
+					}
+				}
+			}
+		}
 
 		RenderItem item;
 		item.Asset = modelAsset;
