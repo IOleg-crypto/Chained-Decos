@@ -129,7 +129,7 @@ namespace Chained
 		// Snapshot the cache under a short lock
 		std::vector<std::pair<AssetHandle, std::shared_ptr<Asset>>> snapshot;
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			snapshot.reserve(m_AssetCache.size());
 			for (const auto& [handle, asset] : m_AssetCache)
 			{
@@ -188,7 +188,7 @@ namespace Chained
 
 	AssetManager::~AssetManager()
 	{
-		std::lock_guard<std::mutex> lock(m_AssetLock);
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 		m_PackOpen = false;
 		m_AssetCache.clear();
 		m_PathResolver.ClearCache();
@@ -237,7 +237,7 @@ namespace Chained
 		std::shared_ptr<Asset> asset;
 
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			if (auto it = m_PathResolver.ResolveToHandle(resolved); it != AssetHandle(0))
 			{
 				auto handle = it;
@@ -302,7 +302,7 @@ namespace Chained
 	{
 		if (handle != 0)
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			if (auto it = m_AssetCache.find(handle); it != m_AssetCache.end())
 			{
 				return it->second;
@@ -373,7 +373,7 @@ namespace Chained
 
 	size_t AssetManager::GetLoadingAssetCount() const
 	{
-		std::lock_guard<std::mutex> lock(m_AssetLock);
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 
 		size_t loadingCount = 0;
 		for (const auto& [handle, asset] : m_AssetCache)
@@ -397,7 +397,7 @@ namespace Chained
 				return true;
 			}
 		}
-		std::lock_guard<std::mutex> lock(m_AssetLock);
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 		for (const auto& [handle, asset] : m_AssetCache)
 		{
 			if (asset && asset->GetState() == AssetState::Loading)
@@ -414,7 +414,7 @@ namespace Chained
 		std::string path;
 
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 
 			auto it = m_AssetCache.find(handle);
 			if (it == m_AssetCache.end())
@@ -472,7 +472,7 @@ namespace Chained
 			DeleteChasset(resolved);
 		}
 
-		std::lock_guard<std::mutex> lock(m_AssetLock);
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 
 		AssetHandle handle = m_PathResolver.ResolveToHandle(resolved);
 		if (handle != AssetHandle(0))
@@ -493,7 +493,7 @@ namespace Chained
 
 		std::shared_ptr<Asset> asset;
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			if (auto it = m_AssetCache.find(handle); it != m_AssetCache.end())
 			{
 				asset = it->second;
@@ -503,7 +503,7 @@ namespace Chained
 		asset->Unload();
 
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			m_AssetCache.erase(handle);
 		}
 
@@ -526,7 +526,7 @@ namespace Chained
 	{
 		std::vector<AssetHandle> toUnload;
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			for (const auto& [handle, asset] : m_AssetCache)
 			{
 				if (asset && asset.use_count() == 1)
@@ -599,7 +599,7 @@ namespace Chained
 
 		if (deleted > 0)
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			m_AssetCache.clear();
 			m_PathResolver.ClearCache();
 		}
@@ -666,7 +666,7 @@ namespace Chained
 	std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
 	{
 		{
-			std::lock_guard<std::mutex> lock(m_AssetLock);
+			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 			if (m_PackOpen && m_PackReader)
 			{
 				std::string packKey = m_PathResolver.ResolvePackKey(assetPath);
@@ -712,7 +712,7 @@ namespace Chained
 
 	bool AssetManager::FileExists(const std::string& path) const
 	{
-		std::lock_guard<std::mutex> lock(m_AssetLock);
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 		if (m_PackOpen && m_PackReader)
 		{
 			std::string packKey = m_PathResolver.ResolvePackKey(path);

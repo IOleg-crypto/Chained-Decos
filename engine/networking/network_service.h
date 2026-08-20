@@ -167,6 +167,9 @@ namespace Chained
 		std::string m_PendingSceneChange;
 		UpnpPortMapper m_UpnpMapper;
 
+		std::string m_CachedPublicIP;
+		std::mutex m_PublicIPMutex;
+
 		static constexpr uint64_t HostNetworkID = 1;
 	};
 

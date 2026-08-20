@@ -7,6 +7,7 @@
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/loaders/anim_graph_loader.h"
 #include "engine/core/service_locator.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include "editor/panels/anim_graph_panel.h"
 #include "editor/layer.h"
 
@@ -292,11 +293,55 @@ namespace Chained
 		{
 			RestorePreview();
 			ImGui::TextDisabled("No animation graph loaded.");
+
+			// Generate unique name for entity
+			std::string baseName = "anim_graph";
+			if (selectedEntity.HasComponent<TagComponent>())
+			{
+				std::string tag = selectedEntity.GetComponent<TagComponent>().Tag;
+				if (!tag.empty())
+				{
+					std::string cleanTag = tag;
+					std::replace(cleanTag.begin(), cleanTag.end(), ' ', '_');
+					std::replace(cleanTag.begin(), cleanTag.end(), '/', '_');
+					std::replace(cleanTag.begin(), cleanTag.end(), '\\', '_');
+					std::replace(cleanTag.begin(), cleanTag.end(), '#', '_');
+					std::transform(cleanTag.begin(), cleanTag.end(), cleanTag.begin(), ::tolower);
+					baseName = cleanTag + "_graph";
+				}
+			}
+			else if (selectedEntity.HasComponent<ModelComponent>())
+			{
+				std::string mPath = selectedEntity.GetComponent<ModelComponent>().ModelPath;
+				if (!mPath.empty())
+				{
+					baseName = std::filesystem::path(mPath).stem().string() + "_graph";
+				}
+			}
+
+			auto* assets = ServiceLocator::TryGet<AssetManager>();
+			std::string uniqueGraphPath = "animations/" + baseName + ".chag";
+			if (assets)
+			{
+				int counter = 1;
+				while (std::filesystem::exists(assets->ResolvePath(uniqueGraphPath)))
+				{
+					uniqueGraphPath = "animations/" + baseName + "_" + std::to_string(counter++) + ".chag";
+				}
+			}
+
 			if (ImGui::Button("Create New Graph"))
 			{
-				animComp.GraphPath = "animations/new_graph.chag";
+				animComp.GraphPath = uniqueGraphPath;
 				animComp.GraphAssetHandle = 0;
 				m_ChangedGraph = true;
+
+				AnimationGraphAsset newGraph;
+				SaveGraph(&newGraph, animComp.GraphPath);
+				if (assets)
+				{
+					assets->Invalidate(animComp.GraphPath);
+				}
 			}
 			ImGui::End();
 			return;
@@ -306,12 +351,35 @@ namespace Chained
 		{
 			ImVec4 btnColor = m_ChangedGraph ? ImVec4(0.8f, 0.4f, 0.1f, 1.0f) : ImVec4(0.3f, 0.3f, 0.3f, 1.0f);
 			ImGui::PushStyleColor(ImGuiCol_Button, btnColor);
-			if (ImGui::Button("Save"))
+			if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save"))
 			{
 				SaveGraph(graph, animComp.GraphPath);
 				m_ChangedGraph = false;
 			}
 			ImGui::PopStyleColor();
+
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_COPY " Clone Graph"))
+			{
+				auto* assets = ServiceLocator::TryGet<AssetManager>();
+				if (assets && !animComp.GraphPath.empty())
+				{
+					std::filesystem::path p(animComp.GraphPath);
+					std::string newPath = (p.parent_path() / (p.stem().string() + "_copy.chag")).generic_string();
+					int counter = 1;
+					while (std::filesystem::exists(assets->ResolvePath(newPath)))
+					{
+						newPath =
+							(p.parent_path() / (p.stem().string() + "_copy" + std::to_string(counter++) + ".chag"))
+								.generic_string();
+					}
+					SaveGraph(graph, newPath);
+					animComp.GraphPath = newPath;
+					animComp.GraphAssetHandle = 0;
+					assets->Invalidate(newPath);
+					m_ChangedGraph = false;
+				}
+			}
 
 			ImGui::SameLine();
 			if (ImGui::Button("Add State"))
@@ -337,6 +405,9 @@ namespace Chained
 			{
 				m_Fit = GraphEditor::Fit_SelectedNodes;
 			}
+
+			ImGui::SameLine();
+			ImGui::TextDisabled("File: %s", animComp.GraphPath.c_str());
 		}
 
 		// Graph editor | Properties side-by-side

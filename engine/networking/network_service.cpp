@@ -1,7 +1,102 @@
 #include "network_service.h"
+#include <thread>
+#include <algorithm>
+#include <cctype>
+
+#ifdef _WIN32
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#else
+#include <sys/socket.h>
+#include <netdb.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#endif
 
 namespace Chained
 {
+	static std::string FetchPublicIPFromWeb()
+	{
+		struct addrinfo hints = {}, *res = nullptr;
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
+		if (getaddrinfo("api.ipify.org", "80", &hints, &res) != 0 || !res)
+		{
+			return {};
+		}
+
+		auto sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (sock == -1
+#ifdef _WIN32
+			|| sock == INVALID_SOCKET
+#endif
+		)
+		{
+			freeaddrinfo(res);
+			return {};
+		}
+
+#ifdef _WIN32
+		DWORD timeout = 3000;
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+#else
+		struct timeval tv = {3, 0};
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+#endif
+
+		if (connect(sock, res->ai_addr, (int)res->ai_addrlen) != 0)
+		{
+#ifdef _WIN32
+			closesocket(sock);
+#else
+			close(sock);
+#endif
+			freeaddrinfo(res);
+			return {};
+		}
+		freeaddrinfo(res);
+
+		const char* request =
+			"GET / HTTP/1.1\r\nHost: api.ipify.org\r\nConnection: close\r\nUser-Agent: ChainedEngine\r\n\r\n";
+		send(sock, request, (int)strlen(request), 0);
+
+		char buffer[1024] = {};
+		int totalBytes = 0;
+		int bytes = 0;
+		while ((bytes = recv(sock, buffer + totalBytes, sizeof(buffer) - 1 - totalBytes, 0)) > 0)
+		{
+			totalBytes += bytes;
+		}
+
+#ifdef _WIN32
+		closesocket(sock);
+#else
+		close(sock);
+#endif
+
+		if (totalBytes <= 0)
+		{
+			return {};
+		}
+		buffer[totalBytes] = '\0';
+
+		const char* body = strstr(buffer, "\r\n\r\n");
+		if (!body)
+		{
+			return {};
+		}
+		body += 4;
+
+		std::string ip(body);
+		ip.erase(std::remove_if(ip.begin(), ip.end(), [](unsigned char c) { return std::isspace(c); }), ip.end());
+		return ip;
+	}
 	Network::~Network()
 	{
 		if (m_Session.IsConnected())
@@ -79,13 +174,41 @@ namespace Chained
 		if (m_UpnpMapper.IsAvailable())
 		{
 			m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
-			std::string wan = m_UpnpMapper.GetPublicIP();
 			CH_CORE_INFO("Network: UPnP mapping added.");
 		}
 		else
 		{
 			CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
 		}
+
+		{
+			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+			m_CachedPublicIP = "Fetching...";
+		}
+
+		// Asynchronously resolve true public WAN IP from web (api.ipify.org)
+		std::thread([this, port]() {
+			std::string ip = FetchPublicIPFromWeb();
+			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+			if (!ip.empty())
+			{
+				m_CachedPublicIP = ip + ":" + std::to_string(port);
+				CH_CORE_INFO("Network: Public IP resolved: {}", m_CachedPublicIP);
+			}
+			else
+			{
+				// Fallback to UPnP WAN IP if available
+				std::string upnpIp = m_UpnpMapper.GetPublicIP();
+				if (!upnpIp.empty())
+				{
+					m_CachedPublicIP = upnpIp + ":" + std::to_string(port);
+				}
+				else
+				{
+					m_CachedPublicIP = "Manual (Port " + std::to_string(port) + ")";
+				}
+			}
+		}).detach();
 
 		CH_CORE_INFO("Network: Hosting on port {} (max {} clients).", port, maxClients);
 	}
@@ -110,6 +233,10 @@ namespace Chained
 		m_Transport.ResetCounters();
 		m_PlayerManager.Reset();
 		m_PendingSceneChange.clear();
+		{
+			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+			m_CachedPublicIP.clear();
+		}
 		CH_CORE_INFO("Network: Disconnected.");
 	}
 
@@ -156,12 +283,21 @@ namespace Chained
 
 	std::string Network::GetListenAddress()
 	{
+		if (m_UpnpMapper.IsAvailable() && m_UpnpMapper.GetLanIP()[0] != '\0')
+		{
+			return std::string(m_UpnpMapper.GetLanIP()) + ":" + std::to_string(m_Session.GetPort());
+		}
 		return m_Session.GetListenAddress();
 	}
 
 	std::string Network::GetPublicAddress()
 	{
-		return m_Session.GetPublicAddress();
+		std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+		if (!m_CachedPublicIP.empty())
+		{
+			return m_CachedPublicIP;
+		}
+		return "Fetching...";
 	}
 
 	// ── Player management ────────────────────────────────────────────────

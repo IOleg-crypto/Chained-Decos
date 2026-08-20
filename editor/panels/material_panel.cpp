@@ -253,6 +253,29 @@ namespace Chained
 					ImGui::Separator();
 					ImGui::Spacing();
 					DrawMaterialSlot(selected);
+
+					// Live update in memory so the viewport reflects changes immediately
+					if (auto* assetMgr = ServiceLocator::TryGet<AssetManager>())
+					{
+						if (m_SelectedEntity.HasComponent<ModelComponent>())
+						{
+							auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
+							auto modelAsset = assetMgr->Get<ModelAsset>(mc.ModelPath);
+							if (modelAsset)
+							{
+								modelAsset->GetMaterials() = m_Materials;
+							}
+							if (m_SelectedMaterialIndex < (int)mc.MaterialPaths.size() &&
+								!mc.MaterialPaths[m_SelectedMaterialIndex].empty())
+							{
+								auto matAsset = assetMgr->Get<MaterialAsset>(mc.MaterialPaths[m_SelectedMaterialIndex]);
+								if (matAsset)
+								{
+									matAsset->SetMaterial(selected);
+								}
+							}
+						}
+					}
 				}
 				else
 				{
@@ -260,9 +283,10 @@ namespace Chained
 				}
 				ImGui::EndChild();
 
-				// Save button
+				// Save & Delete buttons
 				ImGui::Separator();
-				if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Materials", ImVec2(-1, 0)))
+				float buttonWidth = ImGui::GetContentRegionAvail().x * 0.5f - 4.0f;
+				if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save Materials", ImVec2(buttonWidth, 0)))
 				{
 					SaveMaterials();
 					ImGui::OpenPopup("Materials Saved");
@@ -271,6 +295,23 @@ namespace Chained
 				if (ImGui::BeginPopup("Materials Saved"))
 				{
 					ImGui::Text("Materials saved successfully!");
+					ImGui::EndPopup();
+				}
+
+				ImGui::SameLine();
+				ImGui::PushStyleColor(ImGuiCol_Button, {0.7f, 0.2f, 0.2f, 1.0f});
+				ImGui::PushStyleColor(ImGuiCol_ButtonHovered, {0.85f, 0.3f, 0.3f, 1.0f});
+				ImGui::PushStyleColor(ImGuiCol_ButtonActive, {0.6f, 0.15f, 0.15f, 1.0f});
+				if (ImGui::Button(ICON_FA_TRASH " Delete .chmat", ImVec2(-1, 0)))
+				{
+					DeleteMaterials();
+					ImGui::OpenPopup("Materials Deleted");
+				}
+				ImGui::PopStyleColor(3);
+
+				if (ImGui::BeginPopup("Materials Deleted"))
+				{
+					ImGui::Text("Deleted .chmat files and restored model defaults!");
 					ImGui::EndPopup();
 				}
 			}
@@ -350,11 +391,75 @@ namespace Chained
 		}
 	}
 
+	void MaterialPanel::DeleteMaterials()
+	{
+		if (!m_SelectedEntity || !m_SelectedEntity.IsValid())
+		{
+			return;
+		}
+
+		if (!m_SelectedEntity.HasComponent<ModelComponent>())
+		{
+			return;
+		}
+
+		auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
+		auto* assets = ServiceLocator::TryGet<AssetManager>();
+		if (!assets)
+		{
+			return;
+		}
+
+		// Delete all .chmat and .meta files associated with this component
+		for (const auto& matPath : mc.MaterialPaths)
+		{
+			if (!matPath.empty())
+			{
+				std::string resolved = assets->ResolvePath(matPath);
+				std::error_code ec;
+				std::filesystem::remove(resolved, ec);
+				std::filesystem::remove(resolved + ".meta", ec);
+				assets->Invalidate(matPath);
+			}
+		}
+
+		// Also clean standard naming pattern <modelName>_material_*.chmat
+		std::filesystem::path modelPath(mc.ModelPath);
+		std::string modelName = modelPath.stem().string();
+		std::filesystem::path modelDir = modelPath.parent_path();
+		for (int i = 0; i < 64; ++i)
+		{
+			std::string matFileName = modelName + "_material_" + std::to_string(i) + ".chmat";
+			std::string matRel = (modelDir / matFileName).generic_string();
+			std::string resolved = assets->ResolvePath(matRel);
+			if (std::filesystem::exists(resolved))
+			{
+				std::error_code ec;
+				std::filesystem::remove(resolved, ec);
+				std::filesystem::remove(resolved + ".meta", ec);
+				assets->Invalidate(matRel);
+			}
+		}
+
+		mc.MaterialPaths.clear();
+
+		// Invalidate model asset and reload its original native materials
+		assets->Invalidate(mc.ModelPath);
+		auto modelAsset = assets->Get<ModelAsset>(mc.ModelPath);
+		if (modelAsset && modelAsset->IsReady())
+		{
+			m_Materials = modelAsset->GetMaterials();
+		}
+		else
+		{
+			m_Materials.clear();
+		}
+	}
+
 	void MaterialPanel::OnEvent(Event& e)
 	{
 		EventDispatcher dispatcher(e);
 		dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
-			SaveMaterials();
 			if (Scene* scene = ev.GetScene())
 			{
 				m_SelectedEntity = Entity(ev.GetEntity(), &scene->GetRegistry());
@@ -370,7 +475,6 @@ namespace Chained
 	{
 		if (m_Context != context)
 		{
-			SaveMaterials();
 			Panel::SetContext(context);
 			m_SelectedEntity = {};
 			m_Materials.clear();

@@ -7,7 +7,7 @@ Canvas:
   ReferenceResolution: [1920, 1080]
   ScaleMode: 0
   MatchWidthOrHeight: 0.5
-EnvironmentPath: engine/game/chaineddecos/assets/environments/new_environment.chenv
+EnvironmentPath: environments/new_environment.chenv
 Lighting:
   Direction: [-1, -1, -1]
   LightColor: [255, 255, 255, 255]
@@ -71,7 +71,7 @@ Entities:
     SpawnComponent:
       SpawnZoneSize: [1, 1, 1]
       SpawnTextureHandle: 0
-      SpawnTexturePath: boxes/playerspawntexture.png
+      SpawnTexturePath: environments/boxes/playerspawntexture.png
       RenderSpawnZoneInScene: true
   - Entity: 1326311650816898569
     TagComponent:

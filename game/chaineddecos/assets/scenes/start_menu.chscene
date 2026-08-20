@@ -46,7 +46,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 9690683145135120417
+  - Entity: 7901133756770750101
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -96,7 +96,7 @@ Entities:
       Texture Path: materials/logo.png
       Tint Color: [255, 255, 255, 255]
       Border Color: [0, 0, 0, 0]
-  - Entity: 9560013958734812643
+  - Entity: 2918141797093251417
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -152,7 +152,7 @@ Entities:
       Label: Start
       Interactable: true
       Auto Size: false
-  - Entity: 11285965781974115302
+  - Entity: 3210036190791093321
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -205,7 +205,7 @@ Entities:
       Label: Exit
       Interactable: true
       Auto Size: false
-  - Entity: 14031892179473291726
+  - Entity: 16057840357851959455
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -254,7 +254,7 @@ Entities:
       Widget Type: 3
       Text: The game is currently in development.
       Auto Size: false
-  - Entity: 8205122777621556251
+  - Entity: 6680430163034031464
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -307,7 +307,7 @@ Entities:
       Label: Info
       Interactable: true
       Auto Size: false
-  - Entity: 18116943770574165581
+  - Entity: 9869161237812939526
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -360,7 +360,16 @@ Entities:
       Label: Options
       Interactable: true
       Auto Size: false
-  - Entity: 12345678901234567890
+  - Entity: 3276981511984264437
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: false
+      TargetEntityTag: ""
+      OrbitDistance: 10
+      OrbitYaw: 0
+      OrbitPitch: 20
+      LookSensitivity: 0.899999976
     TransformComponent:
       Translation: [0, 0, 10]
       Rotation: [0, 0, 0]
@@ -369,38 +378,3 @@ Entities:
       Tag: MenuCamera2D
     IDComponent:
       {}
-    CameraComponent:
-      Primary: false
-      FixedAspectRatio: false
-      IsOrbitCamera: false
-      TargetEntityTag: ""
-      OrbitDistance: 10
-      OrbitYaw: 0
-      OrbitPitch: 20
-      LookSensitivity: 0.9
-      nearClip: -1
-      farClip: 1
-      verticalFov: 60
-      orthographicSize: 10
-  - Entity: 12345678901234567891
-    TransformComponent:
-      Translation: [0, 0, 10]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: MenuCamera3D
-    IDComponent:
-      {}
-    CameraComponent:
-      Primary: false
-      FixedAspectRatio: false
-      IsOrbitCamera: false
-      TargetEntityTag: ""
-      OrbitDistance: 10
-      OrbitYaw: 0
-      OrbitPitch: 20
-      LookSensitivity: 0.9
-      nearClip: 0.1
-      farClip: 1000
-      verticalFov: 60
-      orthographicSize: 10

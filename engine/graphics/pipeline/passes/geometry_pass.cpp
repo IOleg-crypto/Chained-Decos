@@ -13,7 +13,7 @@ namespace Chained
 
 		// 1. Opaque Pass — no blending
 		GraphicsDevice::Get().EnableDepthTest();
-		GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::Less);
+		GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::LEqual);
 		GraphicsDevice::Get().EnableDepthMask();
 		GraphicsDevice::Get().SetBlendEnabled(false);
 		for (const auto& item : renderer.GetOpaqueQueue())

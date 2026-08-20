@@ -91,6 +91,7 @@ namespace Chained
 		uint32_t VertexCount = 0;
 		uint32_t TriangleCount = 0;
 		int MaterialIndex = 0;
+		bool HasSkinning = false;
 
 		glm::vec3 MinBounds = {0.0f, 0.0f, 0.0f};
 		glm::vec3 MaxBounds = {0.0f, 0.0f, 0.0f};
