@@ -252,6 +252,15 @@ namespace Chained
 				ImGui::TextDisabled("Firewall: no auto-rule (run as admin to enable)");
 			}
 
+			if (!net->IsUpnpAvailable())
+			{
+				ImGui::Separator();
+				ImGui::TextColored(ImVec4(0.3f, 0.8f, 1.0f, 1.0f), "For internet play:");
+				ImGui::BulletText("Install Radmin VPN, create/join a network");
+				ImGui::BulletText("Share your Radmin IP (e.g. 26.xx.xx.xx:7777) with friends");
+				ImGui::BulletText("Or forward UDP port %u on your router manually", net->GetPort());
+			}
+
 			ImGui::Separator();
 
 			if (ImGui::Button("Stop Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
@@ -285,7 +294,7 @@ namespace Chained
 			ImGui::Separator();
 
 			ImGui::TextDisabled("Direct IP connection — no NAT traversal.");
-			ImGui::TextDisabled("Forward this UDP port on your router to host over the internet.");
+			ImGui::TextDisabled("For internet play, use Radmin VPN or forward UDP port on your router.");
 
 			ImGui::Separator();
 
