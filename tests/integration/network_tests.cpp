@@ -21,6 +21,8 @@ namespace
 		void SetUp() override
 		{
 			m_Port = kTestPortBase + (s_PortCounter.fetch_add(1) % 50);
+			m_Host.SetTestMode(true);
+			m_Client.SetTestMode(true);
 			m_Host.Initialize();
 			m_Client.Initialize();
 			ASSERT_TRUE(m_Host.IsEnabled()) << "ENet failed to initialize";

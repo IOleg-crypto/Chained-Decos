@@ -151,6 +151,15 @@ namespace Chained
 			return m_FirewallRuleActive;
 		}
 
+		void SetTestMode(bool enabled)
+		{
+			m_TestMode = enabled;
+		}
+		bool IsTestMode() const
+		{
+			return m_TestMode;
+		}
+
 		NetworkSession& GetSession()
 		{
 			return m_Session;
@@ -178,6 +187,7 @@ namespace Chained
 		std::string m_CachedPublicIP;
 		std::mutex m_PublicIPMutex;
 		bool m_FirewallRuleActive = false;
+		bool m_TestMode = false;
 
 		static constexpr uint64_t HostNetworkID = 1;
 	};

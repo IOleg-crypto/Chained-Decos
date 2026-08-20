@@ -175,25 +175,28 @@ namespace Chained
 		m_PlayerManager.AddHostSelf(HostNetworkID, m_PlayerManager.GetLocalPlayerName(),
 									m_PlayerManager.GetLocalSkinIndex());
 
-		if (!m_UpnpMapper.IsAvailable())
+		if (!m_TestMode)
 		{
-			m_UpnpMapper.Initialize();
-		}
-		if (m_UpnpMapper.IsAvailable())
-		{
-			m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
-			CH_CORE_INFO("Network: UPnP mapping added.");
-		}
-		else
-		{
-			CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
-		}
+			if (!m_UpnpMapper.IsAvailable())
+			{
+				m_UpnpMapper.Initialize();
+			}
+			if (m_UpnpMapper.IsAvailable())
+			{
+				m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
+				CH_CORE_INFO("Network: UPnP mapping added.");
+			}
+			else
+			{
+				CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
+			}
 
-		// Add Windows Firewall inbound rule
-		m_FirewallRuleActive = Firewall::AddUDPRule(port);
-		if (!m_FirewallRuleActive)
-		{
-			CH_CORE_WARN("Network: Could not add firewall rule. Run as admin to allow inbound connections.");
+			// Add Windows Firewall inbound rule
+			m_FirewallRuleActive = Firewall::AddUDPRule(port);
+			if (!m_FirewallRuleActive)
+			{
+				CH_CORE_WARN("Network: Could not add firewall rule. Run as admin to allow inbound connections.");
+			}
 		}
 
 		{
