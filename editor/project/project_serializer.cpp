@@ -75,6 +75,8 @@ namespace Chained
 			out << YAML::Key << "Mode" << YAML::Value << static_cast<int>(config.Export.Mode);
 			out << YAML::Key << "ZipThreshold" << YAML::Value << config.Export.ZipThreshold;
 			out << YAML::Key << "DataVersion" << YAML::Value << config.Export.DataVersion;
+			out << YAML::Key << "SplitSizeMB" << YAML::Value << config.Export.SplitSizeMB;
+			out << YAML::Key << "PackName" << YAML::Value << config.Export.PackName;
 			out << YAML::EndMap;
 
 			out << YAML::Key << "BuildConfig" << YAML::Value << static_cast<int>(config.BuildConfig);
@@ -212,6 +214,12 @@ namespace Chained
 			}
 			DeserializeProperty(exportNode, "ZipThreshold", config.Export.ZipThreshold);
 			DeserializeProperty(exportNode, "DataVersion", config.Export.DataVersion);
+			DeserializeProperty(exportNode, "SplitSizeMB", config.Export.SplitSizeMB);
+			DeserializeProperty(exportNode, "PackName", config.Export.PackName);
+			if (config.Export.PackName.empty())
+			{
+				config.Export.PackName = "resources";
+			}
 		}
 
 		int buildConfig = static_cast<int>(config.BuildConfig);
