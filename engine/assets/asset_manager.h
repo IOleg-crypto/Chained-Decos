@@ -52,6 +52,12 @@ namespace Chained
 		}
 
 		bool OpenPack(const std::filesystem::path& packPath);
+		size_t OpenAllPacksInDirectory(const std::filesystem::path& dir);
+		void CloseAllPacks();
+		size_t GetOpenPackCount() const
+		{
+			return m_PackReaders.size();
+		}
 		bool IsPacked() const
 		{
 			return m_PackOpen;
@@ -161,7 +167,8 @@ namespace Chained
 
 		AssetPathResolver m_PathResolver;
 
-		std::unique_ptr<pack::Reader> m_PackReader;
+		std::vector<std::unique_ptr<pack::Reader>> m_PackReaders;
+		std::vector<std::filesystem::path> m_OpenedPackPaths;
 		bool m_PackOpen = false;
 
 		float m_HotReloadInterval = 3.0f;

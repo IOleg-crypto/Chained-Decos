@@ -78,6 +78,8 @@ namespace Chained
 		PackMode Mode = PackMode::Balanced;
 		float ZipThreshold = 0.05f;
 		uint32_t DataVersion = 0;
+		uint32_t SplitSizeMB = 0;			// 0 = Single pack, >0 = Max uncompressed MB per chunk
+		std::string PackName = "resources"; // Base name for .pack files (without extension)
 	};
 
 	struct ProjectConfig

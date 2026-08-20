@@ -68,6 +68,9 @@ namespace Chained
 			PackMode SelectedMode = PackMode::Balanced;
 			float ZipThreshold = 0.05f;
 			uint32_t DataVersion = 0;
+			uint32_t SplitSizeMB = 0;
+			bool SplitCustom = false; // true when "Custom Size..." is explicitly selected
+			std::string PackName = "resources";
 			bool ForceRepack = false;
 			std::string OutputDir;
 		};

@@ -135,6 +135,7 @@ namespace Chained
 			{
 				if (!isExporting)
 				{
+					m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
 					m_ExportDialog.Open = true;
 					auto project = Project::GetActive();
 					if (project)
@@ -142,6 +143,11 @@ namespace Chained
 						m_ExportDialog.SelectedMode = project->GetConfig().Export.Mode;
 						m_ExportDialog.ZipThreshold = project->GetConfig().Export.ZipThreshold;
 						m_ExportDialog.DataVersion = project->GetConfig().Export.DataVersion;
+						m_ExportDialog.SplitSizeMB = project->GetConfig().Export.SplitSizeMB;
+						uint32_t splitSize = m_ExportDialog.SplitSizeMB;
+						m_ExportDialog.SplitCustom =
+							(splitSize != 0 && splitSize != 512 && splitSize != 1024 && splitSize != 2048);
+						m_ExportDialog.PackName = project->GetConfig().Export.PackName;
 					}
 				}
 			}
@@ -291,8 +297,10 @@ namespace Chained
 			}
 			ImGui::Spacing();
 			ImGui::Separator();
-			if (ImGui::Button("OK", ImVec2(120.f, 0.f)))
+			if (ImGui::Button("OK", ImVec2(120.f, 0.f)) || ImGui::IsKeyPressed(ImGuiKey_Escape) ||
+				ImGui::IsKeyPressed(ImGuiKey_Enter))
 			{
+				m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
 				ImGui::CloseCurrentPopup();
 			}
 			ImGui::EndPopup();
@@ -436,6 +444,121 @@ namespace Chained
 				}
 			}
 
+			if (m_ExportDialog.SelectedMode != PackMode::Raw)
+			{
+				// Reserve 128 chars for the pack name buffer
+				static char packNameBuf[128] = {};
+				if (ImGui::IsWindowAppearing())
+				{
+					std::strncpy(packNameBuf, m_ExportDialog.PackName.c_str(), sizeof(packNameBuf) - 1);
+					packNameBuf[sizeof(packNameBuf) - 1] = '\0';
+				}
+				if (ImGui::InputText("Pack Name", packNameBuf, sizeof(packNameBuf)))
+				{
+					std::string newName = packNameBuf;
+					// Strip spaces and extension characters that would break the filename
+					newName.erase(std::remove_if(newName.begin(), newName.end(),
+												 [](char c) { return c == '.' || c == '/' || c == '\\' || c == ':'; }),
+								  newName.end());
+					if (!newName.empty())
+					{
+						m_ExportDialog.PackName = newName;
+					}
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Base name for the .pack file(s).\nResult: %s.pack, %s_1.pack, ...",
+									  m_ExportDialog.PackName.c_str(), m_ExportDialog.PackName.c_str());
+				}
+			}
+
+			if (m_ExportDialog.SelectedMode != PackMode::Raw)
+			{
+				const char* splitLabels[] = {"Single File (No Split)", "512 MB per pack", "1 GB (1024 MB)",
+											 "2 GB (2048 MB)", "Custom Size..."};
+
+				// Determine which preset slot is active, respecting the explicit custom flag
+				int currentSplitIdx = 0;
+				if (m_ExportDialog.SplitCustom)
+				{
+					currentSplitIdx = 4;
+				}
+				else if (m_ExportDialog.SplitSizeMB == 0)
+				{
+					currentSplitIdx = 0;
+				}
+				else if (m_ExportDialog.SplitSizeMB == 512)
+				{
+					currentSplitIdx = 1;
+				}
+				else if (m_ExportDialog.SplitSizeMB == 1024)
+				{
+					currentSplitIdx = 2;
+				}
+				else if (m_ExportDialog.SplitSizeMB == 2048)
+				{
+					currentSplitIdx = 3;
+				}
+				else
+				{
+					currentSplitIdx = 4; // unknown preset → treat as custom
+				}
+
+				if (ImGui::BeginCombo("Split Pack Size", splitLabels[currentSplitIdx]))
+				{
+					if (ImGui::Selectable(splitLabels[0], currentSplitIdx == 0))
+					{
+						m_ExportDialog.SplitSizeMB = 0;
+						m_ExportDialog.SplitCustom = false;
+					}
+					if (ImGui::Selectable(splitLabels[1], currentSplitIdx == 1))
+					{
+						m_ExportDialog.SplitSizeMB = 512;
+						m_ExportDialog.SplitCustom = false;
+					}
+					if (ImGui::Selectable(splitLabels[2], currentSplitIdx == 2))
+					{
+						m_ExportDialog.SplitSizeMB = 1024;
+						m_ExportDialog.SplitCustom = false;
+					}
+					if (ImGui::Selectable(splitLabels[3], currentSplitIdx == 3))
+					{
+						m_ExportDialog.SplitSizeMB = 2048;
+						m_ExportDialog.SplitCustom = false;
+					}
+					if (ImGui::Selectable(splitLabels[4], currentSplitIdx == 4))
+					{
+						m_ExportDialog.SplitCustom = true;
+						// Keep current SplitSizeMB value so the user sees a sensible default
+						if (m_ExportDialog.SplitSizeMB == 0)
+						{
+							m_ExportDialog.SplitSizeMB = 1024;
+						}
+					}
+					ImGui::EndCombo();
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Split exported assets across multiple .pack files (%s.pack, %s_1.pack, etc.).",
+									  m_ExportDialog.PackName.c_str(), m_ExportDialog.PackName.c_str());
+				}
+
+				// Show custom input only when "Custom Size..." is selected
+				if (m_ExportDialog.SplitCustom)
+				{
+					int customMB = static_cast<int>(m_ExportDialog.SplitSizeMB);
+					if (ImGui::InputInt("Chunk Size (MB)", &customMB))
+					{
+						m_ExportDialog.SplitSizeMB = static_cast<uint32_t>(std::max(1, customMB));
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Maximum uncompressed size per chunk in MB.\nActual .pack file will be "
+										  "smaller after compression.");
+					}
+				}
+			}
+
 			ImGui::Spacing();
 			ImGui::Checkbox("Force repack", &m_ExportDialog.ForceRepack);
 			if (ImGui::IsItemHovered())
@@ -464,6 +587,8 @@ namespace Chained
 						project->GetConfig().Export.Mode = m_ExportDialog.SelectedMode;
 						project->GetConfig().Export.ZipThreshold = m_ExportDialog.ZipThreshold;
 						project->GetConfig().Export.DataVersion = m_ExportDialog.DataVersion;
+						project->GetConfig().Export.SplitSizeMB = m_ExportDialog.SplitSizeMB;
+						project->GetConfig().Export.PackName = m_ExportDialog.PackName;
 					}
 
 					m_ExportDialog.Open = false;
