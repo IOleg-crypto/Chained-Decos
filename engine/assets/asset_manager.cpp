@@ -71,27 +71,32 @@ namespace Chained
 
 	std::vector<uint8_t> AssetManager::TryPackFallback(const std::string& packKey) const
 	{
-		if (!m_PackOpen || !m_PackReader)
+		if (!m_PackOpen || m_PackReaders.empty())
 		{
 			return {};
 		}
 
-		uint64_t idx = 0;
 		if (packKey.rfind("assets/", 0) != 0 && packKey.rfind("resources/", 0) != 0)
 		{
-			std::string altKey = "assets/" + packKey;
-			if (m_PackReader->getItemIndex(altKey.c_str(), idx))
+			std::string altAssets = "assets/" + packKey;
+			std::string altResources = "resources/" + packKey;
+
+			for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 			{
-				std::vector<uint8_t> data;
-				m_PackReader->readItemData(idx, data);
-				return data;
-			}
-			altKey = "resources/" + packKey;
-			if (m_PackReader->getItemIndex(altKey.c_str(), idx))
-			{
-				std::vector<uint8_t> data;
-				m_PackReader->readItemData(idx, data);
-				return data;
+				auto& reader = *it;
+				uint64_t idx = 0;
+				if (reader->getItemIndex(altAssets.c_str(), idx))
+				{
+					std::vector<uint8_t> data;
+					reader->readItemData(idx, data);
+					return data;
+				}
+				if (reader->getItemIndex(altResources.c_str(), idx))
+				{
+					std::vector<uint8_t> data;
+					reader->readItemData(idx, data);
+					return data;
+				}
 			}
 		}
 		return {};
@@ -99,23 +104,24 @@ namespace Chained
 
 	bool AssetManager::TryPackFallbackExists(const std::string& packKey) const
 	{
-		if (!m_PackOpen || !m_PackReader)
+		if (!m_PackOpen || m_PackReaders.empty())
 		{
 			return false;
 		}
 
-		uint64_t idx = 0;
 		if (packKey.rfind("assets/", 0) != 0 && packKey.rfind("resources/", 0) != 0)
 		{
-			std::string altKey = "assets/" + packKey;
-			if (m_PackReader->getItemIndex(altKey.c_str(), idx))
+			std::string altAssets = "assets/" + packKey;
+			std::string altResources = "resources/" + packKey;
+
+			for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 			{
-				return true;
-			}
-			altKey = "resources/" + packKey;
-			if (m_PackReader->getItemIndex(altKey.c_str(), idx))
-			{
-				return true;
+				auto& reader = *it;
+				uint64_t idx = 0;
+				if (reader->getItemIndex(altAssets.c_str(), idx) || reader->getItemIndex(altResources.c_str(), idx))
+				{
+					return true;
+				}
 			}
 		}
 		return false;
@@ -637,9 +643,14 @@ namespace Chained
 
 	bool AssetManager::OpenPack(const std::filesystem::path& packPath)
 	{
-		if (m_PackOpen)
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+
+		for (const auto& p : m_OpenedPackPaths)
 		{
-			return true;
+			if (p == packPath)
+			{
+				return true;
+			}
 		}
 
 		if (!std::filesystem::exists(packPath))
@@ -650,33 +661,77 @@ namespace Chained
 
 		try
 		{
-			m_PackReader = std::make_unique<pack::Reader>(packPath);
+			auto reader = std::make_unique<pack::Reader>(packPath);
+			CH_CORE_INFO("AssetManager: Opened pack '{}' ({} items)", packPath.string(), reader->getItemCount());
+			m_OpenedPackPaths.push_back(packPath);
+			m_PackReaders.push_back(std::move(reader));
 			m_PackOpen = true;
-			CH_CORE_INFO("AssetManager: Opened pack '{}' ({} items)", packPath.string(), m_PackReader->getItemCount());
 			return true;
 		} catch (const pack::Error& err)
 		{
 			CH_CORE_ERROR("AssetManager: Failed to open pack '{}': {}", packPath.string(), err.what());
-			m_PackReader.reset();
-			m_PackOpen = false;
 			return false;
 		}
+	}
+
+	size_t AssetManager::OpenAllPacksInDirectory(const std::filesystem::path& dir)
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+		std::error_code ec;
+		if (!std::filesystem::exists(dir, ec) || !std::filesystem::is_directory(dir, ec))
+		{
+			return 0;
+		}
+
+		std::vector<std::filesystem::path> packFiles;
+		for (const auto& entry : std::filesystem::directory_iterator(dir, ec))
+		{
+			if (entry.is_regular_file() && entry.path().extension() == ".pack")
+			{
+				packFiles.push_back(entry.path());
+			}
+		}
+
+		std::sort(packFiles.begin(), packFiles.end());
+
+		size_t openedCount = 0;
+		for (const auto& p : packFiles)
+		{
+			if (OpenPack(p))
+			{
+				++openedCount;
+			}
+		}
+
+		return openedCount;
+	}
+
+	void AssetManager::CloseAllPacks()
+	{
+		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
+		m_PackReaders.clear();
+		m_OpenedPackPaths.clear();
+		m_PackOpen = false;
 	}
 
 	std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)
 	{
 		{
 			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-			if (m_PackOpen && m_PackReader)
+			if (m_PackOpen && !m_PackReaders.empty())
 			{
 				std::string packKey = m_PathResolver.ResolvePackKey(assetPath);
 
-				uint64_t idx = 0;
-				if (m_PackReader->getItemIndex(packKey.c_str(), idx))
+				for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 				{
-					std::vector<uint8_t> data;
-					m_PackReader->readItemData(idx, data);
-					return data;
+					auto& reader = *it;
+					uint64_t idx = 0;
+					if (reader->getItemIndex(packKey.c_str(), idx))
+					{
+						std::vector<uint8_t> data;
+						reader->readItemData(idx, data);
+						return data;
+					}
 				}
 
 				auto data = TryPackFallback(packKey);
@@ -713,14 +768,18 @@ namespace Chained
 	bool AssetManager::FileExists(const std::string& path) const
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-		if (m_PackOpen && m_PackReader)
+		if (m_PackOpen && !m_PackReaders.empty())
 		{
 			std::string packKey = m_PathResolver.ResolvePackKey(path);
 
-			uint64_t idx = 0;
-			if (m_PackReader->getItemIndex(packKey.c_str(), idx))
+			for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 			{
-				return true;
+				auto& reader = *it;
+				uint64_t idx = 0;
+				if (reader->getItemIndex(packKey.c_str(), idx))
+				{
+					return true;
+				}
 			}
 
 			if (TryPackFallbackExists(packKey))
@@ -740,20 +799,28 @@ namespace Chained
 
 	void AssetManager::EnumeratePackedPaths(const std::function<void(std::string_view)>& callback) const
 	{
-		if (!m_PackOpen || !m_PackReader)
+		if (!m_PackOpen || m_PackReaders.empty())
 		{
 			return;
 		}
-		const uint64_t count = m_PackReader->getItemCount();
-		for (uint64_t i = 0; i < count; ++i)
+		std::unordered_set<std::string_view> seen;
+		for (const auto& reader : m_PackReaders)
 		{
-			callback(m_PackReader->getItemPath(i));
+			const uint64_t count = reader->getItemCount();
+			for (uint64_t i = 0; i < count; ++i)
+			{
+				std::string_view itemPath = reader->getItemPath(i);
+				if (seen.insert(itemPath).second)
+				{
+					callback(itemPath);
+				}
+			}
 		}
 	}
 
 	std::vector<uint8_t> AssetManager::ReadProjectAsset(const std::filesystem::path& absolutePath)
 	{
-		if (!m_PackOpen || !m_PackReader || m_PathResolver.GetProjectDirectory().empty())
+		if (!m_PackOpen || m_PackReaders.empty() || m_PathResolver.GetProjectDirectory().empty())
 		{
 			return {};
 		}

@@ -38,4 +38,6 @@ Project:
     Mode: 2
     ZipThreshold: 1
     DataVersion: 0
+    SplitSizeMB: 0
+    PackName: resources
   BuildConfig: 0

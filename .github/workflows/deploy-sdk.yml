@@ -6,6 +6,8 @@ on:
       - 'v*'
     branches:
       - main
+      - opengl
+      - develop
   workflow_dispatch:
 
 concurrency:
@@ -17,6 +19,7 @@ env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   DOTNET_NOLOGO: true
+  NODE_OPTIONS: "--no-deprecation"
 
 jobs:
   build:
@@ -25,14 +28,15 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
             platform: linux
             preset: linux-clang
+            config: Release
           - os: windows-latest
             platform: windows
             preset: windows-clang
+            config: Release
 
     defaults:
       run:
@@ -61,6 +65,42 @@ jobs:
       - name: Init submodules
         run: git submodule update --init --recursive --depth 1
 
+      - name: Setup MSYS2 (Windows)
+        if: matrix.os == 'windows-latest'
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          path-type: inherit
+          install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make
+
+      - name: Prefer MSYS2 toolchain over preinstalled MinGW
+        if: matrix.os == 'windows-latest'
+        shell: msys2 {0}
+        run: |
+          cygpath -w /mingw64/bin >> "$GITHUB_PATH"
+
+      - name: Setup Mold Linker (Linux)
+        if: matrix.os == 'ubuntu-latest'
+        uses: rui314/setup-mold@v1
+
+      - name: Install Linux Dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            build-essential \
+            xorg-dev \
+            libgl1-mesa-dev libglu1-mesa-dev \
+            libasound2-dev \
+            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+            xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils \
+            clang-18 clang++-18 libc++-18-dev libc++abi-18-dev lld-18 llvm-18
+          echo "CC=clang-18" >> $GITHUB_ENV
+          echo "CXX=clang++-18" >> $GITHUB_ENV
+          echo "LDFLAGS=-fuse-ld=mold" >> $GITHUB_ENV
+
       - name: Get CMake and Ninja
         uses: lukka/get-cmake@latest
 
@@ -68,42 +108,8 @@ jobs:
         uses: hendrikmuhs/ccache-action@v1.2
         with:
           variant: ${{ matrix.os == 'windows-latest' && 'sccache' || 'ccache' }}
-          key: ${{ runner.os }}-deploy-${{ matrix.preset }}
+          key: SDK-${{ matrix.preset }}-${{ matrix.config }}
           max-size: 5G
-
-      - name: Get current version/date
-        id: info
-        shell: bash
-        run: |
-          echo "date=$(date +'%d.%m.%y')" >> $GITHUB_OUTPUT
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=${TAG_VERSION:-manual}" >> $GITHUB_OUTPUT
-
-      - name: Setup environment
-        id: build-env
-        shell: bash
-        run: |
-          mkdir -p build/${{ matrix.preset }}
-          mkdir -p package/bin
-          echo "package-dir=$(pwd)/package" >> $GITHUB_OUTPUT
-
-      - name: Setup Mold Linker
-        if: matrix.os == 'ubuntu-latest'
-        uses: rui314/setup-mold@v1
-
-      - name: Install dependencies (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          # xorg-dev covers the full X11 dev header/lib set GLFW's find_package(X11) needs.
-          # Wayland is force-disabled for Linux in cmake/external/glfw.cmake, so no
-          # libwayland-dev / libegl here.
-          sudo apt-get install -y build-essential cmake ninja-build ccache \
-            xorg-dev \
-            libgl1-mesa-dev libglu1-mesa-dev libasound2-dev \
-            libxkbcommon-dev \
-            pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
-            xvfb libxkbcommon-x11-0 clang lld
 
       - name: Setup Python
         uses: actions/setup-python@v5
@@ -123,72 +129,92 @@ jobs:
             9.0.x
             10.0.x
 
-      - name: Setup MSYS2
-        if: matrix.os == 'windows-latest'
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          update: false
-          install: >-
-            mingw-w64-x86_64-clang lld
+      - name: Get current version/date
+        id: info
+        shell: bash
+        run: |
+          echo "date=$(date +'%d.%m.%y')" >> $GITHUB_OUTPUT
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            CLEAN_BRANCH="${BRANCH_NAME//\//-}"
+            SHORT_SHA="${GITHUB_SHA:0:7}"
+            TAG_VERSION="${CLEAN_BRANCH}-${SHORT_SHA}"
+          fi
+          echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Configure CMake
         run: |
           set -euo pipefail
-          PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
+          PYTHON_EXE=$(python3 -c "import sys; print(sys.executable)" 2>/dev/null || python -c "import sys; print(sys.executable)")
           launcher="sccache"
           if [[ "${{ matrix.os }}" == "ubuntu-latest" ]]; then
             launcher="ccache"
           fi
 
+          mkdir -p "build/${{ matrix.preset }}"
           cmake --preset ${{ matrix.preset }} \
-            -DCMAKE_BUILD_TYPE=Release \
             -DCMAKE_C_COMPILER_LAUNCHER=$launcher \
             -DCMAKE_CXX_COMPILER_LAUNCHER=$launcher \
-            -DCMAKE_INSTALL_PREFIX="${{ steps.build-env.outputs.package-dir }}" \
             -DPython_EXECUTABLE="${PYTHON_EXE}" \
             -DPython3_EXECUTABLE="${PYTHON_EXE}" \
             -DCH_CI=ON \
             -DENABLE_UNITY_BUILD=OFF \
             -DENABLE_PCH=OFF \
-            -DBUILD_TESTS=OFF
+            -DBUILD_TESTS=OFF \
+            2>&1 | tee "build/${{ matrix.preset }}/configure.log"
 
       - name: Build binaries
         run: |
           set -euo pipefail
-          cmake --build --preset ${{ matrix.preset }} \
-            --target ChainedEditor ChainedRuntime \
-            --parallel $(nproc 2>/dev/null || echo 8) \
-            2>&1 | tee "build/${{ matrix.preset }}/build.log"
+          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.config }} --parallel \
+            2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.config }}.log"
 
-      - name: Install to package directory
-        shell: bash
+      - name: Sync resources
         run: |
-          cmake --install build/${{ matrix.preset }} \
-            --component Runtime
+          set -euo pipefail
+          python tools/sync_resources.py --root . --bin "build/${{ matrix.preset }}/bin" --config ${{ matrix.config }}
 
       - name: Package SDK
+        id: package
         shell: bash
         run: |
-          cd "${{ steps.build-env.outputs.package-dir }}"
+          set -euo pipefail
           PACKAGE_NAME="ChainedEngine-SDK-v${{ steps.info.outputs.version }}-${{ steps.info.outputs.date }}-${{ matrix.platform }}"
-          echo "Creating SDK package: $PACKAGE_NAME"
+          PACKAGE_DIR="${{ github.workspace }}/package"
+          mkdir -p "$PACKAGE_DIR"
 
+          BIN_DIR="${{ github.workspace }}/build/${{ matrix.preset }}/bin/${{ matrix.config }}"
+          if [[ ! -d "$BIN_DIR" ]]; then
+            BIN_DIR="${{ github.workspace }}/build/${{ matrix.preset }}/bin"
+          fi
+
+          cp -r "$BIN_DIR"/* "$PACKAGE_DIR/"
+          if [[ -d "${{ github.workspace }}/assets" ]]; then
+            cp -r "${{ github.workspace }}/assets" "$PACKAGE_DIR/"
+          fi
+
+          cd "$PACKAGE_DIR"
+          DEST_ZIP="${{ github.workspace }}/${PACKAGE_NAME}.zip"
+          DEST_TAR="${{ github.workspace }}/${PACKAGE_NAME}.tar.gz"
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            powershell -Command "
-              Compress-Archive -Path '*' -DestinationPath '${{ steps.build-env.outputs.package-dir }}/$PACKAGE_NAME.zip' -Force
-            "
-            echo "p-file=$PACKAGE_NAME.zip" >> $GITHUB_ENV
+            powershell -Command "Compress-Archive -Path * -DestinationPath '$DEST_ZIP' -Force"
+            echo "package_file=$PACKAGE_NAME.zip" >> $GITHUB_OUTPUT
+            echo "package_path=$DEST_ZIP" >> $GITHUB_OUTPUT
           else
-            tar -czf "$PACKAGE_NAME.tar.gz" .
-            echo "p-file=$PACKAGE_NAME.tar.gz" >> $GITHUB_ENV
+            tar -czf "$DEST_TAR" .
+            echo "package_file=$PACKAGE_NAME.tar.gz" >> $GITHUB_OUTPUT
+            echo "package_path=$DEST_TAR" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload SDK artifact
         uses: actions/upload-artifact@v4
         with:
           name: SDK-${{ matrix.platform }}
-          path: ${{ steps.build-env.outputs.package-dir }}/${{ env.p-file }}
+          path: ${{ steps.package.outputs.package_path }}
           retention-days: 30
 
   release:
@@ -234,3 +260,4 @@ jobs:
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+

@@ -107,7 +107,13 @@ namespace Chained
 		}
 
 		ENetAddress address;
-		enet_address_set_host(&address, ip.c_str());
+		if (enet_address_set_host(&address, ip.c_str()) != 0)
+		{
+			CH_CORE_ERROR("NetworkSession: Failed to resolve host '{}'.", ip);
+			enet_host_destroy(m_Host);
+			m_Host = nullptr;
+			return NetworkError::ConnectFailed;
+		}
 		address.port = port;
 
 		m_ServerPeer = enet_host_connect(m_Host, &address, 2, 0);

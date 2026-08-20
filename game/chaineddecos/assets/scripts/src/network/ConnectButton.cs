@@ -25,6 +25,8 @@ namespace ChainedDecos.Scripts
 
         public override void OnUpdate(float deltaTime)
         {
+            ButtonControl? btn = Entity.GetComponent<ButtonControl>();
+
             // Poll connection state while connecting
             if (m_IsConnecting)
             {
@@ -33,6 +35,7 @@ namespace ChainedDecos.Scripts
                 if (Network.IsFullyConnected)
                 {
                     m_IsConnecting = false;
+                    if (btn != null) btn.Label = "Connected!";
                     Log.Info($"[ConnectButton] Connected to {m_PendingIp}:{m_PendingPort}, loading lobby");
                     Scene.LoadScene(LobbyScene);
                     return;
@@ -41,16 +44,16 @@ namespace ChainedDecos.Scripts
                 if (m_ConnectTimer >= ConnectTimeout)
                 {
                     m_IsConnecting = false;
+                    if (btn != null) btn.Label = "Connect to Server";
                     Log.Warn($"[ConnectButton] Connection to {m_PendingIp}:{m_PendingPort} timed out");
                     Network.Disconnect();
-                    ShowError($"Could not connect to {m_PendingIp}:{m_PendingPort}");
+                    ShowError($"Could not connect to {m_PendingIp}:{m_PendingPort} (Timed out)");
                     return;
                 }
 
                 return; // wait, don't process button clicks
             }
 
-            ButtonControl? btn = Entity.GetComponent<ButtonControl>();
             if (btn == null || !btn.IsClicked)
                 return;
 
@@ -73,6 +76,19 @@ namespace ChainedDecos.Scripts
                     port = parsed;
             }
 
+            // Smart check: If user pasted "IP:PORT" into the IP field, parse both
+            if (ip.Contains(":"))
+            {
+                int colonIndex = ip.LastIndexOf(':');
+                string ipPart = ip.Substring(0, colonIndex).Trim();
+                string portPart = ip.Substring(colonIndex + 1).Trim();
+                if (ushort.TryParse(portPart, out ushort extractedPort) && extractedPort > 0)
+                {
+                    port = extractedPort;
+                    ip = ipPart;
+                }
+            }
+
             Entity? nickEntity = Scene.FindEntityByTag(NickInputTag);
             if (nickEntity != null && nickEntity.HasComponent<InputTextControl>())
             {
@@ -82,6 +98,9 @@ namespace ChainedDecos.Scripts
             }
 
             Log.Info($"[ConnectButton] Connecting to {ip}:{port}");
+            ShowError(""); // clear previous error
+            if (btn != null) btn.Label = "Connecting...";
+
             Network.SetLocalPlayerInfo(PlayerSettings.Nickname, (byte)LobbyManager.SelectedSkinIndex);
             Network.ConnectTo(ip, port);
 
