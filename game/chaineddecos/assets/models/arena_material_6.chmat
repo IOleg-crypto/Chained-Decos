@@ -1,9 +1,9 @@
 Material:
-  Name: Wooden_bridge
+  Name: Surface
   AlbedoColor:
-    - 0.329400003
-    - 0.227400005
-    - 0.188199997
+    - 0.470499992
+    - 0.439200014
+    - 0.403899997
     - 1
   EmissiveColor:
     - 0

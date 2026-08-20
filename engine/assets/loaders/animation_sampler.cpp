@@ -7,6 +7,7 @@
 #include <algorithm>
 #include <cmath>
 #include <future>
+#include <mutex>
 
 namespace Chained
 {
@@ -22,6 +23,9 @@ void AnimationSampler::Process(const aiScene* scene, int samplingFPS, const std:
         SampleAnimation(scene->mAnimations[a], samplingFPS, scene, nodeNames, nameToIndex, animations[a]);
     }
 }
+
+
+static std::mutex s_AnimPoolMutex;
 
 void AnimationSampler::SampleAnimation(aiAnimation* anim, int samplingFPS, const aiScene* scene,
                                        const std::vector<std::string>& nodeNames,
@@ -91,21 +95,56 @@ void AnimationSampler::SampleAnimation(aiAnimation* anim, int samplingFPS, const
         }
     }
 
-    std::vector<std::future<void>> animFutures;
-    animFutures.reserve(anim->mNumChannels);
-    for (unsigned int c = 0; c < anim->mNumChannels; ++c)
-    {
-        aiNodeAnim* channel = anim->mChannels[c];
-        auto boneIt = nameToIndex.find(channel->mNodeName.C_Str());
-        if (boneIt == nameToIndex.end())
-        {
-            continue;
-        }
+    if (anim->mNumChannels == 0) return;
 
-        const int boneIdx = boneIt->second;
-        if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+        std::unique_lock<std::mutex> lock(s_AnimPoolMutex, std::try_to_lock);
+
+        if (lock.owns_lock())
         {
-            animFutures.push_back(tp->Enqueue([&out, channel, boneIdx, &bindPoses, ticksPerFrame]() {
+            std::vector<std::future<void>> animFutures;
+            animFutures.reserve(anim->mNumChannels);
+            for (unsigned int c = 0; c < anim->mNumChannels; ++c)
+            {
+                aiNodeAnim* channel = anim->mChannels[c];
+                auto boneIt = nameToIndex.find(channel->mNodeName.C_Str());
+                if (boneIt == nameToIndex.end())
+                {
+                    continue;
+                }
+
+                const int boneIdx = boneIt->second;
+                if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
+                {
+                    animFutures.push_back(tp->Enqueue([&out, channel, boneIdx, &bindPoses, ticksPerFrame]() {
+                        unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
+                        for (int f = 0; f < out.frameCount; ++f)
+                        {
+                            double time = (double)f * ticksPerFrame;
+                            glm::vec3 pos = InterpolatePosition(time, channel, lastPosKey, bindPoses[boneIdx].translation);
+                            glm::quat rot = InterpolateRotation(time, channel, lastRotKey, bindPoses[boneIdx].rotation);
+                            glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
+                            out.framePoses[f * out.boneCount + boneIdx] = {pos, rot, scale};
+                        }
+                    }));
+                }
+            }
+            for (auto& f : animFutures)
+            {
+                f.get(); 
+            }
+        }
+        else
+        {
+            for (unsigned int c = 0; c < anim->mNumChannels; ++c)
+            {
+                aiNodeAnim* channel = anim->mChannels[c];
+                auto boneIt = nameToIndex.find(channel->mNodeName.C_Str());
+                if (boneIt == nameToIndex.end())
+                {
+                    continue;
+                }
+
+                const int boneIdx = boneIt->second;
                 unsigned int lastPosKey = 0, lastRotKey = 0, lastSclKey = 0;
                 for (int f = 0; f < out.frameCount; ++f)
                 {
@@ -115,15 +154,11 @@ void AnimationSampler::SampleAnimation(aiAnimation* anim, int samplingFPS, const
                     glm::vec3 scale = InterpolateScale(time, channel, lastSclKey, bindPoses[boneIdx].scale);
                     out.framePoses[f * out.boneCount + boneIdx] = {pos, rot, scale};
                 }
-            }));
+            }
         }
+
+        CH_CORE_INFO("AnimationSampler: Loaded animation '{}' ({} frames, {} fps, {} channels)", out.name, out.frameCount,
+                     out.frameRate, anim->mNumChannels);
     }
-    for (auto& f : animFutures)
-    {
-        f.get();
-    }
-    CH_CORE_INFO("AnimationSampler: Loaded animation '{}' ({} frames, {} fps, {} channels)", out.name, out.frameCount,
-                 out.frameRate, anim->mNumChannels);
-}
 
 } // namespace Chained

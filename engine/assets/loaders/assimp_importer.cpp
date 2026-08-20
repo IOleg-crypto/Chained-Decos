@@ -18,6 +18,9 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <glm/gtx/quaternion.hpp>
 #include <stb_image.h>
+#include <mutex> 
+
+static std::mutex s_MeshPoolMutex;
 
 namespace Chained
 {
@@ -387,7 +390,9 @@ namespace Chained
 		{
 			ProcessSingleMesh(0);
 		}
-		else
+		
+		std::unique_lock<std::mutex> lock(s_MeshPoolMutex, std::try_to_lock);
+		if (lock.owns_lock()) 
 		{
 			std::vector<std::future<void>> futures;
 			futures.reserve(m_Scene->mNumMeshes);
@@ -401,6 +406,13 @@ namespace Chained
 			for (auto& ft : futures)
 			{
 				ft.wait();
+			}
+		}
+		else
+		{
+			for (uint32_t m = 0; m < m_Scene->mNumMeshes; ++m)
+			{
+				ProcessSingleMesh(m);
 			}
 		}
 

@@ -113,3 +113,74 @@ add_custom_target(sync-scripts
     COMMENT "Syncing C# scripts to game assets"
     VERBATIM
 )
+
+
+
+
+
+
+
+
+# ==============================================================================
+# INSTALL RULES & CPACK (For installation)
+# ==============================================================================
+
+# Set executable files
+install(TARGETS ChainedEditor
+    RUNTIME DESTINATION bin
+)
+
+# You can also add ChainedRunTime
+# install(TARGETS ChainedRuntime RUNTIME DESTINATION bin)
+
+# Resources
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/resources/
+    DESTINATION bin/resources
+)
+install(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/game/
+    DESTINATION bin/game
+)
+
+install(DIRECTORY ${CMAKE_BINARY_DIR}/bin/$<CONFIG>/scriptcore/
+    DESTINATION bin/scriptcore
+    OPTIONAL
+)
+
+install(FILES
+    ${CMAKE_CURRENT_SOURCE_DIR}/editor_settings.yaml
+    ${CMAKE_CURRENT_SOURCE_DIR}/imgui.ini
+    DESTINATION bin
+)
+
+# ==============================================================================
+#  SETTING CPACK FOR WINDOWS AND LINUX
+# ==============================================================================
+
+set(CPACK_PACKAGE_NAME "ChainedEngine")
+set(CPACK_PACKAGE_VENDOR "IOleg-crypto")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Custom C++/C# Game Engine with Editor")
+set(CPACK_PACKAGE_VERSION "1.0.0")
+
+# Add license and README
+set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/license")
+set(CPACK_RESOURCE_FILE_README "${CMAKE_CURRENT_SOURCE_DIR}/readme.md")
+
+
+if(WIN32)
+    # Generates zip archive and Setup.exe
+    set(CPACK_GENERATOR "ZIP;NSIS")
+    set(CPACK_NSIS_INSTDIR_NAME "Chained Engine")
+    set(CPACK_NSIS_DISPLAY_NAME "Chained Engine")
+    set(CPACK_NSIS_HELP_LINK "https://github.com/IOleg-crypto/Chained-Engine")
+elseif(UNIX AND NOT APPLE)
+    # Generates .tar.gz and packet .deb для Ubuntu/Debian
+    set(CPACK_GENERATOR "TGZ;DEB")
+    set(CPACK_DEBIAN_PACKAGE_MAINTAINER "IOleg-crypto")
+    
+    # Automatically finds dependencies for linux (opengs, x11...)
+    # and includes them in your .dev packet
+    set(CPACK_DEBIAN_PACKAGE_SHLIBDEPS ON)
+endif()
+
+
+include(CPack)

@@ -1,0 +1,86 @@
+name: Manual Release Packager
+
+on:
+  workflow_dispatch:
+
+jobs:
+  package-linux:
+    name: Build & Pack (Linux)
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true 
+
+      - name: Setup .NET SDK 10.0.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Install System Dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ninja-build cmake libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev pkg-config libgtk-3-dev libdrm-dev libgbm-dev
+
+      - name: Configure CMake
+        run: cmake --preset linux-clang-release
+
+      - name: Build Engine
+        run: cmake --build --preset linux-clang-release --parallel
+
+      - name: Run CPack
+        working-directory: build/linux-clang-release
+        run: cpack -C Release --verbose
+
+      - name: Upload Linux Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChainedEngine-Linux
+          # Where to put executable files
+          path: |
+            build/linux-clang-release/*.tar.gz
+            build/linux-clang-release/*.deb
+          if-no-files-found: error
+
+  package-windows:
+    name: Build & Pack (Windows)
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          lfs: true
+
+      - name: Setup .NET SDK 10.0.x
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Setup MSVC Developer Command Prompt
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Install Ninja
+        run: choco install ninja --yes
+
+      - name: Configure CMake
+        run: cmake --preset windows-msvc
+
+      - name: Build Engine
+        # Set --config Release, so MSVC will compile release optimise version
+        run: cmake --build --preset windows-msvc --config Release --parallel
+
+      - name: Run CPack
+        working-directory: build/windows-msvc
+        run: cpack -C Release --verbose
+
+      - name: Upload Windows Artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChainedEngine-Windows
+          path: |
+            build/windows-msvc/*.zip
+            build/windows-msvc/*.exe
+          if-no-files-found: error

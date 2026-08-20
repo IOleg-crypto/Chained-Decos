@@ -55,72 +55,62 @@ Chained Decos and Chained Engine target Windows and Linux.
 ## Quick Start
 
 **Clone:**
+> **⚠️ Important:** Ensure [Git LFS](#prerequisites) is installed on your system *before* cloning to properly fetch 3D models and textures.
 ```bash
-git clone --recurse-submodules https://github.com/IOleg-crypto/ChainedEngine.git
+git clone --recurse-submodules [https://github.com/IOleg-crypto/ChainedEngine.git](https://github.com/IOleg-crypto/ChainedEngine.git)
 cd ChainedEngine
 git submodule update --init --recursive
+Configure + Build + Run:
 ```
 
-**Configure + Build + Run:**
+
 ```bash
-# Linux
+# Linux (Release)
 cmake --preset linux-clang
-cmake --build --preset linux-clang --parallel
-./build/linux-clang/bin/ChainedEditor
+cmake --build --preset linux-clang-release --parallel
+./build/linux-clang-release/bin/Release/ChainedEditor
+```
 
-# Windows (MSYS2 Clang)
-cmake --preset windows-clang
-cmake --build --preset windows-clang --parallel
-.\build\windows-clang\bin\ChainedEditor.exe
+```bash
+# Windows (MSYS2 Clang, Debug)
+cmake --preset windows-clang-debug
+cmake --build --preset windows-clang-debug --parallel
+.\build\windows-clang-debug\bin\Debug\ChainedEditor.exe
+```
 
-# Windows (MSVC Ninja)
-cmake --preset windows-msvc
-cmake --build --preset windows-msvc --parallel
-
+```bash
 # Windows (VS 2026 .sln)
 cmake --preset windows-vs2026
+Editor play mode: Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
 ```
-
-> **Editor play mode:** Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
-
-## Build
 
 ### Presets
 
+Presets require a configuration suffix (`-debug` or `-release`).
+
 | Preset | Generator | Compiler | Use case |
 | :--- | :--- | :--- | :--- |
-| `windows-clang` | Ninja Multi-Config | Clang (MSYS2) | Primary dev |
-| `windows-msvc` | Ninja Multi-Config | MSVC (cl) | MSVC Ninja |
+| `windows-clang-debug` / `-release` | Ninja Multi-Config | Clang (MSYS2) | Primary dev |
+| `windows-msvc-debug` / `-release` | Ninja Multi-Config | MSVC (cl) | MSVC Ninja |
 | `windows-vs2026` | Visual Studio 18 2026 | MSVC | VS solution / CI |
-| `linux-clang` | Ninja Multi-Config | Clang | Linux CI |
-| `linux-gcc` | Ninja Multi-Config | GCC | Linux |
-| `windows-gcc` | Ninja Multi-Config | GCC (MinGW) | MinGW |
-
-**Key CMake variables:**
-- `CH_ACTIVE_GAME` — `chaineddecos` (default) or `testproject`. Build-time only. Switching requires reconfigure.
-- `BUILD_TESTS` — ON by default.
-- `CH_ENGINE_SHARED` — OFF by default (static engine).
-
-If you use Clang on Windows and see Intellisense errors in VS Code, ensure `.vscode/settings.json` points to the correct build dir:
-```json
-"clangd.arguments": ["--compile-commands-dir=${workspaceFolder}/build/windows-clang"]
-```
+| `linux-clang-debug` / `-release` | Ninja Multi-Config | Clang | Linux CI |
+| `linux-gcc-debug` / `-release` | Ninja Multi-Config | GCC | Linux |
 
 ## Run
 
-Binaries are generated under `build/{preset}/bin/`:
+Binaries are generated under `build/{preset}/bin/{Configuration}/`:
 
 ```bash
-# Editor
-./build/linux-clang/bin/ChainedEditor
-.\build\windows-clang\bin\ChainedEditor.exe
+# Editor (Linux Release)
+./build/linux-clang-release/bin/Release/ChainedEditor
+# Editor (Windows Debug)
+.\build\windows-clang-debug\bin\Debug\ChainedEditor.exe
 
-# Runtime
-./build/linux-clang/bin/ChainedRuntime path/to/project.chproject
-.\build\windows-clang\bin\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
+# Runtime (Linux Release)
+./build/linux-clang-release/bin/Release/ChainedRuntime path/to/project.chproject
+# Runtime (Windows Debug)
+.\build\windows-clang-debug\bin\Debug\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
 ```
-
-Runtime CLI: `--project` / `-p`, `--name`, `--width`, `--height`.
 
 ## Working with Projects
 
@@ -210,17 +200,35 @@ git submodule update --init --recursive
 | CMake | 3.31+ | Required by top-level CMakeLists |
 | Compiler | C++23 | Clang 18+, MSVC (VS2022+), or MSYS2/MinGW-w64 |
 | Ninja | Latest | Recommended for fast parallel builds |
-| .NET SDK | 10.0.x | Required for managed scripting |
+| .NET SDK | **10.0.x** | **Strictly required** for managed scripting. Other versions may cause build failures in C# projects. |
 | Graphics Driver | OpenGL 4.3+ | Needed for rendering |
+| Git LFS | Latest | **Required on ALL platforms (Windows/Linux)** before cloning for large assets |
 
-Linux packages (Ubuntu reference):
+### System Requirements (Windows)
+
+- Ensure **Git LFS** is installed. It is usually included with the Git for Windows installer, or can be installed via winget: `winget install GitHub.GitLFS`
+- Visual Studio 2022 (with Desktop development with C++ workload) OR an MSYS2/MinGW-w64 environment.
+
+### System Requirements (Linux)
+
+Before cloning the repository, ensure you have **Git LFS** and all required build tools installed (Ubuntu reference):
+
 ```bash
-sudo apt-get install -y build-essential cmake ninja-build \
+sudo apt-get update
+sudo apt-get install -y git-lfs build-essential cmake ninja-build \
   libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
   libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
   pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
   xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
 ```
+
+```bash
+# Initialize Git LFS on your system
+git lfs install
+```
+Note: You must install Git LFS before cloning. If you have already cloned the repository without Git LFS, run git lfs pull inside the project folder on either OS to fetch the actual asset files.
+
+
 
 ## Testing
 

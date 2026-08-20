@@ -1,5 +1,5 @@
 <Project>
   <PropertyGroup>
-    <CoralManagedDir>$(MSBuildThisFileDirectory)..\..\..\build\windows-clang\vendor\coral</CoralManagedDir>
+    <CoralManagedDir>$(MSBuildThisFileDirectory)../../../build/linux-clang/vendor/coral</CoralManagedDir>
   </PropertyGroup>
 </Project>
