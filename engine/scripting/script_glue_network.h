@@ -57,5 +57,8 @@ namespace Chained
 	// UPnP
 	CH_SCRIPT_FUNC uint8_t Network_IsUpnpAvailable();
 
+	// Firewall
+	CH_SCRIPT_FUNC uint8_t Network_IsFirewallRuleActive();
+
 } // namespace Chained
 #endif
