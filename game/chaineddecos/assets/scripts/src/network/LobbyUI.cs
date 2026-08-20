@@ -151,7 +151,8 @@ namespace ChainedDecos.Scripts
                 string local = Network.GetListenAddress();
                 if (string.IsNullOrEmpty(local)) local = $"127.0.0.1:{LobbyManager.SelectedPort}";
                 string upnp = Network.IsUpnpAvailable ? "UPnP: Auto" : "UPnP: Manual";
-                text = $"[HOST] Local: {local}  |  Internet: {pub}  |  {upnp}";
+                string fw = Network.IsFirewallRuleActive ? "FW: OK" : "FW: No rule";
+                text = $"[HOST] Local: {local}  |  Internet: {pub}  |  {upnp}  |  {fw}";
                 if (!fetching && text == m_LastDisplayedInfo) return;
             }
             else if (Network.IsClient)

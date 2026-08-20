@@ -243,6 +243,16 @@ namespace Chained
 				ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "UPnP: Not available — manual forwarding required");
 			}
 
+			if (net->IsFirewallRuleActive())
+			{
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Firewall: Rule added for UDP %u", net->GetPort());
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f),
+								   "Firewall: No rule added (run as admin to allow inbound connections)");
+			}
+
 			ImGui::Separator();
 
 			if (ImGui::Button("Stop Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))

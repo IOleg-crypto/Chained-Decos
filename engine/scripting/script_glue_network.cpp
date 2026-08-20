@@ -348,4 +348,12 @@ namespace Chained
 		return net && net->IsUpnpAvailable();
 	}
 
+	// ---- Firewall ----
+
+	CH_SCRIPT_FUNC uint8_t Network_IsFirewallRuleActive()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		return net && net->IsFirewallRuleActive();
+	}
+
 } // namespace Chained

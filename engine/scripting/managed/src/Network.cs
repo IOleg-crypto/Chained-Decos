@@ -45,6 +45,9 @@ namespace Chained
         // UPnP
         internal static unsafe delegate* unmanaged<byte> Network_IsUpnpAvailable_Ptr;
 
+        // Firewall
+        internal static unsafe delegate* unmanaged<byte> Network_IsFirewallRuleActive_Ptr;
+
 #pragma warning restore 0649
 
         /// <summary>Starts a listen server on the given port.</summary>
@@ -212,5 +215,8 @@ namespace Chained
 
         /// <summary>True when UPnP port forwarding is available on the local network.</summary>
         public static unsafe bool IsUpnpAvailable => Network_IsUpnpAvailable_Ptr != null && Network_IsUpnpAvailable_Ptr() != 0;
+
+        /// <summary>True when a Windows Firewall / iptables rule was added for the game port.</summary>
+        public static unsafe bool IsFirewallRuleActive => Network_IsFirewallRuleActive_Ptr != null && Network_IsFirewallRuleActive_Ptr() != 0;
     }
 }
