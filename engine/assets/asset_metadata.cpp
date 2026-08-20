@@ -1,4 +1,6 @@
 #include "engine/assets/asset_metadata.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
 
 namespace Chained
 {
@@ -10,6 +12,15 @@ namespace Chained
 
 	bool MetaUtils::HasMeta(const std::filesystem::path& assetPath)
 	{
+		auto* am = ServiceLocator::TryGet<AssetManager>();
+		if (am && am->IsPacked())
+		{
+			std::filesystem::path metaPath = GetMetaPath(assetPath);
+			if (am->FileExists(metaPath.string()))
+			{
+				return true;
+			}
+		}
 		return std::filesystem::exists(GetMetaPath(assetPath));
 	}
 
@@ -34,6 +45,16 @@ namespace Chained
 			{
 				break;
 			}
+		}
+		return hash;
+	}
+
+	uint64_t MetaUtils::ComputeHashFromBuffer(const std::vector<uint8_t>& data)
+	{
+		uint64_t hash = UINT64_C(14695981039346656037);
+		for (size_t i = 0; i < data.size(); ++i)
+		{
+			hash = (hash ^ static_cast<uint64_t>(data[i])) * 1099511628211ULL;
 		}
 		return hash;
 	}
@@ -68,8 +89,60 @@ namespace Chained
 		}
 	} // namespace
 
+	AssetMetadata MetaUtils::ReadMetaFromString(std::string_view yamlContent)
+	{
+		AssetMetadata meta;
+		try
+		{
+			YAML::Node root = YAML::Load(std::string(yamlContent));
+
+			meta.version = root["Version"] ? root["Version"].as<uint32_t>() : 1;
+			meta.contentHash = root["ContentHash"] ? root["ContentHash"].as<uint64_t>() : 0;
+			meta.isGenerated = root["IsGenerated"] ? root["IsGenerated"].as<bool>() : false;
+
+			if (root["UUID"])
+			{
+				meta.uuid = UUID(root["UUID"].as<uint64_t>());
+			}
+
+			if (root["Type"])
+			{
+				meta.assetType = StringToAssetType(root["Type"].as<std::string>());
+			}
+
+			if (root["ImporterSettings"])
+			{
+				meta.importerSettingsYaml = YAML::Dump(root["ImporterSettings"]);
+			}
+
+			if (root["Tags"] && root["Tags"].IsSequence())
+			{
+				for (auto tag : root["Tags"])
+				{
+					meta.tags.push_back(tag.as<std::string>());
+				}
+			}
+		} catch (const YAML::Exception& e)
+		{
+			CH_CORE_ERROR("Failed to parse meta YAML: {}", e.what());
+			return {};
+		}
+		return meta;
+	}
+
 	AssetMetadata MetaUtils::ReadMeta(const std::filesystem::path& metaPath)
 	{
+		auto* am = ServiceLocator::TryGet<AssetManager>();
+		if (am && am->IsPacked())
+		{
+			auto metaData = am->ReadAssetData(metaPath.string());
+			if (!metaData.empty())
+			{
+				std::string content(metaData.begin(), metaData.end());
+				return ReadMetaFromString(content);
+			}
+		}
+
 		AssetMetadata meta;
 		try
 		{
@@ -155,6 +228,16 @@ namespace Chained
 
 	AssetMetadata MetaUtils::LoadOrCreateMeta(const std::filesystem::path& assetPath, AssetType type)
 	{
+		auto* am = ServiceLocator::TryGet<AssetManager>();
+		if (am && am->IsPacked())
+		{
+			std::filesystem::path metaPath = GetMetaPath(assetPath);
+			if (am->FileExists(metaPath.string()))
+			{
+				return ReadMeta(metaPath);
+			}
+		}
+
 		std::filesystem::path metaPath = GetMetaPath(assetPath);
 
 		if (std::filesystem::exists(metaPath))

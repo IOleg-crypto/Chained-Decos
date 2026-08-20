@@ -51,10 +51,19 @@ void main()
     vec3 v = normalize(fragPosition);
     
     // Convert Cartesian direction to equirectangular UVs
-    vec2 uv = vec2(atan(v.z, v.x) / (2.0 * PI) + 0.5, asin(v.y) / PI + 0.5);
+    vec2 uv = vec2(atan(v.z, v.x) / (2.0 * PI) + 0.5, asin(clamp(v.y, -1.0, 1.0)) / PI + 0.5);
     
-    // Fetch color from texture map
-    vec3 color = texture(environmentMap, uv).rgb;
+    // Filter derivative seam: across the wrap boundary (uv.x jumping 0 -> 1),
+    // derivatives jump to ~1.0 causing mipmap popping / vertical line artifact.
+    vec2 dX = dFdx(uv);
+    vec2 dY = dFdy(uv);
+    if (dX.x > 0.5) dX.x -= 1.0;
+    else if (dX.x < -0.5) dX.x += 1.0;
+    if (dY.x > 0.5) dY.x -= 1.0;
+    else if (dY.x < -0.5) dY.x += 1.0;
+
+    // Fetch color from texture map with filtered derivatives
+    vec3 color = textureGrad(environmentMap, uv, dX, dY).rgb;
 
     // Apply exposure
     color *= exposure;

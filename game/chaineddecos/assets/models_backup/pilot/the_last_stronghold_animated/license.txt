@@ -1,8 +1,0 @@
-Model Information:
-* title:	The Last Stronghold (animated)
-* source:	https://sketchfab.com/3d-models/the-last-stronghold-animated-6b4ac951cefb43a791b2bd084b53a201
-* author:	Conrad Justin (https://sketchfab.com/ConradJustin)
-
-Model License:
-* license type:	SKETCHFAB Standard (https://sketchfab.com/licenses)
-* requirements:	Under basic restrictions, use worldwide, on all types of media, commercially or not, and in all types of derivative works

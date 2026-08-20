@@ -1,5 +1,6 @@
 #include "script_glue_camera.h"
 
+#include "engine/app/application.h"
 #include "engine/core/service_locator.h"
 #include "engine/physics/physics.h"
 #include "engine/physics/raycast_result.h"
@@ -53,7 +54,7 @@ namespace Chained
 		{
 			auto& camera = entity.GetComponent<CameraComponent>();
 
-			// 1. Спочатку обмежуємо pitch, щоб збережені дані відповідали реальності
+			// 1. Clamp pitch
 			pitch = glm::clamp(pitch, 5.0f, 75.0f);
 
 			camera.OrbitYaw = yaw;
@@ -63,7 +64,7 @@ namespace Chained
 			auto& tc = entity.GetComponent<TransformComponent>();
 			Entity target;
 
-			// Пошук гравця (мережевий або одиночний)
+			// Find the player entity (networked: IsOwner, offline: by tag)
 			auto netView = scene->GetRegistry().view<NetworkIdentityComponent>();
 			for (auto e : netView)
 			{
@@ -80,17 +81,54 @@ namespace Chained
 				target = scene->FindEntityByTag(camera.TargetEntityTag);
 			}
 
-			glm::vec3 targetPos = glm::vec3(0.0f);
+			glm::vec3 targetPos = camera.SmoothedPivot;
 			if (target && target.HasComponent<TransformComponent>())
 			{
 				const auto& targetTC = target.GetComponent<TransformComponent>();
-				targetPos = glm::vec3(targetTC.WorldTransform[3]);
+
+				// Use the local Translation (not WorldTransform[3]) so the camera
+				// tracks the player's CURRENT position rather than the position that
+				// was computed at the start of the frame. For root entities (no parent)
+				// these are identical; for parented entities we read from the parent's
+				// WorldTransform instead.
+				glm::vec3 rawPos;
+				const auto& hier = scene->GetRegistry().try_get<HierarchyComponent>(target);
+				if (hier && hier->Parent != entt::null && scene->GetRegistry().all_of<TransformComponent>(hier->Parent))
+				{
+					// Parented: reconstruct world position from parent world + local translation
+					const auto& parentTC = scene->GetRegistry().get<TransformComponent>(hier->Parent);
+					rawPos = glm::vec3(parentTC.WorldTransform * glm::vec4(targetTC.Translation, 1.0f));
+				}
+				else
+				{
+					rawPos = targetTC.Translation;
+				}
+
+				// Smoothly follow player position so the camera never lags by 1 frame.
+				// Use a very high lerp speed (30) so it's effectively instant for owned
+				// players (physics-driven), while still smoothing out any jitter for
+				// remote/interpolated entities.
+				constexpr float kPivotSmoothSpeed = 30.0f;
+				float dt = Application::Get().GetFrameTime();
+				float lerpT = glm::clamp(dt * kPivotSmoothSpeed, 0.0f, 1.0f);
+
+				if (!camera.PivotInitialized)
+				{
+					camera.SmoothedPivot = rawPos;
+					camera.PivotInitialized = true;
+				}
+				else
+				{
+					camera.SmoothedPivot = glm::mix(camera.SmoothedPivot, rawPos, lerpT);
+				}
+
+				targetPos = camera.SmoothedPivot;
 			}
 
-			// 2. Встановлюємо Pivot рівно на висоту очей/грудей (+1.8m)
+			// 2. Pivot at eye/chest height (+1.8m)
 			glm::vec3 pivot = targetPos + glm::vec3(0.0f, 1.8f, 0.0f);
 
-			// 3. Правильне обчислення кватерніона обертання
+			// 3. Compute rotation quaternion
 			float yawRad = glm::radians(yaw);
 			float pitchRad = glm::radians(pitch);
 
@@ -100,28 +138,6 @@ namespace Chained
 
 			glm::vec3 offset = rotation * glm::vec3(0.0f, 0.0f, distance);
 			glm::vec3 newPos = pivot + offset;
-
-			// // 4. Безпечний Raycast від перешкод
-			// if (distance > 0.6f)
-			// {
-			//     if (auto* physics = ServiceLocator::TryGet<Physics>())
-			//     {
-			//         glm::vec3 rayDir = glm::normalize(offset);
-			//         float startOffset = 0.6f;
-
-			//         Ray ray;
-			//         ray.position = pivot + rayDir * startOffset;
-			//         ray.direction = rayDir;
-
-			//         RaycastResult hit = physics->Raycast(ray);
-			//         float maxRayDist = distance - startOffset;
-			//         if (hit.Hit && hit.Distance < maxRayDist)
-			//         {
-			//             float safeDist = startOffset + glm::max(hit.Distance - 0.2f, 0.0f);
-			//             newPos = pivot + rayDir * safeDist;
-			//         }
-			//     }
-			// }
 
 			TransformSystem::SetTranslation(tc, newPos);
 			TransformSystem::SetRotationQuat(tc, rotation);

@@ -25,6 +25,17 @@ Fog:
   Density: 0.100000001
   Start: 6
   End: 183
+Grid:
+  Spacing: 1
+  SecondarySpacing: 10
+  Color:
+    r: 1
+    g: 1
+    b: 1
+    a: 0.400000006
+  FadeStart: 0
+  FadeEnd: 8000
+  PlaneSize: 15000
 DebugSettings:
   DiagnosticMode: 0
   DrawColliders: false
@@ -35,14 +46,12 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 17996971229073483072
+  - Entity: 1047207412683106544
     ModelComponent:
       ModelPath: models/skeleton_animated.glb
       ModelUUID: 7289248424465903313
       MaterialPaths:
-        - models/skeleton_animated_material_0.chmat
-        - models/skeleton_animated_material_1.chmat
-        - models/skeleton_animated_material_2.chmat
+        []
     TransformComponent:
       Translation: [-385.506042, 210.6026, 185.502914]
       Rotation: [-0.016154483, 0.863519788, -0.00596364681]
@@ -74,32 +83,12 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 15069268821026696501
+  - Entity: 17087174313452565854
     ModelComponent:
       ModelPath: models/island.glb
       ModelUUID: 580609141673989832
       MaterialPaths:
-        - models/island_material_0.chmat
-        - models/island_material_1.chmat
-        - models/island_material_2.chmat
-        - models/island_material_3.chmat
-        - models/island_material_4.chmat
-        - models/island_material_5.chmat
-        - models/island_material_6.chmat
-        - models/island_material_7.chmat
-        - models/island_material_8.chmat
-        - models/island_material_9.chmat
-        - models/island_material_10.chmat
-        - models/island_material_11.chmat
-        - models/island_material_12.chmat
-        - models/island_material_13.chmat
-        - models/island_material_14.chmat
-        - models/island_material_15.chmat
-        - models/island_material_16.chmat
-        - models/island_material_17.chmat
-        - models/island_material_18.chmat
-        - models/island_material_19.chmat
-        - models/island_material_20.chmat
+        []
     TransformComponent:
       Translation: [-22.9906006, -4.32776642, -2881.44678]
       Rotation: [-0.0117486976, 0.0380410925, -0.00385736162]
@@ -123,17 +112,29 @@ Entities:
       ModelPath: models/arena.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 10301710609735180820
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 10552313136623897289
     ModelComponent:
-      ModelPath: models_backup/building/scene.gltf
+      ModelPath: models/building/scene.gltf
       ModelUUID: 891151930191489760
       MaterialPaths:
-        - models_backup/building/scene_material_0.chmat
-        - models_backup/building/scene_material_1.chmat
-        - models_backup/building/scene_material_2.chmat
-        - models_backup/building/scene_material_3.chmat
-        - models_backup/building/scene_material_4.chmat
-        - models_backup/building/scene_material_5.chmat
+        - models/building/scene_material_0.chmat
+        - models/building/scene_material_1.chmat
+        - models/building/scene_material_2.chmat
+        - models/building/scene_material_3.chmat
+        - models/building/scene_material_4.chmat
+        - models/building/scene_material_5.chmat
     TransformComponent:
       Translation: [23.264637, -27.1361389, -506.157532]
       Rotation: [0, -0, 0]
@@ -142,12 +143,12 @@ Entities:
       Tag: buildings_6_pack
     IDComponent:
       {}
-  - Entity: 2045552941328107355
+  - Entity: 262959682445428938
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
+        []
     TransformComponent:
       Translation: [428.76062, 30.1878853, 305.481506]
       Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
@@ -171,20 +172,24 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 0
       IsColliding: false
-    AnimationComponent:
-      GraphPath: ""
-      GraphUUID: 0
-      BlendDuration: 0.25
-      DefaultIsLooping: true
-      PlayOnStart: true
-      Variables:
-        {}
-  - Entity: 2014035060357226906
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 1269210360813176908
     ModelComponent:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       ModelUUID: 4537241321556691418
       MaterialPaths:
-        - models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb_material_0.chmat
+        []
     TransformComponent:
       Translation: [226.774567, 10.7833824, 119.315414]
       Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
@@ -208,12 +213,24 @@ Entities:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 241960397579332613
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 6868553143367474650
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
+        []
     TransformComponent:
       Translation: [440.960266, 32.5502625, 581.221497]
       Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
@@ -237,20 +254,24 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 0
       IsColliding: false
-    AnimationComponent:
-      GraphPath: ""
-      GraphUUID: 0
-      BlendDuration: 0.25
-      DefaultIsLooping: true
-      PlayOnStart: true
-      Variables:
-        {}
-  - Entity: 15363048349537199951
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 1608587864667650697
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
+        []
     TransformComponent:
       Translation: [456.769592, 92.3261108, 838.863159]
       Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
@@ -274,12 +295,24 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 8316337102306389672
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 12834900341709125804
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
+        []
     TransformComponent:
       Translation: [424.876801, 17.5073452, 22.4167747]
       Rotation: [-1.59236383, 0.0545779206, 0.0118380217]
@@ -303,10 +336,19 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 17418762238191362274
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.endgamezone
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 926554578977384312
     TransformComponent:
       Translation: [-8.81565094, 14.7408161, -39.2663612]
       Rotation: [0, -0, 0]
@@ -315,6 +357,9 @@ Entities:
       Tag: Static Collider
     IDComponent:
       {}
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.endgamezone
     ColliderComponent:
       Type: 0
       Size: [19.1000004, 4.19999981, 16]
@@ -330,14 +375,12 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 18340048852698359430
+  - Entity: 8683304692384631908
     ModelComponent:
-      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/toy_train/wooden_train.glb
+      ModelPath: models/toy_train/wooden_train.glb
       ModelUUID: 6503497834854385828
       MaterialPaths:
-        - D:/gitnext/Chained Decos/game/chaineddecos/assets/models/toy_train/wooden_train_material_0.chmat
-        - D:/gitnext/Chained Decos/game/chaineddecos/assets/models/toy_train/wooden_train_material_1.chmat
-        - D:/gitnext/Chained Decos/game/chaineddecos/assets/models/toy_train/wooden_train_material_2.chmat
+        []
     TransformComponent:
       Translation: [-3565.1311, -45.4531631, 621.43158]
       Rotation: [0.18592523, -1.13752759, -0.188373342]
@@ -346,7 +389,7 @@ Entities:
       Tag: toy_train_platform
     IDComponent:
       {}
-  - Entity: 2398531888961156353
+  - Entity: 3052808691587277336
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       ModelUUID: 6922423336282928323
@@ -368,7 +411,7 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 4272111250924417274
+  - Entity: 3948577800838464108
     ModelComponent:
       ModelPath: models/container_ship/scene.gltf
       ModelUUID: 16650958288931697221
@@ -407,33 +450,30 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 7159791045361146
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.cameracontroller
+  - Entity: 4715066359261955126
     CameraComponent:
       Primary: true
-      FixedAspectRatio: true
+      FixedAspectRatio: false
       IsOrbitCamera: true
       TargetEntityTag: Player
-      OrbitDistance: 36.5
+      OrbitDistance: 0
       OrbitYaw: 0
-      OrbitPitch: 20
+      OrbitPitch: 0
       LookSensitivity: 0.899999976
     TransformComponent:
-      Translation: [0, 0, 10]
-      Rotation: [0, 0, 0]
+      Translation: [5.60443401, -1.58330917, -8.12917233]
+      Rotation: [-0.159000024, -2.53800106, 0]
       Scale: [1, 1, 1]
     TagComponent:
       Tag: Camera
     IDComponent:
       {}
-  - Entity: 4203504176043773917
+  - Entity: 11214551571334466962
     ModelComponent:
       ModelPath: models/stairs.glb
       ModelUUID: 2777666302803713364
       MaterialPaths:
-        - models/stairs_material_0.chmat
+        []
     TransformComponent:
       Translation: [411.734222, 21.1899738, 188.952682]
       Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
@@ -457,15 +497,12 @@ Entities:
       ModelPath: models/stairs.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 10724289545805265775
+  - Entity: 2910439523622598395
     ModelComponent:
       ModelPath: models/minigames/hub_for_minigames_server.glb
       ModelUUID: 8378150816431493396
       MaterialPaths:
-        - models/minigames/hub_for_minigames_server_material_0.chmat
-        - models/minigames/hub_for_minigames_server_material_1.chmat
-        - models/minigames/hub_for_minigames_server_material_2.chmat
-        - models/minigames/hub_for_minigames_server_material_3.chmat
+        []
     TransformComponent:
       Translation: [-118.395287, 12.3910465, 826.530884]
       Rotation: [0, -0, 0]
@@ -489,7 +526,32 @@ Entities:
       ModelPath: models/minigames/hub_for_minigames_server.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 4462692347762733541
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 17030008943498569240
+    ModelComponent:
+      ModelPath: models/player_low.glb
+      ModelUUID: 6152005881347795059
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [497.515198, 35.6768875, 208.375519]
+      Rotation: [-3.14159083, -1.31772375, -3.14159083]
+      Scale: [0.999901712, 1, 0.999901712]
+    TagComponent:
+      Tag: Player
+    IDComponent:
+      {}
     ManagedScriptComponent:
       Scripts:
         - ClassName: chaineddecos.scripts.playercontroller
@@ -499,25 +561,13 @@ Entities:
               Value: 9.80000019
             - Name: JumpForce
               Type: 1
-              Value: 32.5
+              Value: 57.0999985
             - Name: MovementSpeed
               Type: 1
               Value: 11.8999996
         - ClassName: chaineddecos.scripts.spawnzone
         - ClassName: chaineddecos.scripts.playerfall
-    ModelComponent:
-      ModelPath: models/player_low.glb
-      ModelUUID: 6152005881347795059
-      MaterialPaths:
-        - models/player_low_material_0.chmat
-    TransformComponent:
-      Translation: [497.515198, 35.6768875, 208.375519]
-      Rotation: [-3.14159083, -1.31772375, -3.14159083]
-      Scale: [0.999901712, 1, 0.999901712]
-    TagComponent:
-      Tag: Player
-    IDComponent:
-      {}
+        - ClassName: chaineddecos.scripts.cameracontroller
     ColliderComponent:
       Type: 0
       Size: [2.29999995, 6.80000019, -2.5]
@@ -533,11 +583,25 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 721856551941649576
+    RigidBodyComponent:
+      Type: 1
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: true
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 3855414609574109619
     TransformComponent:
       Translation: [-148.822327, 65.1090927, 0]
       Rotation: [0, -0, 0]
       Scale: [2.92739296, 3.31053686, 5.81883764]
+    TagComponent:
+      Tag: CubeWithTexture
     PrimitiveComponent:
       Type: 8
       Radius: 13.1099997
@@ -546,27 +610,15 @@ Entities:
       Slices: 49
       Stacks: 145
       Dimensions: [8.60000038, 16, 10.5]
-      AlbedoPath: models_backup/snowman 4.png
-      AlbedoColor: [1, 0.886274517, 1, 1]
-      NormalPath: ""
-      MetallicRoughnessPath: ""
-      EmissivePath: ""
-      EmissiveColor: [0, 0, 0, 1]
-      EmissiveIntensity: 0
-      Metalness: 0
-      Roughness: 0.5
-      Transparent: false
-      Alpha: 1
-    TagComponent:
-      Tag: CubeWithTexture
+      MeshPath: ""
     IDComponent:
       {}
-  - Entity: 2825065192801678072
+  - Entity: 7280370257649515229
     ModelComponent:
-      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
+      ModelPath: models/mystery_skulls_ghost_lewis/scene.gltf
       ModelUUID: 9161924301726423648
       MaterialPaths:
-        - models_backup/mystery_skulls_ghost_lewis/scene_material_0.chmat
+        - models/mystery_skulls_ghost_lewis/scene_material_0.chmat
     TransformComponent:
       Translation: [60.8389587, 88.6849136, 37.5509796]
       Rotation: [0, -0, 0]
@@ -599,18 +651,12 @@ Entities:
       Variables:
         speed: 0
         isMoving: 0
-  - Entity: 12879229317937868148
+  - Entity: 70362916053062223
     ModelComponent:
       ModelPath: models/arena.glb
       ModelUUID: 10755992412146045657
       MaterialPaths:
-        - models/arena_material_0.chmat
-        - models/arena_material_1.chmat
-        - models/arena_material_2.chmat
-        - models/arena_material_3.chmat
-        - models/arena_material_4.chmat
-        - models/arena_material_5.chmat
-        - models/arena_material_6.chmat
+        []
     TransformComponent:
       Translation: [-18.6856194, -4.32776833, -35.4009895]
       Rotation: [-0.0117486976, 0.0380410925, -0.00385736162]
@@ -634,7 +680,19 @@ Entities:
       ModelPath: models/arena.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 10883132274863570723
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 18186989575100975282
     TransformComponent:
       Translation: [-40.4501495, 79.567894, 0]
       Rotation: [0, -0, 0]
@@ -645,7 +703,7 @@ Entities:
       {}
     AudioComponent:
       SoundPath: audio/soundreality-wind-plain-sfx-522910.mp3
-      SoundUUID: 0
+      SoundUUID: 18016372891088584835
       Volume: 2
       Pitch: 3
       Loop: true
@@ -655,12 +713,12 @@ Entities:
       MinDistance: 1
       MaxDistance: 100
       IsPlaying: false
-  - Entity: 17500005044056130195
+  - Entity: 9982162109706525384
     ModelComponent:
       ModelPath: models/stairs.glb
       ModelUUID: 2777666302803713364
       MaterialPaths:
-        - models/stairs_material_0.chmat
+        []
     TransformComponent:
       Translation: [46.4636726, -11088.8096, 14.3364639]
       Rotation: [-3.14153385, -0.624083161, -3.1415863]
@@ -684,82 +742,12 @@ Entities:
       ModelPath: models/stairs.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 6126003897461946963
+  - Entity: 130577409590866654
     ModelComponent:
       ModelPath: models/city/after_the_rain..._-_vr__sound.glb
       ModelUUID: 9063345529843979990
       MaterialPaths:
-        - models/city/after_the_rain..._-_vr__sound_material_0.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_1.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_2.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_3.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_4.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_5.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_6.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_7.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_8.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_9.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_10.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_11.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_12.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_13.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_14.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_15.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_16.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_17.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_18.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_19.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_20.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_21.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_22.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_23.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_24.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_25.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_26.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_27.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_28.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_29.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_30.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_31.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_32.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_33.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_34.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_35.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_36.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_37.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_38.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_39.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_40.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_41.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_42.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_43.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_44.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_45.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_46.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_47.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_48.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_49.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_50.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_51.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_52.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_53.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_54.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_55.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_56.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_57.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_58.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_59.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_60.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_61.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_62.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_63.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_64.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_65.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_66.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_67.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_68.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_69.chmat
-        - models/city/after_the_rain..._-_vr__sound_material_70.chmat
+        []
     TransformComponent:
       Translation: [750.026367, 29.4887199, 157.773407]
       Rotation: [3.14158845, -1.54755747, -3.14157939]
@@ -780,18 +768,22 @@ Entities:
       Enabled: true
       AutoCalculate: false
       UseFastBuildQuality: true
-      ModelPath: D:/gitnext/Chained Decos/game/chaineddecos/assets/models/city/after_the_rain..._-_vr__sound.glb
+      ModelPath: models/city/after_the_rain..._-_vr__sound.glb
       ModelUUID: 0
       IsColliding: false
-    AnimationComponent:
-      GraphPath: ""
-      GraphUUID: 0
-      BlendDuration: 0.25
-      DefaultIsLooping: true
-      PlayOnStart: true
-      Variables:
-        {}
-  - Entity: 4556508125367261321
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 17876936902469701584
     TransformComponent:
       Translation: [-326.500214, 311.823425, 1022.66998]
       Rotation: [0, -0, 0]

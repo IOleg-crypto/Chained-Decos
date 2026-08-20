@@ -25,6 +25,12 @@ namespace Chained
 			return false;
 		}
 
+		// Disable gizmo in UI scenes with 2D (orthographic) camera
+		if (camera.Projection == ProjectionType::Orthographic && scene->GetSettings().Type == SceneType::UI)
+		{
+			return false;
+		}
+
 		if (viewportSize.x <= 1.0f || viewportSize.y <= 1.0f)
 		{
 			return false;

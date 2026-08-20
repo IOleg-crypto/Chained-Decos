@@ -6,7 +6,6 @@ Entities:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       MaterialPaths:
         - models/pilot/animated_civilian_helicopter/scene_material_0.chmat
-        - models/pilot/animated_civilian_helicopter/scene_material_1.chmat
     TransformComponent:
       Translation: [-216.192169, -6.67572021e-06, 0]
       Rotation: [0.0617936067, 0.0883244723, -0.0563300997]

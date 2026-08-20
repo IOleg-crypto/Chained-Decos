@@ -201,7 +201,8 @@ namespace Chained
 
 		{
 			std::lock_guard lock(m_CacheMutex);
-			if (m_MeshShapeCache.count(desc.CacheKey) > 0 || m_InFlightMeshBakes.count(desc.CacheKey) > 0)
+			if (m_MeshShapeCache.count(desc.CacheKey) > 0 || m_ConvexHullCache.count(desc.CacheKey) > 0 ||
+				m_ConvexHullCache.count(desc.CacheKey + "_convex") > 0 || m_InFlightMeshBakes.count(desc.CacheKey) > 0)
 			{
 				return;
 			}
@@ -703,7 +704,8 @@ namespace Chained
 			return false;
 		}
 		std::lock_guard lock(m_CacheMutex);
-		return m_MeshShapeCache.count(key) > 0;
+		return m_MeshShapeCache.count(key) > 0 || m_ConvexHullCache.count(key) > 0 ||
+			   m_ConvexHullCache.count(key + "_convex") > 0;
 	}
 
 	bool JoltPhysicsWorld::IsShapeBaking(const std::string& key) const

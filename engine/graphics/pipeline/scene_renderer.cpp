@@ -270,25 +270,7 @@ namespace Chained
 			return;
 		}
 
-		auto& model = modelAsset->GetModel();
-		std::string fallbackName = boneMatrices.empty() ? "Lighting" : "Skinned";
-		Shader* activeShader = shaderOverride;
-		if (!activeShader)
-		{
-			auto fallbackAsset = renderer->GetShaderLibrary().Exists(fallbackName)
-									 ? renderer->GetShaderLibrary().Get(fallbackName)
-									 : nullptr;
-			if (fallbackAsset)
-			{
-				activeShader = fallbackAsset->GetShader().get();
-			}
-		}
-
-		if (!activeShader)
-		{
-			return;
-		}
-
+		const auto& model = modelAsset->GetModel();
 		for (const auto& inst : modelAsset->GetInstances())
 		{
 			int i = inst.meshIndex;
@@ -297,6 +279,7 @@ namespace Chained
 				continue;
 			}
 
+			const auto& mesh = model.Meshes[i];
 			m_CurrentStats.DrawCalls++;
 			m_CurrentStats.MeshCount++;
 
@@ -312,14 +295,34 @@ namespace Chained
 				continue;
 			}
 
-			BindShaderUniforms(activeShader, boneMatrices, shaderUniformOverrides);
+			bool useSkinning = mesh.HasSkinning && !boneMatrices.empty();
+			std::string fallbackName = useSkinning ? "Skinned" : "Lighting";
+			Shader* activeShader = shaderOverride;
+			if (!activeShader)
+			{
+				auto fallbackAsset = renderer->GetShaderLibrary().Exists(fallbackName)
+										 ? renderer->GetShaderLibrary().Get(fallbackName)
+										 : nullptr;
+				if (fallbackAsset)
+				{
+					activeShader = fallbackAsset->GetShader().get();
+				}
+			}
+
+			if (!activeShader)
+			{
+				continue;
+			}
+
+			BindShaderUniforms(activeShader, useSkinning ? boneMatrices : std::vector<glm::mat4>{},
+							   shaderUniformOverrides);
 			m_MaterialManager.Bind(activeShader, material, i, model);
 
 			uint32_t originalID = material.ShaderID;
 			material.ShaderID = activeShader->GetNativeHandle();
 
 			activeShader->Bind();
-			renderer->DrawMesh(model.Meshes[i], material, transform * inst.localTransform);
+			renderer->DrawMesh(mesh, material, transform * inst.localTransform);
 			material.ShaderID = originalID;
 		}
 	}

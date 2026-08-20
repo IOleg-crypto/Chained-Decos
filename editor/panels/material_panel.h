@@ -19,6 +19,7 @@ namespace Chained
 	private:
 		void DrawMaterialSlot(Material& slot);
 		void SaveMaterials();
+		void DeleteMaterials();
 
 	private:
 		Entity m_SelectedEntity;

@@ -157,7 +157,7 @@ namespace Chained
 
 		mutable std::deque<std::shared_ptr<Asset>> m_PendingAssets;
 		mutable std::mutex m_PendingMutex;
-		mutable std::mutex m_AssetLock;
+		mutable std::recursive_mutex m_AssetLock;
 
 		AssetPathResolver m_PathResolver;
 

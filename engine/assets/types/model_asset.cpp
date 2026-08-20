@@ -268,6 +268,7 @@ namespace Chained
 			mesh.MaterialIndex = (rawMesh.materialIndex >= 0 && rawMesh.materialIndex < (int)newModel.Materials.size())
 									 ? rawMesh.materialIndex
 									 : 0;
+			mesh.HasSkinning = !rawMesh.joints.empty() && !rawMesh.weights.empty();
 
 			if (mesh.VertexCount > 0)
 			{

@@ -162,30 +162,6 @@ namespace Chained::AssetResolutionSystem
 		if (asset && asset->GetState() == AssetState::Ready)
 		{
 			model.ModelHandle = asset->GetID();
-
-			const auto& materials = asset->GetMaterials();
-			if (model.MaterialPaths.empty() || model.MaterialPaths.size() != materials.size())
-			{
-				std::filesystem::path modelPath(model.ModelPath);
-				std::string modelName = modelPath.stem().string();
-				std::filesystem::path modelDir = modelPath.parent_path();
-
-				model.MaterialPaths.resize(materials.size());
-
-				for (int i = 0; i < (int)materials.size(); i++)
-				{
-					std::string matFileName = modelName + "_material_" + std::to_string(i) + ".chmat";
-					model.MaterialPaths[i] = (modelDir / matFileName).generic_string();
-
-					std::string resolvedMatPath = assets->ResolvePath(model.MaterialPaths[i]);
-					if (!std::filesystem::exists(resolvedMatPath))
-					{
-						auto matAsset = std::make_shared<MaterialAsset>();
-						matAsset->SetMaterial(materials[i]);
-						matAsset->SaveToFile(resolvedMatPath);
-					}
-				}
-			}
 		}
 		else
 		{

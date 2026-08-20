@@ -3,6 +3,7 @@
 
 #include "engine/scene/camera.h"
 #include "engine/reflection/reflection_rfl.h"
+#include <glm/glm.hpp>
 #include <string>
 
 namespace Chained
@@ -21,6 +22,10 @@ namespace Chained
 		float OrbitPitch = 20.0f;
 		float LookSensitivity = 0.9f;
 
+		// Runtime-only: smoothed pivot position for lag-free tracking (not serialized)
+		glm::vec3 SmoothedPivot = glm::vec3(0.0f);
+		bool PivotInitialized = false;
+
 		static const char* GetStaticName()
 		{
 			return "CameraComponent";
@@ -33,6 +38,8 @@ namespace Chained
 			UIMeta OrbitYaw = {.Speed = 1.0f};
 			UIMeta OrbitPitch = {.Min = -89.0f, .Max = 89.0f, .Speed = 1.0f};
 			UIMeta LookSensitivity = {.Min = 0.1f, .Max = 10.0f, .Speed = 0.05f};
+			UIMeta SmoothedPivot = {.Transient = true};
+			UIMeta PivotInitialized = {.Transient = true};
 		};
 	};
 
