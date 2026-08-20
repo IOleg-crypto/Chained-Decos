@@ -1,0 +1,35 @@
+name: Deploy SDK
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        preset:
+          - windows-clang-debug
+          - windows-clang-release
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Configure CMake
+        run: cmake --preset ${{ matrix.preset }}
+
+      - name: Build
+        run: cmake --build --preset ${{ matrix.preset }} --parallel
+
+      - name: Sync resources
+        run: python tools/sync_resources.py --preset ${{ matrix.preset }}
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chained-sdk-${{ matrix.preset }}
+          path: build/${{ matrix.preset }}/bin/*
+          retention-days: 30
