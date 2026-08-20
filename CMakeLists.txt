@@ -32,6 +32,15 @@ add_compile_definitions(GLM_FORCE_DEPTH_ZERO_TO_ONE GLM_ENABLE_EXPERIMENTAL)
 # Enable logging only in Debug and RelWithDebInfo configurations
 add_compile_definitions($<$<OR:$<CONFIG:Debug>,$<CONFIG:RelWithDebInfo>>:CH_ENABLE_LOGGING>)
 
+# Embed build preset name and configuration so the exporter knows exactly which build was used
+# e.g. CH_BUILD_PRESET="windows-clang-debug", CH_BUILD_CONFIG="Debug"
+add_compile_definitions($<$<CONFIG:Debug>:CH_BUILD_CONFIG="Debug">)
+add_compile_definitions($<$<CONFIG:Release>:CH_BUILD_CONFIG="Release">)
+add_compile_definitions($<$<CONFIG:RelWithDebInfo>:CH_BUILD_CONFIG="RelWithDebInfo">)
+if(CMAKE_BUILD_PRESET)
+	add_compile_definitions(CH_BUILD_PRESET="${CMAKE_BUILD_PRESET}")
+endif()
+
 
 # Optional: ccache support for faster rebuilds
 option(USE_CCACHE "Use ccache if available" ON)

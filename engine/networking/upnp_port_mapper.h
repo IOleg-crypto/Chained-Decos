@@ -22,6 +22,10 @@ namespace Chained
 		bool AddMapping(uint16_t port, const char* protocol = "UDP", const char* description = "Chained Engine");
 		bool RemoveMapping(uint16_t port, const char* protocol = "UDP");
 		std::string GetPublicIP();
+		const char* GetLanIP() const
+		{
+			return m_LanAddress;
+		}
 		bool IsAvailable() const
 		{
 			return m_Available;
@@ -37,6 +41,8 @@ namespace Chained
 		void* m_ServiceType = nullptr;
 		bool m_Available = false;
 		char m_LanAddress[64] = {};
+		char m_CachedPublicIP[64] = {};
+		bool m_PublicIPFetched = false;
 	};
 
 } // namespace Chained

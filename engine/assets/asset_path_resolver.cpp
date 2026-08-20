@@ -26,6 +26,14 @@ namespace Chained
 		std::string packKey = assetPath;
 		NormalizeSlashes(packKey);
 		StripPrefix(packKey, m_EngineRoot);
+
+		// Strip the "engine/" virtual prefix — pack stores engine resources
+		// under "resources/" directly, not "engine/resources/".
+		if (packKey.rfind("engine/", 0) == 0)
+		{
+			packKey = packKey.substr(7);
+		}
+
 		StripPrefix(packKey, m_ProjectDirectory);
 
 		packKey = std::filesystem::path(packKey).lexically_normal().generic_string();

@@ -23,6 +23,9 @@
 #include <yaml-cpp/yaml.h>
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/scene/components/animation/animation_component.h"
+#include "engine/assets/loaders/anim_graph_loader.h"
+#include "engine/assets/types/animation_graph_asset.h"
 #include "engine/ui/ui_font_registry.h"
 #include "engine/ui/widget_renderer.h"
 
@@ -365,6 +368,15 @@ namespace Chained
 	{
 		if (entity.HasComponent<T>())
 		{
+			if constexpr (std::is_same_v<T, ModelComponent>)
+			{
+				if (entity.HasComponent<PrimitiveComponent>() &&
+					entity.GetComponent<PrimitiveComponent>().Type != PrimitiveType::None)
+				{
+					return;
+				}
+			}
+
 			DrawComponentInternal(
 				entt::type_hash<T>::value(), name, icon, entity,
 				[&]() {
@@ -601,10 +613,27 @@ namespace Chained
 					break;
 				}
 
-				if (!comp.MeshPath.empty())
+				if (entity.HasComponent<ModelComponent>())
 				{
+					auto& mc = entity.GetComponent<ModelComponent>();
 					ImGui::Spacing();
-					ImGui::TextDisabled(ICON_FA_FILE " %s", comp.MeshPath.c_str());
+					ImGui::Separator();
+					ImGui::TextDisabled("Material Override");
+
+					if (mc.MaterialPaths.empty())
+					{
+						mc.MaterialPaths.resize(1);
+					}
+
+					for (size_t matIdx = 0; matIdx < mc.MaterialPaths.size(); ++matIdx)
+					{
+						std::string matLabel = "Material " + std::to_string(matIdx);
+						if (ui.File(matLabel.c_str(), mc.MaterialPaths[matIdx], ".chmat"))
+						{
+							entity.GetRegistry().patch<ModelComponent>(entity, [](ModelComponent&) {});
+							changed = true;
+						}
+					}
 				}
 
 				return changed;
@@ -912,6 +941,44 @@ namespace Chained
 									CH_CORE_INFO("ModelComponent: Deleted .chasset for '{}', will re-import next frame",
 												 comp.ModelPath);
 								}
+								ImGui::SameLine();
+								if (ImGui::SmallButton("Delete .chmat"))
+								{
+									std::filesystem::path modelPath(comp.ModelPath);
+									std::string modelName = modelPath.stem().string();
+									std::filesystem::path modelDir = modelPath.parent_path();
+									for (const auto& mp : comp.MaterialPaths)
+									{
+										if (!mp.empty())
+										{
+											std::string resolved = am->ResolvePath(mp);
+											std::error_code ec;
+											std::filesystem::remove(resolved, ec);
+											std::filesystem::remove(resolved + ".meta", ec);
+											am->Invalidate(mp);
+										}
+									}
+									for (int i = 0; i < 64; ++i)
+									{
+										std::string matFileName =
+											modelName + "_material_" + std::to_string(i) + ".chmat";
+										std::string matRel = (modelDir / matFileName).generic_string();
+										std::string resolved = am->ResolvePath(matRel);
+										if (std::filesystem::exists(resolved))
+										{
+											std::error_code ec;
+											std::filesystem::remove(resolved, ec);
+											std::filesystem::remove(resolved + ".meta", ec);
+											am->Invalidate(matRel);
+										}
+									}
+									comp.MaterialPaths.clear();
+									am->Invalidate(comp.ModelPath);
+									comp.ModelHandle = AssetHandle(0);
+									CH_CORE_INFO(
+										"ModelComponent: Deleted .chmat files for '{}', restored default materials",
+										comp.ModelPath);
+								}
 							}
 						}
 					}
@@ -920,6 +987,109 @@ namespace Chained
 				return changed;
 			},
 			ICON_FA_SHAPES);
+
+		RegisterCustom<AnimationComponent>(
+			"Animation",
+			[&](AnimationComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+				Properties props(ui);
+
+				if (ui.File("Graph Path", comp.GraphPath, ".chag"))
+				{
+					comp.GraphAssetHandle = AssetHandle(0);
+					changed = true;
+				}
+
+				auto* am = ServiceLocator::TryGet<AssetManager>();
+				if (ImGui::Button("New Graph"))
+				{
+					std::string baseName = "anim_graph";
+					if (entity.HasComponent<TagComponent>())
+					{
+						std::string tag = entity.GetComponent<TagComponent>().Tag;
+						if (!tag.empty())
+						{
+							std::string cleanTag = tag;
+							std::replace(cleanTag.begin(), cleanTag.end(), ' ', '_');
+							std::replace(cleanTag.begin(), cleanTag.end(), '/', '_');
+							std::replace(cleanTag.begin(), cleanTag.end(), '\\', '_');
+							std::replace(cleanTag.begin(), cleanTag.end(), '#', '_');
+							std::transform(cleanTag.begin(), cleanTag.end(), cleanTag.begin(), ::tolower);
+							baseName = cleanTag + "_graph";
+						}
+					}
+					else if (entity.HasComponent<ModelComponent>())
+					{
+						std::string mPath = entity.GetComponent<ModelComponent>().ModelPath;
+						if (!mPath.empty())
+						{
+							baseName = std::filesystem::path(mPath).stem().string() + "_graph";
+						}
+					}
+
+					std::string cand = "animations/" + baseName + ".chag";
+					if (am)
+					{
+						int counter = 1;
+						while (std::filesystem::exists(am->ResolvePath(cand)))
+						{
+							cand = "animations/" + baseName + "_" + std::to_string(counter++) + ".chag";
+						}
+					}
+					comp.GraphPath = cand;
+					comp.GraphAssetHandle = AssetHandle(0);
+
+					AnimationGraphAsset newGraph;
+					AnimGraphLoader loader;
+					if (am)
+					{
+						loader.Save(newGraph, am->ResolvePath(cand));
+						am->Invalidate(cand);
+					}
+					changed = true;
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Duplicate Graph") && !comp.GraphPath.empty() && am)
+				{
+					std::string srcResolved = am->ResolvePath(comp.GraphPath);
+					if (std::filesystem::exists(srcResolved))
+					{
+						std::filesystem::path p(comp.GraphPath);
+						std::string newPath = (p.parent_path() / (p.stem().string() + "_copy.chag")).generic_string();
+						int counter = 1;
+						while (std::filesystem::exists(am->ResolvePath(newPath)))
+						{
+							newPath =
+								(p.parent_path() / (p.stem().string() + "_copy" + std::to_string(counter++) + ".chag"))
+									.generic_string();
+						}
+						std::error_code ec;
+						std::filesystem::copy_file(srcResolved, am->ResolvePath(newPath), ec);
+						comp.GraphPath = newPath;
+						comp.GraphAssetHandle = AssetHandle(0);
+						am->Invalidate(newPath);
+						changed = true;
+					}
+				}
+
+				if (ui.Property("Blend Duration", comp.BlendDuration, PropertyMeta(0.0f, 10.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Default Loop", comp.DefaultIsLooping))
+				{
+					changed = true;
+				}
+				if (ui.Property("Play On Start", comp.PlayOnStart))
+				{
+					changed = true;
+				}
+
+				return changed;
+			},
+			ICON_FA_FILM);
 
 		// --- UI Components ---
 

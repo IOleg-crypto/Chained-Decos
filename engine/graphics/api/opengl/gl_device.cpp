@@ -10,7 +10,13 @@ namespace Chained
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
-		glDepthFunc(GL_LESS);
+		glDepthFunc(GL_LEQUAL);
+#ifdef GLM_FORCE_DEPTH_ZERO_TO_ONE
+		if (glClipControl)
+		{
+			glClipControl(GL_LOWER_LEFT, GL_ZERO_TO_ONE);
+		}
+#endif
 		SetCullMode(CullMode::Back);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	}
