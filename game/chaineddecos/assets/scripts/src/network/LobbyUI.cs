@@ -152,7 +152,8 @@ namespace ChainedDecos.Scripts
                 if (string.IsNullOrEmpty(local)) local = $"127.0.0.1:{LobbyManager.SelectedPort}";
                 string upnp = Network.IsUpnpAvailable ? "UPnP: Auto" : "UPnP: Manual";
                 string fw = Network.IsFirewallRuleActive ? " | FW: OK" : "";
-                text = $"[HOST] Local: {local}  |  Internet: {pub}  |  {upnp}{fw}";
+                string hint = !Network.IsUpnpAvailable ? "\nTip: For online play install Radmin VPN and share your Radmin IP" : "";
+                text = $"[HOST] Local: {local}  |  Internet: {pub}  |  {upnp}{fw}{hint}";
                 if (!fetching && text == m_LastDisplayedInfo) return;
             }
             else if (Network.IsClient)
