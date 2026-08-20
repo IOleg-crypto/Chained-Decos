@@ -4,8 +4,7 @@
 #ifdef _WIN32
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <shellapi.h>
-#pragma comment(lib, "shell32.lib")
+#pragma comment(lib, "advapi32.lib")
 #else
 #include <unistd.h>
 #include <sys/types.h>
@@ -20,35 +19,8 @@ namespace Chained
 	namespace Firewall
 	{
 
-		/// Runs a shell command and returns the combined stdout+stderr output.
-		static std::string RunCommand(const char* cmd)
-		{
-			std::string result;
-			std::array<char, 256> buf{};
-
-#ifdef _WIN32
-			std::string fullCmd = std::string(cmd) + " 2>&1";
-			std::shared_ptr<FILE> pipe(_popen(fullCmd.c_str(), "r"), _pclose);
-#else
-			std::string fullCmd = std::string(cmd) + " 2>&1";
-			std::shared_ptr<FILE> pipe(popen(fullCmd.c_str(), "r"), pclose);
-#endif
-			if (!pipe)
-			{
-				return {};
-			}
-
-			while (fgets(buf.data(), static_cast<int>(buf.size()), pipe.get()) != nullptr)
-			{
-				result += buf.data();
-			}
-
-			return result;
-		}
-
 #ifdef _WIN32
 
-		/// Checks whether the process is running with administrator privileges.
 		static bool IsElevated()
 		{
 			HANDLE hToken = nullptr;
@@ -62,7 +34,65 @@ namespace Chained
 			bool result =
 				GetTokenInformation(hToken, TokenElevation, &isElevated, sizeof(isElevated), &size) && isElevated != 0;
 			CloseHandle(hToken);
+			CH_CORE_INFO("Firewall: IsElevated = {}", result);
 			return result;
+		}
+
+		/// Runs a command via CreateProcess and captures stdout+stderr.
+		static std::string RunCommand(const char* cmd)
+		{
+			std::string output;
+
+			SECURITY_ATTRIBUTES sa{};
+			sa.nLength = sizeof(sa);
+			sa.bInheritHandle = TRUE;
+			sa.lpSecurityDescriptor = nullptr;
+
+			HANDLE hRead = nullptr, hWrite = nullptr;
+			if (!CreatePipe(&hRead, &hWrite, &sa, 0))
+			{
+				return {};
+			}
+			SetHandleInformation(hRead, HANDLE_FLAG_INHERIT, 0);
+
+			STARTUPINFOA si{};
+			si.cb = sizeof(si);
+			si.hStdOutput = hWrite;
+			si.hStdError = hWrite;
+			si.dwFlags = STARTF_USESTDHANDLES | STARTF_USESHOWWINDOW;
+			si.wShowWindow = SW_HIDE;
+
+			char cmdBuf[1024];
+			snprintf(cmdBuf, sizeof(cmdBuf), "cmd.exe /C %s", cmd);
+
+			PROCESS_INFORMATION pi{};
+			BOOL ok = CreateProcessA(nullptr, cmdBuf, nullptr, nullptr, TRUE, 0, nullptr, nullptr, &si, &pi);
+
+			CloseHandle(hWrite);
+			hWrite = nullptr;
+
+			if (!ok)
+			{
+				CloseHandle(hRead);
+				CH_CORE_WARN("Firewall: CreateProcess failed for: {}", cmd);
+				return {};
+			}
+
+			WaitForSingleObject(pi.hProcess, 10000);
+
+			char buf[512]{};
+			DWORD bytesRead = 0;
+			while (ReadFile(hRead, buf, sizeof(buf) - 1, &bytesRead, nullptr) && bytesRead > 0)
+			{
+				buf[bytesRead] = '\0';
+				output += buf;
+			}
+
+			CloseHandle(hRead);
+			CloseHandle(pi.hProcess);
+			CloseHandle(pi.hThread);
+
+			return output;
 		}
 
 		bool AddUDPRule(uint16_t port, const std::string& ruleName)
@@ -70,7 +100,7 @@ namespace Chained
 			if (!IsElevated())
 			{
 				CH_CORE_WARN("Firewall: Not running as administrator — cannot add firewall rule. "
-							 "Run as admin to enable automatic port forwarding.");
+							 "Run as admin to allow inbound connections.");
 				return false;
 			}
 
@@ -89,13 +119,14 @@ namespace Chained
 
 			std::string output = RunCommand(cmd);
 
-			if (output.find("Ok.") != std::string::npos)
+			// netsh outputs the rule name on success, or "Ok." on some Windows versions
+			if (output.find("Ok.") != std::string::npos || output.find(ruleName) != std::string::npos)
 			{
-				CH_CORE_INFO("Firewall: Added inbound UDP rule '{}' for port {}.", ruleName, port);
+				CH_CORE_INFO("Firewall: Added inbound UDP rule '{}' for port {}. Output: {}", ruleName, port, output);
 				return true;
 			}
 
-			CH_CORE_WARN("Firewall: Failed to add rule '{}'. Output: {}", ruleName, output);
+			CH_CORE_WARN("Firewall: Failed to add rule '{}'. netsh output: [{}]", ruleName, output);
 			return false;
 		}
 
@@ -106,38 +137,57 @@ namespace Chained
 				return;
 			}
 
-			char cmd[256]{};
+			char cmd[512]{};
 			snprintf(cmd, sizeof(cmd), "netsh advfirewall firewall delete rule name=\"%s\" protocol=udp localport=%u",
 					 ruleName.c_str(), static_cast<unsigned>(port));
 
 			std::string output = RunCommand(cmd);
 
-			if (output.find("Ok.") != std::string::npos || output.find("No rules") != std::string::npos)
+			if (output.find("No rules") != std::string::npos || output.find("Нет правил") != std::string::npos)
 			{
-				CH_CORE_INFO("Firewall: Removed rule '{}' for UDP {}.", ruleName, port);
+				CH_CORE_INFO("Firewall: No rule to remove for UDP {}.", port);
 			}
 			else
 			{
-				CH_CORE_WARN("Firewall: Failed to remove rule '{}'. Output: {}", ruleName, output);
+				CH_CORE_INFO("Firewall: Remove result for UDP {}: {}", port, output);
 			}
 		}
 
 		bool RuleExists(uint16_t port, const std::string& ruleName)
 		{
-			char cmd[256]{};
-			snprintf(cmd, sizeof(cmd), "netsh advfirewall firewall show rule name=\"%s\" protocol=udp localport=%u",
+			char cmd[512]{};
+			snprintf(cmd, sizeof(cmd),
+					 "netsh advfirewall firewall show rule name=\"%s\" dir=in protocol=udp localport=%u",
 					 ruleName.c_str(), static_cast<unsigned>(port));
 
 			std::string output = RunCommand(cmd);
-			return output.find(ruleName) != std::string::npos;
+			bool found = output.find(ruleName) != std::string::npos;
+			CH_CORE_INFO("Firewall: RuleExists('{}', {}) = {}", ruleName, port, found);
+			return found;
 		}
 
 #else
 
-		/// Checks whether the process is running as root (UID 0).
 		static bool IsElevated()
 		{
 			return getuid() == 0;
+		}
+
+		static std::string RunCommand(const char* cmd)
+		{
+			std::string result;
+			std::array<char, 256> buf{};
+			std::string fullCmd = std::string(cmd) + " 2>&1";
+			std::shared_ptr<FILE> pipe(popen(fullCmd.c_str(), "r"), pclose);
+			if (!pipe)
+			{
+				return {};
+			}
+			while (fgets(buf.data(), static_cast<int>(buf.size()), pipe.get()) != nullptr)
+			{
+				result += buf.data();
+			}
+			return result;
 		}
 
 		bool AddUDPRule(uint16_t port, const std::string& ruleName)
@@ -155,7 +205,6 @@ namespace Chained
 				return true;
 			}
 
-			// Check for nftables first, fall back to iptables
 			char cmd[512]{};
 			int ret = system("command -v nft >/dev/null 2>&1");
 			if (ret == 0)
@@ -171,7 +220,6 @@ namespace Chained
 
 			std::string output = RunCommand(cmd);
 
-			// iptables/nft silently succeed (no output) on success
 			if (output.empty() || output.find("error") == std::string::npos)
 			{
 				CH_CORE_INFO("Firewall: Added inbound UDP rule '{}' for port {}.", ruleName, port);
@@ -211,7 +259,7 @@ namespace Chained
 
 		bool RuleExists(uint16_t port, const std::string& ruleName)
 		{
-			char cmd[256]{};
+			char cmd[512]{};
 			int ret = system("command -v nft >/dev/null 2>&1");
 			if (ret == 0)
 			{

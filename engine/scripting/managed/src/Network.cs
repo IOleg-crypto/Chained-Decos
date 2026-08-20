@@ -17,6 +17,7 @@ namespace Chained
         internal static unsafe delegate* unmanaged<byte> Network_IsHost_Ptr;
         internal static unsafe delegate* unmanaged<byte> Network_IsClient_Ptr;
         internal static unsafe delegate* unmanaged<byte> Network_IsConnected_Ptr;
+        internal static unsafe delegate* unmanaged<byte> Network_IsFullyConnected_Ptr;
         internal static unsafe delegate* unmanaged<int> Network_GetClientCount_Ptr;
         internal static unsafe delegate* unmanaged<int> Network_GetRole_Ptr;
         internal static unsafe delegate* unmanaged<char*, int, void> Network_GetListenAddress_Ptr;
@@ -79,6 +80,9 @@ namespace Chained
 
         /// <summary>True when connected (host or client).</summary>
         public static unsafe bool IsConnected => Network_IsConnected_Ptr != null && Network_IsConnected_Ptr() != 0;
+
+        /// <summary>True only after ENet handshake completes (client-side). Use this instead of IsConnected for connection state checks.</summary>
+        public static unsafe bool IsFullyConnected => Network_IsFullyConnected_Ptr != null && Network_IsFullyConnected_Ptr() != 0;
 
         /// <summary>Number of connected clients (host-side only).</summary>
         public static unsafe int ClientCount => Network_GetClientCount_Ptr != null ? Network_GetClientCount_Ptr() : 0;

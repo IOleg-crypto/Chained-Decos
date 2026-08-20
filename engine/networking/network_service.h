@@ -96,6 +96,10 @@ namespace Chained
 		{
 			return m_Session.IsConnected();
 		}
+		bool IsFullyConnected() const
+		{
+			return m_Session.IsFullyConnected();
+		}
 
 		size_t GetClientCount() const;
 		std::vector<int> GetClients() const;

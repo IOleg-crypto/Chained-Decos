@@ -149,6 +149,7 @@ namespace Chained
 
 		m_PeerMap.clear();
 		m_Role = Role::Offline;
+		m_Connected = false;
 		m_ServerConnection = kInvalidPeerHandle;
 
 		CH_CORE_INFO("NetworkSession: Disconnected.");
@@ -193,6 +194,7 @@ namespace Chained
 				}
 				else if (m_Role == Role::Client)
 				{
+					m_Connected = true;
 					CH_CORE_INFO("NetworkSession: Connected to server.");
 				}
 				break;
@@ -219,6 +221,7 @@ namespace Chained
 				}
 				else if (m_Role == Role::Client)
 				{
+					m_Connected = false;
 					CH_CORE_INFO("NetworkSession: Disconnected from server.");
 					m_ServerPeer = nullptr;
 					m_Role = Role::Offline;
