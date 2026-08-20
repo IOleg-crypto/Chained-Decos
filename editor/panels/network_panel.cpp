@@ -240,7 +240,7 @@ namespace Chained
 			}
 			else
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "UPnP: Not available — manual forwarding required");
+				ImGui::TextDisabled("UPnP: not available (manual port forwarding needed)");
 			}
 
 			if (net->IsFirewallRuleActive())
@@ -249,8 +249,7 @@ namespace Chained
 			}
 			else
 			{
-				ImGui::TextColored(ImVec4(1.0f, 0.6f, 0.3f, 1.0f),
-								   "Firewall: No rule added (run as admin to allow inbound connections)");
+				ImGui::TextDisabled("Firewall: no auto-rule (run as admin to enable)");
 			}
 
 			ImGui::Separator();
