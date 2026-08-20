@@ -57,6 +57,10 @@ namespace Chained
 		{
 			return m_Role != Role::Offline;
 		}
+		bool IsFullyConnected() const
+		{
+			return m_Connected;
+		}
 
 		int GetMaxClients() const
 		{
@@ -124,6 +128,7 @@ namespace Chained
 		int m_MaxClients = 0;
 		uint16_t m_Port = 0;
 		int m_ServerConnection = kInvalidPeerHandle;
+		bool m_Connected = false; ///< true only after ENET handshake completes
 
 		std::string m_CachedPublicAddress;
 		std::atomic<bool> m_PublicAddressFetched{false};

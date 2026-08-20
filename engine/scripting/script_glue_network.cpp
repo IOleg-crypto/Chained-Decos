@@ -114,6 +114,12 @@ namespace Chained
 		return net && net->IsConnected();
 	}
 
+	CH_SCRIPT_FUNC uint8_t Network_IsFullyConnected()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		return net && net->IsFullyConnected();
+	}
+
 	CH_SCRIPT_FUNC int Network_GetClientCount()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();

@@ -372,6 +372,12 @@ namespace Chained
 		// New: Prefab
 		assembly.AddInternalCall("Chained.Network", "Network_SetPlayerPrefab_Ptr", (void*)&Network_SetPlayerPrefab);
 
+		// UPnP + Firewall
+		assembly.AddInternalCall("Chained.Network", "Network_IsUpnpAvailable_Ptr", (void*)&Network_IsUpnpAvailable);
+		assembly.AddInternalCall("Chained.Network", "Network_IsFirewallRuleActive_Ptr",
+								 (void*)&Network_IsFirewallRuleActive);
+		assembly.AddInternalCall("Chained.Network", "Network_IsFullyConnected_Ptr", (void*)&Network_IsFullyConnected);
+
 		// ── Auto-generated: Player, Spawn, NetworkIdentity properties ──────
 #include "generated/script_glue_generated_reg.inl"
 
