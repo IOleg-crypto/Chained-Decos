@@ -79,51 +79,84 @@ namespace Chained
 					glm::mat4 t = inst.localTransform;
 					glm::mat3 normalMatrix = glm::transpose(glm::inverse(glm::mat3(t)));
 
-					for (size_t v = 0; v < src.vertices.size(); v += 3)
-					{
-						if (!hasSkins)
-						{
-							glm::vec4 pos =
-								t * glm::vec4(src.vertices[v], src.vertices[v + 1], src.vertices[v + 2], 1.0f);
-							merged.vertices.insert(merged.vertices.end(), {pos.x, pos.y, pos.z});
-						}
-						else
-						{
-							merged.vertices.insert(merged.vertices.end(),
-												   {src.vertices[v], src.vertices[v + 1], src.vertices[v + 2]});
-						}
-					}
-
 					merged.texcoords.insert(merged.texcoords.end(), src.texcoords.begin(), src.texcoords.end());
 					merged.colors.insert(merged.colors.end(), src.colors.begin(), src.colors.end());
 
-					for (size_t n = 0; n < src.normals.size(); n += 3)
+					const size_t vertCount = src.vertices.size() / 3;
+					const bool hasNormals = src.normals.size() == src.vertices.size();
+					const bool hasTangents = src.tangents.size() == src.vertices.size();
+
+					if (!hasSkins)
 					{
-						if (!hasSkins)
+						merged.vertices.reserve(merged.vertices.size() + src.vertices.size());
+						if (hasNormals)
 						{
-							glm::vec3 norm = glm::normalize(
-								normalMatrix * glm::vec3(src.normals[n], src.normals[n + 1], src.normals[n + 2]));
-							merged.normals.insert(merged.normals.end(), {norm.x, norm.y, norm.z});
+							merged.normals.reserve(merged.normals.size() + src.normals.size());
 						}
-						else
+						if (hasTangents)
 						{
-							merged.normals.insert(merged.normals.end(),
-												  {src.normals[n], src.normals[n + 1], src.normals[n + 2]});
+							merged.tangents.reserve(merged.tangents.size() + src.tangents.size());
+						}
+
+						for (size_t v = 0, n = 0, tg = 0; v < src.vertices.size(); v += 3, n += 3, tg += 3)
+						{
+							glm::vec4 pos =
+								t * glm::vec4(src.vertices[v], src.vertices[v + 1], src.vertices[v + 2], 1.0f);
+							merged.vertices.push_back(pos.x);
+							merged.vertices.push_back(pos.y);
+							merged.vertices.push_back(pos.z);
+
+							if (hasNormals)
+							{
+								glm::vec3 norm = glm::normalize(
+									normalMatrix * glm::vec3(src.normals[n], src.normals[n + 1], src.normals[n + 2]));
+								merged.normals.push_back(norm.x);
+								merged.normals.push_back(norm.y);
+								merged.normals.push_back(norm.z);
+							}
+
+							if (hasTangents)
+							{
+								glm::vec3 tan =
+									glm::normalize(normalMatrix * glm::vec3(src.tangents[tg], src.tangents[tg + 1],
+																			src.tangents[tg + 2]));
+								merged.tangents.push_back(tan.x);
+								merged.tangents.push_back(tan.y);
+								merged.tangents.push_back(tan.z);
+							}
 						}
 					}
-
-					for (size_t t = 0; t < src.tangents.size(); t += 3)
+					else
 					{
-						if (!hasSkins)
+						merged.vertices.reserve(merged.vertices.size() + src.vertices.size());
+						if (hasNormals)
 						{
-							glm::vec3 tan = glm::normalize(
-								normalMatrix * glm::vec3(src.tangents[t], src.tangents[t + 1], src.tangents[t + 2]));
-							merged.tangents.insert(merged.tangents.end(), {tan.x, tan.y, tan.z});
+							merged.normals.reserve(merged.normals.size() + src.normals.size());
 						}
-						else
+						if (hasTangents)
 						{
-							merged.tangents.insert(merged.tangents.end(),
-												   {src.tangents[t], src.tangents[t + 1], src.tangents[t + 2]});
+							merged.tangents.reserve(merged.tangents.size() + src.tangents.size());
+						}
+
+						for (size_t v = 0, n = 0, tg = 0; v < src.vertices.size(); v += 3, n += 3, tg += 3)
+						{
+							merged.vertices.push_back(src.vertices[v]);
+							merged.vertices.push_back(src.vertices[v + 1]);
+							merged.vertices.push_back(src.vertices[v + 2]);
+
+							if (hasNormals)
+							{
+								merged.normals.push_back(src.normals[n]);
+								merged.normals.push_back(src.normals[n + 1]);
+								merged.normals.push_back(src.normals[n + 2]);
+							}
+
+							if (hasTangents)
+							{
+								merged.tangents.push_back(src.tangents[tg]);
+								merged.tangents.push_back(src.tangents[tg + 1]);
+								merged.tangents.push_back(src.tangents[tg + 2]);
+							}
 						}
 					}
 

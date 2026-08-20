@@ -45,6 +45,8 @@ namespace Chained
 			m_ServiceType = nullptr;
 		}
 		m_Available = false;
+		m_PublicIPFetched = false;
+		m_CachedPublicIP[0] = '\0';
 	}
 
 	bool UpnpPortMapper::Initialize()
@@ -103,6 +105,12 @@ namespace Chained
 			CH_CORE_WARN("UPnP: Control URL is empty. Port forwarding unavailable.");
 			CleanupDiscovery();
 			return false;
+		}
+
+		if (wanAddr[0] != '\0')
+		{
+			std::strncpy(m_CachedPublicIP, wanAddr, sizeof(m_CachedPublicIP) - 1);
+			m_PublicIPFetched = true;
 		}
 
 		m_Available = true;
@@ -169,7 +177,17 @@ namespace Chained
 
 	std::string UpnpPortMapper::GetPublicIP()
 	{
-		if (!m_Available || !m_ControlURL || !m_ServiceType)
+		if (!m_Available)
+		{
+			return {};
+		}
+
+		if (m_PublicIPFetched)
+		{
+			return std::string(m_CachedPublicIP);
+		}
+
+		if (!m_ControlURL || !m_ServiceType)
 		{
 			return {};
 		}
@@ -178,13 +196,15 @@ namespace Chained
 		int result =
 			UPNP_GetExternalIPAddress(static_cast<char*>(m_ControlURL), static_cast<char*>(m_ServiceType), publicIP);
 
-		if (result != UPNPCOMMAND_SUCCESS)
+		m_PublicIPFetched = true;
+		if (result == UPNPCOMMAND_SUCCESS && publicIP[0] != '\0')
 		{
-			CH_CORE_WARN("UPnP: Failed to get external IP address");
-			return {};
+			std::strncpy(m_CachedPublicIP, publicIP, sizeof(m_CachedPublicIP) - 1);
+			return std::string(publicIP);
 		}
 
-		return std::string(publicIP);
+		CH_CORE_WARN("UPnP: Failed to get external IP address");
+		return {};
 	}
 
 } // namespace Chained

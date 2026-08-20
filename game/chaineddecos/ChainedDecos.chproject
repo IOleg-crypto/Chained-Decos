@@ -3,7 +3,7 @@ Project:
   IconPath: engine/resources/icons/chaineddecos.jpg
   StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/start_menu.chscene
+  ActiveScene: assets/scenes/test_platform_scene.chscene
   Physics:
     Gravity: 17.2999992
     FixedTimestep: 0.00416666688
@@ -35,7 +35,7 @@ Project:
     ModuleDirectory: assets/bin
     AutoLoad: true
   Export:
-    Mode: 1
-    ZipThreshold: 0.300000012
+    Mode: 2
+    ZipThreshold: 1
     DataVersion: 0
   BuildConfig: 0

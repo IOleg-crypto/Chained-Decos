@@ -332,7 +332,7 @@ namespace Chained
 		}
 
 		// 4. Restore Render State
-		GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::Less);
+		GraphicsDevice::Get().SetDepthFunc(GraphicsDevice::DepthFunc::LEqual);
 		GraphicsDevice::Get().SetCullMode(GraphicsDevice::CullMode::Back);
 		GraphicsDevice::Get().EnableDepthMask();
 	}

@@ -46,13 +46,31 @@ namespace Chained::AudioSystem
 		{
 			auto& audio = audioView.get<AudioComponent>(entity);
 
-			// Load sound if path is set but handle is invalid
+			// Load sound if path is set but handle is invalid OR path has changed
 			if (!audio.SoundPath.empty())
 			{
+				bool pathChanged = audio.SoundPath != audio.LoadedSoundPath;
+				if (pathChanged && audio.SoundHandle != AssetHandle(0))
+				{
+					// Stop the old sound and reset so we reload below
+					audioSvc->Stop(audio.SoundHandle);
+					audio.SoundHandle = AssetHandle(0);
+					audio.SoundUUID = 0;
+					audio.IsPlaying = false;
+				}
+
 				if (audio.SoundHandle == AssetHandle(0) || !audioSvc->IsSoundLoaded(audio.SoundHandle))
 				{
 					CH_CORE_INFO("AudioComponent: Loading sound: {}", audio.SoundPath);
 					audio.SoundHandle = audioSvc->LoadSound(audio.SoundPath);
+					// Sync UUID field and loaded path tracker
+					audio.SoundUUID = (uint64_t)audio.SoundHandle;
+					audio.LoadedSoundPath = audio.SoundPath;
+					// Auto-start playback if PlayOnStart was requested
+					if (audio.PlayOnStart && audio.SoundHandle != AssetHandle(0))
+					{
+						audio.IsPlaying = true;
+					}
 				}
 			}
 

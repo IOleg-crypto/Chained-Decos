@@ -203,6 +203,16 @@ namespace Chained::PrimitiveSystem
 			return {};
 		}
 
+		if (am)
+		{
+			auto modelAsset = am->Get<ModelAsset>(rel);
+			if (modelAsset)
+			{
+				modelAsset->SetPendingData(std::move(data));
+				modelAsset->OnLoaded();
+			}
+		}
+
 		return rel;
 	}
 
@@ -242,16 +252,6 @@ namespace Chained::PrimitiveSystem
 			return;
 		}
 
-		// Invalidate cached asset so the loader picks up the new .chasset bytes.
-		if (!prim->MeshPath.empty() && prim->MeshPath != newRelPath)
-		{
-			InvalidateAsset(prim->MeshPath);
-		}
-		else if (!newRelPath.empty())
-		{
-			InvalidateAsset(newRelPath);
-		}
-
 		prim->MeshPath = newRelPath;
 
 		// Ensure ModelComponent exists and points at the generated file.
@@ -260,9 +260,8 @@ namespace Chained::PrimitiveSystem
 		{
 			mc.ModelPath = newRelPath;
 			mc.ModelHandle = AssetHandle(0); // force re-resolve
-			// Trigger AssetResolutionSystem observer so the model gets loaded.
-			reg.patch<ModelComponent>(e, [](ModelComponent&) {});
 		}
+		reg.patch<ModelComponent>(e, [](ModelComponent&) {});
 	}
 
 	/// Called when PrimitiveComponent is destroyed.

@@ -173,6 +173,19 @@ namespace Chained
 		const fs::path projectDir = project->GetConfig().ProjectDirectory;
 		const fs::path assetDir = project->GetConfig().ProjectDirectory / project->GetConfig().AssetDirectory;
 		const fs::path exeDir = Platform::GetExecutableDirectory();
+#ifdef CH_BUILD_PRESET
+		const std::string buildPreset = CH_BUILD_PRESET;
+#else
+		const std::string buildPreset = "";
+#endif
+#ifdef CH_BUILD_CONFIG
+		const std::string buildConfig = CH_BUILD_CONFIG;
+#else
+		const std::string buildConfig = exeDir.string().find("Debug") != std::string::npos ? "Debug" : "Release";
+#endif
+		const bool isDebugExport = (buildConfig == "Debug");
+		CH_CORE_INFO("ProjectExporter: Build preset='{}', config='{}', exeDir='{}'", buildPreset, buildConfig,
+					 exeDir.string());
 
 		// ── 0. Prepare output directory ──────────────────────────────────────────
 		std::error_code ec;
@@ -312,7 +325,9 @@ namespace Chained
 				}
 			}
 
-			// 2. Copy DLLs
+			// 2. Copy DLLs — only from the current build config
+			// Always skip MSVC CRT DLLs (wrong toolchain) and build-time tools.
+			// In Debug: skip release DLLs (no 'd' suffix). In Release: skip debug DLLs ('d' suffix).
 			for (const auto& f : fs::directory_iterator(exeDir, dirEc))
 			{
 				if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
@@ -325,14 +340,43 @@ namespace Chained
 				}
 
 				const std::string ext = f.path().extension().string();
-				if (ext == ".dll" || ext == ".so" || ext == ".dylib")
+				if (ext != ".dll" && ext != ".so" && ext != ".dylib")
 				{
-					std::string copyErr;
-					CopyFile(f.path(), outputDir / f.path().filename(), copyErr);
+					continue;
 				}
+
+				const std::string fname = f.path().filename().string();
+
+				// Always skip MSVC CRT DLLs (e.g. assimp-vc145-mtd.dll) — wrong toolchain
+				if (fname.find("-vc") != std::string::npos)
+				{
+					continue;
+				}
+
+				// Skip build-time generator (not needed at runtime)
+				if (fname.find("Generator") != std::string::npos)
+				{
+					continue;
+				}
+
+				// Check if this DLL has a debug suffix (e.g. "assimpd.dll" → 'd' before ".dll")
+				bool isDebugDll = fname.size() > 4 && fname[fname.size() - 5] == 'd' && fname[fname.size() - 4] == '.';
+
+				// In Debug, skip release DLLs. In Release, skip debug DLLs.
+				if (isDebugExport && !isDebugDll)
+				{
+					continue; // Debug build — skip release DLLs
+				}
+				if (!isDebugExport && isDebugDll)
+				{
+					continue; // Release build — skip debug DLLs
+				}
+
+				std::string copyErr;
+				CopyFile(f.path(), outputDir / f.path().filename(), copyErr);
 			}
 
-			// 3. Copy Subdirectories
+			// 3. Copy Subdirectories (skip Generator DLLs in scripts/)
 			for (const std::string& subDirName : {"nethost", "dotnet", "scripts"})
 			{
 				if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
@@ -346,6 +390,19 @@ namespace Chained
 					fs::path subDst = outputDir / subDirName;
 					std::error_code subEc;
 					fs::copy(subSrc, subDst, fs::copy_options::update_existing | fs::copy_options::recursive, subEc);
+
+					// Remove Generator DLLs that were copied recursively
+					for (const auto& entry : fs::recursive_directory_iterator(subDst, subEc))
+					{
+						if (entry.is_regular_file())
+						{
+							const std::string fname = entry.path().filename().string();
+							if (fname.find("Generator") != std::string::npos)
+							{
+								fs::remove(entry.path(), subEc);
+							}
+						}
+					}
 				}
 			}
 
@@ -371,11 +428,23 @@ namespace Chained
 				}
 			}
 
-			// 5. Copy .chproject to output directory
+			return true;
+		});
+
+		// --- TASK A: Пакування або копіювання ресурсів у головному потоці ---
+		const fs::path packPath = outputDir / "resources.pack";
+		bool packSuccess = false;
+
+		if (isRawMode)
+		{
+			// Raw mode: copy files directly into outputDir, preserving assets/ and resources/ structure.
+			// resources.pack is not created; the runtime falls back to the filesystem automatically.
+			CH_CORE_INFO("ProjectExporter: Raw mode — copying {} files to '{}'.", fileCount, outputDir.string());
+
+			// Copy .chproject with original name so runtime can discover it by {AppName}.chproject
 			auto chProjFile = project->GetConfig().ProjectDirectory / (cfg.Name + ".chproject");
 			if (!fs::exists(chProjFile))
 			{
-				// Fallback: find any .chproject in project dir
 				for (const auto& entry : fs::directory_iterator(project->GetConfig().ProjectDirectory))
 				{
 					if (entry.is_regular_file() && entry.path().extension() == ".chproject")
@@ -394,18 +463,6 @@ namespace Chained
 				}
 			}
 
-			return true;
-		});
-
-		// --- TASK A: Пакування або копіювання ресурсів у головному потоці ---
-		const fs::path packPath = outputDir / "resources.pack";
-		bool packSuccess = false;
-
-		if (isRawMode)
-		{
-			// Raw mode: copy files directly into outputDir, preserving assets/ and resources/ structure.
-			// resources.pack is not created; the runtime falls back to the filesystem automatically.
-			CH_CORE_INFO("ProjectExporter: Raw mode — copying {} files to '{}'.", fileCount, outputDir.string());
 			for (size_t i = 0; i < fileItemPaths.size(); i += 2)
 			{
 				if (cancelFlag && cancelFlag->load(std::memory_order_relaxed))
@@ -453,7 +510,7 @@ namespace Chained
 				}
 
 				bool preferSpeed = (exp.Mode == PackMode::Fast);
-				float threshold = exp.ZipThreshold;
+				float threshold = (exp.Mode == PackMode::Max) ? 0.0f : exp.ZipThreshold;
 
 				struct PackCtx
 				{

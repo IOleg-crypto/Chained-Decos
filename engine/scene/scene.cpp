@@ -345,7 +345,10 @@ namespace Chained
 			{
 				physics->ResetWorld(this);
 				physics->ResetAccumulator(this);
-				physics->InitializeBodies(this);
+				if (!m_Registry->ctx().contains<Physics*>())
+				{
+					m_Registry->ctx().emplace<Physics*>(physics);
+				}
 				m_PhysicsStartupInitialized = true;
 			}
 
@@ -377,6 +380,8 @@ namespace Chained
 		CH_PROFILE_FUNCTION();
 
 		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		CameraAutoSelectSystem::OnSceneUpdate(*m_Registry);
 
 		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{

@@ -61,8 +61,12 @@ namespace Chained
 
 	static void UninitInstance(Chained::SoundInstance& instance)
 	{
-		ma_sound_stop(&instance.Sound);
-		ma_sound_uninit(&instance.Sound);
+		if (instance.HasSound)
+		{
+			ma_sound_stop(&instance.Sound);
+			ma_sound_uninit(&instance.Sound);
+			instance.HasSound = false;
+		}
 		if (instance.HasDecoder)
 		{
 			ma_decoder_uninit(&instance.Decoder);
@@ -80,9 +84,12 @@ namespace Chained
 		std::lock_guard<std::mutex> lock(m_DataMutex);
 		for (auto it = m_ActiveSounds.begin(); it != m_ActiveSounds.end();)
 		{
-			if (ma_sound_at_end(&(*it)->Sound))
+			auto& inst = **it;
+			// HasSound is always true here (sounds that failed init are never added to queue)
+			// Remove finished non-looping sounds
+			if (inst.HasSound && ma_sound_at_end(&inst.Sound))
 			{
-				UninitInstance(**it);
+				UninitInstance(inst);
 				it = m_ActiveSounds.erase(it);
 			}
 			else
@@ -143,7 +150,7 @@ namespace Chained
 		std::lock_guard<std::mutex> lock(m_DataMutex);
 		for (const auto& instance : m_ActiveSounds)
 		{
-			if (instance && instance->Handle == handle)
+			if (instance && instance->Handle == handle && instance->HasSound)
 			{
 				if (ma_sound_is_playing(&instance->Sound))
 				{
@@ -176,7 +183,7 @@ namespace Chained
 		std::lock_guard<std::mutex> lock(m_DataMutex);
 		for (const auto& instance : m_ActiveSounds)
 		{
-			if (instance && instance->Handle == handle)
+			if (instance && instance->Handle == handle && instance->HasSound)
 			{
 				ma_sound_set_position(&instance->Sound, pos.x, pos.y, pos.z);
 			}
@@ -206,16 +213,30 @@ namespace Chained
 
 		std::string filepath = asset->GetPath();
 
+		// Resolve to absolute path if relative, so ReadProjectAsset and
+		// ma_sound_init_from_file both find the file on disk.
+		std::filesystem::path resolvedPath = filepath;
+		if (resolvedPath.is_relative())
+		{
+			if (auto project = Project::GetActive())
+			{
+				resolvedPath = project->GetAssetDirectory() / filepath;
+			}
+		}
+		std::string resolvedStr = resolvedPath.string();
+
 		auto instance = std::make_unique<SoundInstance>();
 		instance->Handle = handle;
 
-		ma_uint32 flags = MA_SOUND_FLAG_DECODE | MA_SOUND_FLAG_ASYNC;
+		// Use synchronous decode (no ASYNC) so ma_sound_at_end/is_playing are safe immediately
+		ma_uint32 flags = MA_SOUND_FLAG_DECODE;
 		ma_result result = MA_ERROR;
 
-		instance->SoundData = am->ReadProjectAsset(filepath);
+		// Try reading from pack/memory first (works in both editor and packaged builds)
+		instance->SoundData = am->ReadProjectAsset(resolvedPath);
 		if (instance->SoundData.empty())
 		{
-			instance->SoundData = am->ReadAssetData(filepath);
+			instance->SoundData = am->ReadAssetData(resolvedStr);
 		}
 
 		if (!instance->SoundData.empty())
@@ -228,26 +249,32 @@ namespace Chained
 				instance->HasDecoder = true;
 				result =
 					ma_sound_init_from_data_source(m_engine.get(), &instance->Decoder, flags, NULL, &instance->Sound);
-			}
-		}
-
-		if (result != MA_SUCCESS)
-		{
-			std::filesystem::path resolvedPath = filepath;
-			if (auto project = Project::GetActive())
-			{
-				if (resolvedPath.is_relative())
+				if (result == MA_SUCCESS)
 				{
-					resolvedPath = project->GetAssetDirectory() / filepath;
+					instance->HasSound = true;
 				}
 			}
-			result = ma_sound_init_from_file(m_engine.get(), resolvedPath.string().c_str(), flags, NULL, NULL,
-											 &instance->Sound);
 		}
 
-		if (result != MA_SUCCESS)
+		if (!instance->HasSound)
 		{
-			CH_CORE_ERROR("Audio System: Failed to init sound {}", filepath);
+			// Fallback: load directly from disk
+			result = ma_sound_init_from_file(m_engine.get(), resolvedStr.c_str(), flags, NULL, NULL, &instance->Sound);
+			if (result == MA_SUCCESS)
+			{
+				instance->HasSound = true;
+			}
+		}
+
+		if (!instance->HasSound)
+		{
+			CH_CORE_ERROR("Audio System: Failed to init sound '{}' (result={})", resolvedStr, (int)result);
+			// Clean up decoder if it was created but sound init failed
+			if (instance->HasDecoder)
+			{
+				ma_decoder_uninit(&instance->Decoder);
+				instance->HasDecoder = false;
+			}
 			return;
 		}
 

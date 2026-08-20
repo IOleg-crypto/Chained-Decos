@@ -20,6 +20,7 @@ namespace Chained
 		ma_decoder Decoder;
 		std::vector<uint8_t> SoundData;
 		bool HasDecoder = false;
+		bool HasSound = false; // true only after ma_sound_init_* succeeded
 		AssetHandle Handle;
 	};
 

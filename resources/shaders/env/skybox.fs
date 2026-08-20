@@ -20,8 +20,8 @@ layout(location = 0) out vec4 finalColor;
 
 vec2 SampleSpherical(vec3 dir)
 {
-    const vec2 invAtan = vec2(0.1591, 0.3183);
-    vec2 uv = vec2(atan(dir.z, dir.x), asin(dir.y));
+    const vec2 invAtan = vec2(0.15915494309, 0.31830988618);
+    vec2 uv = vec2(atan(dir.z, dir.x), asin(clamp(dir.y, -1.0, 1.0)));
     uv *= invAtan;
     return uv + 0.5;
 }
@@ -32,8 +32,17 @@ void main()
     vec2 uv = SampleSpherical(direction);
     if (u_VFlipped == 1) uv.y = 1.0 - uv.y;
 
-    // Sample the panorama
-    vec3 color = texture(u_Panorama, uv).rgb;
+    // Filter derivative seam: across the wrap boundary (uv.x jumping 0 -> 1),
+    // derivatives jump to ~1.0 causing mipmap popping / vertical line artifact.
+    vec2 dX = dFdx(uv);
+    vec2 dY = dFdy(uv);
+    if (dX.x > 0.5) dX.x -= 1.0;
+    else if (dX.x < -0.5) dX.x += 1.0;
+    if (dY.x > 0.5) dY.x -= 1.0;
+    else if (dY.x < -0.5) dY.x += 1.0;
+
+    // Sample the panorama with filtered derivatives
+    vec3 color = textureGrad(u_Panorama, uv, dX, dY).rgb;
 
     // Convert to Linear if LDR (PNG/JPG)
     if (u_IsHDR == 0) color = pow(color, vec3(2.2));

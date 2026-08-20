@@ -130,7 +130,9 @@ namespace Chained
 	{
 		return PropertyWidget(label, [&]() {
 			float c[4] = {value.r / 255.0f, value.g / 255.0f, value.b / 255.0f, value.a / 255.0f};
-			bool changed = ImGui::ColorEdit4("##prop", c);
+			ImGuiColorEditFlags flags =
+				ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_Uint8 | ImGuiColorEditFlags_DisplayRGB;
+			bool changed = ImGui::ColorEdit4("##prop", c, flags);
 			if (changed)
 			{
 				value = {(unsigned char)(c[0] * 255), (unsigned char)(c[1] * 255), (unsigned char)(c[2] * 255),
@@ -158,7 +160,7 @@ namespace Chained
 	bool EditorGUI::PropertyColor(const char* label, glm::vec4& value, bool hdr)
 	{
 		return PropertyWidget(label, [&]() {
-			ImGuiColorEditFlags flags = ImGuiColorEditFlags_AlphaBar;
+			ImGuiColorEditFlags flags = ImGuiColorEditFlags_AlphaBar | ImGuiColorEditFlags_DisplayRGB;
 			if (hdr)
 			{
 				flags |= ImGuiColorEditFlags_HDR | ImGuiColorEditFlags_Float;

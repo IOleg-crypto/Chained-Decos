@@ -43,7 +43,6 @@ Entities:
       ModelPath: models/ghost+with+sword+3d+model.glb
       ModelUUID: 16359669984788571615
       MaterialPaths:
-        - models/ghost+with+sword+3d+model_material_0.chmat
     TransformComponent:
       Translation: [0, 5, 0]
       Rotation: [0, 0, 0]
@@ -69,19 +68,6 @@ Entities:
       ModelPath: models/pilot/wizard_tower_animated.glb
       ModelUUID: 13486165926194482105
       MaterialPaths:
-        - models/pilot/wizard_tower_animated_material_0.chmat
-        - models/pilot/wizard_tower_animated_material_1.chmat
-        - models/pilot/wizard_tower_animated_material_2.chmat
-        - models/pilot/wizard_tower_animated_material_3.chmat
-        - models/pilot/wizard_tower_animated_material_4.chmat
-        - models/pilot/wizard_tower_animated_material_5.chmat
-        - models/pilot/wizard_tower_animated_material_6.chmat
-        - models/pilot/wizard_tower_animated_material_7.chmat
-        - models/pilot/wizard_tower_animated_material_8.chmat
-        - models/pilot/wizard_tower_animated_material_9.chmat
-        - models/pilot/wizard_tower_animated_material_10.chmat
-        - models/pilot/wizard_tower_animated_material_11.chmat
-        - models/pilot/wizard_tower_animated_material_12.chmat
     TransformComponent:
       Translation: [5, 5, 0]
       Rotation: [0, 0, 0]
@@ -109,8 +95,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [394.406952, 36.0981331, -15.4183016]
       Rotation: [3.13979626, -1.54386234, -1.49447083]
@@ -138,7 +122,6 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
     TransformComponent:
       Translation: [428.76062, 30.1878853, 305.481506]
       Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
@@ -174,7 +157,6 @@ Entities:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       ModelUUID: 4537241321556691418
       MaterialPaths:
-        - models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb_material_0.chmat
     TransformComponent:
       Translation: [226.774567, 10.7833824, 119.315414]
       Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
@@ -202,7 +184,6 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
     TransformComponent:
       Translation: [440.960266, 32.5502625, 581.221497]
       Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
@@ -238,7 +219,6 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
     TransformComponent:
       Translation: [456.769592, 92.3261108, 838.863159]
       Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
@@ -274,7 +254,6 @@ Entities:
       ModelPath: models/bridge.glb
       ModelUUID: 9850403329235179652
       MaterialPaths:
-        - models/bridge_material_0.chmat
     TransformComponent:
       Translation: [424.876801, 17.5073452, 22.4167747]
       Rotation: [-1.59236383, 0.0545779206, 0.0118380217]
@@ -336,8 +315,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [124.947281, 34.3363914, -15.4183016]
       Rotation: [3.14005208, -1.54395568, -1.59915721]
@@ -455,7 +432,6 @@ Entities:
       ModelPath: models/stairs.glb
       ModelUUID: 2777666302803713364
       MaterialPaths:
-        - models/stairs_material_0.chmat
     TransformComponent:
       Translation: [411.734222, 21.1899738, 188.952682]
       Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
@@ -483,8 +459,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [55.4628983, 34.3363914, -15.9756889]
       Rotation: [-0.0299999993, 0.0617705695, -1.59763551]
@@ -528,7 +502,6 @@ Entities:
       ModelPath: models/player_low.glb
       ModelUUID: 6152005881347795059
       MaterialPaths:
-        - models/player_low_material_0.chmat
     TransformComponent:
       Translation: [-288.791779, 109.51931, 731.988647]
       Rotation: [0, -1.82386899, 0]
@@ -596,10 +569,10 @@ Entities:
       {}
   - Entity: 10653066213482940164
     ModelComponent:
-      ModelPath: models_backup/mystery_skulls_ghost_lewis/scene.gltf
+      ModelPath: models/mystery_skulls_ghost_lewis/scene.gltf
       ModelUUID: 9161924301726423648
       MaterialPaths:
-        - models_backup/mystery_skulls_ghost_lewis/scene_material_0.chmat
+        - models/mystery_skulls_ghost_lewis/scene_material_0.chmat
     TransformComponent:
       Translation: [60.8389587, 88.6849136, 37.5509796]
       Rotation: [0, -0, 0]
@@ -635,13 +608,6 @@ Entities:
       ModelPath: models/arena.glb
       ModelUUID: 10755992412146045657
       MaterialPaths:
-        - models/arena_material_0.chmat
-        - models/arena_material_1.chmat
-        - models/arena_material_2.chmat
-        - models/arena_material_3.chmat
-        - models/arena_material_4.chmat
-        - models/arena_material_5.chmat
-        - models/arena_material_6.chmat
     TransformComponent:
       Translation: [-1.52065945, -4.32776833, -35.4009895]
       Rotation: [-0.0117500396, 0.038041085, -0.00385748385]
@@ -669,8 +635,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [369.179901, 34.9479713, -15.4183016]
       Rotation: [3.14019299, -1.54396594, -1.55295646]
@@ -698,8 +662,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [340.353027, 34.3363914, -15.4183016]
       Rotation: [3.14018416, -1.54396355, -1.52885783]
@@ -727,8 +689,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [304.469788, 34.3363914, -15.4183016]
       Rotation: [3.14017534, -1.54393637, -1.68613875]
@@ -756,8 +716,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [269.359863, 34.3363914, -15.4183016]
       Rotation: [3.14023447, -1.543975, -1.55569565]
@@ -785,8 +743,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [232.729095, 34.3363914, -15.4183016]
       Rotation: [3.1402328, -1.54398417, -1.52254927]
@@ -814,8 +770,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [195.275909, 34.3363914, -15.4183016]
       Rotation: [-2.1531477, -1.10677683, -2.63240695]
@@ -843,8 +797,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [160.559677, 34.3363914, -15.4183016]
       Rotation: [-2.88122821, -1.07542729, -1.95391703]
@@ -872,8 +824,6 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 13349678835275148188
       MaterialPaths:
-        - models/toy_train/train_vagon_material_0.chmat
-        - models/toy_train/train_vagon_material_1.chmat
     TransformComponent:
       Translation: [89.7119217, 34.3363914, -15.4183016]
       Rotation: [-1.96055889, -0.999783337, -2.69811749]
@@ -901,7 +851,6 @@ Entities:
       ModelPath: models/stairs.glb
       ModelUUID: 2777666302803713364
       MaterialPaths:
-        - models/stairs_material_0.chmat
     TransformComponent:
       Translation: [46.4636726, -2.98017597, 14.336463]
       Rotation: [-3.14153385, -0.624083161, -3.1415863]
@@ -926,15 +875,15 @@ Entities:
       IsColliding: false
   - Entity: 6516797172325941388
     ModelComponent:
-      ModelPath: models_backup/building/scene.gltf
+      ModelPath: models/building/scene.gltf
       ModelUUID: 891151930191489760
       MaterialPaths:
-        - models_backup/building/scene_material_0.chmat
-        - models_backup/building/scene_material_1.chmat
-        - models_backup/building/scene_material_2.chmat
-        - models_backup/building/scene_material_3.chmat
-        - models_backup/building/scene_material_4.chmat
-        - models_backup/building/scene_material_5.chmat
+        - models/building/scene_material_0.chmat
+        - models/building/scene_material_1.chmat
+        - models/building/scene_material_2.chmat
+        - models/building/scene_material_3.chmat
+        - models/building/scene_material_4.chmat
+        - models/building/scene_material_5.chmat
     TransformComponent:
       Translation: [23.264637, -27.1361389, -506.157532]
       Rotation: [0, -0, 0]
@@ -948,10 +897,6 @@ Entities:
       ModelPath: models/minigames/hub_for_minigames_server.glb
       ModelUUID: 8378150816431493396
       MaterialPaths:
-        - models/minigames/hub_for_minigames_server_material_0.chmat
-        - models/minigames/hub_for_minigames_server_material_1.chmat
-        - models/minigames/hub_for_minigames_server_material_2.chmat
-        - models/minigames/hub_for_minigames_server_material_3.chmat
     TransformComponent:
       Translation: [-118.395287, 12.3910465, 826.530884]
       Rotation: [0, -0, 0]
@@ -979,9 +924,6 @@ Entities:
       ModelPath: models/toy_train/wooden_train.glb
       ModelUUID: 6503497834854385828
       MaterialPaths:
-        - models/toy_train/wooden_train_material_0.chmat
-        - models/toy_train/wooden_train_material_1.chmat
-        - models/toy_train/wooden_train_material_2.chmat
     TransformComponent:
       Translation: [-3565.1311, -45.4531631, 621.43158]
       Rotation: [0.18592523, -1.13752759, -0.188373342]
@@ -1000,15 +942,15 @@ Entities:
         {}
   - Entity: 10121800663724246293
     ModelComponent:
-      ModelPath: models_backup/building/scene.gltf
+      ModelPath: models/building/scene.gltf
       ModelUUID: 891151930191489760
       MaterialPaths:
-        - models_backup/building/scene_material_0.chmat
-        - models_backup/building/scene_material_1.chmat
-        - models_backup/building/scene_material_2.chmat
-        - models_backup/building/scene_material_3.chmat
-        - models_backup/building/scene_material_4.chmat
-        - models_backup/building/scene_material_5.chmat
+        - models/building/scene_material_0.chmat
+        - models/building/scene_material_1.chmat
+        - models/building/scene_material_2.chmat
+        - models/building/scene_material_3.chmat
+        - models/building/scene_material_4.chmat
+        - models/building/scene_material_5.chmat
     TransformComponent:
       Translation: [-710.380615, 254.511108, -1909.69739]
       Rotation: [0, -0, 0]
