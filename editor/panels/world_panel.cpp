@@ -299,6 +299,11 @@ namespace Chained
 				auto result = Chained::Dialogs::SaveFile(filters);
 				if (result)
 				{
+					if (result->extension().empty())
+					{
+						result->replace_extension(".chenv");
+					}
+
 					auto newEnv = std::make_shared<EnvironmentAsset>();
 					newEnv->SetPath(result->string());
 					m_Context->GetSettings().Environment = newEnv;

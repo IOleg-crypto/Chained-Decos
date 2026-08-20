@@ -429,11 +429,15 @@ namespace Chained
 			return raw;
 		}
 
-		// Flat XZ plane (up = +Y), spanning dimensions.x by dimensions.z.
+		// Flat XZ plane (up = +Y), spanning dimensions.x by dimensions.z (or dimensions.y).
 		MeshData BuildPlane(const glm::vec3& dimensions)
 		{
 			float hx = dimensions.x * 0.5f;
-			float hz = dimensions.z * 0.5f;
+			float hz = (dimensions.z != 1.0f || dimensions.y == 1.0f) ? dimensions.z * 0.5f : dimensions.y * 0.5f;
+			if (dimensions.z == 1.0f && dimensions.y != 1.0f)
+			{
+				hz = dimensions.y * 0.5f;
+			}
 
 			MeshData raw;
 			raw.materialIndex = 0;
@@ -445,9 +449,10 @@ namespace Chained
 				raw.normals.insert(raw.normals.end(), {0.0f, 1.0f, 0.0f});
 				raw.texcoords.insert(raw.texcoords.end(), {uv[i].x, uv[i].y});
 			}
-			raw.indices = {0, 3, 2, 0, 2, 1};
-			raw.MinBounds = {-hx, 0.0f, -hz};
-			raw.MaxBounds = {hx, 0.0f, hz};
+			// Double-sided quad so planes are visible from both top and bottom
+			raw.indices = {0, 3, 2, 0, 2, 1, 0, 2, 3, 0, 1, 2};
+			raw.MinBounds = {-hx, -0.01f, -hz};
+			raw.MaxBounds = {hx, 0.01f, hz};
 			return raw;
 		}
 
@@ -498,17 +503,18 @@ namespace Chained
 			return raw;
 		}
 
-		// Cylinder aligned to Y, centered at origin. `radiusBottom`/`radiusTop` differ for a cone
-		// (top == 0) or a truncated cone. Side wall + two caps. `slices` = radial segments.
+		// Cylinder aligned to Y, base at Y=0, top at Y=height.
+		// `radiusBottom`/`radiusTop` differ for a cone (top == 0) or a truncated cone.
+		// Side wall + two caps. `slices` = radial segments.
 		MeshData BuildConeLike(float radiusBottom, float radiusTop, float height, int slices)
 		{
 			MeshData raw;
 			raw.materialIndex = 0;
 			slices = std::max(3, slices);
 
-			float halfH = height * 0.5f;
+			// Base at Y=0, tip/top at Y=height
 			float slant = std::sqrt(height * height + (radiusBottom - radiusTop) * (radiusBottom - radiusTop));
-			float ny = (slant > 0.0f) ? (radiusBottom - radiusTop) / slant : 0.0f; // dy/dslant for side normal
+			float ny = (slant > 0.0f) ? (radiusBottom - radiusTop) / slant : 0.0f;
 			float nradial = (slant > 0.0f) ? height / slant : 1.0f;
 
 			auto pushVert = [&](const glm::vec3& p, const glm::vec3& n, const glm::vec2& t) {
@@ -525,10 +531,10 @@ namespace Chained
 				float a = f * 2.0f * glm::pi<float>();
 				float cx = std::cos(a), cz = std::sin(a);
 				glm::vec3 n = glm::normalize(glm::vec3(cx * nradial, ny, cz * nradial));
-				// bottom ring
-				pushVert({cx * radiusBottom, -halfH, cz * radiusBottom}, n, {f, 0.0f});
-				// top ring
-				pushVert({cx * radiusTop, halfH, cz * radiusTop}, n, {f, 1.0f});
+				// bottom ring at Y=0
+				pushVert({cx * radiusBottom, 0.0f, cz * radiusBottom}, n, {f, 0.0f});
+				// top ring at Y=height
+				pushVert({cx * radiusTop, height, cz * radiusTop}, n, {f, 1.0f});
 			}
 			for (int i = 0; i < slices; ++i)
 			{
@@ -537,18 +543,18 @@ namespace Chained
 				raw.indices.insert(raw.indices.end(), {b, b + 2, b + 3, b, b + 3, b + 1});
 			}
 
-			// --- Bottom cap (facing -Y) ---
+			// --- Bottom cap (facing -Y) at Y=0 ---
 			if (radiusBottom > 0.0f)
 			{
 				uint32_t center = (uint32_t)(raw.vertices.size() / 3);
-				pushVert({0.0f, -halfH, 0.0f}, {0, -1, 0}, {0.5f, 0.5f});
+				pushVert({0.0f, 0.0f, 0.0f}, {0, -1, 0}, {0.5f, 0.5f});
 				uint32_t ringStart = (uint32_t)(raw.vertices.size() / 3);
 				for (int i = 0; i <= slices; ++i)
 				{
 					float f = (float)i / (float)slices;
 					float a = f * 2.0f * glm::pi<float>();
 					float cx = std::cos(a), cz = std::sin(a);
-					pushVert({cx * radiusBottom, -halfH, cz * radiusBottom}, {0, -1, 0},
+					pushVert({cx * radiusBottom, 0.0f, cz * radiusBottom}, {0, -1, 0},
 							 {cx * 0.5f + 0.5f, cz * 0.5f + 0.5f});
 				}
 				for (int i = 0; i < slices; ++i)
@@ -557,18 +563,18 @@ namespace Chained
 				}
 			}
 
-			// --- Top cap (facing +Y) ---
+			// --- Top cap (facing +Y) at Y=height ---
 			if (radiusTop > 0.0f)
 			{
 				uint32_t center = (uint32_t)(raw.vertices.size() / 3);
-				pushVert({0.0f, halfH, 0.0f}, {0, 1, 0}, {0.5f, 0.5f});
+				pushVert({0.0f, height, 0.0f}, {0, 1, 0}, {0.5f, 0.5f});
 				uint32_t ringStart = (uint32_t)(raw.vertices.size() / 3);
 				for (int i = 0; i <= slices; ++i)
 				{
 					float f = (float)i / (float)slices;
 					float a = f * 2.0f * glm::pi<float>();
 					float cx = std::cos(a), cz = std::sin(a);
-					pushVert({cx * radiusTop, halfH, cz * radiusTop}, {0, 1, 0}, {cx * 0.5f + 0.5f, cz * 0.5f + 0.5f});
+					pushVert({cx * radiusTop, height, cz * radiusTop}, {0, 1, 0}, {cx * 0.5f + 0.5f, cz * 0.5f + 0.5f});
 				}
 				for (int i = 0; i < slices; ++i)
 				{
@@ -577,8 +583,8 @@ namespace Chained
 			}
 
 			float maxR = std::max(radiusBottom, radiusTop);
-			raw.MinBounds = {-maxR, -halfH, -maxR};
-			raw.MaxBounds = {maxR, halfH, maxR};
+			raw.MinBounds = {-maxR, 0.0f, -maxR};
+			raw.MaxBounds = {maxR, height, maxR};
 			return raw;
 		}
 

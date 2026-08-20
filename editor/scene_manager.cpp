@@ -26,7 +26,7 @@ namespace Chained
 
 	void EditorSceneManager::OpenScene()
 	{
-		std::vector<DialogFilter> filters = {{".chscene", "chscene"}};
+		std::vector<DialogFilter> filters = {{"Chained Scene", "chscene"}};
 		auto result = Chained::Dialogs::OpenFile(filters);
 		if (result)
 		{
@@ -84,6 +84,11 @@ namespace Chained
 			if (!scene)
 			{
 				return;
+			}
+
+			if (result->extension().empty())
+			{
+				result->replace_extension(".chscene");
 			}
 
 			scene->GetSettings().ScenePath = result->string();

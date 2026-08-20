@@ -108,7 +108,7 @@ namespace Chained
 
 		auto view = scene->GetRegistry().view<CameraComponent>();
 		Entity primaryCam = SceneRenderer::GetPrimaryCameraEntity(scene->GetRegistry(), scene->GetRegistryPtr());
-		std::string currentLabel = primaryCam ? primaryCam.GetComponent<TagComponent>().Tag : "No Camera";
+		std::string currentLabel = primaryCam ? primaryCam.GetComponent<TagComponent>().Tag : "Editor Camera";
 
 		ImGui::SetNextItemWidth(150);
 		if (ImGui::BeginCombo("##CameraSelector", (ICON_FA_VIDEO "  " + currentLabel).c_str(), ImGuiComboFlags_None))

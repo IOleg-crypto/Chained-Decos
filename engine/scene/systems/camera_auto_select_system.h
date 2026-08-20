@@ -8,6 +8,9 @@ namespace Chained
 	namespace CameraAutoSelectSystem
 	{
 		void OnRuntimeStart(entt::registry& reg);
+		void OnSceneUpdate(entt::registry& reg);
+
+		bool IsActiveCamera2D(entt::registry& reg);
 	} // namespace CameraAutoSelectSystem
 } // namespace Chained
 

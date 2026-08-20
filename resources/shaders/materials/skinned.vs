@@ -28,11 +28,20 @@ void main()
     vec3 vNormal = a_Normal;
     vec3 vTangent = a_Tangent;
 
-    mat4 skinMat = 
-        a_Weights.x * boneMatrices[a_JointIDs.x] +
-        a_Weights.y * boneMatrices[a_JointIDs.y] +
-        a_Weights.z * boneMatrices[a_JointIDs.z] +
-        a_Weights.w * boneMatrices[a_JointIDs.w];
+    float totalWeight = a_Weights.x + a_Weights.y + a_Weights.z + a_Weights.w;
+    mat4 skinMat;
+    if (totalWeight < 0.001)
+    {
+        skinMat = mat4(1.0);
+    }
+    else
+    {
+        skinMat = 
+            (a_Weights.x * boneMatrices[a_JointIDs.x] +
+             a_Weights.y * boneMatrices[a_JointIDs.y] +
+             a_Weights.z * boneMatrices[a_JointIDs.z] +
+             a_Weights.w * boneMatrices[a_JointIDs.w]) / totalWeight;
+    }
     
     vPos = (skinMat * vec4(vPos, 1.0)).xyz;
     vNormal = (skinMat * vec4(vNormal, 0.0)).xyz;

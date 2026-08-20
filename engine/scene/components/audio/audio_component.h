@@ -23,8 +23,9 @@ namespace Chained
 		float MinDistance = 1.0f;
 		float MaxDistance = 100.0f;
 
-		// Runtime
+		// Runtime — not serialized
 		bool IsPlaying = false;
+		std::string LoadedSoundPath; // tracks the path that was actually loaded, to detect changes
 
 		static const char* GetStaticName()
 		{
@@ -43,6 +44,8 @@ namespace Chained
 				.Min = 0.0f, .Max = 500.0f, .Speed = 0.5f, .Tooltip = "Radius where the sound starts to fade"};
 			UIMeta MaxDistance = {
 				.Min = 1.0f, .Max = 10000.0f, .Speed = 5.0f, .Tooltip = "Maximum distance for 3D sound visibility"};
+			UIMeta IsPlaying = {.ReadOnly = false, .Transient = false};
+			UIMeta LoadedSoundPath = {.ReadOnly = true, .Transient = true};
 		};
 	};
 
