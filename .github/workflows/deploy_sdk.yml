@@ -1,0 +1,43 @@
+name: Deploy SDK
+
+on:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+jobs:
+  build-and-deploy:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        preset:
+          - windows-clang-debug
+          - windows-clang-release
+          # - windows-msvc-debug  # commented out: static CRT issue
+          # - windows-vs2022     # commented out: VS solution required
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Initialize CMake environment
+        run: |
+        cmake --preset windows-clang-debug
+        cmake --install --preset windows-clang-debug --component ChainedDecos
+
+      - name: Build all presets
+        run: |
+        for preset in windows-clang-debug windows-clang-release; do
+          cmake --build --preset $preset --parallel
+        done
+
+      - name: Sync resources (Python required at configure time)
+        run: |
+        python tools/sync_resources.py --preset windows-clang-release
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: chained-sdk-${{ matrix.preset }}
+          path: build/${{ matrix.preset }}/bin/*
+          retention-days: 30
