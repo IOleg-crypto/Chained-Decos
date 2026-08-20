@@ -6,6 +6,7 @@ namespace ChainedDecos.Scripts
     /// <summary>
     /// Attach directly to the "Connect to Server" button entity.
     /// Reads IP from input_ip and port from input_port, then calls Network.ConnectTo.
+    /// Polls for connection success/failure before loading lobby.
     /// </summary>
     public class ConnectButton : Script
     {
@@ -15,9 +16,40 @@ namespace ChainedDecos.Scripts
         public string LobbyScene = "scenes/lobby.chscene";
         public string DefaultIp    = "127.0.0.1";
         public ushort DefaultPort  = 7777;
+        public float  ConnectTimeout = 5f;
+
+        private bool   m_IsConnecting = false;
+        private float  m_ConnectTimer = 0f;
+        private string m_PendingIp    = "";
+        private ushort m_PendingPort  = 0;
 
         public override void OnUpdate(float deltaTime)
         {
+            // Poll connection state while connecting
+            if (m_IsConnecting)
+            {
+                m_ConnectTimer += deltaTime;
+
+                if (Network.IsFullyConnected)
+                {
+                    m_IsConnecting = false;
+                    Log.Info($"[ConnectButton] Connected to {m_PendingIp}:{m_PendingPort}, loading lobby");
+                    Scene.LoadScene(LobbyScene);
+                    return;
+                }
+
+                if (m_ConnectTimer >= ConnectTimeout)
+                {
+                    m_IsConnecting = false;
+                    Log.Warn($"[ConnectButton] Connection to {m_PendingIp}:{m_PendingPort} timed out");
+                    Network.Disconnect();
+                    ShowError($"Could not connect to {m_PendingIp}:{m_PendingPort}");
+                    return;
+                }
+
+                return; // wait, don't process button clicks
+            }
+
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
             if (btn == null || !btn.IsClicked)
                 return;
@@ -52,7 +84,24 @@ namespace ChainedDecos.Scripts
             Log.Info($"[ConnectButton] Connecting to {ip}:{port}");
             Network.SetLocalPlayerInfo(PlayerSettings.Nickname, (byte)LobbyManager.SelectedSkinIndex);
             Network.ConnectTo(ip, port);
-            Scene.LoadScene(LobbyScene);
+
+            m_PendingIp = ip;
+            m_PendingPort = port;
+            m_ConnectTimer = 0f;
+            m_IsConnecting = true;
+        }
+
+        private void ShowError(string message)
+        {
+            Entity? errorLabel = Scene.FindEntityByTag("label_error");
+            if (errorLabel != null && errorLabel.IsValid)
+            {
+                LabelControl? lc = errorLabel.GetComponent<LabelControl>();
+                if (lc != null)
+                {
+                    lc.Text = message;
+                }
+            }
         }
     }
 }
