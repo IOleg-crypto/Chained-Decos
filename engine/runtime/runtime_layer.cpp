@@ -412,10 +412,10 @@ namespace Chained
 			return false;
 		}
 
-		std::filesystem::path packPath = Platform::GetExecutableDirectory() / "resources.pack";
-		if (std::filesystem::exists(packPath))
+		size_t openedPacks = m_AssetManager->OpenAllPacksInDirectory(Platform::GetExecutableDirectory());
+		if (openedPacks > 0)
 		{
-			m_AssetManager->OpenPack(packPath);
+			CH_CORE_INFO("RuntimeSystem: Mounted {} resource pack(s)", openedPacks);
 		}
 
 		auto project = Project::Load(m_ProjectPath);

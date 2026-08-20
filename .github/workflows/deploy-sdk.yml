@@ -134,8 +134,17 @@ jobs:
         shell: bash
         run: |
           echo "date=$(date +'%d.%m.%y')" >> $GITHUB_OUTPUT
-          TAG_VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=${TAG_VERSION:-manual}" >> $GITHUB_OUTPUT
+          if [[ "${GITHUB_REF}" == refs/tags/v* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/v}"
+          elif [[ "${GITHUB_REF}" == refs/tags/* ]]; then
+            TAG_VERSION="${GITHUB_REF#refs/tags/}"
+          else
+            BRANCH_NAME="${GITHUB_REF#refs/heads/}"
+            CLEAN_BRANCH="${BRANCH_NAME//\//-}"
+            SHORT_SHA="${GITHUB_SHA:0:7}"
+            TAG_VERSION="${CLEAN_BRANCH}-${SHORT_SHA}"
+          fi
+          echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
       - name: Configure CMake
         run: |
@@ -189,14 +198,16 @@ jobs:
           fi
 
           cd "$PACKAGE_DIR"
+          DEST_ZIP="${{ github.workspace }}/${PACKAGE_NAME}.zip"
+          DEST_TAR="${{ github.workspace }}/${PACKAGE_NAME}.tar.gz"
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            powershell -Command "Compress-Archive -Path '*' -DestinationPath '${{ github.workspace }}/$PACKAGE_NAME.zip' -Force"
+            powershell -Command "Compress-Archive -Path * -DestinationPath '$DEST_ZIP' -Force"
             echo "package_file=$PACKAGE_NAME.zip" >> $GITHUB_OUTPUT
-            echo "package_path=${{ github.workspace }}/$PACKAGE_NAME.zip" >> $GITHUB_OUTPUT
+            echo "package_path=$DEST_ZIP" >> $GITHUB_OUTPUT
           else
-            tar -czf "${{ github.workspace }}/$PACKAGE_NAME.tar.gz" .
+            tar -czf "$DEST_TAR" .
             echo "package_file=$PACKAGE_NAME.tar.gz" >> $GITHUB_OUTPUT
-            echo "package_path=${{ github.workspace }}/$PACKAGE_NAME.tar.gz" >> $GITHUB_OUTPUT
+            echo "package_path=$DEST_TAR" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload SDK artifact

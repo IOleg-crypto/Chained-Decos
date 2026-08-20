@@ -207,6 +207,18 @@ namespace Chained
 			{
 				config.Export.DataVersion = projectNode["Export"]["DataVersion"].as<uint32_t>();
 			}
+			if (projectNode["Export"]["SplitSizeMB"])
+			{
+				config.Export.SplitSizeMB = projectNode["Export"]["SplitSizeMB"].as<uint32_t>();
+			}
+			if (projectNode["Export"]["PackName"])
+			{
+				config.Export.PackName = projectNode["Export"]["PackName"].as<std::string>();
+				if (config.Export.PackName.empty())
+				{
+					config.Export.PackName = "resources";
+				}
+			}
 		}
 
 		config.ProjectDirectory = filepath.parent_path();

@@ -115,7 +115,7 @@ namespace Chained
 			{
 				return true;
 			}
-		} catch (const pack::Error&)
+		} catch (...)
 		{
 			return true;
 		}
@@ -146,6 +146,9 @@ namespace Chained
 		result.OutDir = outputDir;
 
 		const bool outputExisted = fs::exists(outputDir);
+		// packPath is resolved once we've read the project config (after project is loaded)
+		// For CleanupAndCancel we just wipe all .pack files in outputDir
+		fs::path packPath; // set after project config is read
 
 		// Only remove the output directory when this run created it — otherwise a cancel
 		// would destroy a previous working export, including the pack we tried to preserve.
@@ -154,6 +157,18 @@ namespace Chained
 			{
 				std::error_code cleanEc;
 				fs::remove_all(outputDir, cleanEc);
+			}
+			else
+			{
+				// Remove potentially incomplete/corrupted pack files so next export succeeds
+				std::error_code cleanEc;
+				for (const auto& entry : fs::directory_iterator(outputDir, cleanEc))
+				{
+					if (entry.is_regular_file() && entry.path().extension() == ".pack")
+					{
+						fs::remove(entry.path(), cleanEc);
+					}
+				}
 			}
 			result.Cancelled = true;
 			CH_CORE_INFO("ProjectExporter: Cancelled {}. {}", phaseLog,
@@ -253,6 +268,10 @@ namespace Chained
 
 		const auto& exp = project->GetConfig().Export;
 		const bool isRawMode = (exp.Mode == PackMode::Raw);
+
+		// Resolve pack base path from PackName setting (default: "resources")
+		const std::string packBaseName = exp.PackName.empty() ? "resources" : exp.PackName;
+		packPath = outputDir / (packBaseName + ".pack");
 
 		if (fileItemPaths.size() <= 2)
 		{
@@ -432,7 +451,6 @@ namespace Chained
 		});
 
 		// --- TASK A: Пакування або копіювання ресурсів у головному потоці ---
-		const fs::path packPath = outputDir / "resources.pack";
 		bool packSuccess = false;
 
 		if (isRawMode)
@@ -494,56 +512,135 @@ namespace Chained
 		}
 		else if (!forceRepack && !IsPackStale(packPath, fileItemPaths, fileCount))
 		{
-			CH_CORE_INFO("ProjectExporter: resources.pack is up to date ({} items) — skipping repack.", fileCount);
+			CH_CORE_INFO("ProjectExporter: {}.pack is up to date ({} items) — skipping repack.", packBaseName,
+						 fileCount);
 			result.PackSkipped = true;
 			packSuccess = true;
 		}
 		else
 		{
+			bool preferSpeed = (exp.Mode == PackMode::Fast);
+			float threshold = (exp.Mode == PackMode::Max) ? 0.0f : exp.ZipThreshold;
+
+			// --- Build chunks -------------------------------------------------------
+			// Each entry in fileItemPaths is: [srcPath, packKey, srcPath, packKey, ...]
+			// We split by uncompressed (on-disk) file size per chunk.
+			// SplitSizeMB == 0 → one chunk containing all files.
+			struct Chunk
+			{
+				std::vector<std::string> items; // flat [srcPath, packKey, ...]
+				uint64_t itemCount = 0;
+			};
+
+			std::vector<Chunk> chunks;
+			{
+				const uint64_t limitBytes =
+					exp.SplitSizeMB > 0 ? static_cast<uint64_t>(exp.SplitSizeMB) * 1024 * 1024 : UINT64_MAX;
+
+				chunks.emplace_back();
+				uint64_t chunkBytes = 0;
+
+				for (size_t i = 0; i < fileItemPaths.size(); i += 2)
+				{
+					const std::string& srcPath = fileItemPaths[i];
+					std::error_code sizeEc;
+					uint64_t fileBytes = static_cast<uint64_t>(fs::file_size(srcPath, sizeEc));
+					if (sizeEc)
+					{
+						fileBytes = 0;
+					}
+
+					// Start a new chunk if this file would push the current chunk over the limit
+					// (always put at least one file per chunk to avoid infinite loops)
+					if (chunkBytes > 0 && chunkBytes + fileBytes > limitBytes)
+					{
+						chunks.emplace_back();
+						chunkBytes = 0;
+					}
+
+					chunks.back().items.push_back(fileItemPaths[i]);
+					chunks.back().items.push_back(fileItemPaths[i + 1]);
+					++chunks.back().itemCount;
+					chunkBytes += fileBytes;
+				}
+			}
+
+			// Track the global item offset for progress reporting across all chunks
+			uint64_t globalItemOffset = 0;
+
+			struct PackCtx
+			{
+				const std::vector<std::string>& chunkItems; // items for this chunk
+				uint64_t chunkOffset;						// first item index in global list
+				uint64_t totalItems;						// total items across all chunks
+				ExportProgressCallback& cb;
+				const std::atomic<bool>* cancelFlag;
+			};
+
 			try
 			{
-				std::vector<const char*> rawPaths;
-				rawPaths.reserve(fileItemPaths.size());
-				for (const auto& s : fileItemPaths)
+				for (size_t chunkIdx = 0; chunkIdx < chunks.size(); ++chunkIdx)
 				{
-					rawPaths.push_back(s.c_str());
+					const Chunk& chunk = chunks[chunkIdx];
+					if (chunk.itemCount == 0)
+					{
+						continue;
+					}
+
+					// Build pack path: {name}.pack, {name}_1.pack, {name}_2.pack ...
+					fs::path chunkPackPath;
+					if (chunkIdx == 0)
+					{
+						chunkPackPath = packPath; // == outputDir / "{packBaseName}.pack"
+					}
+					else
+					{
+						chunkPackPath = outputDir / (packBaseName + "_" + std::to_string(chunkIdx) + ".pack");
+					}
+
+					std::vector<const char*> rawPaths;
+					rawPaths.reserve(chunk.items.size());
+					for (const auto& s : chunk.items)
+					{
+						rawPaths.push_back(s.c_str());
+					}
+
+					PackCtx ctx{chunk.items, globalItemOffset, fileCount, onProgress, cancelFlag};
+
+					OnPackFile cCallback = [](uint64_t itemIndex, void* arg) {
+						auto* ctx = static_cast<PackCtx*>(arg);
+
+						if (ctx->cancelFlag && ctx->cancelFlag->load(std::memory_order_relaxed))
+						{
+							throw ExportCancelledException();
+						}
+
+						if (ctx->cb)
+						{
+							uint64_t globalPacked = ctx->chunkOffset + itemIndex + 1;
+							const std::string& itemPath = ctx->chunkItems[itemIndex * 2 + 1];
+							ctx->cb(globalPacked, ctx->totalItems, itemPath);
+						}
+					};
+
+					CH_CORE_INFO("ProjectExporter: Packing chunk {}/{} → '{}' ({} items)", chunkIdx + 1, chunks.size(),
+								 chunkPackPath.filename().string(), chunk.itemCount);
+
+					pack::Writer::pack(chunkPackPath, chunk.itemCount, rawPaths.data(), exp.DataVersion, threshold,
+									   preferSpeed, false, cCallback, &ctx);
+
+					globalItemOffset += chunk.itemCount;
 				}
 
-				bool preferSpeed = (exp.Mode == PackMode::Fast);
-				float threshold = (exp.Mode == PackMode::Max) ? 0.0f : exp.ZipThreshold;
-
-				struct PackCtx
-				{
-					const std::vector<std::string>& fileItemPaths;
-					uint64_t total;
-					ExportProgressCallback& cb;
-					const std::atomic<bool>* cancelFlag;
-				};
-				PackCtx ctx{fileItemPaths, fileCount, onProgress, cancelFlag};
-
-				OnPackFile cCallback = [](uint64_t itemIndex, void* arg) {
-					auto* ctx = static_cast<PackCtx*>(arg);
-
-					if (ctx->cancelFlag && ctx->cancelFlag->load(std::memory_order_relaxed))
-					{
-						throw ExportCancelledException();
-					}
-
-					if (ctx->cb)
-					{
-						uint64_t packed = itemIndex + 1;
-						const std::string& itemPath = ctx->fileItemPaths[itemIndex * 2 + 1];
-						ctx->cb(packed, ctx->total, itemPath);
-					}
-				};
-
-				pack::Writer::pack(packPath, fileCount, rawPaths.data(), exp.DataVersion, threshold, preferSpeed, false,
-								   cCallback, &ctx);
-
 				packSuccess = true;
+
+				if (chunks.size() > 1)
+				{
+					CH_CORE_INFO("ProjectExporter: Created {} pack chunks.", chunks.size());
+				}
 			} catch (const ExportCancelledException&)
 			{
-				copyBinariesTask.wait(); // Чекаємо фоновий потік перед очищенням
+				copyBinariesTask.wait();
 				return CleanupAndCancel("during packing process");
 			} catch (const pack::Error& err)
 			{
@@ -572,11 +669,14 @@ namespace Chained
 		// ── 5. Get Pack File Size ────────────────────────────────────────────────
 		if (!isRawMode)
 		{
+			// Sum up all .pack files in outputDir
 			std::error_code sizeEc;
-			result.PackFileSize = static_cast<uint64_t>(fs::file_size(packPath, sizeEc));
-			if (sizeEc)
+			for (const auto& entry : fs::directory_iterator(outputDir, sizeEc))
 			{
-				result.PackFileSize = 0;
+				if (entry.is_regular_file() && entry.path().extension() == ".pack")
+				{
+					result.PackFileSize += static_cast<uint64_t>(fs::file_size(entry.path(), sizeEc));
+				}
 			}
 		}
 
