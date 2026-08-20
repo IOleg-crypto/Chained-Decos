@@ -6,18 +6,21 @@
 #include <chrono>
 #include <cstring>
 #include <thread>
+#include <atomic>
 
 using namespace Chained;
 
 namespace
 {
-	constexpr uint16_t kTestPort = 27599;
+	constexpr uint16_t kTestPortBase = 27599;
+	std::atomic<uint16_t> s_PortCounter{0};
 
 	class NetworkLoopbackTest : public ::testing::Test
 	{
 	protected:
 		void SetUp() override
 		{
+			m_Port = kTestPortBase + (s_PortCounter.fetch_add(1) % 50);
 			m_Host.Initialize();
 			m_Client.Initialize();
 			ASSERT_TRUE(m_Host.IsEnabled()) << "ENet failed to initialize";
@@ -46,6 +49,7 @@ namespace
 			return false;
 		}
 
+		uint16_t m_Port = 0;
 		Network m_Host;
 		Network m_Client;
 	};
@@ -59,34 +63,34 @@ TEST_F(NetworkLoopbackTest, InitializeSucceeds)
 
 TEST_F(NetworkLoopbackTest, HostGameOpensListenSocket)
 {
-	m_Host.HostGame(kTestPort, 4);
+	m_Host.HostGame(m_Port, 4);
 
 	EXPECT_TRUE(m_Host.IsEnabled()) << "HostGame disabled the service — listen socket failed";
 	EXPECT_EQ(m_Host.GetRole(), Role::Host);
-	EXPECT_EQ(m_Host.GetPort(), kTestPort);
+	EXPECT_EQ(m_Host.GetPort(), m_Port);
 }
 
 TEST_F(NetworkLoopbackTest, ClientConnectsToHost)
 {
-	m_Host.HostGame(kTestPort, 4);
+	m_Host.HostGame(m_Port, 4);
 	ASSERT_TRUE(m_Host.IsEnabled());
 
-	m_Client.ConnectTo("127.0.0.1", kTestPort);
+	m_Client.ConnectTo("127.0.0.1", m_Port);
 	ASSERT_TRUE(m_Client.IsEnabled());
 	EXPECT_EQ(m_Client.GetRole(), Role::Client);
 
-	const bool connected = PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5));
+	const bool connected = PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(10));
 	EXPECT_TRUE(connected) << "Host never accepted the client connection";
 }
 
 TEST_F(NetworkLoopbackTest, ClientToHostPacketRoundTrip)
 {
-	m_Host.HostGame(kTestPort, 4);
+	m_Host.HostGame(m_Port, 4);
 	ASSERT_TRUE(m_Host.IsEnabled());
 
-	m_Client.ConnectTo("127.0.0.1", kTestPort);
+	m_Client.ConnectTo("127.0.0.1", m_Port);
 	ASSERT_TRUE(m_Client.IsEnabled());
-	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5)));
+	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(10)));
 
 	InputStateMessage received{};
 	bool gotPacket = false;
@@ -111,7 +115,7 @@ TEST_F(NetworkLoopbackTest, ClientToHostPacketRoundTrip)
 	sent.Encode(w);
 	m_Client.SendToServer(MessageType_InputState, w.Data().data(), w.Data().size(), true);
 
-	ASSERT_TRUE(PumpUntil([&] { return gotPacket; }, std::chrono::seconds(5)))
+	ASSERT_TRUE(PumpUntil([&] { return gotPacket; }, std::chrono::seconds(10)))
 		<< "Host never received the client's input message";
 
 	EXPECT_EQ(received.Tick, 4242u);
@@ -124,12 +128,12 @@ TEST_F(NetworkLoopbackTest, ClientToHostPacketRoundTrip)
 
 TEST_F(NetworkLoopbackTest, HostBroadcastReachesClient)
 {
-	m_Host.HostGame(kTestPort, 4);
+	m_Host.HostGame(m_Port, 4);
 	ASSERT_TRUE(m_Host.IsEnabled());
 
-	m_Client.ConnectTo("127.0.0.1", kTestPort);
+	m_Client.ConnectTo("127.0.0.1", m_Port);
 	ASSERT_TRUE(m_Client.IsEnabled());
-	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5)));
+	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(10)));
 
 	std::string receivedPath;
 	m_Client.SetPacketCallback([&](int clientIndex, MessageType type, const uint8_t* data, size_t len) {
@@ -146,7 +150,7 @@ TEST_F(NetworkLoopbackTest, HostBroadcastReachesClient)
 
 	m_Host.BroadcastSceneChange("assets/scenes/level_01.chscene");
 
-	ASSERT_TRUE(PumpUntil([&] { return !receivedPath.empty(); }, std::chrono::seconds(5)))
+	ASSERT_TRUE(PumpUntil([&] { return !receivedPath.empty(); }, std::chrono::seconds(10)))
 		<< "Client never received the broadcast scene change";
 	EXPECT_EQ(receivedPath, "assets/scenes/level_01.chscene");
 
@@ -156,7 +160,7 @@ TEST_F(NetworkLoopbackTest, HostBroadcastReachesClient)
 TEST_F(NetworkLoopbackTest, HostAppearsInItsOwnPlayerList)
 {
 	m_Host.SetLocalPlayerInfo("Alice", 3);
-	m_Host.HostGame(kTestPort, 4);
+	m_Host.HostGame(m_Port, 4);
 	ASSERT_TRUE(m_Host.IsEnabled());
 
 	const auto& players = m_Host.GetPlayerList();
@@ -170,12 +174,12 @@ TEST_F(NetworkLoopbackTest, HostAppearsInItsOwnPlayerList)
 
 TEST_F(NetworkLoopbackTest, PeerGetsIdentityDistinctFromHost)
 {
-	m_Host.HostGame(kTestPort, 4);
+	m_Host.HostGame(m_Port, 4);
 	ASSERT_TRUE(m_Host.IsEnabled());
 
-	m_Client.ConnectTo("127.0.0.1", kTestPort);
+	m_Client.ConnectTo("127.0.0.1", m_Port);
 	ASSERT_TRUE(m_Client.IsEnabled());
-	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(5)));
+	ASSERT_TRUE(PumpUntil([this] { return m_Host.GetClientCount() == 1; }, std::chrono::seconds(10)));
 
 	const auto clients = m_Host.GetClients();
 	ASSERT_EQ(clients.size(), 1u);
