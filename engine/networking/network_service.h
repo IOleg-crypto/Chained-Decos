@@ -142,6 +142,10 @@ namespace Chained
 		{
 			return m_UpnpMapper.IsAvailable();
 		}
+		bool IsFirewallRuleActive() const
+		{
+			return m_FirewallRuleActive;
+		}
 
 		NetworkSession& GetSession()
 		{
@@ -169,6 +173,7 @@ namespace Chained
 
 		std::string m_CachedPublicIP;
 		std::mutex m_PublicIPMutex;
+		bool m_FirewallRuleActive = false;
 
 		static constexpr uint64_t HostNetworkID = 1;
 	};

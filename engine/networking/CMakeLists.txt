@@ -11,6 +11,8 @@ add_library(engine_network STATIC
     net_packet.h
     upnp_port_mapper.h
     upnp_port_mapper.cpp
+    firewall_helper.h
+    firewall_helper.cpp
 )
 
 target_include_directories(engine_network PUBLIC

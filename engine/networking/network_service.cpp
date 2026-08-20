@@ -1,4 +1,5 @@
 #include "network_service.h"
+#include "firewall_helper.h"
 #include <thread>
 #include <algorithm>
 #include <cctype>
@@ -148,6 +149,13 @@ namespace Chained
 			m_UpnpMapper.Shutdown();
 		}
 
+		// Remove Windows Firewall rule
+		if (m_FirewallRuleActive && portToUnmap != 0)
+		{
+			Firewall::RemoveUDPRule(portToUnmap);
+			m_FirewallRuleActive = false;
+		}
+
 		m_Session.Shutdown();
 
 		CH_CORE_INFO("Network: Shutdown complete.");
@@ -179,6 +187,13 @@ namespace Chained
 		else
 		{
 			CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
+		}
+
+		// Add Windows Firewall inbound rule
+		m_FirewallRuleActive = Firewall::AddUDPRule(port);
+		if (!m_FirewallRuleActive)
+		{
+			CH_CORE_WARN("Network: Could not add firewall rule. Run as admin to allow inbound connections.");
 		}
 
 		{
