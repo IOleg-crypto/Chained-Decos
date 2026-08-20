@@ -21,6 +21,7 @@ namespace Chained
 	CH_SCRIPT_FUNC uint8_t Network_IsClient();
 
 	CH_SCRIPT_FUNC uint8_t Network_IsConnected();
+	CH_SCRIPT_FUNC uint8_t Network_IsFullyConnected();
 
 	CH_SCRIPT_FUNC int Network_GetClientCount();
 
