@@ -1,4 +1,5 @@
 #include "gl_uniform_buffer.h"
+#include "engine/graphics/api/graphics_device.h"
 #include <glad/gl.h>
 
 namespace Chained
@@ -14,7 +15,11 @@ namespace Chained
 
 	GLUniformBuffer::~GLUniformBuffer()
 	{
-		glDeleteBuffers(1, &m_RendererID);
+		if (m_RendererID)
+		{
+			uint32_t id = m_RendererID;
+			GraphicsDevice::EnqueueResourceDeletion([id]() { glDeleteBuffers(1, &id); });
+		}
 	}
 
 	void GLUniformBuffer::SetData(const void* data, uint32_t size, uint32_t offset)

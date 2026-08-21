@@ -1,4 +1,5 @@
 #include "gl_texture.h"
+#include "engine/graphics/api/graphics_device.h"
 #include <stb_image.h>
 
 namespace Chained
@@ -106,9 +107,10 @@ namespace Chained
 
 	GLTexture::~GLTexture()
 	{
-		if (m_OwnsResource)
+		if (m_OwnsResource && m_RendererID)
 		{
-			glDeleteTextures(1, &m_RendererID);
+			uint32_t id = m_RendererID;
+			GraphicsDevice::EnqueueResourceDeletion([id]() { glDeleteTextures(1, &id); });
 		}
 	}
 

@@ -1,4 +1,5 @@
 #include "gl_storage_buffer.h"
+#include "engine/graphics/api/graphics_device.h"
 #include <glad/gl.h>
 
 namespace Chained
@@ -13,7 +14,11 @@ namespace Chained
 
 	GLStorageBuffer::~GLStorageBuffer()
 	{
-		glDeleteBuffers(1, &m_RendererID);
+		if (m_RendererID)
+		{
+			uint32_t id = m_RendererID;
+			GraphicsDevice::EnqueueResourceDeletion([id]() { glDeleteBuffers(1, &id); });
+		}
 	}
 
 	void GLStorageBuffer::BindBase(uint32_t slot) const

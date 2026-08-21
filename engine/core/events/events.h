@@ -21,6 +21,7 @@ namespace Chained
 		SceneSimulate,
 		SceneStop,
 		SceneChangeRequest,
+		SceneModified,
 		EntitySelected,
 		AppLaunchRuntime,
 		AppResetLayout,
@@ -28,13 +29,32 @@ namespace Chained
 		ViewportFocusEntity
 	};
 
+	using EventTypeID = uint32_t;
+
+	namespace Detail
+	{
+		inline EventTypeID GetNextEventTypeID()
+		{
+			static EventTypeID s_CurrentID = 1000; // Dynamic IDs start at 1000
+			return ++s_CurrentID;
+		}
+
+		template <typename T> inline EventTypeID GetTypeID()
+		{
+			static EventTypeID s_ID = GetNextEventTypeID();
+			return s_ID;
+		}
+	} // namespace Detail
+
 	enum EventCategory
 	{
 		NoneCategory = 0,
 		EventCategoryApplication = 1 << 0,
 		EventCategoryInput = 1 << 1,
 		EventCategoryKeyboard = 1 << 2,
-		EventCategoryEditor = 1 << 3
+		EventCategoryEditor = 1 << 3,
+		EventCategoryScene = 1 << 4,
+		EventCategoryGameplay = 1 << 5
 	};
 
 #define EVENT_CLASS_TYPE(type)                                                                                         \
@@ -49,6 +69,20 @@ namespace Chained
 	virtual const char* GetName() const override                                                                       \
 	{                                                                                                                  \
 		return #type;                                                                                                  \
+	}
+
+#define CUSTOM_EVENT_CLASS_TYPE(typeName)                                                                              \
+	static EventType GetStaticType()                                                                                   \
+	{                                                                                                                  \
+		return static_cast<EventType>(::Chained::Detail::GetTypeID<typeName>());                                       \
+	}                                                                                                                  \
+	virtual EventType GetEventType() const override                                                                    \
+	{                                                                                                                  \
+		return GetStaticType();                                                                                        \
+	}                                                                                                                  \
+	virtual const char* GetName() const override                                                                       \
+	{                                                                                                                  \
+		return #typeName;                                                                                              \
 	}
 
 #define EVENT_CLASS_CATEGORY(category)                                                                                 \

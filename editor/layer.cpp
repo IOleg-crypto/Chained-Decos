@@ -528,6 +528,10 @@ namespace Chained
 			m_SceneManager->SetSceneState(SceneState::Edit);
 			return true;
 		});
+		dispatcher.Dispatch<SceneModifiedEvent>([this](auto& e) {
+			m_SceneManager->MarkSceneDirty();
+			return true;
+		});
 
 		// 2. Project Management
 		dispatcher.Dispatch<ProjectOpenedEvent>([this](auto& e) { return m_ProjectManager->OnProjectOpened(e); });

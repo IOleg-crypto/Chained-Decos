@@ -151,6 +151,7 @@ namespace Chained
 		Project::SetActive(nullptr);
 
 		ServiceLocator::Shutdown();
+		GraphicsDevice::ProcessResourceDeletions();
 		m_Window.reset();
 		// Log::Shutdown() MUST come after m_Window.reset(): ~GlfwWindow::Shutdown() emits
 		// CH_CORE_INFO("Glfw Window Closed"). If the core logger were reset first, that log
@@ -176,6 +177,9 @@ namespace Chained
 			{
 				m_Window->BeginFrame();
 			}
+
+			// Process any GPU resource deletions queued from worker threads
+			GraphicsDevice::ProcessResourceDeletions();
 
 			if (m_Window && m_Window->GetWidth() > 0 && m_Window->GetHeight() > 0)
 			{
