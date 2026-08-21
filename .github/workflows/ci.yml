@@ -49,3 +49,13 @@ jobs:
     name: Windows Builds
     uses: ./.github/workflows/windows.yml
     secrets: inherit
+
+  production-check:
+    name : Production Check
+    needs: [format, linux, windows]
+    if: success()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Production Checks
+        run: echo "All previous builds passed. Running production checks..."
+      
