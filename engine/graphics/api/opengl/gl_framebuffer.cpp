@@ -1,4 +1,5 @@
 #include "gl_framebuffer.h"
+#include "engine/graphics/api/graphics_device.h"
 
 #include <glad/gl.h>
 
@@ -12,15 +13,39 @@ namespace Chained
 
 	GLFramebuffer::~GLFramebuffer()
 	{
-		glDeleteFramebuffers(1, &m_RendererID);
-		glDeleteTextures(1, &m_ColorAttachment);
-		glDeleteTextures(1, &m_DepthAttachment);
-		if (m_ResolveFBO)
-		{
-			glDeleteFramebuffers(1, &m_ResolveFBO);
-			glDeleteTextures(1, &m_ResolveColorAttachment);
-			glDeleteTextures(1, &m_ResolveDepthAttachment);
-		}
+		uint32_t fbo = m_RendererID;
+		uint32_t color = m_ColorAttachment;
+		uint32_t depth = m_DepthAttachment;
+		uint32_t resolveFbo = m_ResolveFBO;
+		uint32_t resolveColor = m_ResolveColorAttachment;
+		uint32_t resolveDepth = m_ResolveDepthAttachment;
+
+		GraphicsDevice::EnqueueResourceDeletion([fbo, color, depth, resolveFbo, resolveColor, resolveDepth]() {
+			if (fbo)
+			{
+				glDeleteFramebuffers(1, &fbo);
+			}
+			if (color)
+			{
+				glDeleteTextures(1, &color);
+			}
+			if (depth)
+			{
+				glDeleteTextures(1, &depth);
+			}
+			if (resolveFbo)
+			{
+				glDeleteFramebuffers(1, &resolveFbo);
+			}
+			if (resolveColor)
+			{
+				glDeleteTextures(1, &resolveColor);
+			}
+			if (resolveDepth)
+			{
+				glDeleteTextures(1, &resolveDepth);
+			}
+		});
 	}
 
 	void GLFramebuffer::Invalidate()

@@ -3,6 +3,7 @@
 
 #include "engine/common/color.h"
 #include "engine/common/engine_assert.h"
+#include <functional>
 #include <memory>
 
 namespace Chained
@@ -126,6 +127,13 @@ namespace Chained
 		virtual void DrawArraysInstanced(uint32_t vertexCount, uint32_t instanceCount) = 0;
 
 		virtual void SetTexture(uint32_t slot, uint32_t textureId, bool isCubemap = false) = 0;
+
+		/// Enqueue a GPU resource deletion command safely from any thread.
+		/// The deletion will be executed on the main render thread where the GPU context is active.
+		static void EnqueueResourceDeletion(std::function<void()> deleter);
+
+		/// Process all pending GPU resource deletions (called on the main render thread).
+		static void ProcessResourceDeletions();
 
 		static GraphicsDevice& Get()
 		{

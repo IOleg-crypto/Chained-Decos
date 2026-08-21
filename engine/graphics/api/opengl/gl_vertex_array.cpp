@@ -1,4 +1,5 @@
 #include "gl_vertex_array.h"
+#include "engine/graphics/api/graphics_device.h"
 #include <glad/gl.h>
 
 namespace Chained
@@ -43,7 +44,11 @@ namespace Chained
 
 	GLVertexArray::~GLVertexArray()
 	{
-		glDeleteVertexArrays(1, &m_RendererID);
+		if (m_RendererID)
+		{
+			uint32_t id = m_RendererID;
+			GraphicsDevice::EnqueueResourceDeletion([id]() { glDeleteVertexArrays(1, &id); });
+		}
 	}
 
 	void GLVertexArray::Bind() const

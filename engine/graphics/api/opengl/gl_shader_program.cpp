@@ -1,4 +1,5 @@
 #include "gl_shader_program.h"
+#include "engine/graphics/api/graphics_device.h"
 
 #include <glad/gl.h>
 
@@ -75,7 +76,8 @@ namespace Chained
 	{
 		if (m_RendererID > 0)
 		{
-			glDeleteProgram(m_RendererID);
+			uint32_t id = m_RendererID;
+			GraphicsDevice::EnqueueResourceDeletion([id]() { glDeleteProgram(id); });
 		}
 	}
 

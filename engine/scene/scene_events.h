@@ -152,6 +152,14 @@ namespace Chained
 		std::string m_Path;
 	};
 
+	class SceneModifiedEvent : public Event
+	{
+	public:
+		SceneModifiedEvent() = default;
+		EVENT_CLASS_TYPE(SceneModified)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	};
+
 } // namespace Chained
 
 #endif // CH_SCENE_EVENTS_H
