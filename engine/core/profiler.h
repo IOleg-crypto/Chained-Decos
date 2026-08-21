@@ -11,201 +11,214 @@
 #include <unordered_map>
 #include <vector>
 
-#include "engine/core/base.h"
+#include "engine/common/base.h"
 
-namespace CHEngine
+namespace Chained
 {
-struct ProfileResult
-{
-    std::string Name;
-    long long Start;
-    long long End;
-    float DurationMS;
-    uint32_t ThreadID;
-};
+	struct ProfileResult
+	{
+		std::string Name;
+		long long Start;
+		long long End;
+		float DurationMS;
+		uint32_t ThreadID;
+	};
 
-struct InstrumentationSession
-{
-    std::string Name;
-};
+	struct InstrumentationSession
+	{
+		std::string Name;
+	};
 
-class Instrumentor
-{
-public:
-    Instrumentor()
-        : m_CurrentSession(nullptr),
-          m_ProfileCount(0)
-    {
-    }
+	struct ProfilerStats
+	{
+		// Rendering
+		uint32_t DrawCalls = 0;
+		uint32_t MeshCount = 0;
+		uint32_t TextureCount = 0;
 
-    void BeginSession(const std::string& name, const std::string& filepath = "results.json")
-    {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        m_OutputStream.open(filepath);
-        WriteHeader();
-        m_CurrentSession = new InstrumentationSession{name};
-    }
+		// Scene
+		uint32_t EntityCount = 0;
+		uint32_t ColliderCount = 0;
+	};
 
-    void EndSession()
-    {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        WriteFooter();
-        m_OutputStream.close();
-        delete m_CurrentSession;
-        m_CurrentSession = nullptr;
-        m_ProfileCount = 0;
-    }
+	class Instrumentor
+	{
+	public:
+		Instrumentor()
+			: m_ProfileCount(0)
+		{
+		}
 
-    void WriteProfile(const ProfileResult& result)
-    {
-        std::lock_guard<std::mutex> lock(m_Mutex);
+		void BeginSession(const std::string& name, const std::string& filepath = "results.json")
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			m_OutputStream.open(filepath);
+			WriteHeader();
+			m_CurrentSession = std::make_unique<InstrumentationSession>(InstrumentationSession{name});
+		}
 
-        m_FrameResults.push_back(result);
+		void EndSession()
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			WriteFooter();
+			m_OutputStream.close();
+			m_CurrentSession.reset();
+			m_ProfileCount = 0;
+		}
 
-        if (m_OutputStream.is_open())
-        {
-            if (m_ProfileCount++ > 0)
-            {
-                m_OutputStream << ",";
-            }
+		void WriteProfile(const ProfileResult& result)
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
 
-            std::string name = result.Name;
-            std::replace(name.begin(), name.end(), '"', '\'');
+			m_FrameResults.push_back(result);
 
-            m_OutputStream << "{";
-            m_OutputStream << "\"cat\":\"function\",";
-            m_OutputStream << "\"dur\":" << (result.End - result.Start) << ',';
-            m_OutputStream << "\"name\":\"" << name << "\",";
-            m_OutputStream << "\"ph\":\"X\",";
-            m_OutputStream << "\"pid\":1,";
-            m_OutputStream << "\"tid\":" << result.ThreadID << ",";
-            m_OutputStream << "\"ts\":" << result.Start;
-            m_OutputStream << "}";
+			if (m_OutputStream.is_open())
+			{
+				if (m_ProfileCount++ > 0)
+				{
+					m_OutputStream << ",";
+				}
 
-            m_OutputStream.flush();
-        }
-    }
+				std::string name = result.Name;
+				std::replace(name.begin(), name.end(), '"', '\'');
 
-    void ClearFrameResults()
-    {
-        std::lock_guard<std::mutex> lock(m_Mutex);
-        m_FrameResults.clear();
-    }
+				m_OutputStream << "{";
+				m_OutputStream << "\"cat\":\"function\",";
+				m_OutputStream << "\"dur\":" << (result.End - result.Start) << ',';
+				m_OutputStream << "\"name\":\"" << name << "\",";
+				m_OutputStream << "\"ph\":\"X\",";
+				m_OutputStream << "\"pid\":1,";
+				m_OutputStream << "\"tid\":" << result.ThreadID << ",";
+				m_OutputStream << "\"ts\":" << result.Start;
+				m_OutputStream << "}";
 
-    const std::vector<ProfileResult>& GetFrameResults() const
-    {
-        return m_FrameResults;
-    }
+				m_OutputStream.flush();
+			}
+		}
 
-    void WriteHeader()
-    {
-        m_OutputStream << "{\"otherData\": {},\"traceEvents\":[";
-        m_OutputStream.flush();
-    }
+		void ClearFrameResults()
+		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
+			m_FrameResults.clear();
+		}
 
-    void WriteFooter()
-    {
-        m_OutputStream << "]}";
-        m_OutputStream.flush();
-    }
+		const std::vector<ProfileResult>& GetFrameResults() const
+		{
+			return m_FrameResults;
+		}
 
-    static Instrumentor& Get()
-    {
-        static Instrumentor instance;
-        return instance;
-    }
+		// --- Frame-level stats (formerly Profiler) ---
 
-private:
-    InstrumentationSession* m_CurrentSession;
-    std::ofstream m_OutputStream;
-    int m_ProfileCount;
-    std::vector<ProfileResult> m_FrameResults;
-    std::mutex m_Mutex;
-};
+		void BeginFrame()
+		{
+			s_LastFrameResults = m_FrameResults;
+			ClearFrameResults();
+			s_Stats.DrawCalls = 0;
+			s_Stats.MeshCount = 0;
+			s_Stats.TextureCount = 0;
+		}
 
-class InstrumentationTimer
-{
-public:
-    InstrumentationTimer(const char* name)
-        : m_Name(name),
-          m_Stopped(false)
-    {
-        m_StartTimepoint = std::chrono::high_resolution_clock::now();
-    }
+		void UpdateStats(const ProfilerStats& stats)
+		{
+			s_Stats.DrawCalls += stats.DrawCalls;
+			s_Stats.MeshCount += stats.MeshCount;
+			s_Stats.TextureCount += stats.TextureCount;
+			if (stats.EntityCount > 0)
+			{
+				s_Stats.EntityCount = stats.EntityCount;
+			}
+			if (stats.ColliderCount > 0)
+			{
+				s_Stats.ColliderCount = stats.ColliderCount;
+			}
+		}
 
-    ~InstrumentationTimer()
-    {
-        if (!m_Stopped)
-        {
-            Stop();
-        }
-    }
+		const ProfilerStats& GetStats() const
+		{
+			return s_Stats;
+		}
+		const std::vector<ProfileResult>& GetLastFrameResults() const
+		{
+			return s_LastFrameResults;
+		}
 
-    void Stop()
-    {
-        auto endTimepoint = std::chrono::high_resolution_clock::now();
+		void WriteHeader()
+		{
+			m_OutputStream << "{\"otherData\": {},\"traceEvents\":[";
+			m_OutputStream.flush();
+		}
 
-        long long start =
-            std::chrono::time_point_cast<std::chrono::microseconds>(m_StartTimepoint).time_since_epoch().count();
-        long long end =
-            std::chrono::time_point_cast<std::chrono::microseconds>(endTimepoint).time_since_epoch().count();
+		void WriteFooter()
+		{
+			m_OutputStream << "]}";
+			m_OutputStream.flush();
+		}
 
-        float durationMS = (float)(end - start) / 1000.0f;
+		static Instrumentor& Get()
+		{
+			static Instrumentor instance;
+			return instance;
+		}
 
-        uint32_t threadID = (uint32_t)std::hash<std::thread::id>{}(std::this_thread::get_id());
-        Instrumentor::Get().WriteProfile({m_Name, start, end, durationMS, threadID});
+	private:
+		std::unique_ptr<InstrumentationSession> m_CurrentSession;
+		std::ofstream m_OutputStream;
+		int m_ProfileCount;
+		std::vector<ProfileResult> m_FrameResults;
+		std::mutex m_Mutex;
 
-        m_Stopped = true;
-    }
+		ProfilerStats s_Stats{};
+		std::vector<ProfileResult> s_LastFrameResults;
+	};
 
-private:
-    const char* m_Name;
-    std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTimepoint;
-    bool m_Stopped;
-};
+	class InstrumentationTimer
+	{
+	public:
+		InstrumentationTimer(const char* name)
+			: m_Name(name),
+			  m_Stopped(false)
+		{
+			m_StartTimepoint = std::chrono::high_resolution_clock::now();
+		}
 
-struct ProfilerStats
-{
-    // Rendering
-    uint32_t DrawCalls = 0;
-    uint32_t PolyCount = 0;
-    uint32_t MeshCount = 0;
-    uint32_t TextureCount = 0;
+		~InstrumentationTimer()
+		{
+			if (!m_Stopped)
+			{
+				Stop();
+			}
+		}
 
-    // Scene
-    uint32_t EntityCount = 0;
-    uint32_t ColliderCount = 0;
-};
+		void Stop()
+		{
+			auto endTimepoint = std::chrono::high_resolution_clock::now();
 
-class Profiler
-{
-public:
-    static void BeginFrame();
-    static void EndFrame();
+			long long start =
+				std::chrono::time_point_cast<std::chrono::microseconds>(m_StartTimepoint).time_since_epoch().count();
+			long long end =
+				std::chrono::time_point_cast<std::chrono::microseconds>(endTimepoint).time_since_epoch().count();
 
-    static const ProfilerStats& GetStats()
-    {
-        return s_Stats;
-    }
-    static void UpdateStats(const ProfilerStats& stats);
-    static void ResetFrameStats();
+			float durationMS = (float)(end - start) / 1000.0f;
 
-    static const std::vector<ProfileResult>& GetLastFrameResults()
-    {
-        return s_LastFrameResults;
-    }
+			uint32_t threadID = (uint32_t)std::hash<std::thread::id>{}(std::this_thread::get_id());
+			Instrumentor::Get().WriteProfile({m_Name, start, end, durationMS, threadID});
 
-private:
-    static std::mutex s_Mutex;
-    static ProfilerStats s_Stats;
-    static std::vector<ProfileResult> s_LastFrameResults;
-};
+			m_Stopped = true;
+		}
 
-} // namespace CHEngine
+	private:
+		const char* m_Name;
+		std::chrono::time_point<std::chrono::high_resolution_clock> m_StartTimepoint;
+		bool m_Stopped;
+	};
 
-#define CH_PROFILE_BEGIN_SESSION(name, filepath) ::CHEngine::Instrumentor::Get().BeginSession(name, filepath)
-#define CH_PROFILE_END_SESSION() ::CHEngine::Instrumentor::Get().EndSession()
-#define CH_PROFILE_SCOPE(name) ::CHEngine::InstrumentationTimer timer##__LINE__(name)
+} // namespace Chained
+
+#define CH_PROFILE_BEGIN_SESSION(name, filepath) ::Chained::Instrumentor::Get().BeginSession(name, filepath)
+#define CH_PROFILE_END_SESSION() ::Chained::Instrumentor::Get().EndSession()
+#define CH_PROFILE_CONCAT_IMPL(x, y) x##y
+#define CH_PROFILE_CONCAT(x, y) CH_PROFILE_CONCAT_IMPL(x, y)
+#define CH_PROFILE_SCOPE(name) ::Chained::InstrumentationTimer CH_PROFILE_CONCAT(timer, __LINE__)(name)
 #define CH_PROFILE_FUNCTION() CH_PROFILE_SCOPE(__FUNCTION__)
 
 #endif // CH_PROFILER_H

@@ -1,156 +1,164 @@
 #ifndef CH_LOG_H
 #define CH_LOG_H
 
-#include "raylib.h"
-#include <format>
+#include <spdlog/spdlog.h>
+#include <spdlog/fmt/ostr.h>
+#include <spdlog/sinks/callback_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <chrono>
+#include <cstdio>
+#include <deque>
+#include <mutex>
 #include <string>
+#include <vector>
 
-namespace CHEngine
+namespace Chained
 {
-enum class LogLevel
-{
-    LogTrace = LOG_TRACE,
-    LogInfo = LOG_INFO,
-    LogWarning = LOG_WARNING,
-    LogError = LOG_ERROR,
-    LogFatal = LOG_FATAL,
-    LogNone = LOG_NONE
-};
+	enum class LogLevel
+	{
+		LogTrace = spdlog::level::trace,
+		LogInfo = spdlog::level::info,
+		LogWarning = spdlog::level::warn,
+		LogError = spdlog::level::err,
+		LogFatal = spdlog::level::critical,
+		LogNone = spdlog::level::off
+	};
 
-class Log
-{
-public:
-    static void SetLogLevel(LogLevel level)
-    {
-        s_LogLevel = level;
-        ::SetTraceLogLevel((int)level);
-    }
-    static LogLevel GetLogLevel()
-    {
-        return s_LogLevel;
-    }
+	struct BufferedLogEntry
+	{
+		LogLevel level;
+		std::string message;
+		std::string timestamp;
+	};
 
-    // Core logging functions
-    template <typename... Args> static void CoreTrace(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_TRACE, "[CORE] %s", message.c_str());
-    }
+	using LogCallbackFn = void (*)(const char*, int);
 
-    template <typename... Args> static void CoreInfo(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_INFO, "[CORE] %s", message.c_str());
-    }
+	class Log
+	{
+	public:
+		static void Init()
+		{
+			auto console_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
+			console_sink->set_pattern("%^[%H:%M:%S] %v%$");
 
-    template <typename... Args> static void CoreWarn(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_WARNING, "[CORE] %s", message.c_str());
-    }
+			auto callback_sink =
+				std::make_shared<spdlog::sinks::callback_sink_mt>([](const spdlog::details::log_msg& msg) {
+					std::string message(msg.payload.data(), msg.payload.size());
 
-    template <typename... Args> static void CoreError(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_ERROR, "[CORE] %s", message.c_str());
-    }
+					// Wall-clock HH:MM:SS for the buffered in-editor console. Deliberately
+					// snprintf, not std::format: std::format segfaulted inside libstdc++'s
+					// formatting machinery in Debug builds made by the MinGW-Builds GCC 15.2
+					// that GitHub runners preinstall (crash in _Formatting_scanner::_M_format_arg
+					// on the very first log message). duration_cast is also portable across
+					// system_clock tick periods — the old divisors assumed microseconds.
+					const long long secs =
+						std::chrono::duration_cast<std::chrono::seconds>(msg.time.time_since_epoch()).count();
+					char ts[32];
+					std::snprintf(ts, sizeof(ts), "[%02lld:%02lld:%02lld] ", (secs / 3600) % 24, (secs / 60) % 60,
+								  secs % 60);
+					std::string timestamp = ts;
 
-    template <typename... Args> static void CoreFatal(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_FATAL, "[CORE] %s", message.c_str());
-    }
+					std::lock_guard<std::mutex> lock(s_BufferMutex);
+					s_Buffer.push_back({static_cast<LogLevel>(msg.level), message, timestamp});
+					if (s_Buffer.size() > MAX_BUFFERED_MESSAGES)
+					{
+						s_Buffer.pop_front();
+					}
 
-    // Client logging functions
-    template <typename... Args> static void ClientTrace(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_TRACE, "[CLIENT] %s", message.c_str());
-    }
+					if (s_LogCallback)
+					{
+						s_LogCallback(message.c_str(), static_cast<int>(msg.level));
+					}
+				});
 
-    template <typename... Args> static void ClientInfo(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_INFO, "[CLIENT] %s", message.c_str());
-    }
+			std::vector<spdlog::sink_ptr> sinks{console_sink, callback_sink};
 
-    template <typename... Args> static void ClientWarn(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_WARNING, "[CLIENT] %s", message.c_str());
-    }
+			s_CoreLogger = std::make_shared<spdlog::logger>("CORE", sinks.begin(), sinks.end());
+			s_CoreLogger->set_level(spdlog::level::trace);
+			// Flush only on warnings+ — flushing the console sink on every trace/info
+			// message forces a synchronous stdout flush each frame, which stalls the
+			// editor badly when per-frame logs are active. spdlog still flushes
+			// periodically on its own.
+			s_CoreLogger->flush_on(spdlog::level::warn);
 
-    template <typename... Args> static void ClientError(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_ERROR, "[CLIENT] %s", message.c_str());
-    }
+			s_ClientLogger = std::make_shared<spdlog::logger>("CLIENT", sinks.begin(), sinks.end());
+			s_ClientLogger->set_level(spdlog::level::trace);
+			s_ClientLogger->flush_on(spdlog::level::warn);
+		}
 
-    template <typename... Args> static void ClientFatal(std::format_string<Args...> fmt, Args&&... args)
-    {
-        std::string message = std::format(fmt, std::forward<Args>(args)...);
-        TraceLog(LOG_FATAL, "[CLIENT] %s", message.c_str());
-    }
+		static void SetLogLevel(LogLevel level)
+		{
+			spdlog::set_level(static_cast<spdlog::level::level_enum>(level));
+		}
 
-private:
-#ifdef CH_DEBUG
-    inline static LogLevel s_LogLevel = LogLevel::LogTrace;
-#else
-    inline static LogLevel s_LogLevel = LogLevel::LogInfo;
-#endif
-};
-} // namespace CHEngine
+		static void Shutdown()
+		{
+			s_CoreLogger.reset();
+			s_ClientLogger.reset();
+			spdlog::shutdown();
+		}
+
+		static void SetLogCallback(LogCallbackFn callback)
+		{
+			s_LogCallback = callback;
+		}
+
+		static std::vector<BufferedLogEntry> ConsumeBufferedMessages()
+		{
+			std::lock_guard<std::mutex> lock(s_BufferMutex);
+			std::vector<BufferedLogEntry> messages(std::make_move_iterator(s_Buffer.begin()),
+												   std::make_move_iterator(s_Buffer.end()));
+			s_Buffer.clear();
+			return messages;
+		}
+
+		inline static std::shared_ptr<spdlog::logger>& GetCoreLogger()
+		{
+			return s_CoreLogger;
+		}
+		inline static std::shared_ptr<spdlog::logger>& GetClientLogger()
+		{
+			return s_ClientLogger;
+		}
+
+	private:
+		inline static std::shared_ptr<spdlog::logger> s_CoreLogger;
+		inline static std::shared_ptr<spdlog::logger> s_ClientLogger;
+		inline static LogCallbackFn s_LogCallback = nullptr;
+		inline static std::deque<BufferedLogEntry> s_Buffer;
+		inline static std::mutex s_BufferMutex;
+		static constexpr size_t MAX_BUFFERED_MESSAGES = 10000;
+	};
+} // namespace Chained
 
 // Core logging macros
-#define CH_CORE_TRACE(...)                                                                                             \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogTrace)                                              \
-    ::CHEngine::Log::CoreTrace(__VA_ARGS__)
-#define CH_CORE_INFO(...)                                                                                              \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogInfo)                                               \
-    ::CHEngine::Log::CoreInfo(__VA_ARGS__)
-#define CH_CORE_WARN(...)                                                                                              \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogWarning)                                            \
-    ::CHEngine::Log::CoreWarn(__VA_ARGS__)
-#define CH_CORE_ERROR(...)                                                                                             \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogError)                                              \
-    ::CHEngine::Log::CoreError(__VA_ARGS__)
-#define CH_CORE_FATAL(...)                                                                                             \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogFatal)                                              \
-    ::CHEngine::Log::CoreFatal(__VA_ARGS__)
-
-#define CH_CORE_TRACE_ONCE(...)                                                                                        \
-    { static bool warned = false; if (!warned) { CH_CORE_TRACE(__VA_ARGS__); warned = true; } }
-#define CH_CORE_INFO_ONCE(...)                                                                                         \
-    { static bool warned = false; if (!warned) { CH_CORE_INFO(__VA_ARGS__); warned = true; } }
-#define CH_CORE_WARN_ONCE(...)                                                                                         \
-    { static bool warned = false; if (!warned) { CH_CORE_WARN(__VA_ARGS__); warned = true; } }
-#define CH_CORE_ERROR_ONCE(...)                                                                                        \
-    { static bool warned = false; if (!warned) { CH_CORE_ERROR(__VA_ARGS__); warned = true; } }
+#ifdef CH_ENABLE_LOGGING
+#define CH_CORE_TRACE(...) ::Chained::Log::GetCoreLogger()->trace(__VA_ARGS__)
+#define CH_CORE_INFO(...) ::Chained::Log::GetCoreLogger()->info(__VA_ARGS__)
+#define CH_CORE_WARN(...) ::Chained::Log::GetCoreLogger()->warn(__VA_ARGS__)
+#define CH_CORE_ERROR(...) ::Chained::Log::GetCoreLogger()->error(__VA_ARGS__)
+#define CH_CORE_FATAL(...) ::Chained::Log::GetCoreLogger()->critical(__VA_ARGS__)
 
 // Client logging macros
-#define CH_TRACE(...)                                                                                                  \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogTrace)                                              \
-    ::CHEngine::Log::ClientTrace(__VA_ARGS__)
-#define CH_INFO(...)                                                                                                   \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogInfo)                                               \
-    ::CHEngine::Log::ClientInfo(__VA_ARGS__)
-#define CH_WARN(...)                                                                                                   \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogWarning)                                            \
-    ::CHEngine::Log::ClientWarn(__VA_ARGS__)
-#define CH_ERROR(...)                                                                                                  \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogError)                                              \
-    ::CHEngine::Log::ClientError(__VA_ARGS__)
-#define CH_FATAL(...)                                                                                                  \
-    if (::CHEngine::Log::GetLogLevel() <= ::CHEngine::LogLevel::LogFatal)                                              \
-    ::CHEngine::Log::ClientFatal(__VA_ARGS__)
+#define CH_TRACE(...) ::Chained::Log::GetClientLogger()->trace(__VA_ARGS__)
+#define CH_INFO(...) ::Chained::Log::GetClientLogger()->info(__VA_ARGS__)
+#define CH_WARN(...) ::Chained::Log::GetClientLogger()->warn(__VA_ARGS__)
+#define CH_ERROR(...) ::Chained::Log::GetClientLogger()->error(__VA_ARGS__)
+#define CH_FATAL(...) ::Chained::Log::GetClientLogger()->critical(__VA_ARGS__)
+#else
+// Core logging macros
+#define CH_CORE_TRACE(...)
+#define CH_CORE_INFO(...)
+#define CH_CORE_WARN(...)
+#define CH_CORE_ERROR(...)
+#define CH_CORE_FATAL(...)
 
-#define CH_TRACE_ONCE(...)                                                                                             \
-    { static bool warned = false; if (!warned) { CH_TRACE(__VA_ARGS__); warned = true; } }
-#define CH_INFO_ONCE(...)                                                                                              \
-    { static bool warned = false; if (!warned) { CH_INFO(__VA_ARGS__); warned = true; } }
-#define CH_WARN_ONCE(...)                                                                                              \
-    { static bool warned = false; if (!warned) { CH_WARN(__VA_ARGS__); warned = true; } }
-#define CH_ERROR_ONCE(...)                                                                                             \
-    { static bool warned = false; if (!warned) { CH_ERROR(__VA_ARGS__); warned = true; } }
+// Client logging macros
+#define CH_TRACE(...)
+#define CH_INFO(...)
+#define CH_WARN(...)
+#define CH_ERROR(...)
+#define CH_FATAL(...)
+#endif
 
 #endif // CH_LOG_H

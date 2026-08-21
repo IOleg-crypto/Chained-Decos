@@ -1,179 +1,295 @@
-# Chained Decos 
 
-### _A High-Performance 3D Parkour Engine & Game Powered by Chained Engine_
+# ChainedEngine
+
+## Custom C++/C# Game Engine with Editor, OpenGL Renderer, and Managed Scripting
 
 [![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/build.yml)](https://github.com/IOleg-crypto/Chained-Decos/actions)
-[![raylib](https://img.shields.io/badge/raylib-5.5--dev-red?logo=raylib)](https://www.raylib.com/)
+![Workflow Status](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml/badge.svg?branch=opengl)
+[![Linux](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Engine/ci.yml?branch=opengl&job=Linux&label=Linux)](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Engine/ci.yml?branch=opengl&job=Windows&label=Windows)](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml)
+[![OpenGL](https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl)](https://www.khronos.org/opengl/)
 
+ChainedEngine is a modular C++23 game engine with editor tooling, runtime packaging, ECS architecture, physics, OpenGL 4.3+ rendering, and managed C# gameplay scripting via Coral. Ships with a parkour game **Chained Decos**.
+
+![Game Screenshot](https://i.imgur.com/MLIxRhB.png)
 
 > [!NOTE]
-> **Active Development Notice**: This engine and game are under active development. Some information in this README may be outdated as features are continuously being added, refactored, and improved. Check the latest commits and [implementation plans](https://github.com/IOleg-crypto/Chained-Decos/tree/refactor-branch) for the most current state.
+> Active development is ongoing. Features and workflows continue to evolve, but this README is maintained to reflect the current repository state.
 
-**Chained Decos** is a 3D parkour game built from the ground up using **Chained Engine**, a custom modular C++23 game engine. It features advanced physics, an ECS-driven architecture, native C++ scripting, and integrated development tools.
+## Table of Contents
 
-![Game Screenshot](https://i.imgur.com/d9Bxmsq.jpeg)
+- [Overview](#overview)
+- [Quick Start](#quick-start)
+- [Build](#build)
+- [Run](#run)
+- [Working with Projects](#working-with-projects)
+- [Project Structure](#project-structure)
+- [Dependencies](#dependencies)
+- [Prerequisites](#prerequisites)
+- [Testing](#testing)
+- [CI/CD](#cicd)
+- [Troubleshooting](#troubleshooting)
+- [Known Issues](#known-issues)
+- [Documentation](#documentation)
+- [Contributing](#contributing)
+- [License](#license)
 
----
+## Overview
 
-## The Chained Engine Architecture
+Chained Decos and Chained Engine target Windows and Linux.
 
-Chained Engine follows a modern, modular design inspired by professional game engines:
+- OpenGL 4.3+ rendering pipeline with PBR, fog, and shadow mapping
+- ECS-driven scene model using EnTT
+- YAML-based project and scene serialization
+- Editor with hierarchy/inspector/panels and in-editor play mode
+- Managed C# gameplay scripting through Coral (.NET/CoreCLR)
+- UDP networking with client/server model, UPnP port forwarding, and encryption
+- Project export pipeline with compressed asset packs (ZSTD)
+- Visual Animation Graph system (`.chag`)
 
-- **Entity Component System (ECS)**: Powered by [EnTT](https://github.com/skypjack/entt) for high-performance entity management.
-- **Native C++ Scripting**: Custom scripting DSL for gameplay logic with hot-reloading support.
-- **Virtual File System**: Unified asset access with support for engine-relative paths and project-relative assets.(Planned)
-- **Advanced Physics**: BVH-accelerated collision detection with robust world-to-local coordinate transformations.
-- **Project Hub**: Integrated project browser with recent project tracking and intelligent path resolution.
-- **Cross-Platform Core**: Designed for portability; current support for Windows and Linux, with an architecture that allows for easy integration of **new platforms**.
+> **Inspiration:** ChainedEngine is inspired by [Hazel](https://github.com/TheCherno/Hazel) by TheCherno, with significant custom additions — C# scripting via Coral, Jolt physics, animation graph system, project export pipeline, and multi-platform support.
 
-## Editor & Simulation Workflow
+![Editor Screenshot 1](https://i.imgur.com/jey25o0.png)
+![Editor Screenshot 2](https://i.imgur.com/VMhs9Zm.jpeg)
 
-The Chained Editor provides a high-fidelity environment for creating and testing parkour courses.
+## Quick Start
 
-> [!IMPORTANT]
-> **Simulation Mode Controls**:
->
-> - **Capture**: When you press **PLAY**, the editor captures the cursor for game control.
-> - **ESCAPE**: No longer exits the app! Press **ESCAPE** during play to return to editor control.
+**Clone:**
+```bash
+git clone --recurse-submodules https://github.com/IOleg-crypto/ChainedEngine.git
+cd ChainedEngine
+git submodule update --init --recursive
+```
 
-![Editor Screenshot#1](https://i.postimg.cc/CMrw4RW5/Znimok-ekrana-2026-01-18-115501.png)
-![Editor Screenshot#2](https://i.postimg.cc/1XhrxmdQ/Znimok-ekrana-2026-01-18-122026.png)
-![Editor Screenshot#3](https://i.postimg.cc/ZK3tPGXk/Znimok-ekrana-2026-02-01-125758.png)
+**Configure + Build + Run:**
+```bash
+# Linux
+cmake --preset linux-clang
+cmake --build --preset linux-clang --parallel
+./build/linux-clang/bin/ChainedEditor
 
-_GUI Development is currently in progress and may be unstable. It is recommended to use the **ChainedEditor** for GUI development._
+# Windows (MSYS2 Clang)
+cmake --preset windows-clang
+cmake --build --preset windows-clang --parallel
+.\build\windows-clang\bin\ChainedEditor.exe
 
-[![Editor Screenshot#4](https://i.postimg.cc/dtRNVwzr/Znimok-ekrana-2026-02-01-133334.png)](https://postimg.cc/4mdQ8k4x)
+# Windows (MSVC Ninja)
+cmake --preset windows-msvc
+cmake --build --preset windows-msvc --parallel
 
-> [!WARNING]
-> **Standalone Runtime**: The `ChainedRuntime` acts as a specialized **wrapper** for your games. It is designed to load and execute your custom projects directly. While it now supports Linux and Windows, it is still under active development.
+# Windows (VS 2026 .sln)
+cmake --preset windows-vs2026
+```
 
----
+> **Editor play mode:** Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
 
-### Engine Features
+## Build
 
-- **High-Performance Rendering**: Optimized Raylib-based renderer with custom shader support and PBR materials.
-- **Native C++ Scripting**: Type-safe gameplay scripts with DSL macros for clean, maintainable code.
-- **Advanced Physics & Diagnostics**: BVH-accelerated collision detection with real-time logging for collider state.
-- **Project Hub**: Split-view launcher with "Recent Projects" and intelligent project folder creation.
-- **Undo/Redo System**: Full command history for editor operations (Add/Delete/Move/Transform).
-- **Scene Serialization**: YAML-based format with UUID tracking and hierarchy preservation.
-- **Deduplicated Loading**: Optimized asset pipeline that prevents redundant asset tasks and improves load times.
+### Presets
 
----
+| Preset | Generator | Compiler | Use case |
+| :--- | :--- | :--- | :--- |
+| `windows-clang` | Ninja Multi-Config | Clang (MSYS2) | Primary dev |
+| `windows-msvc` | Ninja Multi-Config | MSVC (cl) | MSVC Ninja |
+| `windows-vs2026` | Visual Studio 18 2026 | MSVC | VS solution / CI |
+| `linux-clang` | Ninja Multi-Config | Clang | Linux CI |
+| `linux-gcc` | Ninja Multi-Config | GCC | Linux |
+| `windows-gcc` | Ninja Multi-Config | GCC (MinGW) | MinGW |
 
-## Installation & Build
+**Key CMake variables:**
+- `CH_ACTIVE_GAME` — `chaineddecos` (default) or `testproject`. Build-time only. Switching requires reconfigure.
+- `BUILD_TESTS` — ON by default.
+- `CH_ENGINE_SHARED` — OFF by default (static engine).
 
-### Prerequisites
+If you use Clang on Windows and see Intellisense errors in VS Code, ensure `.vscode/settings.json` points to the correct build dir:
+```json
+"clangd.arguments": ["--compile-commands-dir=${workspaceFolder}/build/windows-clang"]
+```
+
+## Run
+
+Binaries are generated under `build/{preset}/bin/`:
+
+```bash
+# Editor
+./build/linux-clang/bin/ChainedEditor
+.\build\windows-clang\bin\ChainedEditor.exe
+
+# Runtime
+./build/linux-clang/bin/ChainedRuntime path/to/project.chproject
+.\build\windows-clang\bin\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
+```
+
+Runtime CLI: `--project` / `-p`, `--name`, `--width`, `--height`.
+
+## Working with Projects
+
+The engine supports multiple game projects under `game/`. Currently:
+- **`chaineddecos`** — the main parkour game
+- **`testproject`** — a lightweight sandbox for testing features
+
+### Switching the Active Game
+
+```bash
+cmake -S . -B build/windows-clang -DCH_ACTIVE_GAME=testproject
+```
+
+Or in VS Code: Command Palette → `CMake: Edit CMake Cache (UI)` → change `CH_ACTIVE_GAME`.
+
+### Creating a New Project
+
+Use the scaffolding script:
+```bash
+python tools/create_game.py MyGame
+python tools/create_game.py MyGame --csproj assets/scripts/MyGame.Scripts.csproj
+```
+
+This creates `game/mygame/` with:
+- `CMakeLists.txt` — wired into the build via auto-discovery
+- `src/main.cpp` — `CreateApplication` entry point
+- `MyGame.chproject` — project metadata
+- `assets/scripts/` — for C# scripts
+
+New games are auto-discovered by the root `CMakeLists.txt` — any directory under `game/` with a `CMakeLists.txt` is included when `CH_ACTIVE_GAME` matches.
+
+### Editor‑created projects
+
+The editor (**Project → New Project**) now also generates CMake build scaffolding:
+
+- `{project}/CMakeLists.txt` — `chained_add_game()` boilerplate
+- `{project}/src/main.cpp` — `CreateApplication` entry point
+
+For a standalone build, move the project directory under `game/` (e.g. `game/mygame/`) so it is auto‑discovered by the root `CMakeLists.txt`.
+
+### Project Configuration (`.chproject`)
+
+Each game has a YAML metadata file defining its entry scene, physics, rendering, and window settings. See [User Guide](docs/USER_GUIDE.md) for the full reference.
+
+## Project Structure
+
+- `engine/` — core engine modules (graphics, scene, physics, audio, platform, assets, networking)
+- `editor/` — ChainedEditor application and editor panels/tools
+- `runtime/` — ChainedRuntime application and runtime layer
+- `engine/scripting/` — script host, glue bindings, and managed build integration
+- `game/chaineddecos/` — main game project
+- `game/testproject/` — alternate sandbox project
+- `tests/` — native C++ tests (GoogleTest)
+- `thirdparty/` — third-party dependencies (git submodules)
+- `tools/` — build scripts, glue code generator, resource sync
+
+## Dependencies
+
+| Library | Purpose |
+| :--- | :--- |
+| EnTT | ECS framework |
+| Assimp | 3D model import |
+| Coral | C#/C++ interop |
+| ImGui + ImGuizmo | Editor UI |
+| GLFW + GLAD | Window/OpenGL |
+| GLM | Math library |
+| yaml-cpp | YAML serialization |
+| GoogleTest | Unit/integration tests |
+| JoltPhysics | Physics simulation |
+| zstd + pack (cfnptr) | Asset pack compression |
+| miniaudio | Audio |
+| spdlog | Logging |
+| stb | Image loading |
+| cereal | Binary serialization |
+| reflect-cpp | Runtime reflection |
+| ENet | UDP networking |
+| libsodium | Encryption (xchacha20poly1305) |
+| miniupnpc | UPnP port forwarding |
+
+Always init submodules before building:
+```bash
+git submodule update --init --recursive
+```
+
+## Prerequisites
 
 | Tool | Version | Notes |
 | :--- | :--- | :--- |
-| **CMake** | 3.25+ | Required for build configuration. |
-| **Ninja** | Latest | Highly recommended for fast, parallel builds. |
-| **Compiler** | C++23 | Clang 18+, GCC 14+, or MSVC 2022 (17.6+). |
-| **Vulkan/GL** | - | OpenGL 4.3+ compatible drivers. |
+| CMake | 3.31+ | Required by top-level CMakeLists |
+| Compiler | C++23 | Clang 18+, MSVC (VS2022+), or MSYS2/MinGW-w64 |
+| Ninja | Latest | Recommended for fast parallel builds |
+| .NET SDK | 10.0.x | Required for managed scripting |
+| Graphics Driver | OpenGL 4.3+ | Needed for rendering |
 
-#### Linux Dependencies
-On Ubuntu/Debian, install the required development libraries:
+Linux packages (Ubuntu reference):
 ```bash
-sudo apt-get update
 sudo apt-get install -y build-essential cmake ninja-build \
-    libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
-    libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
-    pkg-config
+  libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
+  libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
+  pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
+  xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
 ```
 
-### Build Using CMake Presets
+## Testing
 
-The project uses [CMake Presets](https://cmake.org/cmake/help/latest/manual/cmake-presets.7.html) to simplify cross-platform configuration.
-
-#### 1. Configuration
-Choose a preset based on your OS and preferred compiler:
-
-| OS | Compiler | Build Type | Preset Name |
-| :--- | :--- | :--- | :--- |
-| **Linux** | **Clang** | Release | `linux-clang-release` |
-| **Linux** | **Clang** | Debug | `linux-clang-debug` |
-| **Linux** | **GCC** | Release | `linux-gcc-release` |
-| **Linux** | **GCC** | Debug | `linux-gcc-debug` |
-| **Windows** | **MSVC** | Logic | `windows-vs2022` |
-| **Windows** | **Ninja** | Release | `windows-ninja-release` |
+Native tests use GoogleTest + CTest, split into unit (fast, no engine runtime) and integration (full engine) targets.
 
 ```bash
-# Example: Configure for Linux using Clang 19
-cmake --preset linux-clang-release
+# Run all tests
+ctest --test-dir build/windows-clang --output-on-failure
+
+# Unit tests only
+ctest --test-dir build/windows-clang -L Unit --output-on-failure
+
+# Integration tests only
+ctest --test-dir build/windows-clang -L Integration --output-on-failure
 ```
 
-> [!CAUTION]
-> **Switching Presets**: When switching between different presets (e.g., from `windows-ninja-debug` to `windows-vs2022`), you **must delete the `CMakeCache.txt`** in the corresponding build directory. CMake caches compiler and generator settings that can conflict when switching presets.
-> ```bash
-> # Delete cache before switching presets
-> rm -rf build/<old-preset>/CMakeCache.txt
-> # Or delete the entire build directory for a clean slate
-> rm -rf build/<old-preset>
-> ```
+Managed (C#) tests require .NET SDK 10.0.x on PATH. Without it, the scripting target is silently skipped.
 
+## CI/CD
 
-#### 2. Compilation
-Compile all targets (Editor, Runtime, Tests) using a build preset:
+CI workflow (`.github/workflows/ci.yml`) fans out to:
+- **Format Check** (`format.yml`): `clang-format-18 --dry-run -Werror` on changed C++ files
+- **Linux Builds** (`linux.yml`): Debug + Release under `xvfb` + Mesa software rendering
+- **Windows Builds** (`windows.yml`): Debug + Release matrix (Clang, MSVC, GCC)
 
-```bash
-# Example: Build the release version
-cmake --build --preset linux-clang-release -j $(nproc)
-```
+Debug builds use `-DENABLE_SANITIZERS=ON` (ASan + UBSan). CTest output is captured as JUnit XML.
 
-### Launching the Application
+Deploy workflow (`.github/workflows/deploy-sdk.yml`): triggered by `v*` tags, packages ChainedEditor + ChainedRuntime artifacts.
 
-Binaries are located in `build/<preset-name>/bin/`.
+## Troubleshooting
 
-#### Running the Editor
-The **Chained Editor** is the primary tool for course creation and live simulation.
-```bash
-# Linux
-./build/linux-clang-release/bin/ChainedEditor
+- **Submodule errors:** `git submodule update --init --recursive`
+- **Generator conflicts:** Reconfigure from a clean build folder when switching generator families
+- **No managed build:** Ensure `dotnet` SDK 10.0.x is on PATH
+- **Linux headless:** Install packages from Prerequisites, use `xvfb` + Mesa
+- **Stale files after `CH_ACTIVE_GAME` change:** Reconfigure the build directory, don't just rebuild
 
-# Windows
-.\build\windows-ninja-release\bin\ChainedEditor.exe
-```
+## Known Issues
 
-#### Running the Standalone Runtime
-The **Chained Runtime** is a lightweight wrapper that loads and runs your own projects/games without the editor's UI overhead. By passing your project file as an argument, you can test the final "player experience" of your game.
-```bash
-# Linux
-./build/linux-clang-release/bin/ChainedRuntime path/to/your.chproject
+- Font system needs rework for in-scene text and editor
+- Some native tests are being reworked and may be skipped in CI
+- Runtime and editor workflows are under active iteration
+- Virtual file system is planned/in-progress
+- **Runtime may have bugs and issues — known problems include font rendering, physics edge cases, and occasional crashes under specific scenarios**
 
-# Windows
-.\build\windows-ninja-release\bin\ChainedRuntime.exe path\to\your.chproject
-```
+## Documentation
 
----
+Full guides and references:
 
-## Testing & CI
+| Document | Description |
+| :--- | :--- |
+| [User Guide](docs/USER_GUIDE.md) | Step-by-step: build, run, create scenes, write scripts, export |
+| [Engine Architecture](docs/ARCHITECTURE.md) | Bootstrapping, system initialization, main loop |
+| [Component Reference](docs/COMPONENTS.md) | All ECS components, adding new ones |
+| [Scripting API](docs/SCRIPTING_API.md) | C# API reference: lifecycle, entities, input, UI |
+| [Scripting Interop](docs/SCRIPTING_INTEROP.md) | C++/C# bridge internals |
+| [Animation Graphs](docs/ANIMATION_GRAPHS.md) | Visual animation graph system tutorial |
+| [Export Guide](docs/EXPORT.md) | Project packaging and distribution |
+| [FAQ](docs/FAQ.md) | Common patterns and solutions |
 
-We use **Google Test** for engine and scene validation.
+## Contributing
 
-### Running Tests Locally
-After building, you can run the test suite:
-```bash
-# Run all tests via CTest
-ctest --preset linux-clang-release
+- Open issues for bugs/regressions
+- Submit pull requests for fixes and improvements
+- Platform/build workflow improvements are especially helpful
 
-# Or run individual test binaries
-./build/linux-clang-release/bin/tests/EngineTests
-```
+## License
 
----
-
-## Contributing & Community
-
-Contributions are welcome! As a project in active development, especially regarding the newly added **Linux support**, you may encounter bugs or platform-specific issues.
-
-### How to Help
-- **Bug Reports**: Open an issue describing the problem.
-- **Pull Requests**: We highly encourage you to help maintain and improve the engine by creating branches and submitting **Pull Requests**.
-- **Platform Support**: If you are a Linux developer, your expertise in refining the build process and runtime compatibility is greatly appreciated.
-
-This project is licensed under the **MIT License**.
-
-Made with using **Raylib**, **ImGui**, and **Chained Engine** (Modern C++23).
+This project is licensed under MIT. See [license](license) for details.

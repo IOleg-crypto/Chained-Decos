@@ -15,78 +15,31 @@
         "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
         "CMAKE_CXX_EXTENSIONS": "OFF",
         "BUILD_TESTS": "ON",
-        "BUILD_MAP_EDITOR": "ON",
+        "CMAKE_SUPPRESS_DEVELOPER_WARNINGS": "OFF",
         "DISABLE_ALL_WARNINGS": "ON",
         "CH_ENGINE_SHARED": "OFF",
-        "WINDOWS_SDK_VERSION": "10.0"
+        "CH_ACTIVE_GAME": "chaineddecos",
+        "WINDOWS_SDK_VERSION": "10.0",
+        "CMAKE_CONFIGURATION_TYPES": "Debug;Release;RelWithDebInfo"
       }
     },
     {
       "name": "ninja-base",
       "hidden": true,
       "inherits": "base",
-      "generator": "Ninja",
-      "cacheVariables": {}
-    },
-    {
-      "name": "linux-gcc-debug",
-      "displayName": "Linux GCC Debug",
-      "inherits": "ninja-base",
+      "generator": "Ninja Multi-Config",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
+        "ENABLE_UNITY_BUILD": "OFF",
+        "CMAKE_SUPPRESS_REGENERATION": "ON"
       }
     },
     {
-      "name": "linux-gcc-release",
-      "displayName": "Linux GCC Release",
+      "name": "windows-clang",
+      "displayName": "Windows Ninja Clang",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-clang-debug",
-      "displayName": "Linux Clang Debug",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "linux-clang-release",
-      "displayName": "Linux Clang Release",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release"
-      },
-      "condition": {
-        "type": "equals",
-        "lhs": "${hostSystemName}",
-        "rhs": "Linux"
-      }
-    },
-    {
-      "name": "windows-ninja-debug",
-      "displayName": "Windows Ninja Debug",
-      "inherits": "ninja-base",
-      "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Debug",
-        "CH_ENGINE_SHARED": "OFF"
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
       },
       "condition": {
         "type": "equals",
@@ -95,12 +48,12 @@
       }
     },
     {
-      "name": "windows-ninja-release",
-      "displayName": "Windows Ninja Release",
+      "name": "windows-gcc",
+      "displayName": "Windows Ninja GCC (MinGW)",
       "inherits": "ninja-base",
       "cacheVariables": {
-        "CMAKE_BUILD_TYPE": "Release",
-        "CH_ENGINE_SHARED": "OFF"
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
       },
       "condition": {
         "type": "equals",
@@ -109,14 +62,53 @@
       }
     },
     {
-      "name": "windows-vs2022",
-      "displayName": "Windows Visual Studio 2022",
+      "name": "linux-clang",
+      "displayName": "Linux Ninja Clang",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "linux-gcc",
+      "displayName": "Linux Ninja GCC",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "gcc",
+        "CMAKE_CXX_COMPILER": "g++"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Linux"
+      }
+    },
+    {
+      "name": "windows-msvc",
+      "displayName": "Windows Ninja MSVC",
+      "inherits": "ninja-base",
+      "cacheVariables": {
+        "CMAKE_C_COMPILER": "cl",
+        "CMAKE_CXX_COMPILER": "cl"
+      },
+      "condition": {
+        "type": "equals",
+        "lhs": "${hostSystemName}",
+        "rhs": "Windows"
+      }
+    },
+    {
+      "name": "windows-vs2026",
+      "displayName": "Windows Visual Studio 2026",
       "inherits": "base",
-      "generator": "Visual Studio 17 2022",
-      "architecture": {
-        "value": "x64",
-        "strategy": "set"
-      },
+      "generator": "Visual Studio 18 2026",
+      "architecture": { "value": "x64", "strategy": "set" },
       "condition": {
         "type": "equals",
         "lhs": "${hostSystemName}",
@@ -125,39 +117,17 @@
     }
   ],
   "buildPresets": [
-    {
-      "name": "linux-gcc-debug",
-      "configurePreset": "linux-gcc-debug"
-    },
-    {
-      "name": "linux-gcc-release",
-      "configurePreset": "linux-gcc-release"
-    },
-    {
-      "name": "linux-clang-debug",
-      "configurePreset": "linux-clang-debug"
-    },
-    {
-      "name": "linux-clang-release",
-      "configurePreset": "linux-clang-release"
-    },
-    {
-      "name": "windows-ninja-debug",
-      "configurePreset": "windows-ninja-debug"
-    },
-    {
-      "name": "windows-ninja-release",
-      "configurePreset": "windows-ninja-release"
-    },
-    {
-      "name": "windows-vs2022-debug",
-      "configurePreset": "windows-vs2022",
-      "configuration": "Debug"
-    },
-    {
-      "name": "windows-vs2022-release",
-      "configurePreset": "windows-vs2022",
-      "configuration": "Release"
-    }
+    { "name": "windows-clang-debug", "configurePreset": "windows-clang", "configuration": "Debug" },
+    { "name": "windows-clang-release", "configurePreset": "windows-clang", "configuration": "Release" },
+    { "name": "windows-msvc-debug", "configurePreset": "windows-msvc", "configuration": "Debug" },
+    { "name": "windows-msvc-release", "configurePreset": "windows-msvc", "configuration": "Release" },
+    { "name": "windows-vs2026-debug", "configurePreset": "windows-vs2026", "configuration": "Debug" },
+    { "name": "windows-vs2026-release", "configurePreset": "windows-vs2026", "configuration": "Release" },
+    { "name": "windows-gcc-debug", "configurePreset": "windows-gcc", "configuration": "Debug" },
+    { "name": "windows-gcc-release", "configurePreset": "windows-gcc", "configuration": "Release" },
+    { "name": "linux-clang-debug", "configurePreset": "linux-clang", "configuration": "Debug" },
+    { "name": "linux-clang-release", "configurePreset": "linux-clang", "configuration": "Release" },
+    { "name": "linux-gcc-debug", "configurePreset": "linux-gcc", "configuration": "Debug" },
+    { "name": "linux-gcc-release", "configurePreset": "linux-gcc", "configuration": "Release" }
   ]
 }

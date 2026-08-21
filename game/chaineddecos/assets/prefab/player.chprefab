@@ -1,0 +1,65 @@
+Prefab: Player
+RootEntity: 10143220268921709979
+Entities:
+  - Entity: 10143220268921709979
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.ingamechat
+        - ClassName: chaineddecos.scripts.debuginfoscript
+        - ClassName: chaineddecos.scripts.playercontroller
+        - ClassName: chaineddecos.scripts.cameracontroller
+    ModelComponent:
+      ModelPath: models/skeleton/scene.gltf
+      ModelUUID: 0
+      MaterialPaths:
+        - models/skeleton/scene_material_0.chmat
+        - models/skeleton/scene_material_1.chmat
+        - models/skeleton/scene_material_2.chmat
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: Player
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 1
+      Size: [0.8, 1.8, 0.8]
+      Offset: [0, 0.9, 0]
+      Radius: 0.4
+      Height: 1.8
+      Friction: 0.5
+      Restitution: 0.0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: models/skeleton/scene.gltf
+      ModelUUID: 0
+      IsColliding: false
+    PlayerComponent:
+      MovementSpeed: 15
+      JumpForce: 10
+      LookSensitivity: 0.9
+    RigidBodyComponent:
+      Type: 1
+      Mass: 70
+      LinearDamping: 0
+      AngularDamping: 0
+      UseGravity: true
+      IsFixedRotation: true
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: true
+      VelocityForced: false
+    AnimationComponent:
+      GraphPath: animations/new_graph.chag
+      GraphUUID: 0
+      BlendDuration: 0.25
+      DefaultIsLooping: true
+      PlayOnStart: true
+      Variables:
+        speed: 0
+        isMoving: 0

@@ -1,0 +1,8 @@
+# Shadow Depth Shader Metadata
+VertexShader: "shadow_depth.vs"
+FragmentShader: "shadow_depth.fs"
+
+Uniforms:
+  - Name: "u_LightSpaceMatrix"
+    Type: "Matrix"
+    Default: [1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 0.0, 1.0]

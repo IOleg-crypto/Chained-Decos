@@ -1,251 +1,321 @@
+#include "physics.h"
 
-#include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "engine/core/service_locator.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project.h"
 #include "engine/scene/scene.h"
-#include "narrow_phase.h"
-#include "scene_trace.h"
-#include "dynamics.h"
-#include <mutex>
-#include <unordered_map>
+#include "engine/scene/systems/physics_body_system.h"
+#include "engine/scene/systems/transform_system.h"
+#include "iphysics_world.h"
+#include "jolt_physics_world.h"
 
-#include "engine/core/application.h"
+#include "engine/project/project.h"
 
-namespace CHEngine
+namespace Chained
 {
-static PhysicsSystem* s_PhysicsInstance = nullptr;
 
-PhysicsSystem::PhysicsSystem()
-{
-    CH_CORE_ASSERT(!s_PhysicsInstance, "PhysicsSystem already exists!");
-    s_PhysicsInstance = this;
-}
+	// Named constants replacing magic numbers
+	static constexpr float kFixedDtDefault = 1.0f / 60.0f;
+	static constexpr int kMaxStepsPerFrame = 8;
+	static constexpr float kVelocityYThreshold = 0.5f;
+	static constexpr float kDefaultRaycastDistance = 1000.0f;
 
-PhysicsSystem::~PhysicsSystem()
-{
-    Shutdown();
-    s_PhysicsInstance = nullptr;
-}
+	Physics::Physics() = default;
+	Physics::~Physics() = default;
 
-void PhysicsSystem::Init()
-{
-    CH_CORE_INFO("Global Physics System Initialized.");
-}
+	void Physics::Initialize()
+	{
+		CH_CORE_INFO("Physics initialized (Jolt backend).");
+	}
 
-void PhysicsSystem::Shutdown()
-{
-    CH_CORE_INFO("Global Physics System Shutdown.");
-}
+	void Physics::Shutdown()
+	{
+		m_World.reset();
+		CH_CORE_INFO("Physics shutdown.");
+	}
 
-PhysicsSystem& PhysicsSystem::Get()
-{
-    CH_CORE_ASSERT(s_PhysicsInstance, "PhysicsSystem not initialized!");
-    return *s_PhysicsInstance;
-}
+	IPhysicsWorld* Physics::GetWorld()
+	{
+		if (!m_World)
+		{
+			m_World = std::make_unique<JoltPhysicsWorld>();
+		}
+		return m_World.get();
+	}
 
-Physics::Physics(Scene* scene)
-    : m_Scene(scene)
-{
-    m_NarrowPhase = std::make_unique<NarrowPhase>(this);
-    m_Dynamics = std::make_unique<Dynamics>();
-    m_SceneTrace = std::make_unique<SceneTrace>(this);
-}
+	void Physics::ResetWorld(Scene* scene)
+	{
+		auto oldJoltWorld = dynamic_cast<JoltPhysicsWorld*>(m_World.get());
 
-Physics::~Physics()
-{
-    CH_CORE_INFO("Physics instance for scene destroyed.");
-}
+		// Invalidate all rigid body handles before destroying the world
+		if (scene)
+		{
+			auto& registry = scene->GetRegistry();
+			auto view = registry.view<RigidBodyComponent>();
+			for (auto entity : view)
+			{
+				auto& rb = view.get<RigidBodyComponent>(entity);
+				rb.Handle = kInvalidPhysicsBody;
+			}
+			registry.ctx().erase<Physics*>();
+		}
 
-void Physics::Update(Timestep deltaTime, bool runtime)
-{
-    CH_PROFILE_FUNCTION();
-    CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
+		auto newWorld = std::make_unique<JoltPhysicsWorld>();
+		if (oldJoltWorld)
+		{
+			newWorld->PreserveShapeCacheFrom(*oldJoltWorld);
+		}
+		m_World = std::move(newWorld);
 
-    // Reset collision flags every frame (needed for debug visualisation)
-    auto& registry = m_Scene->GetRegistry();
-    auto collView = registry.view<ColliderComponent>();
-    for (auto entity : collView)
-        collView.get<ColliderComponent>(entity).IsColliding = false;
+		if (auto project = Project::GetActive())
+		{
+			float gravity = project->GetConfig().Physics.Gravity;
+			m_World->SetGravity(gravity);
+		}
 
-    // Collider shape recalc and simulation only when playing
-    if (!runtime)
-        return;
+		CH_CORE_INFO("Physics: World reset — fresh Jolt world created (shape cache preserved).");
+	}
 
-    UpdateColliders();
+	void Physics::InitializeBodies(Scene* scene)
+	{
+		// Use m_World directly — ResetWorld() already created the world.
+		// GetWorld() would lazily create a new one without gravity/contact listener.
+		auto world = m_World.get();
+		if (!world)
+		{
+			return;
+		}
 
-    float fixedTimestep = 1.0f / 60.0f;
-    if (auto project = Project::GetActive())
-        fixedTimestep = project->GetConfig().Physics.FixedTimestep;
+		auto& registry = scene->GetRegistry();
+		if (!registry.ctx().contains<Physics*>())
+		{
+			registry.ctx().emplace<Physics*>(this);
+		}
 
-    m_Accumulator += deltaTime;
-    while (m_Accumulator >= fixedTimestep)
-    {
-        ResolveSimulation(fixedTimestep);
-        m_Accumulator -= fixedTimestep;
-    }
-}
+		PhysicsBodySystem::BatchInitializeBodies(registry, world);
 
-RaycastResult Physics::Raycast(Ray ray)
-{
-    CH_CORE_ASSERT(m_Scene, "Physics Scene is null!");
-    return m_SceneTrace->Raycast(m_Scene, ray);
-}
+		CH_CORE_INFO("Physics::InitializeBodies — bodies initialized for scene '{}'.", scene->GetSettings().Name);
+	}
 
-std::shared_ptr<BVH> Physics::GetBVH(ModelAsset* asset)
-{
-    if (!asset || asset->GetState() != AssetState::Ready)
-    {
-        return nullptr;
-    }
+	void Physics::Update(Scene* scene, Timestep deltaTime, bool runtime)
+	{
+		if (!runtime)
+		{
+			return;
+		}
 
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
+		float& accumulator = m_Accumulators[scene];
+		accumulator += deltaTime;
 
-    auto it = m_BVHCache.find(asset);
-    if (it == m_BVHCache.end())
-    {
-        // Start building in background using full model data (node transforms)
-        m_BVHCache[asset] =
-            BVH::BuildAsync(asset->GetModel(), asset->GetGlobalNodeTransforms(), asset->GetMeshToNode()).share();
-        return nullptr;
-    }
+		float fixedDt = kFixedDtDefault;
+		if (auto project = Project::GetActive())
+		{
+			fixedDt = project->GetConfig().Physics.FixedTimestep;
+		}
+		bool stepped = false;
 
-    // Check if ready
-    if (it->second.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
-    {
-        return it->second.get();
-    }
+		auto world = GetWorld();
+		if (!world)
+		{
+			return;
+		}
 
-    return nullptr;
-}
+		auto& registry = scene->GetRegistry();
+		auto view = registry.view<TransformComponent, RigidBodyComponent>();
 
-void Physics::InvalidateBVH(ModelAsset* asset)
-{
-    if (!asset)
-    {
-        return;
-    }
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
-    m_BVHCache.erase(asset);
-}
+		for (auto entity : view)
+		{
+			auto& rb = view.get<RigidBodyComponent>(entity);
+			auto& transform = view.get<TransformComponent>(entity);
 
-void Physics::UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh)
-{
-    if (!asset || !bvh)
-    {
-        return;
-    }
-    std::lock_guard<std::mutex> lock(m_BVHMutex);
+			if (rb.Handle == kInvalidPhysicsBody)
+			{
+				continue;
+			}
 
-    std::promise<std::shared_ptr<BVH>> promise;
-    promise.set_value(bvh);
-    m_BVHCache[asset] = promise.get_future().share();
-}
+			// Network-driven bodies are controlled by NetworkSystem::InterpolateEntities.
+			// Do not let Jolt overwrite their transform or apply simulated velocity.
+			if (rb.IsNetworkDriven)
+			{
+				continue;
+			}
 
-void Physics::UpdateColliders()
-{
-    auto& registry = m_Scene->GetRegistry();
-    auto project = Project::GetActive();
-    if (!project || !project->GetAssetManager())
-        return;
+			if (rb.Type == RigidBodyComponent::BodyType::Dynamic)
+			{
+				// 1. Apply transform update FIRST (if script changed it)
+				if (transform.TransformChanged)
+				{
+					glm::vec3 currentPos;
+					glm::quat currentRot;
+					world->GetTransform(rb.Handle, currentPos, currentRot);
 
-    auto genView = registry.view<ColliderComponent, TransformComponent>();
+					bool posChanged = glm::distance2(transform.Translation, currentPos) > 0.0001f;
+					glm::quat targetRot = rb.IsFixedRotation ? currentRot : transform.RotationQuat;
 
-    for (auto entity : genView)
-    {
-        auto& collider = genView.get<ColliderComponent>(entity);
+					bool rotChanged = false;
+					if (!rb.IsFixedRotation)
+					{
+						float dot = glm::abs(glm::dot(currentRot, targetRot));
+						rotChanged = dot < 0.9999f;
+					}
 
-        // Case A: Box Collider (Auto) — compute once; static meshes don't change
-        if (collider.Type == ColliderType::Box && collider.AutoCalculate)
-        {
-            if (!registry.all_of<ModelComponent>(entity))
-                continue;
+					if (posChanged || rotChanged)
+					{
+						glm::vec3 preVel = world->GetVelocity(rb.Handle);
+						world->SetTransform(rb.Handle, transform.Translation, targetRot);
+						world->SetVelocity(rb.Handle, preVel);
+					}
+					transform.TransformChanged = false;
+				}
 
-            auto& model = registry.get<ModelComponent>(entity);
-            auto& asset = m_ColliderAssetCache[model.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+				// 2. Apply script-requested velocity
+				glm::vec3 currentJoltVelocity = world->GetVelocity(rb.Handle);
+				glm::vec3 finalVelocity = rb.Velocity;
+				if (!rb.VelocityForced && rb.Velocity.y <= kVelocityYThreshold)
+				{
+					finalVelocity.y = currentJoltVelocity.y;
+				}
+				rb.VelocityForced = false;
+				world->SetVelocity(rb.Handle, finalVelocity);
+			}
+			else if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
+			{
+				world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
+				world->SetVelocity(rb.Handle, rb.Velocity);
+				// NOTE: Do NOT clear TransformChanged here.
+				// The script set it via Transform_SetTranslation; the HierarchySystem
+				// PostUpdate pass needs it to propagate Translation → WorldTransform.
+				continue;
+			}
+			else if (transform.TransformChanged)
+			{
+				// Static bodies — just update transform
+				world->SetTransform(rb.Handle, transform.Translation, transform.RotationQuat);
+				transform.TransformChanged = false;
+			}
+		}
 
-            if (asset && asset->GetState() == AssetState::Ready)
-            {
-                // Only recalculate if size hasn't been set yet
-                if (collider.Size.x == 0 && collider.Size.y == 0 && collider.Size.z == 0)
-                {
-                    BoundingBox box = asset->GetBoundingBox();
-                    collider.Size   = Vector3Subtract(box.max, box.min);
-                    collider.Offset = box.min;
-                }
-            }
-            continue;
-        }
+		int steps = 0;
+		while (accumulator >= fixedDt && steps < kMaxStepsPerFrame)
+		{
+			world->ClearGroundedState();
+			world->Step(fixedDt);
+			accumulator -= fixedDt;
+			stepped = true;
+			steps++;
+		}
 
-        // Case B: Mesh Collider (BVH)
-        if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
-        {
-            auto& asset = m_ColliderAssetCache[collider.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
+		if (accumulator >= fixedDt)
+		{
+			accumulator = 0.0f;
+		}
 
-            if (asset && asset->GetState() == AssetState::Ready && asset->GetModel().meshCount > 0)
-            {
-                auto bvh = GetBVH(asset.get());
-                if (bvh)
-                    collider.BVHRoot = bvh;
+		if (stepped)
+		{
+			UpdateColliders(scene);
+		}
+	}
 
-                if (collider.AutoCalculate && collider.BVHRoot && collider.Size.x == 0)
-                {
-                    BoundingBox box = asset->GetBoundingBox();
-                    collider.Offset = box.min;
-                    collider.Size   = Vector3Subtract(box.max, box.min);
-                }
-            }
-            continue;
-        }
+	void Physics::UpdateColliders(Scene* scene)
+	{
+		auto world = GetWorld();
+		auto& registry = scene->GetRegistry();
+		auto view = registry.view<TransformComponent, RigidBodyComponent>();
 
-        // Case C: Sphere Collider (Auto)
-        if (collider.Type == ColliderType::Sphere && collider.AutoCalculate)
-        {
-            if (!registry.all_of<ModelComponent>(entity))
-                continue;
+		for (auto entity : view)
+		{
+			auto& transform = view.get<TransformComponent>(entity);
+			auto& rb = view.get<RigidBodyComponent>(entity);
 
-            auto& model = registry.get<ModelComponent>(entity);
-            auto& asset = m_ColliderAssetCache[model.ModelPath];
-            if (!asset)
-                asset = project->GetAssetManager()->Get<ModelAsset>(model.ModelPath);
+			if (rb.Handle == kInvalidPhysicsBody)
+			{
+				continue;
+			}
+			if (rb.IsNetworkDriven)
+			{
+				continue;
+			}
+			if (rb.Type == RigidBodyComponent::BodyType::Static)
+			{
+				continue;
+			}
 
-            if (asset && asset->GetState() == AssetState::Ready && collider.Radius == 0)
-            {
-                BoundingBox box = asset->GetBoundingBox();
-                Vector3 size = Vector3Subtract(box.max, box.min);
-                collider.Radius = fmaxf(size.x, fmaxf(size.y, size.z)) * 0.5f;
-                collider.Offset = Vector3Scale(Vector3Add(box.min, box.max), 0.5f);
-            }
-            continue;
-        }
-    }
-}
+			bool isActive = world->IsBodyActive(rb.Handle);
 
-void Physics::ResolveSimulation(Timestep deltaTime)
-{
-    auto& registry = m_Scene->GetRegistry();
-    auto rbView = registry.view<TransformComponent, RigidBodyComponent>();
-    std::vector<entt::entity> rbEntities;
-    rbEntities.reserve(rbView.size_hint());
+			if (rb.Type == RigidBodyComponent::BodyType::Kinematic)
+			{
+				// Kinematic: position is controlled by script, but IsGrounded is still needed.
+				// Only update IsGrounded for active bodies; sleeping bodies do not move,
+				// so their grounded state remains correct from the previous frame.
+				if (isActive)
+				{
+					rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
+				}
+				continue;
+			}
 
-    for (auto entity : rbView)
-    {
-        rbEntities.push_back(entity);
-    }
+			// Dynamic: read position, velocity and grounded state from Jolt
+			// For sleeping bodies - position hasn't changed, IsGrounded is kept from previous frame.
+			if (!isActive)
+			{
+				continue;
+			}
 
-    if (rbEntities.empty())
-    {
-        return;
-    }
+			glm::vec3 pos;
+			glm::quat rot;
+			world->GetTransform(rb.Handle, pos, rot);
 
-    m_Dynamics->Update(m_Scene, rbEntities, deltaTime);
-    m_NarrowPhase->ResolveCollisions(m_Scene, rbEntities);
-}
+			TransformSystem::SetTranslation(transform, pos);
+			if (!rb.IsFixedRotation)
+			{
+				TransformSystem::SetRotationQuat(transform, rot);
+			}
 
-} // namespace CHEngine
+			rb.Velocity = world->GetVelocity(rb.Handle);
+			rb.IsGrounded = world->IsBodyGrounded(rb.Handle);
+		}
+	}
+
+	void Physics::ForceSetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity)
+	{
+		if (auto world = GetWorld())
+		{
+			world->SetVelocity(handle, velocity);
+		}
+	}
+
+	RaycastResult Physics::Raycast(Ray ray)
+	{
+		if (auto world = GetWorld())
+		{
+			return world->Raycast(ray.position, ray.direction, kDefaultRaycastDistance);
+		}
+		return {};
+	}
+
+	void Physics::ResetAccumulator(Scene* scene)
+	{
+		m_Accumulators[scene] = 0.0f;
+	}
+
+	void Physics::ClearContext(Scene* scene)
+	{
+		auto& registry = scene->GetRegistry();
+
+		if (m_World)
+		{
+			auto view = registry.view<RigidBodyComponent>();
+			for (auto entity : view)
+			{
+				auto& rb = view.get<RigidBodyComponent>(entity);
+				if (rb.Handle != kInvalidPhysicsBody)
+				{
+					m_World->DestroyBody(rb.Handle);
+					rb.Handle = kInvalidPhysicsBody;
+				}
+			}
+		}
+		m_Accumulators.erase(scene);
+		registry.ctx().erase<Physics*>();
+	}
+
+} // namespace Chained

@@ -1,91 +1,96 @@
 #include "inspector_panel.h"
-#include "editor_gui.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "thirdparty/IconsFontAwesome6.h"
+#include "gui.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/model_asset.h"
 #include "engine/scene/components.h"
-#include "engine/scene/project.h"
+#include "engine/project/project.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_events.h"
-#include "extras/IconsFontAwesome6.h"
+
 #include "imgui.h"
 #include "property_editor.h"
-#include "raymath.h"
 
-namespace CHEngine
+namespace Chained
 {
-InspectorPanel::InspectorPanel()
-{
-    m_Name = "Inspector";
-}
+	InspectorPanel::InspectorPanel()
+	{
+		m_Name = "Inspector";
+	}
 
-void InspectorPanel::OnImGuiRender(bool readOnly)
-{
-    if (!m_IsOpen)
-    {
-        return;
-    }
+	void InspectorPanel::OnImGuiRender(bool readOnly)
+	{
+		if (!m_IsOpen)
+		{
+			return;
+		}
 
-    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
-    ImGui::PushID(this);
+		ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-    if (m_SelectedEntity && m_SelectedEntity.GetRegistry().ctx().get<Scene*>() != m_Context.get())
-    {
-        m_SelectedEntity = {};
-    }
+		if (m_SelectedEntity && (!m_Context || m_SelectedEntity.GetRegistryPtr() != m_Context->GetRegistryPtr() ||
+								 !m_SelectedEntity.IsValid()))
+		{
+			m_SelectedEntity = {};
+		}
 
-    if (m_SelectedEntity && m_SelectedEntity.IsValid())
-    {
-        ImGui::BeginDisabled(readOnly);
-        DrawComponents(m_SelectedEntity);
-        ImGui::EndDisabled();
-    }
-    else
-    {
-        ImGui::Text("Selection: None");
-        ImGui::TextDisabled("Select an entity in the Hierarchy to view its components.");
-    }
-    ImGui::PopID();
-    ImGui::End();
-}
+		if (m_SelectedEntity)
+		{
 
-void InspectorPanel::OnEvent(Event& e)
-{
-    EventDispatcher dispatcher(e);
-    dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
-        m_SelectedEntity = Entity(ev.GetEntity(), &ev.GetScene()->GetRegistry());
-        m_SelectedMeshIndex = ev.GetMeshIndex();
-        return false;
-    });
-}
+			bool isTransitioning = EditorLayer::Get().GetSceneManager().IsTransitioning();
+			DrawComponents(m_SelectedEntity, readOnly || isTransitioning);
+		}
+		else
+		{
+			ImGui::Text("Selection: None");
+			ImGui::TextDisabled("Select an entity in the Hierarchy to view its components.");
+		}
+		ImGui::End();
+	}
 
-void InspectorPanel::DrawComponents(Entity entity)
-{
-    ImGui::PushID((uint32_t)entity);
+	void InspectorPanel::OnEvent(Event& e)
+	{
+		EventDispatcher dispatcher(e);
+		dispatcher.Dispatch<EntitySelectedEvent>([this](EntitySelectedEvent& ev) {
+			if (m_Context && ev.GetEntity() != entt::null)
+			{
+				m_SelectedEntity = Entity(ev.GetEntity(), m_Context->GetRegistryPtr());
+			}
+			else
+			{
+				m_SelectedEntity = {};
+			}
+			m_SelectedMeshIndex = ev.GetMeshIndex();
+			return false;
+		});
+	}
 
-    if (entity.HasComponent<IDComponent>())
-    {
-        uint64_t uuid = (uint64_t)entity.GetComponent<IDComponent>().ID;
-        ImGui::Text("UUID: %llu", uuid);
-    }
+	void InspectorPanel::SetContext(const std::shared_ptr<Scene>& context)
+	{
+		if (m_Context.get() != context.get())
+		{
+			m_SelectedEntity = {};
+		}
+		Panel::SetContext(context);
+	}
 
-    PropertyEditor::DrawTag(entity);
+	void InspectorPanel::DrawComponents(Entity entity, bool readOnly)
+	{
+		ImGui::PushID((uint32_t)entity);
 
-    ImGui::SameLine();
-    ImGui::PushItemWidth(-1);
-    if (ImGui::Button("Add Component"))
-    {
-        ImGui::OpenPopup("AddComponent");
-    }
-    PropertyEditor::DrawAddComponentPopup(entity);
-    ImGui::PopItemWidth();
+		if (entity.HasComponent<IDComponent>())
+		{
+			uint64_t uuid = (uint64_t)entity.GetComponent<IDComponent>().ID;
+			ImGui::TextDisabled("UUID: %llu", uuid);
+		}
 
-    // Delegate all component drawing logic to PropertyEditor registry
-    PropertyEditor::DrawEntityProperties(entity);
+		PropertyEditor::DrawEntityHeader(entity);
 
-    // Special cases like Materials (if multi-mesh selection is ever added, hit index might matter)
-    PropertyEditor::DrawMaterial(entity, m_SelectedMeshIndex);
+		// Delegate all component drawing logic to PropertyEditor registry
+		PropertyEditor::DrawEntityProperties(entity);
 
-    ImGui::PopID();
-}
-} // namespace CHEngine
+		ImGui::PopID();
+	}
+	void InspectorPanel::SetSelectedMeshIndex(int index)
+	{
+		m_SelectedMeshIndex = index;
+	}
+} // namespace Chained

@@ -1,74 +1,75 @@
 #ifndef CH_CONTENT_BROWSER_PANEL_H
 #define CH_CONTENT_BROWSER_PANEL_H
 
+#include "editor/asset_types.h"
 #include "panel.h"
-#include "raylib.h"
-#include <filesystem>
-#include <functional>
-#include <string>
 #include <vector>
 
-namespace CHEngine
+namespace Chained
 {
-enum class EditorAssetType
-{
-    Directory,
-    Scene,
-    Script,
-    Model,
-    Texture,
-    Audio,
-    Prefab,
-    Other
-};
 
-struct AssetEntry
-{
-    std::string name;
-    std::filesystem::path path;
-    EditorAssetType type;
-    Texture2D icon;
-    bool isDirectory;
-};
+	class ContentBrowserPanel : public Panel
+	{
+	public:
+		ContentBrowserPanel();
+		~ContentBrowserPanel() override;
 
-class ContentBrowserPanel : public Panel
-{
-public:
-    ContentBrowserPanel();
-    ~ContentBrowserPanel();
+		void OnImGuiRender(bool readOnly = false) override;
+		void OnEvent(Event& e) override;
 
-    virtual void OnImGuiRender(bool readOnly = false) override;
-    virtual void OnEvent(Event& e) override;
-    void SetRootDirectory(const std::filesystem::path& path);
+	private:
+		void RenderToolbar();
+		void RenderGridView();
 
-private:
-    void RenderToolbar();
-    void RenderGridView();
-    void RefreshDirectory();
-    void ScanCurrentDirectory();
+		void OnAssetDoubleClicked(const AssetEntry& entry);
 
-private:
-    EditorAssetType DetermineAssetType(const std::filesystem::path& path);
-    void LoadDefaultIcons();
-    Texture2D GetIconForAsset(const AssetEntry& entry);
-    void OnAssetDoubleClicked(AssetEntry& entry);
+		void Scan();
+		EditorAssetType DetermineAssetType(const std::filesystem::path& path);
 
-private:
-    std::filesystem::path m_RootDirectory;
-    std::filesystem::path m_CurrentDirectory;
-    std::vector<AssetEntry> m_CurrentAssets;
+		const std::vector<AssetEntry>& GetAssets() const
+		{
+			return m_CurrentAssets;
+		}
+		const std::filesystem::path& GetCurrentDirectory() const
+		{
+			return m_CurrentDirectory;
+		}
+		const std::filesystem::path& GetRootDirectory() const
+		{
+			return m_RootDirectory;
+		}
 
-    float m_ThumbnailSize = 96.0f;
-    float m_Padding = 16.0f;
+		void SetRoot(const std::filesystem::path& path);
+		void SetFilter(const std::string& query, int typeFilter);
+		void Refresh();
+		void Navigate(const std::filesystem::path& path);
+		void GoUp();
+		void GoToRoot();
 
-    // Filtering
-    char m_FilterBuffer[128] = "";
-    int m_FilterType = 0; // 0 = All, or specific type
+	private:
+		std::filesystem::path m_RootDirectory;
+		std::filesystem::path m_CurrentDirectory;
+		std::vector<AssetEntry> m_CurrentAssets;
 
-    Texture2D m_FolderIcon;
-    Texture2D m_FileIcon;
-    float m_IconScale = 1.0f;
-};
-} // namespace CHEngine
+		std::string m_FilterQuery;
+		int m_ContentFilterType = 0;
+
+		float m_ThumbnailSize = 96.0f;
+		float m_Padding = 16.0f;
+		float m_IconScale = 1.0f;
+
+		char m_FilterBuffer[128] = "";
+		int m_FilterType = 0;
+
+		std::filesystem::path m_RenamingPath;
+		char m_RenameBuffer[256] = "";
+		std::filesystem::path m_PathToDelete;
+		std::filesystem::path m_NextDirectory;
+		bool m_OpenRenamePopup = false;
+		bool m_OpenDeletePopup = false;
+		bool m_PendingRefresh = false;
+	};
+
+} // namespace Chained
 
 #endif // CH_CONTENT_BROWSER_PANEL_H

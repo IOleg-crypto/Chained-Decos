@@ -1,48 +1,75 @@
 #ifndef CH_CONSOLE_PANEL_H
 #define CH_CONSOLE_PANEL_H
 
-#include "deque"
+#include "engine/core/log.h"
+#include "panel.h"
 #include <cstdint>
+#include <deque>
 #include <mutex>
 #include <string>
 #include <vector>
 
-#include "panel.h" // Added include for Panel
-
-namespace CHEngine
+namespace Chained
 {
-enum class ConsoleLogLevel : uint32_t
-{
-    Info = 0,
-    Warn = 1,
-    Error = 2
-};
+	/**
+	 * @class ConsolePanel
+	 * @brief A developer tool panel that displays system log messages in real-time using ImGui.
+	 *
+	 * This panel supports live filtering by log severity levels (LogLevel) and text substrings,
+	 * handles automatic scrolling, and ensures thread-safe access to underlying log entries.
+	 */
+	class ConsolePanel : public Panel
+	{
+	public:
+		/**
+		 * @brief Constructs the ConsolePanel and initializes the UI state.
+		 */
+		ConsolePanel();
 
-struct ConsoleLogEntry
-{
-    ConsoleLogLevel level;
-    std::string message;
-};
+		/**
+		 * @brief Destructs the ConsolePanel and releases its resources.
+		 */
+		~ConsolePanel();
 
-class ConsolePanel : public Panel // Inherited from Panel
-{
-public:
-    ConsolePanel();
-    ~ConsolePanel();
+		/**
+		 * @brief Renders the console interface using ImGui commands.
+		 * @param readOnly If true, disables control elements such as the clear button and filters input.
+		 */
+		void OnImGuiRender(bool readOnly = false) override;
 
-    void OnImGuiRender(bool readOnly = false) override; // Added override keyword
-    void Log(const std::string& message, ConsoleLogLevel level = ConsoleLogLevel::Info);
-    void Clear();
+		/**
+		 * @brief Clears all accumulated log messages from the buffer and resets visible indices.
+		 */
+		void Clear();
 
-    static void AddLog(const char* message, ConsoleLogLevel level = ConsoleLogLevel::Info);
+	private:
+		/// @brief Thread-safe double-ended queue storing raw log entries. Deque enables efficient pop_front when
+		/// exceeding limits.
+		std::deque<BufferedLogEntry> m_Messages;
 
-private:
-    static ConsolePanel* s_Instance;
-    std::deque<ConsoleLogEntry> m_Messages;
-    std::mutex m_LogMutex;
-    int m_LogLevel = 3; // Default to LOG_INFO
-    static constexpr size_t MAX_MESSAGES = 1000;
-};
-} // namespace CHEngine
+		/// @brief Cached indices of messages from m_Messages that successfully passed active filters. Optimizes render
+		/// passes.
+		std::vector<int> m_VisibleIndices;
+
+		/// @brief Mutex to guarantee thread-safe operations when background threads submit logs while the main thread
+		/// renders them.
+		std::mutex m_LogMutex;
+
+		// --- UI State ---
+
+		/// @brief Currently selected minimum severity level cutoff for rendering messages.
+		int m_LogLevel = (int)LogLevel::LogInfo;
+
+		/// @brief Flag to trigger the ImGui container window to scroll down to the latest message.
+		bool m_ScrollToBottom = false;
+
+		/// @brief Character buffer containing the text substring query for filtering.
+		char m_FilterBuffer[128] = {0};
+
+		/// @brief The hard limit of history retention. Prevents memory leaks by discarding the oldest logs upon
+		/// overflow.
+		const size_t MAX_MESSAGES = 25000;
+	};
+} // namespace Chained
 
 #endif // CH_CONSOLE_PANEL_H

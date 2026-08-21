@@ -1,882 +1,711 @@
 #include "engine/scene/scene.h"
-#include "engine/audio/audio.h"
-#include "engine/audio/sound_asset.h"
-#include "engine/core/application.h"
 #include "engine/core/profiler.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "engine/core/service_locator.h"
+#include "engine/graphics/pipeline/renderer.h"
+#include "engine/ui/ui_data_components.h"
+#include "engine/ui/widget_renderer.h"
 #include "engine/physics/physics.h"
-#include "engine/scene/component_serializer.h"
+#include "engine/scene/components/animation/animation_component.h"
+#include "engine/scene/components/core/hierarchy_component.h"
+#include "engine/scene/components/ui/scene_transition_component.h"
 #include "engine/scene/scene_events.h"
-#include "engine/scene/scene_scripting.h"
-#include "project.h"
-#include "raylib.h"
-#include "raymath.h"
-#include "scene_serializer.h"
-#include <Coral/ManagedObject.hpp>
+#include "engine/scene/systems/hierarchy_system.h"
+#include "engine/scene/systems/animation_system.h"
+#include "engine/scene/systems/physics_body_system.h"
+#include "engine/scene/systems/asset_resolution_system.h"
+#include "engine/scene/systems/audio_system.h"
+#include "engine/scene/systems/scene_transition_system.h"
+#include "engine/scene/systems/camera_auto_select_system.h"
+#include "engine/scene/systems/network_system.h"
+#include "engine/scene/systems/transform_system.h"
+#include "engine/scene/systems/primitive_system.h"
+#include "engine/scene/component_serializer.h"
+#include "scene_scripting_manager.h"
+#include "engine/scripting/scriptengine.h"
+#include "engine/scene/prefab_serializer.h"
 
-namespace CHEngine
-{
-// Scene implementation
-Scene::Scene()
-{
-    m_Registry.ctx().emplace<Scene*>(this);
-
-    // Declarative signals binding
-    m_Registry.on_construct<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
-    m_Registry.on_update<ModelComponent>().connect<&Scene::OnModelComponentAdded>(this);
-
-    m_Registry.on_construct<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
-    m_Registry.on_update<AnimationComponent>().connect<&Scene::OnAnimationComponentAdded>(this);
-
-    m_Registry.on_construct<ColliderComponent>().connect<&Scene::OnColliderComponentAdded>(this);
-    m_Registry.on_update<ColliderComponent>().connect<&Scene::OnColliderComponentAdded>(this);
-
-    m_Registry.on_construct<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
-    m_Registry.on_update<PanelControl>().connect<&Scene::OnPanelControlAdded>(this);
-
-    m_Registry.on_destroy<ManagedScriptComponent>().connect<&Scene::OnScriptComponentDestroyed>(this);
-
-    // Every scene must have its own environment to avoid skybox leaking/bugs
-    m_Settings.Environment = std::make_shared<EnvironmentAsset>();
-
-    // UUID Mapping
-    m_Registry.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
-    m_Registry.on_destroy<IDComponent>().connect<&Scene::OnIDDestroy>(this);
-
-    // Hierarchy Mapping
-    m_Registry.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
-
-    // Create physics instance
-    m_Physics = std::make_unique<Physics>(this);
-}
-
-Scene::~Scene()
-{
-    // Clean up active signals
-    m_Registry.clear();
-}
-
-std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
-{
-    CH_PROFILE_FUNCTION();
-    CH_CORE_INFO("Scene::Copy - Starting copy of scene '{}'", other->m_Settings.Name);
-
-    std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
-
-    // 1. Copy Scene Settings
-    newScene->m_Settings = other->m_Settings;
-
-    // 2. Copy Entities (Direct Memory Copy)
-    auto& srcRegistry = other->m_Registry;
-    auto& dstRegistry = newScene->m_Registry;
-
-    // Copy all entities using ComponentSerializer
-    int entityCount = 0;
-    srcRegistry.view<IDComponent>().each([&](auto entityHandle, auto& id) {
-        entityCount++;
-        Entity srcEntity = {entityHandle, &other->m_Registry};
-        Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
-
-        ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
-    });
-
-    CH_CORE_INFO("Scene::Copy - Successfully copied {} entities", entityCount);
-    return newScene;
-}
-
-Entity Scene::CreateEntity(const std::string& name)
-{
-    Entity entity(m_Registry.create(), &m_Registry);
-    entity.AddComponent<IDComponent>();
-    entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
-    entity.AddComponent<TransformComponent>();
-
-    CH_CORE_INFO("Entity Created: {} ({})", name, (uint64_t)entity.GetComponent<IDComponent>().ID);
-    return entity;
-}
-
-Entity Scene::CopyEntity(entt::entity copyEntity)
-{
-    Entity srcEntity(copyEntity, &m_Registry);
-    std::string name = srcEntity.GetName();
-    Entity dstEntity = CreateEntity(name);
-
-    // Copy components
-    ComponentSerializer::Get().CopyAll(srcEntity, dstEntity);
-
-    return dstEntity;
-}
-
-Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
-{
-    Entity entity(m_Registry.create(), &m_Registry);
-    entity.AddComponent<IDComponent>(uuid);
-    entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
-    entity.AddComponent<TransformComponent>();
-
-    CH_CORE_INFO("Entity Created with UUID: {} ({})", name, (uint64_t)uuid);
-    return entity;
-}
-
-Entity Scene::CreateUIEntity(const std::string& type, const std::string& name)
+namespace Chained
 {
 
-    Entity entity = CreateEntity(name.empty() ? type : name);
-    entity.AddComponent<ControlComponent>();
-
-    if (type == "Button")
-    {
-        entity.AddComponent<ButtonControl>();
-    }
-    else if (type == "Panel")
-    {
-        entity.AddComponent<PanelControl>();
-    }
-    else if (type == "Label")
-    {
-        entity.AddComponent<LabelControl>();
-    }
-    else if (type == "Slider")
-    {
-        entity.AddComponent<SliderControl>();
-    }
-    else if (type == "CheckBox")
-    {
-        entity.AddComponent<CheckboxControl>();
-    }
-    else if (type == "InputText")
-    {
-        entity.AddComponent<InputTextControl>();
-    }
-    else if (type == "ComboBox")
-    {
-        entity.AddComponent<ComboBoxControl>();
-    }
-    else if (type == "ProgressBar")
-    {
-        entity.AddComponent<ProgressBarControl>();
-    }
-    else if (type == "Image")
-    {
-        entity.AddComponent<ImageControl>();
-    }
-    else if (type == "ImageButton")
-    {
-        entity.AddComponent<ImageButtonControl>();
-    }
-    else if (type == "Separator")
-    {
-        entity.AddComponent<SeparatorControl>();
-    }
-    else if (type == "RadioButton")
-    {
-        entity.AddComponent<RadioButtonControl>();
-    }
-    else if (type == "ColorPicker")
-    {
-        entity.AddComponent<ColorPickerControl>();
-    }
-    else if (type == "DragFloat")
-    {
-        entity.AddComponent<DragFloatControl>();
-    }
-    else if (type == "DragInt")
-    {
-        entity.AddComponent<DragIntControl>();
-    }
-    else if (type == "TreeNode")
-    {
-        entity.AddComponent<TreeNodeControl>();
-    }
-    else if (type == "TabBar")
-    {
-        entity.AddComponent<TabBarControl>();
-    }
-    else if (type == "TabItem")
-    {
-        entity.AddComponent<TabItemControl>();
-    }
-    else if (type == "CollapsingHeader")
-    {
-        entity.AddComponent<CollapsingHeaderControl>();
-    }
-    else if (type == "PlotLines")
-    {
-        entity.AddComponent<PlotLinesControl>();
-    }
-    else if (type == "PlotHistogram")
-    {
-        entity.AddComponent<PlotHistogramControl>();
-    }
-
-    return entity;
-}
-
-void Scene::DestroyEntity(Entity entity)
-{
-    CH_CORE_ASSERT(entity, "Entity is null!");
-
-    std::vector<entt::entity> entitiesToDestroy;
-    entitiesToDestroy.push_back(entity);
-
-    // 1. Iteratively collect all descendants
-    size_t current = 0;
-    while (current < entitiesToDestroy.size())
-    {
-        Entity e(entitiesToDestroy[current++], &m_Registry);
-        if (e.HasComponent<HierarchyComponent>())
-        {
-            auto& hc = e.GetComponent<HierarchyComponent>();
-            for (auto child : hc.Children)
-            {
-                // Basic circular dependency check
-                if (std::find(entitiesToDestroy.begin(), entitiesToDestroy.end(), child) == entitiesToDestroy.end())
-                {
-                    entitiesToDestroy.push_back(child);
-                }
-            }
-        }
-    }
-
-    // 2. Destroy in reverse order (bottom-up)
-    for (auto it = entitiesToDestroy.rbegin(); it != entitiesToDestroy.rend(); ++it)
-    {
-        if (m_Registry.valid(*it))
-        {
-            Entity e(*it, &m_Registry);
-            CH_CORE_INFO("Entity Destroyed: {} ({})", e.GetName(), (uint32_t)*it);
-            m_Registry.destroy(*it);
-        }
-    }
-}
-
-void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
-{
-    auto& hc = reg.get<HierarchyComponent>(entity);
-
-    // 1. Detach from parent
-    if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<HierarchyComponent>(hc.Parent))
-    {
-        auto& phc = reg.get<HierarchyComponent>(hc.Parent);
-        auto it = std::find(phc.Children.begin(), phc.Children.end(), entity);
-        if (it != phc.Children.end())
-        {
-            phc.Children.erase(it);
-        }
-    }
-
-    // Children are handled by recursive DestroyEntity call
-}
-
-void Scene::OnUpdateRuntime(Timestep timestep)
-{
-    CH_PROFILE_FUNCTION();
-
-    UpdateHierarchy();
-    UpdateScripting(timestep);
-    UpdateAnimations(timestep);
-    UpdateUIActions();
-    UpdateAudio(timestep);
-    UpdateCameras(timestep);
-    UpdateTransitions();
-    UpdatePhysics(timestep);
-}
-
-void Scene::OnUpdateEditor(Timestep timestep)
-{
-    CH_PROFILE_FUNCTION();
-
-    UpdateHierarchy();
-    UpdateAnimations(timestep);
-    UpdateCameras(timestep);
-    UpdatePhysics(timestep);
-}
-
-void Scene::OnViewportResize(uint32_t width, uint32_t height)
-{
-    auto view = m_Registry.view<CameraComponent>();
-    for (auto entity : view)
-    {
-        auto& cameraComponent = view.get<CameraComponent>(entity);
-        if (!cameraComponent.FixedAspectRatio)
-        {
-            cameraComponent.Camera.SetViewportSize(width, height);
-        }
-    }
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-// Update Logic Implementation
-// -------------------------------------------------------------------------------------------------------------------
-
-void Scene::UpdatePhysics(Timestep deltaTime)
-{
-    m_Physics->Update(deltaTime, IsSimulationRunning());
-}
-
-void Scene::UpdateAnimations(Timestep deltaTime)
-{
-    // Compute frameTime once per frame — Project::GetActive() is a global lookup
-    float targetFPS = 30.0f;
-    if (auto project = Project::GetActive())
-        targetFPS = project->GetConfig().Animation.TargetFPS;
-    const float frameTime = 1.0f / (targetFPS > 0.0f ? targetFPS : 30.0f);
-
-    m_Registry.view<ModelComponent, AnimationComponent>().each([&](auto entity, auto& mc, auto& anim) {
-        if (anim.IsPlaying && mc.Asset)
-        {
-            const auto& anims = mc.Asset->GetRawAnimations();
-            int animCount = (int)anims.size();
-
-            auto UpdateTrack = [&](int animIdx, int& frame, float& timeCounter) {
-                if (animIdx >= 0 && animIdx < animCount)
-                {
-                    const auto& rawAnim = anims[animIdx];
-                    // frameTime already computed above — no per-entity Project lookup
-                    timeCounter += deltaTime;
-                    while (timeCounter >= frameTime)
-                    {
-                        frame++;
-                        timeCounter -= frameTime;
-                        if (frame >= rawAnim.frameCount)
-                        {
-                            if (anim.IsLooping)
-                            {
-                                frame = 0;
-                            }
-                            else
-                            {
-                                frame = rawAnim.frameCount - 1;
-                                return false; // Animation finished
-                            }
-                        }
-                    }
-                }
-                return true;
-            };
-
-            // Update primary track
-            bool primaryPlaying = UpdateTrack(anim.CurrentAnimationIndex, anim.CurrentFrame, anim.FrameTimeCounter);
-
-            if (anim.Blending)
-            {
-                // Note: We use the same time counter/speed for the target track for simplicity
-                float targetTimeCounter = anim.FrameTimeCounter;
-                UpdateTrack(anim.TargetAnimationIndex, anim.TargetFrame, targetTimeCounter);
-
-                anim.BlendTimer += deltaTime;
-                if (anim.BlendTimer >= anim.BlendDuration)
-                {
-                    // Transition complete
-                    anim.CurrentAnimationIndex = anim.TargetAnimationIndex;
-                    anim.CurrentFrame = anim.TargetFrame;
-                    anim.Blending = false;
-                    anim.TargetAnimationIndex = -1;
-                    anim.BlendTimer = 0.0f;
-                }
-            }
-            else if (!primaryPlaying)
-            {
-                anim.IsPlaying = false;
-            }
-        }
-    });
-}
-
-void Scene::UpdateScripting(Timestep deltaTime)
-{
-    SceneScripting::Update(this, deltaTime);
-}
-
-void Scene::UpdateAudio(Timestep deltaTime)
-{
-    Audio::Get().Update(this, deltaTime);
-}
-
-void Scene::UpdateTransitions()
-{
-    m_Registry.view<SceneTransitionComponent>().each([&](auto entity, auto& tr) {
-        if (tr.Triggered && !tr.TargetScenePath.empty())
-        {
-            SceneChangeRequestEvent e(tr.TargetScenePath);
-            Application::Get().OnEvent(e);
-        }
-    });
-}
-
-void Scene::UpdateCameras(Timestep deltaTime)
-{
-    m_Registry.view<TransformComponent, CameraComponent>().each([&](auto entity, auto& tc, auto& cc) {
-        if (cc.IsOrbitCamera && !cc.TargetEntityTag.empty())
-        {
-            Entity target = FindEntityByTag(cc.TargetEntityTag);
-            if (!target)
-            {
-                return;
-            }
-
-            auto& targetTc = target.GetComponent<TransformComponent>();
-
-            // Spherical coordinates → orbit position
-            float yaw = cc.OrbitYaw * DEG2RAD;
-            float pitch = cc.OrbitPitch * DEG2RAD;
-            Vector3 offset = {cc.OrbitDistance * sin(yaw) * cos(pitch), cc.OrbitDistance * sin(pitch),
-                              cc.OrbitDistance * cos(yaw) * cos(pitch)};
-            tc.Translation = Vector3Add(targetTc.Translation, offset);
-
-            // LookAt → quaternion rotation
-            Matrix viewMat = MatrixLookAt(tc.Translation, targetTc.Translation, {0, 1, 0});
-            tc.RotationQuat = QuaternionFromMatrix(MatrixInvert(viewMat));
-
-            // Sync Euler angles for Inspector display
-            tc.Rotation = QuaternionToEuler(tc.RotationQuat);
-            tc.Rotation.x *= RAD2DEG;
-            tc.Rotation.y *= RAD2DEG;
-            tc.Rotation.z *= RAD2DEG;
-        }
-    });
-}
-
-// -------------------------------------------------------------------------------------------------------------------
-
-void Scene::OnRuntimeStart()
-{
-    m_IsSimulationRunning = true;
-
-    std::string sceneName = "Unknown";
-    auto view = m_Registry.view<TagComponent>();
-    if (!view.empty())
-    {
-        sceneName = view.get<TagComponent>(view.front()).Tag;
-    }
-
-    // Track initialization statistics
-    int modelsLoaded = 0, modelsFailed = 0;
-    int collidersBuilt = 0, collidersFailed = 0;
-    int scriptsCreated = 0;
-
-    // Phase 1: Load models (other components may depend on them)
-    m_Registry.view<ModelComponent>().each([&](auto entity, auto& component) {
-        if (!component.ModelPath.empty())
-        {
-            OnModelComponentAdded(m_Registry, entity);
-            if (component.Asset && component.Asset->IsReady())
-            {
-                modelsLoaded++;
-            }
-            else
-            {
-                modelsFailed++;
-                CH_CORE_ERROR("Failed to load model: {}", component.ModelPath);
-            }
-        }
-    });
-
-    // Phase 2: Initialize ColliderComponents (may depend on models for mesh colliders)
-    m_Registry.view<ColliderComponent>().each([&](auto entity, auto& component) {
-        OnColliderComponentAdded(m_Registry, entity);
-        if (component.Type == ColliderType::Mesh)
-        {
-            if (component.BVHRoot)
-            {
-                collidersBuilt++;
-            }
-            else if (!component.ModelPath.empty())
-            {
-                collidersFailed++;
-                CH_CORE_ERROR("Failed to build BVH for collider: {}", component.ModelPath);
-            }
-        }
-    });
-
-    // Phase 3: Initialize ManagedScripts (deferred to SceneScripting)
-    // SceneScripting::OnRuntimeStart(this);
-
-    // Phase 4: Initialize UI textures (PanelControl)
-    m_Registry.view<PanelControl>().each([&](auto entity, auto& panel) { OnPanelControlAdded(m_Registry, entity); });
-
-    // Report initialization results
-    CH_CORE_INFO("Runtime initialization complete:");
-    CH_CORE_INFO("  - Models: {} loaded, {} failed", modelsLoaded, modelsFailed);
-    CH_CORE_INFO("  - Colliders: {} built, {} failed", collidersBuilt, collidersFailed);
-    CH_CORE_INFO("  - Scripts: {} created", scriptsCreated);
-}
-
-void Scene::OnRuntimeStop()
-{
-    CH_CORE_INFO("Scene - Stopping runtime simulation");
-
-    // Destroy all active C# script instances (calls OnDestroy and frees memory)
-    SceneScripting::Stop(this);
-
-    m_IsSimulationRunning = false;
-    CH_CORE_INFO("Runtime stopped - all scripts destroyed");
-}
-
-void Scene::OnEvent(Event& e)
-{
-    SceneScripting::DispatchEvent(this, e);
-}
-
-Entity Scene::FindEntityByTag(const std::string& tag)
-{
-    auto view = m_Registry.view<TagComponent>();
-    for (auto entity : view)
-    {
-        const auto& tagComp = view.get<TagComponent>(entity);
-        if (tagComp.Tag == tag)
-        {
-            return {entity, &m_Registry};
-        }
-    }
-    return {};
-}
-Entity Scene::GetEntityByUUID(UUID uuid)
-{
-    if (m_EntityMap.find(uuid) != m_EntityMap.end())
-    {
-        return {m_EntityMap.at(uuid), &m_Registry};
-    }
-    return {};
-}
-
-void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
-{
-    auto& id = reg.get<IDComponent>(entity).ID;
-    m_EntityMap[id] = entity;
-}
-
-void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
-{
-    auto& id = reg.get<IDComponent>(entity).ID;
-    m_EntityMap.erase(id);
-}
-
-void Scene::OnAudioComponentAdded(entt::registry& reg, entt::entity entity)
-{
-    auto& audio = reg.get<AudioComponent>(entity);
-
-    if (!audio.SoundPath.empty())
-    {
-        auto project = Project::GetActive();
-        if (project && project->GetAssetManager())
-        {
-            audio.Asset = project->GetAssetManager()->Get<SoundAsset>(audio.SoundPath);
-        }
-    }
-
-    // Reactive Sound Playback
-    if (audio.PlayOnStart && !audio.IsPlaying)
-    {
-        audio.IsPlaying = true;
-        if (audio.Asset)
-        {
-            Audio::Get().Play(audio.Asset, audio.Volume, audio.Pitch, audio.Loop);
-        }
-    }
-}
-
-void Scene::OnModelComponentAdded(entt::registry& reg, entt::entity entity)
-{
-    auto& component = reg.get<ModelComponent>(entity);
-    if (component.ModelPath.empty())
-    {
-        return;
-    }
-
-    auto project = Project::GetActive();
-    std::string resolvedPath = component.ModelPath;
-    if (project && project->GetAssetManager())
-    {
-        resolvedPath = project->GetAssetManager()->ResolvePath(component.ModelPath);
-    }
-
-    bool pathChanged = !component.Asset || (component.Asset->GetPath() != resolvedPath);
-
-    if (pathChanged)
-    {
-        if (project && project->GetAssetManager())
-        {
-            component.Asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
-            if (!component.Asset)
-            {
-                CH_CORE_ERROR("Failed to load model asset: {}", component.ModelPath);
-            }
-        }
-        else
-        {
-            CH_CORE_ERROR("No active project or AssetManager!");
-        }
-
-        // Only reset materials if we don't have deserialized ones
-        if (component.Materials.empty())
-        {
-            component.MaterialsInitialized = false;
-        }
-    }
-
-    if (component.Asset && !component.MaterialsInitialized)
-    {
-        if (component.Asset->GetState() != AssetState::Ready)
-        {
-            return;
-        }
-
-        Model& model = component.Asset->GetModel();
-
-        // Initialize default materials from model if none were deserialized
-        if (component.Materials.empty() && model.materials != nullptr)
-        {
-            std::set<int> uniqueIndices;
-            for (int i = 0; i < model.meshCount; i++)
-            {
-                uniqueIndices.insert(model.meshMaterial[i]);
-            }
-
-            for (int idx : uniqueIndices)
-            {
-                if (idx >= 0 && idx < model.materialCount)
-                {
-                    MaterialSlot slot("Material " + std::to_string(idx), idx);
-                    slot.Target = MaterialSlotTarget::MaterialIndex;
-                    slot.Material.AlbedoColor = model.materials[idx].maps[MATERIAL_MAP_ALBEDO].color;
-                    component.Materials.push_back(slot);
-                }
-            }
-        }
-        component.MaterialsInitialized = true;
-    }
-}
-
-void Scene::OnAnimationComponentAdded(entt::registry& reg, entt::entity entity)
-{
-    auto& component = reg.get<AnimationComponent>(entity);
-    // Animation component might need the model asset to perform calculations
-    if (reg.all_of<ModelComponent>(entity))
-    {
-        auto& mc = reg.get<ModelComponent>(entity);
-        if (!mc.Asset && !mc.ModelPath.empty())
-        {
-            auto project = Project::GetActive();
-            if (project && project->GetAssetManager())
-            {
-                mc.Asset = project->GetAssetManager()->Get<ModelAsset>(mc.ModelPath);
-            }
-        }
-    }
-}
-
-void Scene::OnColliderComponentAdded(entt::registry& reg, entt::entity entity)
-{
-    auto& collider = reg.get<ColliderComponent>(entity);
-    if (collider.Type == ColliderType::Mesh && !collider.ModelPath.empty())
-    {
-        // Rebuild BVH if path changed or it's null
-        if (!collider.BVHRoot)
-        {
-            auto project = Project::GetActive();
-            if (project && project->GetAssetManager())
-            {
-                auto modelAsset = project->GetAssetManager()->Get<ModelAsset>(collider.ModelPath);
-                if (modelAsset && modelAsset->IsReady())
-                {
-                    collider.BVHRoot = BVH::Build(modelAsset);
-                }
-            }
-        }
-    }
-}
-
-void Scene::OnPanelControlAdded(entt::registry& reg, entt::entity entity)
-{
-    auto& panel = reg.get<PanelControl>(entity);
-    if (panel.TexturePath.empty())
-    {
-        return;
-    }
-
-    // Load texture asset if path changed or texture is null
-    bool pathChanged = !panel.Texture || (panel.Texture->GetPath() != panel.TexturePath);
-
-    if (pathChanged)
-    {
-        auto project = Project::GetActive();
-        if (project && project->GetAssetManager())
-        {
-            panel.Texture = project->GetAssetManager()->Get<TextureAsset>(panel.TexturePath);
-        }
-    }
-}
-
-std::optional<Camera3D> Scene::GetActiveCamera()
-{
-    auto view = m_Registry.view<TransformComponent, CameraComponent>();
-
-    entt::entity fallbackEntity = entt::null;
-
-    for (auto entityHandle : view)
-    {
-        auto& cc = view.get<CameraComponent>(entityHandle);
-        if (fallbackEntity == entt::null)
-        {
-            fallbackEntity = entityHandle;
-        }
-
-        if (cc.Primary)
-        {
-            return GetCameraFromEntity(entityHandle);
-        }
-    }
-
-    // Fallback to first available camera if no primary set
-    if (fallbackEntity != entt::null)
-    {
-        return GetCameraFromEntity(fallbackEntity);
-    }
-
-    return std::nullopt;
-}
-
-Camera3D Scene::GetCameraFromEntity(entt::entity entityHandle)
-{
-    auto& tc = m_Registry.get<TransformComponent>(entityHandle);
-    auto& cc = m_Registry.get<CameraComponent>(entityHandle);
-
-    Camera3D camera = {0};
-    camera.position = tc.Translation;
-
-    // Calculate forward vector from rotation
-    Matrix frame = QuaternionToMatrix(tc.RotationQuat);
-    Vector3 forward = Vector3Transform({0, 0, -1}, frame);
-
-    camera.target = Vector3Add(camera.position, forward);
-    camera.up = Vector3Transform({0, 1, 0}, frame);
-
-    // Map Hazel-style SceneCamera properties to Raylib's Camera3D
-    if (cc.Camera.GetProjectionType() == ProjectionType::Perspective)
-    {
-        camera.fovy = cc.Camera.GetPerspectiveVerticalFOV() * RAD2DEG;
-        camera.projection = CAMERA_PERSPECTIVE;
-    }
-    else
-    {
-        camera.fovy = cc.Camera.GetOrthographicSize();
-        camera.projection = CAMERA_ORTHOGRAPHIC;
-    }
-
-    return camera;
-}
-
-Entity Scene::GetPrimaryCameraEntity()
-{
-    auto view = m_Registry.view<CameraComponent>();
-    for (auto entity : view)
-    {
-        const auto& camera = view.get<CameraComponent>(entity);
-        if (camera.Primary)
-        {
-            return Entity(entity, &m_Registry);
-        }
-    }
-    return {};
-}
-
-
-void Scene::UpdateUIActions()
-{
-    m_Registry.view<UIActionComponent>().each([&](auto entity, auto& action) {
-        Entity uiEntity(entity, &m_Registry);
-        bool pressed = false;
-        if (uiEntity.HasComponent<ButtonControl>())
-            pressed = uiEntity.GetComponent<ButtonControl>().PressedThisFrame;
-        else if (uiEntity.HasComponent<ImageButtonControl>())
-            pressed = uiEntity.GetComponent<ImageButtonControl>().PressedThisFrame;
-    });
-}
-
-void Scene::UpdateHierarchy()
-{
-    CH_PROFILE_FUNCTION();
-
-    auto view = m_Registry.view<TransformComponent>();
-
-    struct UpdateTask
-    {
-        entt::entity Entity;
-        Matrix ParentTransform;
-    };
-
-    std::vector<UpdateTask> stack;
-    stack.reserve(m_Registry.storage<entt::entity>().size());
-
-    // 1. Find all root entities and push to stack
-    for (auto entity : view)
-    {
-        bool isRoot = true;
-        if (m_Registry.all_of<HierarchyComponent>(entity))
-        {
-            auto& hc = m_Registry.get<HierarchyComponent>(entity);
-            if (hc.Parent != entt::null && m_Registry.valid(hc.Parent) &&
-                m_Registry.all_of<TransformComponent>(hc.Parent))
-            {
-                isRoot = false;
-            }
-        }
-
-        if (isRoot)
-        {
-            stack.push_back({entity, MatrixIdentity()});
-        }
-    }
-
-    // 2. Iterative DFS update
-    while (!stack.empty())
-    {
-        UpdateTask task = stack.back();
-        stack.pop_back();
-
-        auto& tc = view.get<TransformComponent>(task.Entity);
-        tc.WorldTransform = MatrixMultiply(tc.GetTransform(), task.ParentTransform);
-        tc.IsDirty = false;
-
-        if (m_Registry.all_of<HierarchyComponent>(task.Entity))
-        {
-            auto& hc = m_Registry.get<HierarchyComponent>(task.Entity);
-            for (auto child : hc.Children)
-            {
-                if (m_Registry.valid(child) && m_Registry.all_of<TransformComponent>(child))
-                {
-                    stack.push_back({child, tc.WorldTransform});
-                }
-            }
-        }
-    }
-}
-
-void Scene::OnScriptComponentDestroyed(entt::registry& registry, entt::entity entity)
-{
-    auto& msc = registry.get<ManagedScriptComponent>(entity);
-    for (auto& script : msc.Scripts)
-    {
-        if (script.Instance)
-        {
-            auto* instance = static_cast<Coral::ManagedObject*>(script.Instance);
-            if (instance->IsValid())
-            {
-                try {
-                    instance->InvokeMethod("OnDestroy");
-                } catch (const std::exception& e) {
-                    CH_CORE_ERROR("Exception in C# OnDestroy: {}", e.what());
-                } catch (...) {}
-            }
-            
-            instance->Destroy();
-            delete instance;
-            script.Instance = nullptr;
-        }
-    }
-}
-
-} // namespace CHEngine
+	Scene::Scene()
+	{
+		m_Registry = std::make_unique<entt::registry>();
+		auto& reg = *m_Registry;
+
+		reg.ctx().emplace<Scene*>(this);
+		reg.ctx().emplace<EntityUUIDMap>();
+
+		reg.on_construct<IDComponent>().connect<&Scene::OnIDConstruct>(this);
+		reg.on_destroy<IDComponent>().connect<&Scene::OnIDDestroy>(this);
+
+		reg.on_construct<HierarchyComponent>().connect<&Scene::OnHierarchyConstruct>(this);
+		reg.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
+
+		AssetResolutionSystem::RegisterObservers(reg);
+		PrimitiveSystem::RegisterObservers(reg, "");
+
+		m_Settings.Environment = std::make_shared<EnvironmentAsset>();
+		m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
+	}
+
+	Scene::~Scene()
+	{
+		auto& reg = *m_Registry;
+		reg.on_destroy<IDComponent>().disconnect();
+		reg.on_destroy<HierarchyComponent>().disconnect();
+		reg.on_construct<IDComponent>().disconnect();
+		reg.on_construct<HierarchyComponent>().disconnect();
+		reg.ctx().erase<Scene*>();
+		GetRegistry().clear();
+	}
+
+	std::shared_ptr<Scene> Scene::CreateDefault()
+	{
+		auto scene = std::make_shared<Scene>();
+
+		Entity camera = scene->CreateEntity("Main Camera");
+		auto& cameraEntity = camera.AddComponent<CameraComponent>();
+		cameraEntity.Primary = true;
+		TransformSystem::SetTranslation(camera.GetComponent<TransformComponent>(), {0, 5, 10});
+
+		return scene;
+	}
+
+	std::shared_ptr<Scene> Scene::Copy(std::shared_ptr<Scene> other)
+	{
+		CH_PROFILE_FUNCTION();
+		CH_CORE_INFO("Scene::Copy - Starting copy of scene '{}'", other->m_Settings.Name);
+
+		std::shared_ptr<Scene> newScene = std::make_shared<Scene>();
+		newScene->m_Settings = other->m_Settings;
+
+		auto& srcRegistry = other->GetRegistry();
+		auto& dstRegistry = newScene->GetRegistry();
+
+		std::unordered_map<entt::entity, entt::entity> entityMap;
+
+		{
+			CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass1");
+			for (auto entityHandle : srcRegistry.view<IDComponent>())
+			{
+				auto& id = srcRegistry.get<IDComponent>(entityHandle);
+				Entity srcEntity = {entityHandle, other->m_Registry.get()};
+				Entity dstEntity = newScene->CreateEntityWithUUID(id.ID);
+				entityMap[entityHandle] = (entt::entity)dstEntity;
+
+				ComponentSerializer::CopyAll(srcEntity, dstEntity);
+
+				if (dstEntity.HasComponent<RigidBodyComponent>())
+				{
+					dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+				}
+			}
+		}
+
+		{
+			CH_PROFILE_SCOPE("Scene::Copy::CopyEntities_Pass2");
+			srcRegistry.view<HierarchyComponent>().each([&](auto entityHandle, auto& srcHC) {
+				if (!entityMap.contains(entityHandle))
+				{
+					return;
+				}
+
+				entt::entity dstHandle = entityMap[entityHandle];
+				auto& dstHC = dstRegistry.get_or_emplace<HierarchyComponent>(dstHandle);
+
+				if (srcHC.Parent != entt::null && entityMap.count(srcHC.Parent))
+				{
+					dstHC.Parent = entityMap[srcHC.Parent];
+				}
+				else
+				{
+					dstHC.Parent = entt::null;
+				}
+
+				dstHC.Children.clear();
+				for (auto child : srcHC.Children)
+				{
+					if (entityMap.count(child))
+					{
+						dstHC.Children.push_back(entityMap[child]);
+					}
+				}
+			});
+		}
+
+		newScene->m_RootsDirty = true;
+		return newScene;
+	}
+
+	void Scene::OnHierarchyConstruct()
+	{
+		m_RootsDirty = true;
+	}
+
+	void Scene::OnHierarchyDestroy(entt::registry& reg, entt::entity entity)
+	{
+		m_RootsDirty = true;
+
+		if (!reg.valid(entity) || !reg.all_of<HierarchyComponent>(entity))
+		{
+			return;
+		}
+
+		auto& hc = reg.get<HierarchyComponent>(entity);
+
+		if (hc.Parent != entt::null && reg.valid(hc.Parent) && reg.all_of<HierarchyComponent>(hc.Parent))
+		{
+			auto& phc = reg.get<HierarchyComponent>(hc.Parent);
+			auto it = std::find(phc.Children.begin(), phc.Children.end(), entity);
+			if (it != phc.Children.end())
+			{
+				phc.Children.erase(it);
+			}
+		}
+	}
+
+	void Scene::OnEvent(Event& e)
+	{
+		if (m_State == SceneState::Play && !m_IsStartingUp)
+		{
+			m_ScriptingManager->OnEvent(e);
+		}
+	}
+
+	void Scene::OnRenderUI()
+	{
+		if (m_State == SceneState::Play && !m_IsStartingUp)
+		{
+			m_ScriptingManager->OnRenderUI();
+		}
+	}
+
+	void Scene::OnRuntimeStart()
+	{
+		CH_CORE_INFO("Scene::OnRuntimeStart - Starting activation for state: {}", (int)m_State);
+		m_IsStartingUp = true;
+		m_PhysicsStartupInitialized = false;
+	}
+
+	void Scene::FinishRuntimeStart()
+	{
+		if (auto* scripting = ServiceLocator::TryGet<ScriptEngine>())
+		{
+			scripting->SetContextScene(this);
+		}
+
+		if (m_State == SceneState::Play)
+		{
+			if (m_ScriptingManager)
+			{
+				m_ScriptingManager->OnRuntimeStart();
+			}
+			else
+			{
+				CH_CORE_ERROR("Scene::OnRuntimeStart - m_ScriptingManager is NULL!");
+			}
+		}
+
+		AudioSystem::OnRuntimeStart(*m_Registry);
+
+		CameraAutoSelectSystem::OnRuntimeStart(*m_Registry);
+
+		auto transitionView = m_Registry->view<SceneTransitionComponent>();
+		for (auto entity : transitionView)
+		{
+			transitionView.get<SceneTransitionComponent>(entity).Triggered = false;
+		}
+
+		auto view = m_Registry->view<AnimationComponent>();
+		for (auto entity : view)
+		{
+			auto& anim = view.get<AnimationComponent>(entity);
+			if (anim.PlayOnStart)
+			{
+				anim.IsPlaying = true;
+			}
+			CH_CORE_INFO("[AnimDebug] FinishRuntimeStart entity={} PlayOnStart={} IsPlaying={} GraphPath='{}' "
+						 "GraphHandle={} NodeID={}",
+						 (uint32_t)entity, anim.PlayOnStart, anim.IsPlaying, anim.GraphPath,
+						 (uint64_t)anim.GraphAssetHandle, anim.CurrentNodeID);
+		}
+	}
+
+	void Scene::OnRuntimeStop()
+	{
+		CH_CORE_INFO("Scene::OnRuntimeStop - Stopping lifecycle...");
+
+		m_IsStartingUp = false;
+		m_PhysicsStartupInitialized = false;
+
+		if (m_ScriptingManager)
+		{
+			m_ScriptingManager->OnRuntimeStop();
+		}
+
+		AudioSystem::OnRuntimeStop(*m_Registry);
+
+		NetworkSystem::GetInstance().Reset();
+
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			physics->ClearContext(this);
+		}
+
+		if (auto* scripting = ServiceLocator::TryGet<ScriptEngine>())
+		{
+			scripting->SetContextScene(nullptr);
+		}
+	}
+
+	void Scene::OnUpdateRuntime(Timestep ts)
+	{
+		CH_PROFILE_FUNCTION();
+
+		if (m_IsStartingUp)
+		{
+			InitializePhysicsStartup();
+			return;
+		}
+
+		auto& netSys = NetworkSystem::GetInstance();
+		netSys.PollNetwork(this, ts);
+
+		// Interpolate remote entities BEFORE scripts so PlayerController
+		// reads the correct velocity/grounded values for animation.
+		if (auto* net = ServiceLocator::TryGet<Network>())
+		{
+			if (net->IsClient())
+			{
+				float dt = static_cast<float>(ts);
+				netSys.InterpolateEntities(*m_Registry, dt);
+			}
+		}
+
+		if (m_ScriptingManager)
+		{
+			m_ScriptingManager->OnUpdate(ts);
+		}
+
+		// 1st world transform — processes entities spawned by SyncPeerAvatars
+		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		AssetResolutionSystem::Update(*m_Registry);
+		AnimationSystem::Update(*m_Registry, ts);
+		AudioSystem::Update(*m_Registry);
+
+		PhysicsBodySystem::Update(*m_Registry);
+
+		netSys.ApplyHostInputs(*m_Registry, ts);
+
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			physics->Update(this, ts, true);
+		}
+
+		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		netSys.FinalizeFrame(this, ts);
+
+		if (auto target = SceneTransitionSystem::Update(*m_Registry))
+		{
+			m_PendingScenePath = *target;
+		}
+	}
+
+	void Scene::OnUpdateSimulation(Timestep ts)
+	{
+		CH_PROFILE_FUNCTION();
+
+		if (m_IsStartingUp)
+		{
+			InitializePhysicsStartup();
+			return;
+		}
+
+		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		AssetResolutionSystem::Update(*m_Registry);
+		AnimationSystem::Update(*m_Registry, ts);
+		AudioSystem::Update(*m_Registry);
+
+		PhysicsBodySystem::Update(*m_Registry);
+
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			physics->Update(this, ts, true);
+		}
+	}
+
+	void Scene::InitializePhysicsStartup()
+	{
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			if (!m_PhysicsStartupInitialized)
+			{
+				physics->ResetWorld(this);
+				physics->ResetAccumulator(this);
+				if (!m_Registry->ctx().contains<Physics*>())
+				{
+					m_Registry->ctx().emplace<Physics*>(physics);
+				}
+				m_PhysicsStartupInitialized = true;
+			}
+
+			PhysicsBodySystem::Update(*m_Registry);
+
+			auto* world = physics->GetWorld();
+			if (world && world->HasPendingShapeBakes())
+			{
+				return;
+			}
+
+			auto bodyView = m_Registry->view<RigidBodyComponent, ColliderComponent>();
+			for (auto entity : bodyView)
+			{
+				auto& rigidBody = bodyView.get<RigidBodyComponent>(entity);
+				auto& collider = bodyView.get<ColliderComponent>(entity);
+				if (collider.Enabled && rigidBody.Handle == kInvalidPhysicsBody)
+				{
+					return;
+				}
+			}
+		}
+		m_IsStartingUp = false;
+		FinishRuntimeStart();
+	}
+
+	void Scene::OnUpdateEditor(Timestep timestep)
+	{
+		CH_PROFILE_FUNCTION();
+
+		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
+
+		CameraAutoSelectSystem::OnSceneUpdate(*m_Registry);
+
+		if (auto* physics = ServiceLocator::TryGet<Physics>())
+		{
+			physics->Update(this, timestep, false);
+		}
+
+		AssetResolutionSystem::Update(*m_Registry);
+		AnimationSystem::Update(*m_Registry, timestep);
+		AudioSystem::Update(*m_Registry);
+	}
+
+	void Scene::OnViewportResize(uint32_t width, uint32_t height)
+	{
+		auto& reg = GetRegistry();
+		auto view = reg.view<CameraComponent>();
+		for (auto entity : view)
+		{
+			auto& cameraComponent = view.get<CameraComponent>(entity);
+			if (!cameraComponent.FixedAspectRatio)
+			{
+				cameraComponent.Camera.SetViewportSize(width, height);
+			}
+		}
+	}
+
+	void Scene::OnIDConstruct(entt::registry& reg, entt::entity entity)
+	{
+		auto& id = reg.get<IDComponent>(entity);
+		auto& mapStruct = reg.ctx().get<EntityUUIDMap>();
+		mapStruct.Map[id.ID] = entity;
+	}
+
+	void Scene::OnIDDestroy(entt::registry& reg, entt::entity entity)
+	{
+		auto& id = reg.get<IDComponent>(entity);
+		auto& mapStruct = reg.ctx().get<EntityUUIDMap>();
+		mapStruct.Map.erase(id.ID);
+	}
+
+	entt::registry* Scene::GetRegistryPtr()
+	{
+		return m_Registry.get();
+	}
+
+	const entt::registry& Scene::GetRegistry() const
+	{
+		return *m_Registry;
+	}
+
+	entt::registry& Scene::GetRegistry()
+	{
+		return *m_Registry;
+	}
+
+	const SceneSettings& Scene::GetSettings() const
+	{
+		return m_Settings;
+	}
+
+	SceneSettings& Scene::GetSettings()
+	{
+		return m_Settings;
+	}
+
+	const std::vector<entt::entity>& Scene::GetRootEntities() const
+	{
+		if (m_RootsDirty)
+		{
+			RebuildRootCache();
+		}
+		return m_CachedRoots;
+	}
+
+	void Scene::RebuildRootCache() const
+	{
+		m_CachedRoots.clear();
+		auto& reg = GetRegistry();
+
+		auto view = reg.view<TransformComponent>();
+		for (auto entity : view)
+		{
+			if (reg.all_of<HierarchyComponent>(entity))
+			{
+				auto& hc = reg.get<HierarchyComponent>(entity);
+				if (hc.Parent == entt::null)
+				{
+					m_CachedRoots.push_back(entity);
+				}
+			}
+			else
+			{
+				m_CachedRoots.push_back(entity);
+			}
+		}
+		m_RootsDirty = false;
+	}
+
+	bool Scene::IsSimulationRunning() const
+	{
+		return m_State == SceneState::Play || m_State == SceneState::Simulate;
+	}
+
+	void Scene::DestroyEntity(Entity entity)
+	{
+		entity.Destroy();
+	}
+
+	entt::entity Scene::CopyEntity(entt::entity copyEntity)
+	{
+		return (entt::entity)CopyEntityInternal(copyEntity, entt::null);
+	}
+
+	Entity Scene::CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity)
+	{
+		Entity srcEntity(copyEntity, m_Registry.get());
+		std::string copyName = srcEntity.GetName() + (parentEntity == entt::null ? "_copy" : "");
+		Entity dstEntity = CreateEntity(copyName);
+
+		ComponentSerializer::CopyAll(srcEntity, dstEntity);
+		dstEntity.GetComponent<TagComponent>().Tag = copyName;
+
+		dstEntity.RemoveComponent<IDComponent>();
+		dstEntity.AddComponent<IDComponent>();
+
+		if (dstEntity.HasComponent<RigidBodyComponent>())
+		{
+			dstEntity.GetComponent<RigidBodyComponent>().Handle = kInvalidPhysicsBody;
+		}
+
+		if (srcEntity.HasComponent<HierarchyComponent>())
+		{
+			auto srcHC = srcEntity.GetComponent<HierarchyComponent>();
+
+			entt::entity targetParent = parentEntity;
+			if (targetParent == entt::null && srcHC.Parent != entt::null)
+			{
+				targetParent = srcHC.Parent;
+			}
+
+			if (targetParent != entt::null)
+			{
+				auto& dstHC = dstEntity.AddOrReplaceComponent<HierarchyComponent>();
+				dstHC.Parent = targetParent;
+				dstHC.Children.clear();
+
+				Entity parent(targetParent, m_Registry.get());
+				if (parent.HasComponent<HierarchyComponent>())
+				{
+					parent.GetComponent<HierarchyComponent>().Children.push_back(dstEntity);
+				}
+			}
+			else
+			{
+				if (dstEntity.HasComponent<HierarchyComponent>())
+				{
+					dstEntity.GetComponent<HierarchyComponent>().Parent = entt::null;
+					dstEntity.GetComponent<HierarchyComponent>().Children.clear();
+				}
+			}
+
+			for (auto child : srcHC.Children)
+			{
+				CopyEntityInternal(child, dstEntity);
+			}
+		}
+
+		return dstEntity;
+	}
+
+	Entity Scene::CreateUIEntity(WidgetType type, const std::string& name)
+	{
+		Entity entity = CreateEntity(name.empty() ? WidgetTypeName(type) : name);
+		entity.AddComponent<ControlComponent>();
+		auto& comp = entity.AddComponent<UIControlComponent>();
+		comp.Data = CreateDefaultWidgetData(type);
+		return entity;
+	}
+
+	Entity Scene::CreateEntityWithUUID(UUID uuid, const std::string& name)
+	{
+		Entity entity(m_Registry->create(), m_Registry.get());
+		entity.AddComponent<IDComponent>(uuid);
+		entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
+		entity.AddComponent<TransformComponent>();
+		m_RootsDirty = true;
+		return entity;
+	}
+
+	Entity Scene::CreateEntity(const std::string& name)
+	{
+		Entity entity(m_Registry->create(), m_Registry.get());
+		entity.AddComponent<IDComponent>();
+		entity.AddComponent<TagComponent>(name.empty() ? "Entity" : name);
+		entity.AddComponent<TransformComponent>();
+		m_RootsDirty = true;
+		return entity;
+	}
+
+	Entity Scene::FindEntityByTag(const std::string& tag)
+	{
+		auto view = m_Registry->view<TagComponent>();
+		for (auto entity : view)
+		{
+			const auto& tagComp = view.get<TagComponent>(entity);
+			if (tagComp.Tag == tag)
+			{
+				return {entity, m_Registry.get()};
+			}
+		}
+		return {};
+	}
+
+	Entity Scene::GetEntityByUUID(UUID uuid)
+	{
+		auto* mapStruct = m_Registry->ctx().find<EntityUUIDMap>();
+		if (mapStruct && mapStruct->Map.find(uuid) != mapStruct->Map.end())
+		{
+			return {mapStruct->Map.at(uuid), m_Registry.get()};
+		}
+		return {};
+	}
+
+	void Scene::TransitionToState(SceneState newState)
+	{
+		if (m_State == newState)
+		{
+			return;
+		}
+
+		OnStateExit(m_State);
+		SceneState oldState = m_State;
+		m_State = newState;
+		OnStateEnter(m_State);
+
+		CH_CORE_TRACE("Scene: Transitioned state from {} to {}", (int)oldState, (int)newState);
+	}
+
+	void Scene::OnStateEnter(SceneState state)
+	{
+		switch (state)
+		{
+		case SceneState::Play:
+		case SceneState::Simulate:
+			OnRuntimeStart();
+			break;
+		case SceneState::Edit:
+			break;
+		}
+	}
+
+	void Scene::OnStateExit(SceneState state)
+	{
+		switch (state)
+		{
+		case SceneState::Play:
+		case SceneState::Simulate:
+			OnRuntimeStop();
+			break;
+		case SceneState::Edit:
+			break;
+		}
+	}
+
+	void Scene::OnUpdate(Timestep timestep)
+	{
+		switch (m_State)
+		{
+		case SceneState::Edit:
+			OnUpdateEditor(timestep);
+			break;
+		case SceneState::Play:
+			OnUpdateRuntime(timestep);
+			break;
+		case SceneState::Simulate:
+			OnUpdateSimulation(timestep);
+			break;
+		}
+	}
+
+	std::future<std::shared_ptr<Scene>> Scene::LoadSceneAsync(const std::string& path)
+	{
+		// Запускаємо завантаження у фоновому потоці.
+		// Всерединьі потоці просто створюємо нову сцену та десиріалізуємо префалб у неї.
+		auto task = std::make_shared<std::packaged_task<std::shared_ptr<Scene>()>>([path]() -> std::shared_ptr<Scene> {
+			auto newScene = std::make_shared<Scene>();
+
+			// Десиріалізуємо префалб у нову сцену (синхронно всередині потоку)
+			if (PrefabSerializer::Deserialize(newScene.get(), path) != Entity{})
+			{
+				return newScene;
+			}
+
+			// Якщо префалб не валідний — повертаємо порожню сцену
+			return nullptr;
+		});
+
+		// Виконуємо задачу в окремому потоці та повертаємо future
+		std::thread t([task]() { (*task)(); });
+		t.detach();
+
+		return task->get_future();
+	}
+
+	void Scene::SwapScene(std::shared_ptr<Scene> newScene)
+	{
+		if (!newScene)
+		{
+			CH_CORE_ERROR("Scene::SwapScene: newScene is null");
+			return;
+		}
+
+		// Swap ownership explicitly instead of stealing fields from another scene object.
+		// This keeps lifecycle ownership clear and avoids leaving a partially-moved scene behind.
+		std::swap(m_Registry, newScene->m_Registry);
+		std::swap(m_ScriptingManager, newScene->m_ScriptingManager);
+		std::swap(m_Settings, newScene->m_Settings);
+		std::swap(m_State, newScene->m_State);
+		std::swap(m_PendingScenePath, newScene->m_PendingScenePath);
+		std::swap(m_IsStartingUp, newScene->m_IsStartingUp);
+		std::swap(m_PhysicsStartupInitialized, newScene->m_PhysicsStartupInitialized);
+		std::swap(m_CachedRoots, newScene->m_CachedRoots);
+		std::swap(m_RootsDirty, newScene->m_RootsDirty);
+
+		CH_CORE_INFO("Scene: Swapped to '{}'", m_Settings.Name);
+	}
+
+} // namespace Chained

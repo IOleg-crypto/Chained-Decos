@@ -495,7 +495,6 @@ Entities:
     NativeScriptComponent:
       ? Scripts:
           - ScriptName: PlayerController
-          - ScriptName: CameraController
           - ScriptName: GameHUD
           - ScriptName: SpawnZoneRespawn
     ModelComponent:

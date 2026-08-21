@@ -1,8 +1,8 @@
 CompileFlags:
-  CompilationDatabase: build/ninja-debug
+  CompilationDatabase: build/windows-clang
   Add:
     - -Wall
-    - -Wextra
+    - -Wextras
   Remove:
     - -fmodules-ts
     - -fmodule-mapper=*
@@ -12,4 +12,7 @@ CompileFlags:
 
 Diagnostics:
   UnusedIncludes: None
+
+Index:
+  Background: Skip
 

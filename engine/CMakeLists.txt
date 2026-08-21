@@ -1,96 +1,86 @@
-
-# Common include directories for all engine targets
-set(ENGINE_INCLUDE_DIRS
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${glm_SOURCE_DIR}
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/coral/Coral.Native/Include
-    ${CMAKE_SOURCE_DIR}/include/raylib/src
-)
-
-# SHARED for local development (hot-reload), STATIC for CI/distribution
-option(CH_ENGINE_SHARED "Build engine as shared library (DLL)" ON)
+# SHARED for local development (hot-reload), STATIC for CI/distribution/stability
+option(CH_ENGINE_SHARED "Build engine as shared library (DLL)" OFF)
 if(CH_ENGINE_SHARED)
     set(ENGINE_LIB_TYPE SHARED)
 else()
     set(ENGINE_LIB_TYPE STATIC)
 endif()
 
+# If building as a shared library, all internal static sub-modules need to be aware
+# they are part of a DLL build so they can dllexport their symbols.
+if(CH_ENGINE_SHARED)
+    add_compile_definitions(CH_DYNAMIC_LINK CH_ENGINE_BUILD)
+endif()
+
+add_subdirectory(common)
+add_subdirectory(reflection)
+add_subdirectory(imgui)
 add_subdirectory(core)
+add_subdirectory(assets)
 add_subdirectory(graphics)
+add_subdirectory(ui)
 add_subdirectory(physics)
 add_subdirectory(audio)
 add_subdirectory(scene)
-add_subdirectory(script)
+add_subdirectory(project)
+include(${CMAKE_SOURCE_DIR}/cmake/external/enet.cmake)
+include(${CMAKE_SOURCE_DIR}/cmake/external/sodium.cmake)
+add_subdirectory(networking)
+add_subdirectory(platform)
+add_subdirectory(scripting)
+add_subdirectory(app)
+add_subdirectory(runtime)
 
-# Create the final engine facade library that stitches all objects together
-add_library(engine ${ENGINE_LIB_TYPE}
-    $<TARGET_OBJECTS:engine_core>
-    $<TARGET_OBJECTS:engine_graphics>
-    $<TARGET_OBJECTS:engine_physics>
-    $<TARGET_OBJECTS:engine_audio>
-    $<TARGET_OBJECTS:engine_scene>
-    $<TARGET_OBJECTS:engine_script>
-)
-
-# MSVC needs exported symbols to generate the .lib import library
-set_target_properties(engine PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
-if(WIN32)
-    set_target_properties(engine PROPERTIES PREFIX "")
+# ── Engine facade library ────────────────────────────────────────────────────
+# INTERFACE when static (header/dependency re-export only, no source needed),
+# SHARED when building as DLL (needs a translation unit for MSVC archiver).
+if(CH_ENGINE_SHARED)
+    add_library(engine SHARED engine_dummy.cpp)
+    target_compile_definitions(engine PRIVATE CH_ENGINE_BUILD)
+    target_compile_definitions(engine PUBLIC CH_DYNAMIC_LINK)
+    if(WIN32)
+        set_target_properties(engine PROPERTIES PREFIX "")
+    endif()
+    install(TARGETS engine
+        EXPORT ChainedEngineTargets
+        ARCHIVE DESTINATION lib COMPONENT Runtime
+        LIBRARY DESTINATION lib COMPONENT Runtime
+        RUNTIME DESTINATION bin COMPONENT Runtime
+    )
+else()
+    add_library(engine INTERFACE)
 endif()
 
-target_include_directories(engine PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${glm_SOURCE_DIR}
-    ${yaml-cpp_SOURCE_DIR}/include
-INTERFACE
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${imguizmo_SOURCE_DIR}
-)
-
-target_link_libraries(engine 
-PUBLIC 
-    EnTT
-PRIVATE
-    raylib 
-    imguilib
-    yaml-cpp
-    Coral.Native
-    assimp::assimp
-)
-
-# (Redundant compiler flags removed - now in CompilerSettings.cmake)
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine)
+if(CH_ENGINE_SHARED)
+    target_link_libraries(engine PUBLIC engine_app)
+else()
+    target_link_libraries(engine INTERFACE engine_app)
 endif()
 
-install(TARGETS engine
-    EXPORT ChainedEngineTargets
-    ARCHIVE DESTINATION lib COMPONENT Runtime
-    LIBRARY DESTINATION lib COMPONENT Runtime
-    RUNTIME DESTINATION bin COMPONENT Runtime
+target_include_directories(engine INTERFACE
+    ${CMAKE_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
 )
 
-install(DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/resources"
-    DESTINATION engine
+# ── Unified Framework Interface ──────────────────────────────────────────────
+# This provides a single target for games to link against, encapsulating all
+# engine headers and dependencies in a clean way.
+add_library(ChainedEngineFramework INTERFACE)
+add_library(ChainedEngine::Framework ALIAS ChainedEngineFramework)
+add_library(ChainedEngine::API ALIAS ChainedEngineFramework)
+
+file(TO_CMAKE_PATH "${CMAKE_SOURCE_DIR}" PROJECT_ROOT_DIR_ESCAPED)
+
+target_link_libraries(ChainedEngineFramework INTERFACE
+    engine
+)
+
+target_compile_definitions(ChainedEngineFramework INTERFACE
+    PROJECT_ROOT_DIR="${PROJECT_ROOT_DIR_ESCAPED}"
+)
+
+install(DIRECTORY "${CMAKE_SOURCE_DIR}/resources"
+    DESTINATION .
     USE_SOURCE_PERMISSIONS
     COMPONENT Runtime
 )
-
-# ── DLL Deployment ──────────────────────────────────────────────────────────
-# Ensure Coral.Managed.dll is in the same folder as the engine/editor binaries
-if(TARGET CoralManaged)
-    add_custom_command(TARGET engine POST_BUILD
-        COMMAND ${CMAKE_COMMAND} -E copy_if_different
-        "${CMAKE_BINARY_DIR}/include/coral/cmake/Coral.Managed.dll"
-        "${CMAKE_BINARY_DIR}/bin/Coral.Managed.dll"
-        COMMENT "Deploying Coral.Managed.dll to bin/"
-        VERBATIM
-    )
-endif()

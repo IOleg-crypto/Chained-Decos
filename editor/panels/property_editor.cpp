@@ -1,1579 +1,1484 @@
 #include "property_editor.h"
-#include "editor/editor_layer.h"
-#include "editor_gui.h"
-#include "engine/graphics/asset_manager.h"
-#include "engine/graphics/model_asset.h"
-#include "engine/physics/bvh/bvh.h"
+#include "engine/reflection/reflection_rfl.h"
+#include "engine/reflection/reflection_rfl_impl.h"
+#include "engine/scene/components/render/primitive_component.h"
+#include "engine/scene/component_registry.h"
+#include "thirdparty/IconsFontAwesome6.h"
+#include "editor/layer.h"
+#include "editor/undo/component_commands.h"
+#include "editor/undo/modify_component_command.h"
+#include "engine/core/service_locator.h"
+#include "gui.h"
+
 #include "engine/physics/physics.h"
-#include "engine/scene/components.h"
-#include "engine/scene/project.h"
-#include "engine/script/scriptengine.h"
-#include "extras/IconsFontAwesome6.h"
+#include "engine/scene/scene_settings.h"
 #include "imgui.h"
-#include "nfd.h"
-#include "raymath.h"
+#include "misc/cpp/imgui_stdlib.h"
+#include "ui_properties.h" // Included here to break circular dependency
+#include <memory>
+#include "engine/scripting/scriptengine.h"
+#include <Coral/ManagedObject.hpp>
+
+#include "engine/app/application.h"
 #include <yaml-cpp/yaml.h>
-#include <iterator>
-#include <algorithm>
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/model_asset.h"
+#include "engine/scene/components/animation/animation_component.h"
+#include "engine/assets/loaders/anim_graph_loader.h"
+#include "engine/assets/types/animation_graph_asset.h"
+#include "engine/ui/ui_font_registry.h"
+#include "engine/ui/widget_renderer.h"
 
-namespace CHEngine
+namespace Chained
 {
 
-std::unordered_map<entt::id_type, PropertyEditor::ComponentMetadata> PropertyEditor::s_ComponentRegistry;
-
-void PropertyEditor::RegisterComponent(entt::id_type typeId, const ComponentMetadata& metadata)
-{
-    s_ComponentRegistry[typeId] = metadata;
-}
-
-bool PropertyEditor::DrawTextStyle(TextStyle& style)
-{
-    bool changed = false;
-    auto pb = EditorGUI::Begin();
-    if (pb.Float("Font Size", style.FontSize, 1).Color("Text Color", style.TextColor).Changed)
-    {
-        if (style.FontSize < 0.0f)
-        {
-            style.FontSize = 0.0f;
-        }
-        changed = true;
-    }
-
-    const char* alignments[] = {"Left", "Center", "Right"};
-    int hAlign = (int)style.HorizontalAlignment;
-    if (EditorGUI::Property("H Align", hAlign, alignments, 3))
-    {
-        style.HorizontalAlignment = (TextAlignment)hAlign;
-        changed = true;
-    }
-
-    int vAlign = (int)style.VerticalAlignment;
-    if (EditorGUI::Property("V Align", vAlign, alignments, 3))
-    {
-        style.VerticalAlignment = (TextAlignment)vAlign;
-        changed = true;
-    }
-
-    pb.Float("Letter Spacing", style.LetterSpacing).Float("Line Height", style.LineHeight);
-    if (pb.Bool("Shadow", style.Shadow) && style.Shadow)
-    {
-        pb.Float("Shadow Offset", style.ShadowOffset).Color("Shadow Color", style.ShadowColor);
-    }
-    return changed || pb.Changed;
-}
-
-bool PropertyEditor::DrawUIStyle(UIStyle& style)
-{
-    auto pb = EditorGUI::Begin();
-    pb.Color("Background", style.BackgroundColor)
-        .Color("Hover", style.HoverColor)
-        .Color("Pressed", style.PressedColor)
-        .Float("Rounding", style.Rounding)
-        .Float("Border", style.BorderSize)
-        .Color("Border Color", style.BorderColor)
-        .Float("Padding", style.Padding)
-        .Bool("Use Gradient", style.UseGradient)
-        .Color("Gradient Color", style.GradientColor)
-        .Float("Hover Scale", style.HoverScale, 0.01f, 0.5f, 2.0f)
-        .Float("Pressed Scale", style.PressedScale, 0.01f, 0.5f, 2.0f)
-        .Float("Transition Speed", style.TransitionSpeed, 0.01f, 0.0f, 1.0f);
-    return pb.Changed;
-}
-void PropertyEditor::Init()
-{
-#define REG_HIDDEN(T, name)                                                                                            \
-    Register<T>(name, [](auto&, auto) { return false; });                                                              \
-    s_ComponentRegistry[entt::type_hash<T>::value()].Visible = false;
-
-    // --- Core & Rendering ---
-    Register<TransformComponent>("Transform", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::DrawVec3("Position", component.Translation))
-            changed = true;
-        
-        if (EditorGUI::DrawVec3("Rotation", component.Rotation))
-        {
-            component.RotationQuat = QuaternionFromEuler(component.Rotation.x * DEG2RAD, component.Rotation.y * DEG2RAD,
-                                                         component.Rotation.z * DEG2RAD);
-            changed = true;
-        }
-        
-        if (EditorGUI::DrawVec3("Scale", component.Scale, 1.0f))
-            changed = true;
-            
-        return changed;
-    });
-    s_ComponentRegistry[entt::type_hash<TransformComponent>::value()].AllowAdd = false;
-
-    Register<CameraComponent>("Camera", [](auto& component, auto entity) {
-        bool changed = false;
-        auto& camera = component.Camera;
-
-        const char* projectionTypeStrings[] = {"Perspective", "Orthographic"};
-        int projectionType = (int)camera.GetProjectionType();
-        if (EditorGUI::Property("Projection", projectionType, projectionTypeStrings, 2))
-        {
-            camera.SetProjectionType((CHEngine::ProjectionType)projectionType);
-            changed = true;
-        }
-
-        if (camera.GetProjectionType() == CHEngine::ProjectionType::Perspective)
-        {
-            float verticalFov = camera.GetPerspectiveVerticalFOV() * RAD2DEG;
-            if (EditorGUI::Property("Vertical FOV", verticalFov, 1.0f, 1.0f, 180.0f))
-            {
-                camera.SetPerspectiveVerticalFOV(verticalFov * DEG2RAD);
-                changed = true;
-            }
-
-            float nearClip = camera.GetPerspectiveNearClip();
-            if (EditorGUI::Property("Near", nearClip, 0.01f))
-            {
-                camera.SetPerspectiveNearClip(nearClip);
-                changed = true;
-            }
-
-            float farClip = camera.GetPerspectiveFarClip();
-            if (EditorGUI::Property("Far", farClip, 1.0f))
-            {
-                camera.SetPerspectiveFarClip(farClip);
-                changed = true;
-            }
-        }
-
-        if (camera.GetProjectionType() == CHEngine::ProjectionType::Orthographic)
-        {
-            float orthoSize = camera.GetOrthographicSize();
-            if (EditorGUI::Property("Size", orthoSize, 0.1f))
-            {
-                camera.SetOrthographicSize(orthoSize);
-                changed = true;
-            }
-
-            float nearClip = camera.GetOrthographicNearClip();
-            if (EditorGUI::Property("Near", nearClip, 0.01f))
-            {
-                camera.SetOrthographicNearClip(nearClip);
-                changed = true;
-            }
-
-            float farClip = camera.GetOrthographicFarClip();
-            if (EditorGUI::Property("Far", farClip, 0.1f))
-            {
-                camera.SetOrthographicFarClip(farClip);
-                changed = true;
-            }
-
-            if (EditorGUI::Property("Fixed Aspect Ratio", component.FixedAspectRatio))
-            {
-                changed = true;
-            }
-        }
-
-        if (EditorGUI::Property("Primary", component.Primary))
-        {
-            changed = true;
-        }
-
-        ImGui::Separator();
-        if (EditorGUI::Property("Orbit Camera Setup", component.IsOrbitCamera))
-        {
-            changed = true;
-        }
-
-        if (component.IsOrbitCamera)
-        {
-            if (EditorGUI::Property("Target Tag", component.TargetEntityTag))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Distance", component.OrbitDistance, 0.1f, 0.0f, 100.0f))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Yaw", component.OrbitYaw, 0.5f))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Pitch", component.OrbitPitch, 0.5f, -89.0f, 89.0f))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Sensitivity", component.LookSensitivity, 0.1f, 0.1f, 5.0f))
-            {
-                changed = true;
-            }
-        }
-        return changed;
-    });
-
-    Register<LightComponent>("Light", [](auto& component, auto entity) {
-        bool changed = false;
-
-        const char* lightTypeStrings[] = {"Point", "Spot"};
-        int lightType = (int)component.Type;
-        if (EditorGUI::Property("Type", lightType, lightTypeStrings, 2))
-        {
-            component.Type = (LightType)lightType;
-            changed = true;
-        }
-
-        if (EditorGUI::Property("Color", component.LightColor))
-            changed = true;
-        if (EditorGUI::Property("Intensity", component.Intensity, 0.1f, 0.0f, 100.0f))
-            changed = true;
-        if (EditorGUI::Property("Radius", component.Radius, 0.1f, 0.0f, 1000.0f))
-            changed = true;
-
-        if (component.Type == LightType::Spot)
-        {
-            if (EditorGUI::Property("Inner Cutoff", component.InnerCutoff, 0.1f, 0.0f, 90.0f))
-                changed = true;
-            if (EditorGUI::Property("Outer Cutoff", component.OuterCutoff, 0.1f, 0.0f, 90.0f))
-                changed = true;
-        }
-
-        if (component.Radius <= 0.01f)
-        {
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::NextColumn();
-            ImGui::TextColored({1, 1, 0, 1}, ICON_FA_CIRCLE_EXCLAMATION " Radius is 0");
-            ImGui::Columns(1);
-        }
-
-        return changed;
-    });
-
-    Register<RigidBodyComponent>("RigidBody", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Property("Mass", component.Mass, 0.1f, 0.0f, 1000.0f))
-            changed = true;
-        if (EditorGUI::Property("Use Gravity", component.UseGravity))
-            changed = true;
-        if (EditorGUI::Property("Is Kinematic", component.IsKinematic))
-            changed = true;
-        return changed;
-    });
-
-    Register<ColliderComponent>("Collider", [](auto& component, auto entity) {
-        bool changed = false;
-        const char* types[] = {"Box", "Mesh (BVH)", "Capsule"};
-        int type = (int)component.Type;
-        if (EditorGUI::Property("Type", type, types, (int)std::size(types)))
-        {
-            component.Type = (ColliderType)type;
-            changed = true;
-        }
-
-        if (EditorGUI::Property("Enabled", component.Enabled))
-            changed = true;
-
-        ImGui::BeginDisabled(component.AutoCalculate);
-        if (EditorGUI::DrawVec3("Offset", component.Offset))
-            changed = true;
-        ImGui::EndDisabled();
-
-        if (component.Type == ColliderType::Box)
-        {
-            ImGui::BeginDisabled(component.AutoCalculate);
-            if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
-                changed = true;
-            ImGui::EndDisabled();
-        }
-        else if (component.Type == ColliderType::Capsule)
-        {
-            ImGui::BeginDisabled(component.AutoCalculate);
-            if (EditorGUI::Property("Radius", component.Radius, 0.05f))
-                changed = true;
-            if (EditorGUI::Property("Height", component.Height, 0.05f))
-                changed = true;
-            ImGui::EndDisabled();
-        }
-        else if (component.Type == ColliderType::Mesh)
-        {
-            if (EditorGUI::Property("Model Path", component.ModelPath, "obj,gltf,glb"))
-                changed = true;
-
-            ImGui::BeginDisabled(component.AutoCalculate);
-            if (EditorGUI::DrawVec3("Size", component.Size, 1.0f))
-                changed = true;
-            ImGui::EndDisabled();
-
-            // Status row
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::Text("BVH Status");
-            ImGui::NextColumn();
-            ImGui::Text(component.BVHRoot ? "Built" : "Missing");
-            ImGui::Columns(1);
-
-            // Action row
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::NextColumn();
-            if (ImGui::Button(ICON_FA_HAMMER " Rebuild BVH", {-1, 0}))
-            {
-                if (auto project = Project::GetActive())
-                {
-                    auto asset = project->GetAssetManager()->Get<ModelAsset>(component.ModelPath);
-                    if (asset)
-                    {
-                        auto scene = EditorLayer::Get().GetActiveScene();
-                        if (scene)
-                            scene->GetPhysics().InvalidateBVH(asset.get());
-
-                        component.BVHRoot = BVH::Build(asset);
-                        if (component.AutoCalculate)
-                        {
-                            BoundingBox box = asset->GetBoundingBox();
-                            component.Offset = box.min;
-                            component.Size = Vector3Subtract(box.max, box.min);
-                        }
-                        changed = true;
-                    }
-                }
-            }
-            ImGui::Columns(1);
-        }
-
-        if (EditorGUI::Property("Auto Calculate", component.AutoCalculate))
-            changed = true;
-
-        return changed;
-    });
-
-    Register<ShaderComponent>("Shader", [](auto& component, auto entity) {
-        bool changed = false;
-
-        // Hazel-style Shader Selection
-        if (Renderer::IsInitialized())
-        {
-            auto& lib = Renderer::Get().GetShaderLibrary();
-            std::vector<std::string> names = lib.GetNames();
-            std::sort(names.begin(), names.end());
-
-            std::string currentName = "Custom";
-            for (const auto& name : names)
-            {
-                if (lib.Get(name)->GetPath() == component.ShaderPath)
-                {
-                    currentName = name;
-                    break;
-                }
-            }
-
-            EditorGUI::BeginProperty("Shader");
-            if (ImGui::BeginCombo("##ShaderCombo", currentName.c_str()))
-            {
-                if (ImGui::Selectable("Custom", currentName == "Custom")) {}
-                for (const auto& name : names)
-                {
-                    if (ImGui::Selectable(name.c_str(), currentName == name))
-                    {
-                        component.ShaderPath = lib.Get(name)->GetPath();
-                        changed = true;
-                    }
-                }
-                ImGui::EndCombo();
-            }
-            EditorGUI::EndProperty();
-        }
-
-        if (EditorGUI::Property("Shader Path", component.ShaderPath, "chshader"))
-            changed = true;
-        if (EditorGUI::Property("Enabled", component.Enabled))
-            changed = true;
-
-        if (!component.Uniforms.empty() &&
-            ImGui::TreeNodeEx("Uniforms", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            for (auto& u : component.Uniforms)
-            {
-                EditorGUI::BeginProperty(u.Name.c_str());
-                if (u.Type == 0)
-                {
-                    if (ImGui::DragFloat("##U", &u.Value[0], 0.05f)) changed = true;
-                }
-                else if (u.Type == 1)
-                {
-                    if (ImGui::DragFloat2("##U", u.Value, 0.05f)) changed = true;
-                }
-                else if (u.Type == 2)
-                {
-                    if (ImGui::DragFloat3("##U", u.Value, 0.05f)) changed = true;
-                }
-                else if (u.Type == 4)
-                {
-                    if (ImGui::ColorEdit4("##U", u.Value)) changed = true;
-                }
-                EditorGUI::EndProperty();
-            }
-            ImGui::TreePop();
-        }
-
-        ImGui::Separator();
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, 100.0f);
-        ImGui::NextColumn();
-        if (ImGui::Button(ICON_FA_ARROWS_ROTATE " Sync Uniforms", {-1, 0}))
-        {
-            if (auto project = Project::GetActive())
-            {
-                std::string fullPath = project->GetAssetManager()->ResolvePath(component.ShaderPath);
-                if (std::filesystem::exists(fullPath))
-                {
-                    try {
-                        YAML::Node config = YAML::LoadFile(fullPath);
-                        if (config["Uniforms"]) {
-                            std::vector<ShaderUniform> newUniforms;
-                            for (auto uNode : config["Uniforms"]) {
-                                std::string name = uNode.as<std::string>();
-                                auto it = std::find_if(component.Uniforms.begin(), component.Uniforms.end(),
-                                                       [&](const auto& e) { return e.Name == name; });
-                                if (it != component.Uniforms.end()) newUniforms.push_back(*it);
-                                else {
-                                    ShaderUniform u; u.Name = name;
-                                    u.Type = name.find("Color") != std::string::npos ? 4 : 0;
-                                    newUniforms.push_back(u);
-                                }
-                            }
-                            component.Uniforms = newUniforms;
-                            changed = true;
-                        }
-                    } catch (...) {}
-                }
-            }
-        }
-        ImGui::Columns(1);
-        return changed;
-    });
-
-    Register<AudioComponent>("Audio", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Property("Sound Path", component.SoundPath, "wav,ogg,mp3")) changed = true;
-        if (EditorGUI::Property("Loop", component.Loop)) changed = true;
-        if (EditorGUI::Property("Play On Start", component.PlayOnStart)) changed = true;
-        if (EditorGUI::Property("Volume", component.Volume, 0.05f, 0.0f, 2.0f)) changed = true;
-        if (EditorGUI::Property("Pitch", component.Pitch, 0.05f, 0.1f, 5.0f)) changed = true;
-        return changed;
-    });
-
-    Register<SpawnComponent>("Spawn Zone", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::DrawVec3("Zone Size", component.ZoneSize)) changed = true;
-        if (EditorGUI::Property("Spawn Texture", component.TexturePath, "png,jpg,tga")) changed = true;
-        if (EditorGUI::Property("Render Zone", component.RenderSpawnZoneInScene)) changed = true;
-        return changed;
-    });
-
-    Register<PlayerComponent>("Player", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Property("Speed", component.MovementSpeed)) changed = true;
-        if (EditorGUI::Property("Sensitivity", component.LookSensitivity)) changed = true;
-        if (EditorGUI::Property("Jump Force", component.JumpForce)) changed = true;
-        return changed;
-    });
-
-    Register<SceneTransitionComponent>("Scene Transition", [](auto& component, auto entity) {
-        return EditorGUI::Property("Target Scene", component.TargetScenePath, "chscene");
-    });
-
-    Register<ManagedScriptComponent>("Scripts", [](auto& component, Entity entity) {
-        bool changed = false;
-        auto& scriptClasses = ScriptEngine::Get().GetScriptClasses();
-
-        for (size_t i = 0; i < component.Scripts.size(); i++)
-        {
-            auto& script = component.Scripts[i];
-            ImGui::PushID((int)i);
-
-            EditorGUI::BeginProperty("Script Class");
-            if (ImGui::Button(script.ClassName.empty() ? "None" : script.ClassName.c_str(), {-1, 0}))
-            {
-                ImGui::OpenPopup("SelectScript");
-            }
-
-            if (ImGui::BeginPopup("SelectScript"))
-            {
-                if (ImGui::Selectable("None", script.ClassName.empty()))
-                {
-                    script.ClassName = "";
-                    changed = true;
-                }
-                for (const auto& [className, type] : scriptClasses)
-                {
-                    bool isSelected = (script.ClassName == className);
-                    if (ImGui::Selectable(className.c_str(), isSelected))
-                    {
-                        script.ClassName = className;
-                        changed = true;
-                    }
-                    if (isSelected)
-                        ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndPopup();
-            }
-            EditorGUI::EndProperty();
-
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::NextColumn();
-            if (ImGui::Button(ICON_FA_TRASH " Remove", {-1, 0}))
-            {
-                component.Scripts.erase(component.Scripts.begin() + i);
-                changed = true;
-                ImGui::Columns(1);
-                ImGui::PopID();
-                break;
-            }
-            ImGui::Columns(1);
-            ImGui::PopID();
-            ImGui::Separator();
-        }
-
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, 100.0f);
-        ImGui::NextColumn();
-        if (ImGui::Button(ICON_FA_PLUS " Add Script", {-1, 0}))
-        {
-            component.Scripts.push_back({});
-            changed = true;
-        }
-        ImGui::Columns(1);
-
-        return changed;
-    });
-
-    Register<AnimationComponent>("Animations", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Property("Looping", component.IsLooping)) changed = true;
-        if (EditorGUI::Property("Playing", component.IsPlaying)) changed = true;
-        
-        int animCount = 0;
-        if (entity.template HasComponent<ModelComponent>()) {
-            auto& mc = entity.template GetComponent<ModelComponent>();
-            if (mc.Asset) animCount = mc.Asset->GetAnimationCount();
-        }
-
-        if (animCount > 0) {
-            auto asset = entity.template GetComponent<ModelComponent>().Asset;
-            std::string currentAnimName = asset->GetAnimationName(component.CurrentAnimationIndex);
-            
-            EditorGUI::BeginProperty("Current Animation");
-            if (ImGui::BeginCombo("##AnimCombo", currentAnimName.c_str())) {
-                for (int i = 0; i < animCount; i++) {
-                    bool isSelected = (component.CurrentAnimationIndex == i);
-                    if (ImGui::Selectable(asset->GetAnimationName(i).c_str(), isSelected)) {
-                        component.CurrentAnimationIndex = i;
-                        changed = true;
-                    }
-                    if (isSelected) ImGui::SetItemDefaultFocus();
-                }
-                ImGui::EndCombo();
-            }
-            EditorGUI::EndProperty();
-        } else {
-            ImGui::Columns(2);
-            ImGui::SetColumnWidth(0, 100.0f);
-            ImGui::NextColumn();
-            ImGui::TextDisabled(ICON_FA_CIRCLE_EXCLAMATION " No animations found");
-            ImGui::Columns(1);
-        }
-
-        if (EditorGUI::Property("Loop", component.IsLooping)) changed = true;
-        if (EditorGUI::Property("Playing", component.IsPlaying)) changed = true;
-        
-        ImGui::Columns(2);
-        ImGui::SetColumnWidth(0, 100.0f);
-        ImGui::Text("Frame");
-        ImGui::NextColumn();
-        ImGui::Text("%d", component.CurrentFrame);
-        ImGui::Columns(1);
-
-        return changed;
-    });
-
-
-
-    Register<UIActionComponent>("UI Action", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        
-        // Target Entity Selection (Simplified for now - using UUID as string/hidden)
-        // Ideally we'd have a picker
-        std::string uuidStr = component.TargetEntityID.ToString();
-        if (EditorGUI::Property("Target UUID", uuidStr))
-        {
-            component.TargetEntityID = UUID(uuidStr);
-            pb.Changed = true;
-        }
-
-        pb.String("Parameter", component.ParameterName)
-          .Float("Value", component.Value);
-
-        return pb.Changed;
-    });
-
-    Register<ModelComponent>("Model", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Begin().File("Model Path", component.ModelPath, "obj,gltf,glb"))
-        {
-            changed = true;
-        }
-
-        if (EditorGUI::ActionButton(ICON_FA_DOWNLOAD, "Reload Model"))
-        {
-            component.MaterialsInitialized = false;
-            changed = true;
-        }
-
-        return changed;
-    });
-
-    Register<PrimitiveComponent>("Primitive", [](auto& component, auto entity) {
-        bool changed = false;
-        const char* primitiveTypes[] = {"None", "Cube", "Sphere", "Plane", "Cylinder", "Cone", "Torus", "Knot", "Hemisphere"};
-        int type = (int)component.Type;
-        if (EditorGUI::Property("Shape", type, primitiveTypes, (int)std::size(primitiveTypes)))
-        {
-            component.Type = (PrimitiveType)type;
-            component.Asset = nullptr; // Reset asset cache for type change
-            component.Dirty = true;
-            changed = true;
-        }
-
-        if (component.Type == PrimitiveType::None)
-            return changed;
-
-        ImGui::Separator();
-
-        if (component.Type == PrimitiveType::Cube)
-        {
-            if (EditorGUI::DrawVec3("Dimensions", component.Dimensions, 1.0f)) changed = true;
-        }
-        else if (component.Type == PrimitiveType::Sphere || component.Type == PrimitiveType::Hemisphere)
-        {
-            if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
-            if (EditorGUI::Property("Slices", component.Slices, 3, 128)) changed = true;
-            if (EditorGUI::Property("Stacks", component.Stacks, 3, 128)) changed = true;
-        }
-        else if (component.Type == PrimitiveType::Plane)
-        {
-            Vector2 size = {component.Dimensions.x, component.Dimensions.z};
-            if (EditorGUI::Property("Size", size))
-            {
-                component.Dimensions.x = size.x;
-                component.Dimensions.z = size.y;
-                changed = true;
-            }
-            if (EditorGUI::Property("Res X", component.Slices, 1, 128)) changed = true;
-            if (EditorGUI::Property("Res Z", component.Stacks, 1, 128)) changed = true;
-        }
-        else if (component.Type == PrimitiveType::Cylinder || component.Type == PrimitiveType::Cone)
-        {
-            if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
-            if (EditorGUI::Property("Height", component.Height, 0.05f)) changed = true;
-            if (EditorGUI::Property("Slices", component.Slices, 3, 128)) changed = true;
-        }
-        else if (component.Type == PrimitiveType::Torus || component.Type == PrimitiveType::Knot)
-        {
-            if (EditorGUI::Property("Radius", component.Radius, 0.05f)) changed = true;
-            if (EditorGUI::Property("Inner Radius", component.InnerRadius, 0.05f)) changed = true;
-            if (EditorGUI::Property("Slices", component.Slices, 3, 128)) changed = true;
-            if (EditorGUI::Property("Stacks", component.Stacks, 3, 128)) changed = true;
-        }
-
-        if (changed)
-            component.Dirty = true;
-
-        return changed;
-    });
-
-    Register<SpriteComponent>("Sprite", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.File("Texture", component.TexturePath, "png,jpg,tga")
-            .Color("Tint", component.Tint)
-            .Bool("Flip X", component.FlipX)
-            .Bool("Flip Y", component.FlipY)
-            .Int("Z Order", component.ZOrder);
-        return pb.Changed;
-    });
-
-    // --- UI Widgets ---
-    Register<ControlComponent>("Rect Transform", [](auto& component, auto entity) {
-        auto& rectTransform = component.Transform;
-        bool changed = false;
-
-        // --- Anchor Presets ---
-        ImGui::Text("Presets:");
-        ImGui::SameLine();
-        if (ImGui::Button("Center"))
-        {
-            rectTransform.AnchorMin = {0.5f, 0.5f};
-            rectTransform.AnchorMax = {0.5f, 0.5f};
-            rectTransform.OffsetMin = {-50, -50};
-            rectTransform.OffsetMax = {50, 50};
-            changed = true;
-        }
-        ImGui::SameLine();
-        if (ImGui::Button("Stretch"))
-        {
-            rectTransform.AnchorMin = {0.0f, 0.0f};
-            rectTransform.AnchorMax = {1.0f, 1.0f};
-            rectTransform.OffsetMin = {0, 0};
-            rectTransform.OffsetMax = {0, 0};
-            changed = true;
-        }
-
-        bool isPoint = (rectTransform.AnchorMin.x == rectTransform.AnchorMax.x &&
-                        rectTransform.AnchorMin.y == rectTransform.AnchorMax.y);
-        if (isPoint)
-        {
-            float width = rectTransform.OffsetMax.x - rectTransform.OffsetMin.x;
-            float height = rectTransform.OffsetMax.y - rectTransform.OffsetMin.y;
-            float posX = rectTransform.OffsetMin.x + width * rectTransform.Pivot.x;
-            float posY = rectTransform.OffsetMin.y + height * rectTransform.Pivot.y;
-
-            Vector2 pos = {posX, posY};
-            Vector2 size = {width, height};
-
-            if (EditorGUI::Property("Pos", pos))
-            {
-                rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
-                rectTransform.OffsetMin.y = pos.y - size.y * rectTransform.Pivot.y;
-                rectTransform.OffsetMax.x = pos.x + size.x * (1.0f - rectTransform.Pivot.x);
-                rectTransform.OffsetMax.y = pos.y + size.y * (1.0f - rectTransform.Pivot.y);
-                changed = true;
-            }
-            if (EditorGUI::Property("Size", size))
-            {
-                rectTransform.OffsetMin.x = pos.x - size.x * rectTransform.Pivot.x;
-                rectTransform.OffsetMin.y = pos.y - size.y * rectTransform.Pivot.y;
-                rectTransform.OffsetMax.x = pos.x + size.x * (1.0f - rectTransform.Pivot.x);
-                rectTransform.OffsetMax.y = pos.y + size.y * (1.0f - rectTransform.Pivot.y);
-                changed = true;
-            }
-        }
-        else
-        {
-            float rightPadding = -rectTransform.OffsetMax.x;
-            float bottomPadding = -rectTransform.OffsetMax.y;
-
-            if (EditorGUI::Property("Left", rectTransform.OffsetMin.x))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Top", rectTransform.OffsetMin.y))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Right", rightPadding))
-            {
-                rectTransform.OffsetMax.x = -rightPadding;
-                changed = true;
-            }
-            if (EditorGUI::Property("Bottom", bottomPadding))
-            {
-                rectTransform.OffsetMax.y = -bottomPadding;
-                changed = true;
-            }
-        }
-
-        if (ImGui::TreeNodeEx("Advanced Layout Settings", ImGuiTreeNodeFlags_SpanAvailWidth))
-        {
-            if (EditorGUI::Property("Pivot", rectTransform.Pivot))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Anchor Min", rectTransform.AnchorMin))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Anchor Max", rectTransform.AnchorMax))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Rotation", rectTransform.Rotation))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Scale", rectTransform.Scale))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Z Order", component.ZOrder))
-            {
-                changed = true;
-            }
-            if (EditorGUI::Property("Visible", component.IsActive))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<ButtonControl>("Button Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Property("Label", component.Label))
-        {
-            changed = true;
-        }
-        if (EditorGUI::Property("Interactable", component.IsInteractable))
-        {
-            changed = true;
-        }
-        if (EditorGUI::Property("Auto Size", component.AutoSize))
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Text))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<PanelControl>("Panel Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.File("Texture", component.TexturePath, "png,jpg,tga").Bool("Full Screen", component.FullScreen);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<LabelControl>("Label Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        if (EditorGUI::Property("Text", component.Text))
-        {
-            changed = true;
-        }
-        if (EditorGUI::Property("Auto Size", component.AutoSize))
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<SliderControl>("Slider Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label).Float("Value", component.Value, 0.01f, component.Min, component.Max);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<CheckboxControl>("Checkbox Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label).Bool("Checked", component.Checked);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<InputTextControl>("Input Text Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .String("Text", component.Text)
-            .String("Placeholder", component.Placeholder)
-            .Int("Max Length", component.MaxLength)
-            .Bool("Multiline", component.Multiline)
-            .Bool("Read Only", component.ReadOnly)
-            .Bool("Password", component.Password);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.BoxStyle))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<ComboBoxControl>("ComboBox Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label).Int("Selected Index", component.SelectedIndex);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Items", ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            for (int i = 0; i < (int)component.Items.size(); i++)
-            {
-                ImGui::PushID(i);
-                char buf[256];
-                strncpy(buf, component.Items[i].c_str(), sizeof(buf) - 1);
-                if (ImGui::InputText("##item", buf, sizeof(buf)))
-                {
-                    component.Items[i] = buf;
-                    changed = true;
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("X"))
-                {
-                    component.Items.erase(component.Items.begin() + i);
-                    changed = true;
-                    ImGui::PopID();
-                    break;
-                }
-                ImGui::PopID();
-            }
-            if (ImGui::Button("Add Item"))
-            {
-                component.Items.push_back("New Option");
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.BoxStyle))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<ProgressBarControl>("ProgressBar Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.Float("Progress", component.Progress, 0.0f, 1.0f)
-            .String("Overlay Text", component.OverlayText)
-            .Bool("Show Percentage", component.ShowPercentage);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Bar Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.BarStyle))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<ImageControl>("Image Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.File("Texture Path", component.TexturePath, "png,jpg,tga")
-            .Color("Tint Color", component.TintColor)
-            .Color("Border Color", component.BorderColor);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<ImageButtonControl>("Image Button Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .File("Texture Path", component.TexturePath, "png,jpg,tga")
-            .Color("Tint Color", component.TintColor)
-            .Color("Background Color", component.BackgroundColor)
-            .Int("Frame Padding", component.FramePadding);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<SeparatorControl>("Separator Widget", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.Float("Thickness", component.Thickness).Color("Color", component.LineColor);
-        return pb.Changed;
-    });
-
-    Register<RadioButtonControl>("RadioButton Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .Int("Selected Index", component.SelectedIndex)
-            .Bool("Horizontal", component.Horizontal);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Options", ImGuiTreeNodeFlags_Framed))
-        {
-            for (int i = 0; i < (int)component.Options.size(); i++)
-            {
-                ImGui::PushID(i);
-                char buf[256];
-                strncpy(buf, component.Options[i].c_str(), 255);
-                if (ImGui::InputText("##opt", buf, 255))
-                {
-                    component.Options[i] = buf;
-                    changed = true;
-                }
-                ImGui::SameLine();
-                if (ImGui::Button("X"))
-                {
-                    component.Options.erase(component.Options.begin() + i);
-                    changed = true;
-                    ImGui::PopID();
-                    break;
-                }
-                ImGui::PopID();
-            }
-            if (ImGui::Button("Add Option"))
-            {
-                component.Options.push_back("New Option");
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<ColorPickerControl>("ColorPicker Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .Color("Color", component.SelectedColor)
-            .Bool("Show Alpha", component.ShowAlpha)
-            .Bool("Show Picker", component.ShowPicker);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<DragFloatControl>("DragFloat Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .Float("Value", component.Value)
-            .Float("Speed", component.Speed)
-            .Float("Min", component.Min)
-            .Float("Max", component.Max)
-            .String("Format", component.Format);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.BoxStyle))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<DragIntControl>("DragInt Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .Int("Value", component.Value)
-            .Float("Speed", component.Speed)
-            .Int("Min", component.Min)
-            .Int("Max", component.Max)
-            .String("Format", component.Format);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        if (ImGui::TreeNodeEx("Box Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.BoxStyle))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<TabBarControl>("TabBar Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label)
-            .Bool("Reorderable", component.Reorderable)
-            .Bool("Auto Select New Tabs", component.AutoSelectNewTabs);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawUIStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<TabItemControl>("Tab Item Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label).Bool("Is Open", component.IsOpen);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<CollapsingHeaderControl>("CollapsingHeader Widget", [](auto& component, auto entity) {
-        bool changed = false;
-        auto pb = EditorGUI::Begin();
-        pb.String("Label", component.Label).Bool("Default Open", component.DefaultOpen);
-        if (pb.Changed)
-        {
-            changed = true;
-        }
-
-        if (ImGui::TreeNodeEx("Text Style", ImGuiTreeNodeFlags_Framed))
-        {
-            if (PropertyEditor::DrawTextStyle(component.Style))
-            {
-                changed = true;
-            }
-            ImGui::TreePop();
-        }
-        return changed;
-    });
-
-    Register<VerticalLayoutGroup>("Vertical Layout Group", [](auto& component, auto entity) {
-        auto pb = EditorGUI::Begin();
-        pb.Float("Spacing", component.Spacing).Vec2("Padding", component.Padding);
-        return pb.Changed;
-    });
-
-    // Helper to setup widgets
-    auto setupWidget = [](entt::id_type id) {
-        auto& metadata = s_ComponentRegistry[id];
-        metadata.IsWidget = true;
-        metadata.AllowAdd = true;
-    };
-
-    setupWidget(entt::type_hash<ButtonControl>::value());
-    setupWidget(entt::type_hash<PanelControl>::value());
-    setupWidget(entt::type_hash<LabelControl>::value());
-    setupWidget(entt::type_hash<SliderControl>::value());
-    setupWidget(entt::type_hash<CheckboxControl>::value());
-    setupWidget(entt::type_hash<InputTextControl>::value());
-    setupWidget(entt::type_hash<ComboBoxControl>::value());
-    setupWidget(entt::type_hash<ProgressBarControl>::value());
-    setupWidget(entt::type_hash<ImageControl>::value());
-    setupWidget(entt::type_hash<ImageButtonControl>::value());
-    setupWidget(entt::type_hash<SeparatorControl>::value());
-    setupWidget(entt::type_hash<RadioButtonControl>::value());
-    setupWidget(entt::type_hash<ColorPickerControl>::value());
-    setupWidget(entt::type_hash<DragFloatControl>::value());
-    setupWidget(entt::type_hash<DragIntControl>::value());
-    setupWidget(entt::type_hash<TabBarControl>::value());
-    setupWidget(entt::type_hash<TabItemControl>::value());
-    setupWidget(entt::type_hash<CollapsingHeaderControl>::value());
-
-    // Allow adding Rect Transform directly too
-    s_ComponentRegistry[entt::type_hash<ControlComponent>::value()].AllowAdd = true;
-}
-
-void PropertyEditor::DrawEntityProperties(CHEngine::Entity entity)
-{
-    auto& registry = entity.GetRegistry();
-    bool isUI = entity.HasComponent<ControlComponent>();
-
-    bool hasWidget = false;
-    for (auto [id, storage] : registry.storage())
-    {
-        if (storage.contains(entity) && s_ComponentRegistry.contains(id))
-        {
-            if (s_ComponentRegistry[id].IsWidget)
-            {
-                hasWidget = true;
-                break;
-            }
-        }
-    }
-
-    for (auto [id, storage] : registry.storage())
-    {
-        if (storage.contains(entity))
-        {
-            if (s_ComponentRegistry.find(id) != s_ComponentRegistry.end())
-            {
-                auto& metadata = s_ComponentRegistry[id];
-                if (!metadata.Visible)
-                {
-                    continue;
-                }
-
-                // Logic to reduce clutter
-                if (isUI && id == entt::type_hash<TransformComponent>::value())
-                {
-                    continue;
-                }
-
-                if (hasWidget && id == entt::type_hash<ControlComponent>::value())
-                {
-                    continue;
-                }
-
-                ImGui::PushID((int)id);
-                metadata.Draw(entity);
-                ImGui::PopID();
-            }
-        }
-    }
-}
-
-void PropertyEditor::DrawTag(CHEngine::Entity entity)
-{
-    if (entity.HasComponent<TagComponent>())
-    {
-        auto& tag = entity.GetComponent<TagComponent>().Tag;
-        char buffer[256];
-        memset(buffer, 0, sizeof(buffer));
-        strncpy(buffer, tag.c_str(), sizeof(buffer) - 1);
-
-        ImGui::Text("Tag");
-        ImGui::SameLine();
-        if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
-        {
-            tag = std::string(buffer);
-        }
-    }
-}
-
-void PropertyEditor::DrawMaterial(CHEngine::Entity entity, int hitMeshIndex)
-{
-    if (!entity.HasComponent<ModelComponent>())
-    {
-        return;
-    }
-
-    auto& mc = entity.GetComponent<ModelComponent>();
-    if (!mc.Asset)
-    {
-        return;
-    }
-
-    const Model& model = mc.Asset->GetModel();
-
-    // Helper to draw a single material instance
-    auto DrawMaterialInstance = [](MaterialInstance& mat, int index) {
-        std::string header = "Material " + std::to_string(index);
-        if (ImGui::CollapsingHeader(header.c_str(), ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            ImGui::PushID(index);
-
-            // Albedo
-            ImGui::Text("Albedo");
-            ImGui::PushID("Albedo");
-            EditorGUI::Property("Color", mat.AlbedoColor);
-            EditorGUI::Property("Texture", mat.AlbedoPath, "png,jpg,tga,bmp");
-            EditorGUI::Property("Use Texture", mat.OverrideAlbedo);
-            ImGui::PopID();
-
-            // PBR Maps
-            ImGui::Text("PBR Maps");
-            ImGui::PushID("PBRMaps");
-            EditorGUI::Property("Normal Map", mat.NormalMapPath, "png,jpg,tga,bmp");
-            EditorGUI::Property("Metallic/Roughness", mat.MetallicRoughnessPath, "png,jpg,tga,bmp");
-            EditorGUI::Property("Occlusion", mat.OcclusionMapPath, "png,jpg,tga,bmp");
-            ImGui::PopID();
-
-            ImGui::Separator();
-
-            // Parameters
-            ImGui::Text("Parameters");
-            ImGui::PushID("Parameters");
-            EditorGUI::Property("Metalness", mat.Metalness, 0.01f, 0.0f, 1.0f);
-            EditorGUI::Property("Roughness", mat.Roughness, 0.01f, 0.0f, 1.0f);
-            ImGui::PopID();
-
-            ImGui::Separator();
-
-            // Emissive
-            ImGui::Text("Emissive Bloom");
-            ImGui::PushID("Emissive");
-            if (EditorGUI::Property("Emissive Color", mat.EmissiveColor))
-            {
-                mat.OverrideEmissive = true;
-            }
-            EditorGUI::Property("Intensity", mat.EmissiveIntensity, 0.1f, 0.0f, 100.0f);
-            EditorGUI::Property("Texture", mat.EmissivePath, "png,jpg,tga,bmp");
-            ImGui::PopID();
-
-            // Rendering
-            ImGui::Separator();
-            ImGui::Text("Rendering");
-            ImGui::PushID("Rendering");
-            EditorGUI::Property("Double Sided", mat.DoubleSided);
-            EditorGUI::Property("Transparent", mat.Transparent);
-            if (mat.Transparent)
-            {
-                EditorGUI::Property("Alpha", mat.Alpha, 0.01f, 0.0f, 1.0f);
-            }
-            ImGui::PopID();
-            ImGui::PopID();
-        }
-    };
-
-    if (hitMeshIndex >= 0 && hitMeshIndex < model.meshCount)
-    {
-        // Find specific material for this mesh
-        // 1. Check for Mesh Index override
-        int slotIndex = -1;
-        for (int i = 0; i < mc.Materials.size(); i++)
-        {
-            if (mc.Materials[i].Target == MaterialSlotTarget::MeshIndex && mc.Materials[i].Index == hitMeshIndex)
-            {
-                slotIndex = i;
-                break;
-            }
-        }
-
-        // 2. Check for Material Index override
-        if (slotIndex == -1 && model.meshMaterial)
-        {
-            int matIndex = model.meshMaterial[hitMeshIndex];
-            for (int i = 0; i < mc.Materials.size(); i++)
-            {
-                if (mc.Materials[i].Target == MaterialSlotTarget::MaterialIndex && mc.Materials[i].Index == matIndex)
-                {
-                    slotIndex = i;
-                    break;
-                }
-            }
-        }
-
-        if (slotIndex != -1)
-        {
-            DrawMaterialInstance(mc.Materials[slotIndex].Material, slotIndex);
-        }
-        else
-        {
-            ImGui::Text("No Material Slot assigned to this mesh.");
-            if (ImGui::Button("Create Override"))
-            {
-                // Create new slot for this mesh
-                MaterialSlot newSlot;
-                newSlot.Name = "Mesh Override " + std::to_string(hitMeshIndex);
-                newSlot.Target = MaterialSlotTarget::MeshIndex;
-                newSlot.Index = hitMeshIndex;
-                mc.Materials.push_back(newSlot);
-            }
-        }
-    }
-    else
-    {
-        // Show all materials
-        for (int i = 0; i < mc.Materials.size(); i++)
-        {
-            DrawMaterialInstance(mc.Materials[i].Material, i);
-        }
-    }
-}
-
-void PropertyEditor::DrawAddComponentPopup(CHEngine::Entity entity)
-{
-    if (ImGui::BeginPopup("AddComponent"))
-    {
-        bool isUIEntity = entity.HasComponent<ControlComponent>();
-
-        for (auto& [id, metadata] : s_ComponentRegistry)
-        {
-            if (!metadata.AllowAdd)
-            {
-                continue;
-            }
-
-            // Filtering: Only show widgets if the entity is a UI entity
-            // (or if it's the ControlComponent itself which can be added to any transform)
-            if (metadata.IsWidget && !isUIEntity)
-            {
-                continue;
-            }
-
-            auto& registry = entity.GetRegistry();
-            auto* storage = registry.storage(id);
-            if (storage && storage->contains(entity))
-            {
-                continue;
-            }
-
-            if (ImGui::MenuItem(metadata.Name.c_str()))
-            {
-                metadata.Add(entity);
-                ImGui::CloseCurrentPopup();
-            }
-        }
-        ImGui::EndPopup();
-    }
-}
-} // namespace CHEngine
+	// --- UI Widget Data Drawers (extracted from UIControlComponent lambda) ---
+
+	static bool DrawButtonData(ButtonData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Interactable", data.IsInteractable))
+		{
+			changed = true;
+		}
+		if (ui.Property("Auto Size", data.AutoSize))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawLabelData(LabelData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Text", data.Text))
+		{
+			changed = true;
+		}
+		if (ui.Property("Auto Size", data.AutoSize))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawCheckboxData(CheckboxData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Checked", data.Checked))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawSliderData(SliderData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 0.01f)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Min", data.Min))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max", data.Max))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawProgressBarData(ProgressBarData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Progress", data.Progress, PropertyMeta(0.0f, 1.0f, 0.01f)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Overlay Text", data.OverlayText))
+		{
+			changed = true;
+		}
+		if (ui.Property("Show %", data.ShowPercentage))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawImageData(ImageData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg,.bmp,.tga"))
+		{
+			changed = true;
+		}
+		if (ui.Property("Tint Color", data.TintColor))
+		{
+			changed = true;
+		}
+		if (ui.Property("Border Color", data.BorderColor))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawPanelData(PanelData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
+		{
+			changed = true;
+		}
+		if (ui.Property("Full Screen", data.FullScreen))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawComboBoxData(ComboBoxData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (!data.Items.empty())
+		{
+			if (ui.Property("Selected", data.SelectedIndex, PropertyMeta(0, (int)data.Items.size() - 1, 1)))
+			{
+				changed = true;
+			}
+		}
+
+		ImGui::TableNextRow();
+		ImGui::TableSetColumnIndex(0);
+		ImGui::TextUnformatted("Items");
+		ImGui::TableSetColumnIndex(1);
+		int removeIdx = -1;
+		for (int i = 0; i < (int)data.Items.size(); i++)
+		{
+			ImGui::PushID(i);
+			if (ImGui::InputText("##item", &data.Items[i]))
+			{
+				changed = true;
+			}
+			ImGui::SameLine();
+			if (ImGui::SmallButton(ICON_FA_TRASH))
+			{
+				removeIdx = i;
+				changed = true;
+			}
+			ImGui::PopID();
+		}
+		if (removeIdx >= 0)
+		{
+			data.Items.erase(data.Items.begin() + removeIdx);
+		}
+		if (ImGui::SmallButton(ICON_FA_PLUS " Add Item"))
+		{
+			data.Items.push_back("");
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawInputTextData(InputTextData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Text", data.Text))
+		{
+			data.InputBuffer.clear();
+			changed = true;
+		}
+		if (ui.Property("Placeholder", data.Placeholder))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max Length", data.MaxLength, PropertyMeta(1, 1024, 1)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Multiline", data.Multiline))
+		{
+			changed = true;
+		}
+		if (ui.Property("Read Only", data.ReadOnly))
+		{
+			changed = true;
+		}
+		if (ui.Property("Password", data.Password))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawImageButtonData(ImageButtonData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.File("Texture Path", data.TexturePath, ".png,.jpg,.jpeg"))
+		{
+			changed = true;
+		}
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawRadioButtonData(RadioButtonData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (!data.Options.empty())
+		{
+			if (ui.Property("Selected", data.SelectedIndex, PropertyMeta(0, (int)data.Options.size() - 1, 1)))
+			{
+				changed = true;
+			}
+		}
+		if (ui.Property("Horizontal", data.Horizontal))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawDragFloatData(DragFloatData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, data.Speed)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Min", data.Min))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max", data.Max))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	static bool DrawDragIntData(DragIntData& data, UIProperties& ui)
+	{
+		bool changed = false;
+		if (ui.Property("Label", data.Label))
+		{
+			changed = true;
+		}
+		if (ui.Property("Value", data.Value, PropertyMeta(data.Min, data.Max, 1)))
+		{
+			changed = true;
+		}
+		if (ui.Property("Min", data.Min))
+		{
+			changed = true;
+		}
+		if (ui.Property("Max", data.Max))
+		{
+			changed = true;
+		}
+		return changed;
+	}
+
+	// --- Template Implementations (Moved from Header) ---
+
+	template <typename T>
+	void PropertyEditor::DrawComponentReflection(const std::string& name, const char* icon, Entity entity)
+	{
+		static std::unordered_map<entt::entity, T> s_InitialStates;
+		entt::entity e = (entt::entity)entity;
+
+		// Clear stale states when entity is not in the current context
+		// (handles scene changes where entity IDs may be reused)
+		static entt::registry* s_LastRegistry = nullptr;
+		entt::registry* currentRegistry = &entity.GetRegistry();
+		if (s_LastRegistry != currentRegistry)
+		{
+			s_InitialStates.clear();
+			s_LastRegistry = currentRegistry;
+		}
+
+		DrawComponentContainer<T>(name, icon, entity, [&](T& comp, Entity ent) {
+			UIProperties ui;
+			Properties props(ui);
+
+			if constexpr (is_rfl_component<T>::value)
+			{
+				ReflectFromRfl(comp, props);
+			}
+			else
+			{
+				comp.Reflect(props);
+			}
+
+			if (ui.HasStarted())
+			{
+				s_InitialStates[e] = entity.GetComponent<T>();
+			}
+
+			if (ui.HasFinished())
+			{
+				if (s_InitialStates.contains(e))
+				{
+					auto oldState = s_InitialStates[e];
+					auto newState = comp;
+
+					EditorLayer::Get().GetCommandHistory().PushCommand(
+						std::make_unique<ModifyComponentCommand<T>>(entity, oldState, newState, "Modify " + name));
+
+					s_InitialStates.erase(e);
+				}
+			}
+
+			return props.HasChanged();
+		});
+	}
+
+	template <typename T, typename F>
+	void PropertyEditor::DrawComponentContainer(const std::string& name, const char* icon, Entity entity, F&& drawer)
+	{
+		if (entity.HasComponent<T>())
+		{
+			if constexpr (std::is_same_v<T, ModelComponent>)
+			{
+				if (entity.HasComponent<PrimitiveComponent>() &&
+					entity.GetComponent<PrimitiveComponent>().Type != PrimitiveType::None)
+				{
+					return;
+				}
+			}
+
+			DrawComponentInternal(
+				entt::type_hash<T>::value(), name, icon, entity,
+				[&]() {
+					auto& component = entity.GetComponent<T>();
+					T componentCopy = component;
+					if (drawer(componentCopy, entity))
+					{
+						// Live preview / immediate update
+						entity.GetRegistry().template patch<T>(entity,
+															   [&componentCopy](T& comp) { comp = componentCopy; });
+						return true;
+					}
+					return false;
+				},
+				[&]() {
+					EditorLayer::Get().GetCommandHistory().PushCommand(
+						std::make_unique<RemoveComponentCommand<T>>(entity));
+				});
+		}
+	}
+
+	void PropertyEditor::DrawGenericReflection(const ComponentMetadata& metadata, Entity entity)
+	{
+		// Use a stable hash of the component name as the tree node ID
+		// to avoid ImGui ID collisions when multiple generic components are rendered
+		entt::id_type stableId = static_cast<entt::id_type>(std::hash<std::string>{}(metadata.Name));
+
+		DrawComponentInternal(
+			stableId, metadata.Name, metadata.Icon, entity,
+			[&]() {
+				UIProperties ui;
+				metadata.ReflectInternal(entity, ui, ReflectionMode::UI);
+				bool changed = ui.HasChanged();
+				if (changed && metadata.NotifyUpdate)
+				{
+					// Fire registry.patch() so on_update observers (e.g. MarkPrimitiveDirty) run.
+					metadata.NotifyUpdate(entity);
+				}
+				return changed;
+			},
+			[&]() {
+				if (metadata.Remove)
+				{
+					metadata.Remove(entity);
+				}
+			});
+	}
+
+	template <typename T>
+	void PropertyEditor::RegisterComponentImpl(const std::string& name, const char* icon,
+											   std::function<void(Entity)> drawUI)
+	{
+		auto typeId = entt::type_hash<T>::value();
+
+		// Register fresh metadata if the component type doesn't exist yet
+		if (!ComponentRegistry::Exists(typeId))
+		{
+			ComponentMetadata fresh;
+			fresh.Name = name;
+			fresh.Icon = icon;
+			fresh.Category = "Engine";
+			fresh.SerializationKey = name + "Component";
+			ComponentRegistry::Register(typeId, fresh);
+		}
+
+		// Apply editor-specific overrides (undo/redo, custom DrawUI)
+		ComponentMetadata override;
+		override.Name = name;
+		override.Icon = icon;
+		override.DrawUI = drawUI;
+		override.Add = [](Entity e) {
+			if (!e.HasComponent<T>())
+			{
+				EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<AddComponentCommand<T>>(e));
+			}
+		};
+		override.Remove = [](Entity e) {
+			EditorLayer::Get().GetCommandHistory().PushCommand(std::make_unique<RemoveComponentCommand<T>>(e));
+		};
+		ComponentRegistry::OverrideMetadata(typeId, override);
+	}
+
+	template <typename T> void PropertyEditor::Register(const std::string& name, const char* icon)
+	{
+		RegisterComponentImpl<T>(name, icon, [name, icon](Entity e) { DrawComponentReflection<T>(name, icon, e); });
+	}
+
+	template <typename T, typename F>
+	void PropertyEditor::RegisterCustom(const std::string& name, F&& drawer, const char* icon)
+	{
+		RegisterComponentImpl<T>(name, icon, [name, icon, drawer = std::forward<F>(drawer)](Entity e) {
+			DrawComponentContainer<T>(name, icon, e, drawer);
+		});
+	}
+
+	// --- Implementation ---
+
+	void PropertyEditor::Init()
+	{
+		// --- Core Components ---
+		ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
+
+		// Custom drawer for PrimitiveComponent (shown in Inspector)
+		RegisterCustom<PrimitiveComponent>(
+			"Primitive",
+			[](PrimitiveComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+
+				static const char* primitiveTypes[] = {"None", "Cube",	"Sphere", "Plane",	   "Cylinder",
+													   "Cone", "Torus", "Knot",	  "Hemisphere"};
+				int typeIdx = static_cast<int>(comp.Type);
+				if (ui.Enum("Shape Type", typeIdx, primitiveTypes, 9))
+				{
+					comp.Type = static_cast<PrimitiveType>(typeIdx);
+					changed = true;
+				}
+
+				switch (comp.Type)
+				{
+				case PrimitiveType::Cube: {
+					if (ui.Property("Dimensions", comp.Dimensions, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Sphere: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Plane: {
+					if (ui.Property("Dimensions", comp.Dimensions, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Cylinder: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Height", comp.Height, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Cone: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Height", comp.Height, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Torus: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Inner Radius", comp.InnerRadius, PropertyMeta(0.01f, 50.0f, 0.01f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Knot: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Inner Radius", comp.InnerRadius, PropertyMeta(0.01f, 50.0f, 0.01f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				case PrimitiveType::Hemisphere: {
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
+					{
+						changed = true;
+					}
+					break;
+				}
+				default:
+					break;
+				}
+
+				if (entity.HasComponent<ModelComponent>())
+				{
+					auto& mc = entity.GetComponent<ModelComponent>();
+					ImGui::Spacing();
+					ImGui::Separator();
+					ImGui::TextDisabled("Material Override");
+
+					if (mc.MaterialPaths.empty())
+					{
+						mc.MaterialPaths.resize(1);
+					}
+
+					for (size_t matIdx = 0; matIdx < mc.MaterialPaths.size(); ++matIdx)
+					{
+						std::string matLabel = "Material " + std::to_string(matIdx);
+						if (ui.File(matLabel.c_str(), mc.MaterialPaths[matIdx], ".chmat"))
+						{
+							entity.GetRegistry().patch<ModelComponent>(entity, [](ModelComponent&) {});
+							changed = true;
+						}
+					}
+				}
+
+				return changed;
+			},
+			ICON_FA_SHAPES);
+		RegisterCustom<LightComponent>(
+			"Light",
+			[&](LightComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+				Properties props(ui);
+
+				int typeIdx = static_cast<int>(comp.Type);
+				static const char* lightTypes[] = {"Point", "Spot", "Directional"};
+				if (ui.Enum("Type", typeIdx, lightTypes, 3))
+				{
+					comp.Type = static_cast<LightType>(typeIdx);
+					changed = true;
+				}
+				if (ui.Property("Color", comp.LightColor))
+				{
+					changed = true;
+				}
+				if (ui.Property("Intensity", comp.Intensity, PropertyMeta(0.0f, 10000.0f, 5.0f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Range", comp.Radius, PropertyMeta(0.0f, 1000.0f, 1.0f)))
+				{
+					changed = true;
+				}
+
+				if (comp.Type == LightType::Spot)
+				{
+					if (ui.Property("Inner Cutoff", comp.InnerCutoff, PropertyMeta(0.0f, 90.0f, 0.5f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Outer Cutoff", comp.OuterCutoff, PropertyMeta(0.0f, 90.0f, 0.5f)))
+					{
+						changed = true;
+					}
+				}
+
+				if (ui.Property("Cast Shadows", comp.Shadows))
+				{
+					changed = true;
+				}
+
+				return changed;
+			},
+			ICON_FA_LIGHTBULB);
+
+		RegisterCustom<ColliderComponent>(
+			"Collider",
+			[&](ColliderComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+				Properties props(ui);
+
+				int typeIdx = static_cast<int>(comp.Type);
+				static const char* colliderTypes[] = {"Box", "Sphere", "Capsule", "Mesh"};
+				if (ui.Enum("Type", typeIdx, colliderTypes, 4))
+				{
+					comp.Type = static_cast<ColliderType>(typeIdx);
+					changed = true;
+				}
+
+				if (comp.Type == ColliderType::Box)
+				{
+					if (ui.Property("Size", comp.Size, PropertyMeta(0.01f, 100.0f, 0.05f)))
+					{
+						changed = true;
+					}
+				}
+				else if (comp.Type == ColliderType::Sphere || comp.Type == ColliderType::Capsule)
+				{
+					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.0f, 500.0f, 0.05f)))
+					{
+						changed = true;
+					}
+				}
+				if (comp.Type == ColliderType::Capsule)
+				{
+					if (ui.Property("Height", comp.Height, PropertyMeta(0.0f, 500.0f, 0.05f)))
+					{
+						changed = true;
+					}
+				}
+
+				if (ui.Property("Offset", comp.Offset, PropertyMeta(-10.0f, 10.0f, 0.05f)))
+				{
+					changed = true;
+				}
+
+				if (comp.Type == ColliderType::Mesh)
+				{
+					if (ui.Property("Auto Calculate", comp.AutoCalculate))
+					{
+						changed = true;
+					}
+					if (!comp.AutoCalculate)
+					{
+						if (ui.File("Model Path", comp.ModelPath, ".glb,.gltf,.obj"))
+						{
+							changed = true;
+						}
+					}
+				}
+
+				if (ui.Property("Friction", comp.Friction, PropertyMeta(0.0f, 1.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Restitution", comp.Restitution, PropertyMeta(0.0f, 1.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Is Trigger", comp.IsTrigger))
+				{
+					changed = true;
+				}
+				if (ui.Property("Enabled", comp.Enabled))
+				{
+					changed = true;
+				}
+
+				return changed;
+			},
+			ICON_FA_SHIELD);
+
+		// --- Scripting ---
+		RegisterCustom<ManagedScriptComponent>(
+			"Scripts",
+			[](ManagedScriptComponent& comp, Entity entity) {
+				bool changed = false;
+
+				for (int i = 0; i < (int)comp.Scripts.size(); i++)
+				{
+					auto& script = comp.Scripts[i];
+					ImGui::PushID(i);
+
+					// We are already inside a PropertyGrid table (2 columns).
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(0);
+
+					ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+											   ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
+											   ImGuiTreeNodeFlags_SpanAllColumns;
+
+					// Extract short class name (after last dot)
+					std::string fullClassName = script.ClassName;
+					size_t lastDot = fullClassName.find_last_of('.');
+					std::string shortName =
+						(lastDot == std::string::npos) ? fullClassName : fullClassName.substr(lastDot + 1);
+					std::string label = shortName.empty() ? "-- Empty Script --" : shortName;
+
+					float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+					bool open =
+						ImGui::TreeNodeEx((void*)(uintptr_t)i, flags, "%s %s", ICON_FA_FILE_CODE, label.c_str());
+
+					// Tooltip with full name
+					if (ImGui::IsItemHovered() && !fullClassName.empty())
+					{
+						ImGui::SetTooltip("%s", fullClassName.c_str());
+					}
+
+					// Delete button in the header row (right aligned in column 1)
+					ImGui::TableSetColumnIndex(1);
+					ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetContentRegionAvail().x - lineHeight - 5.0f);
+					if (ImGui::Button(ICON_FA_TRASH, ImVec2{lineHeight, lineHeight}))
+					{
+						comp.Scripts.erase(comp.Scripts.begin() + i);
+						changed = true;
+						if (open)
+						{
+							ImGui::TreePop();
+						}
+						ImGui::PopID();
+						break;
+					}
+
+					if (open)
+					{
+						UIProperties ui;
+						// Manually draw fields from the map, skipping redundancy
+						for (auto& [fieldName, field] : script.Fields)
+						{
+							std::visit(
+								[&](auto&& val) {
+									if (ui.Property(fieldName.c_str(), val))
+									{
+										changed = true;
+									}
+								},
+								field.Value);
+						}
+
+						ImGui::TreePop();
+					}
+
+					ImGui::PopID();
+					ImGui::Spacing();
+				}
+
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(1);
+				if (EditorGUI::ActionButton(ICON_FA_PLUS, "Add Script"))
+				{
+					ImGui::OpenPopup("AddScriptPopup");
+				}
+
+				if (ImGui::BeginPopup("AddScriptPopup"))
+				{
+					if (auto* se = ServiceLocator::TryGet<ScriptEngine>())
+					{
+						for (const auto& [className, type] : se->GetRegistry().GetScriptClasses())
+						{
+							// Extract short name for menu
+							size_t lastDot = className.find_last_of('.');
+							std::string shortName =
+								(lastDot == std::string::npos) ? className : className.substr(lastDot + 1);
+
+							if (ImGui::MenuItem(shortName.c_str()))
+							{
+								comp.Scripts.emplace_back(className);
+								changed = true;
+							}
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::SetTooltip("%s", className.c_str());
+							}
+						}
+					}
+					ImGui::EndPopup();
+				}
+
+				return changed;
+			},
+			ICON_FA_FILE_CODE);
+
+		RegisterCustom<ModelComponent>(
+			"Model",
+			[&](ModelComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+				Properties props(ui);
+
+				if (ui.File("Model Path", comp.ModelPath, ".glb,.gltf,.obj"))
+				{
+					comp.ModelHandle = AssetHandle(0);
+					comp.MaterialPaths.clear();
+					changed = true;
+				}
+
+				auto* am = ServiceLocator::TryGet<AssetManager>();
+				if (am && !comp.ModelPath.empty())
+				{
+					auto handle = am->ResolveToHandle(comp.ModelPath);
+					if (handle != AssetHandle(0))
+					{
+						auto asset = am->Get<ModelAsset>(handle);
+						if (asset)
+						{
+							const char* stateStr = "Unknown";
+							ImVec4 stateColor(0.7f, 0.7f, 0.7f, 1.0f);
+							switch (asset->GetState())
+							{
+							case AssetState::Ready:
+								stateStr = "Ready";
+								stateColor = ImVec4(0.3f, 0.8f, 0.3f, 1.0f);
+								break;
+							case AssetState::Loading:
+								stateStr = "Loading";
+								stateColor = ImVec4(0.9f, 0.7f, 0.2f, 1.0f);
+								break;
+							case AssetState::Failed:
+								stateStr = "Failed";
+								stateColor = ImVec4(0.9f, 0.2f, 0.2f, 1.0f);
+								break;
+							default:
+								break;
+							}
+							ImGui::SameLine();
+							ImGui::TextColored(stateColor, "%s", stateStr);
+
+							if (asset->GetState() == AssetState::Ready)
+							{
+								ImGui::SameLine();
+								if (ImGui::SmallButton("Reload"))
+								{
+									am->Invalidate(comp.ModelPath);
+									comp.ModelHandle = AssetHandle(0);
+									comp.MaterialPaths.clear();
+									CH_CORE_INFO("ModelComponent: Invalidated '{}', will reload next frame",
+												 comp.ModelPath);
+								}
+								ImGui::SameLine();
+								if (ImGui::SmallButton("Delete .chasset"))
+								{
+									am->DeleteChasset(comp.ModelPath);
+									am->Invalidate(comp.ModelPath);
+									comp.ModelHandle = AssetHandle(0);
+									comp.MaterialPaths.clear();
+									CH_CORE_INFO("ModelComponent: Deleted .chasset for '{}', will re-import next frame",
+												 comp.ModelPath);
+								}
+								ImGui::SameLine();
+								if (ImGui::SmallButton("Delete .chmat"))
+								{
+									std::filesystem::path modelPath(comp.ModelPath);
+									std::string modelName = modelPath.stem().string();
+									std::filesystem::path modelDir = modelPath.parent_path();
+									for (const auto& mp : comp.MaterialPaths)
+									{
+										if (!mp.empty())
+										{
+											std::string resolved = am->ResolvePath(mp);
+											std::error_code ec;
+											std::filesystem::remove(resolved, ec);
+											std::filesystem::remove(resolved + ".meta", ec);
+											am->Invalidate(mp);
+										}
+									}
+									for (int i = 0; i < 64; ++i)
+									{
+										std::string matFileName =
+											modelName + "_material_" + std::to_string(i) + ".chmat";
+										std::string matRel = (modelDir / matFileName).generic_string();
+										std::string resolved = am->ResolvePath(matRel);
+										if (std::filesystem::exists(resolved))
+										{
+											std::error_code ec;
+											std::filesystem::remove(resolved, ec);
+											std::filesystem::remove(resolved + ".meta", ec);
+											am->Invalidate(matRel);
+										}
+									}
+									comp.MaterialPaths.clear();
+									am->Invalidate(comp.ModelPath);
+									comp.ModelHandle = AssetHandle(0);
+									CH_CORE_INFO(
+										"ModelComponent: Deleted .chmat files for '{}', restored default materials",
+										comp.ModelPath);
+								}
+							}
+						}
+					}
+				}
+
+				return changed;
+			},
+			ICON_FA_SHAPES);
+
+		RegisterCustom<AnimationComponent>(
+			"Animation",
+			[&](AnimationComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+				Properties props(ui);
+
+				if (ui.File("Graph Path", comp.GraphPath, ".chag"))
+				{
+					comp.GraphAssetHandle = AssetHandle(0);
+					changed = true;
+				}
+
+				auto* am = ServiceLocator::TryGet<AssetManager>();
+				if (ImGui::Button("New Graph"))
+				{
+					std::string baseName = "anim_graph";
+					if (entity.HasComponent<TagComponent>())
+					{
+						std::string tag = entity.GetComponent<TagComponent>().Tag;
+						if (!tag.empty())
+						{
+							std::string cleanTag = tag;
+							std::replace(cleanTag.begin(), cleanTag.end(), ' ', '_');
+							std::replace(cleanTag.begin(), cleanTag.end(), '/', '_');
+							std::replace(cleanTag.begin(), cleanTag.end(), '\\', '_');
+							std::replace(cleanTag.begin(), cleanTag.end(), '#', '_');
+							std::transform(cleanTag.begin(), cleanTag.end(), cleanTag.begin(), ::tolower);
+							baseName = cleanTag + "_graph";
+						}
+					}
+					else if (entity.HasComponent<ModelComponent>())
+					{
+						std::string mPath = entity.GetComponent<ModelComponent>().ModelPath;
+						if (!mPath.empty())
+						{
+							baseName = std::filesystem::path(mPath).stem().string() + "_graph";
+						}
+					}
+
+					std::string cand = "animations/" + baseName + ".chag";
+					if (am)
+					{
+						int counter = 1;
+						while (std::filesystem::exists(am->ResolvePath(cand)))
+						{
+							cand = "animations/" + baseName + "_" + std::to_string(counter++) + ".chag";
+						}
+					}
+					comp.GraphPath = cand;
+					comp.GraphAssetHandle = AssetHandle(0);
+
+					AnimationGraphAsset newGraph;
+					AnimGraphLoader loader;
+					if (am)
+					{
+						loader.Save(newGraph, am->ResolvePath(cand));
+						am->Invalidate(cand);
+					}
+					changed = true;
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button("Duplicate Graph") && !comp.GraphPath.empty() && am)
+				{
+					std::string srcResolved = am->ResolvePath(comp.GraphPath);
+					if (std::filesystem::exists(srcResolved))
+					{
+						std::filesystem::path p(comp.GraphPath);
+						std::string newPath = (p.parent_path() / (p.stem().string() + "_copy.chag")).generic_string();
+						int counter = 1;
+						while (std::filesystem::exists(am->ResolvePath(newPath)))
+						{
+							newPath =
+								(p.parent_path() / (p.stem().string() + "_copy" + std::to_string(counter++) + ".chag"))
+									.generic_string();
+						}
+						std::error_code ec;
+						std::filesystem::copy_file(srcResolved, am->ResolvePath(newPath), ec);
+						comp.GraphPath = newPath;
+						comp.GraphAssetHandle = AssetHandle(0);
+						am->Invalidate(newPath);
+						changed = true;
+					}
+				}
+
+				if (ui.Property("Blend Duration", comp.BlendDuration, PropertyMeta(0.0f, 10.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Default Loop", comp.DefaultIsLooping))
+				{
+					changed = true;
+				}
+				if (ui.Property("Play On Start", comp.PlayOnStart))
+				{
+					changed = true;
+				}
+
+				return changed;
+			},
+			ICON_FA_FILM);
+
+		// --- UI Components ---
+
+		// --- UI Widgets ---
+		RegisterCustom<UIControlComponent>(
+			"Widget",
+			[](UIControlComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+
+				// Box Style
+				ui.Header("Box Style");
+				if (ui.Property("BG Color", comp.BoxStyle.BackgroundColor))
+				{
+					changed = true;
+				}
+				if (ui.Property("Hover Color", comp.BoxStyle.HoverColor))
+				{
+					changed = true;
+				}
+				if (ui.Property("Pressed Color", comp.BoxStyle.PressedColor))
+				{
+					changed = true;
+				}
+				if (ui.Property("Border Color", comp.BoxStyle.BorderColor))
+				{
+					changed = true;
+				}
+				if (ui.Property("Rounding", comp.BoxStyle.Rounding, PropertyMeta(0.0f, 32.0f, 0.5f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Border Size", comp.BoxStyle.BorderSize, PropertyMeta(0.0f, 10.0f, 0.1f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Padding", comp.BoxStyle.Padding, PropertyMeta(0.0f, 64.0f, 0.5f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Hover Scale", comp.BoxStyle.HoverScale, PropertyMeta(0.5f, 3.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Pressed Scale", comp.BoxStyle.PressedScale, PropertyMeta(0.5f, 3.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Transition Speed", comp.BoxStyle.TransitionSpeed, PropertyMeta(0.0f, 2.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Gradient", comp.BoxStyle.UseGradient))
+				{
+					changed = true;
+				}
+				if (ui.Property("Gradient Color", comp.BoxStyle.GradientColor))
+				{
+					changed = true;
+				}
+
+				const bool needsTextStyle =
+					std::holds_alternative<ButtonData>(comp.Data) || std::holds_alternative<LabelData>(comp.Data) ||
+					std::holds_alternative<CheckboxData>(comp.Data) ||
+					std::holds_alternative<InputTextData>(comp.Data) ||
+					std::holds_alternative<ComboBoxData>(comp.Data) ||
+					std::holds_alternative<RadioButtonData>(comp.Data) ||
+					std::holds_alternative<ColorPickerData>(comp.Data) ||
+					std::holds_alternative<DragFloatData>(comp.Data) ||
+					std::holds_alternative<DragIntData>(comp.Data) || std::holds_alternative<TabBarData>(comp.Data) ||
+					std::holds_alternative<TabItemData>(comp.Data) ||
+					std::holds_alternative<CollapsingHeaderData>(comp.Data) ||
+					std::holds_alternative<PlotData>(comp.Data) || std::holds_alternative<ProgressBarData>(comp.Data) ||
+					std::holds_alternative<ImageButtonData>(comp.Data);
+
+				if (needsTextStyle)
+				{
+					ui.Separator();
+					// Text Style
+					ui.Header("Text Style");
+					{
+						auto* fontRegistry = ServiceLocator::TryGet<UIFontRegistry>();
+						auto fontNames = fontRegistry ? fontRegistry->GetKnownFontNames() : std::vector<std::string>{};
+						fontNames.insert(fontNames.begin(), "Default");
+						if (ui.StringEnum("Font Name", comp.TextStyle.FontName, fontNames))
+						{
+							changed = true;
+						}
+					}
+					if (ui.Property("Font Size", comp.TextStyle.FontSize, PropertyMeta(4.0f, 256.0f, 0.5f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Text Color", comp.TextStyle.TextColor))
+					{
+						changed = true;
+					}
+					if (ui.Property("Shadow", comp.TextStyle.Shadow))
+					{
+						changed = true;
+					}
+					if (comp.TextStyle.Shadow)
+					{
+						if (ui.Property("Shadow Offset", comp.TextStyle.ShadowOffset, PropertyMeta(0.0f, 20.0f, 0.5f)))
+						{
+							changed = true;
+						}
+						if (ui.Property("Shadow Color", comp.TextStyle.ShadowColor))
+						{
+							changed = true;
+						}
+					}
+					if (ui.Property("Letter Spacing", comp.TextStyle.LetterSpacing, PropertyMeta(0.0f, 10.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("Line Height", comp.TextStyle.LineHeight, PropertyMeta(0.0f, 5.0f, 0.05f)))
+					{
+						changed = true;
+					}
+					if (ui.Property("H Align", comp.TextStyle.Horizontal))
+					{
+						changed = true;
+					}
+					if (ui.Property("V Align", comp.TextStyle.Vertical))
+					{
+						changed = true;
+					}
+				}
+
+				ui.Separator();
+				// Widget-type specific
+				std::visit(
+					[&](auto&& data) {
+						using T = std::decay_t<decltype(data)>;
+						if constexpr (std::is_same_v<T, ButtonData>)
+						{
+							changed = DrawButtonData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, LabelData>)
+						{
+							changed = DrawLabelData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, CheckboxData>)
+						{
+							changed = DrawCheckboxData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, SliderData>)
+						{
+							changed = DrawSliderData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, ProgressBarData>)
+						{
+							changed = DrawProgressBarData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, ImageData>)
+						{
+							changed = DrawImageData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, PanelData>)
+						{
+							changed = DrawPanelData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, ComboBoxData>)
+						{
+							changed = DrawComboBoxData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, InputTextData>)
+						{
+							changed = DrawInputTextData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, ImageButtonData>)
+						{
+							changed = DrawImageButtonData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, RadioButtonData>)
+						{
+							changed = DrawRadioButtonData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, DragFloatData>)
+						{
+							changed = DrawDragFloatData(data, ui) || changed;
+						}
+						else if constexpr (std::is_same_v<T, DragIntData>)
+						{
+							changed = DrawDragIntData(data, ui) || changed;
+						}
+					},
+					comp.Data);
+
+				return changed;
+			},
+			ICON_FA_SHAPES);
+
+		// Mark only real UI widget types as IsWidget (these will be hidden in 3D scenes)
+		auto markWidget = [&](entt::id_type id) { ComponentRegistry::SetIsWidget(id, true); };
+		markWidget(entt::type_hash<ControlComponent>::value());
+		markWidget(entt::type_hash<UIActionComponent>::value());
+		markWidget(entt::type_hash<UIControlComponent>::value());
+		markWidget(entt::type_hash<SpriteComponent>::value());
+	}
+
+	void PropertyEditor::DrawComponentInternal(entt::id_type typeId, const std::string& name, const char* icon,
+											   Entity entity, std::function<bool()> contentDrawer,
+											   std::function<void()> remover)
+	{
+		const ImGuiTreeNodeFlags treeNodeFlags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed |
+												 ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_AllowOverlap |
+												 ImGuiTreeNodeFlags_FramePadding;
+
+		ImVec2 contentRegionAvailable = ImGui::GetContentRegionAvail();
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
+		float lineHeight = ImGui::GetFontSize() + ImGui::GetStyle().FramePadding.y * 2.0f;
+
+		// Header Background Color
+		ImGui::PushStyleColor(ImGuiCol_Header, {0.2f, 0.25f, 0.35f, 0.8f});
+		ImGui::PushStyleColor(ImGuiCol_HeaderActive, {0.3f, 0.4f, 0.6f, 1.0f});
+		ImGui::PushStyleColor(ImGuiCol_HeaderHovered, {0.25f, 0.35f, 0.5f, 1.0f});
+
+		std::string headerName = (icon ? std::string(icon) + " " : "") + name;
+		bool open = ImGui::TreeNodeEx((void*)typeId, treeNodeFlags, headerName.c_str());
+
+		ImGui::PopStyleColor(3);
+		ImGui::PopStyleVar();
+
+		// Right-aligned settings button
+		ImGui::SameLine(contentRegionAvailable.x - lineHeight * 0.7f);
+		ImGui::PushStyleColor(ImGuiCol_Button, {0, 0, 0, 0});
+		if (ImGui::Button(ICON_FA_GEAR, ImVec2{lineHeight, lineHeight}))
+		{
+			ImGui::OpenPopup("ComponentSettings");
+		}
+		ImGui::PopStyleColor();
+
+		bool removed = false;
+		if (ImGui::BeginPopup("ComponentSettings"))
+		{
+			if (ImGui::MenuItem("Remove Component"))
+			{
+				remover();
+				removed = true;
+			}
+
+			ImGui::EndPopup();
+		}
+
+		if (open)
+		{
+			if (!removed)
+			{
+				EditorGUI::BeginPropertyGrid();
+				contentDrawer();
+				EditorGUI::EndPropertyGrid();
+			}
+			ImGui::TreePop();
+			ImGui::Spacing();
+		}
+	}
+
+	void PropertyEditor::DrawEntityProperties(Chained::Entity entity)
+	{
+		auto& registry = entity.GetRegistry();
+		bool isUI = entity.HasComponent<ControlComponent>();
+
+		auto& compRegistry = ComponentRegistry::GetRegistry();
+
+		// 2. Draw components efficiently
+		for (auto [id, storage] : registry.storage())
+		{
+			if (storage.contains(entity) && compRegistry.contains(id))
+			{
+				auto& metadata = compRegistry.at(id);
+				if (!metadata.Visible)
+				{
+					continue;
+				}
+
+				// Logic to reduce clutter
+				if (isUI && id == entt::type_hash<TransformComponent>::value())
+				{
+					continue;
+				}
+
+				ImGui::PushID((int)id);
+				if (metadata.DrawUI)
+				{
+					metadata.DrawUI(entity);
+				}
+				else if (metadata.IsReflective && metadata.ReflectInternal)
+				{
+					DrawGenericReflection(metadata, entity);
+				}
+				ImGui::PopID();
+			}
+		}
+	}
+
+	void PropertyEditor::DrawEntityHeader(Chained::Entity entity)
+	{
+		if (entity.HasComponent<TagComponent>())
+		{
+			auto& tag = entity.GetComponent<TagComponent>().Tag;
+
+			// Entity Icon and Label
+			ImGui::BeginGroup();
+			ImGui::PushFont(ImGui::GetIO().Fonts->Fonts[0]);
+			ImGui::TextColored({0.4f, 0.6f, 0.9f, 1.0f}, ICON_FA_CUBE " Entity");
+			ImGui::PopFont();
+
+			char buffer[256];
+			memset(buffer, 0, sizeof(buffer));
+			strncpy(buffer, tag.c_str(), sizeof(buffer) - 1);
+
+			ImGui::PushItemWidth(ImGui::GetContentRegionAvail().x - 120.0f);
+			if (ImGui::InputText("##Tag", buffer, sizeof(buffer)))
+			{
+				tag = std::string(buffer);
+			}
+			ImGui::PopItemWidth();
+
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_PLUS " Add Component", ImVec2(110, 0)))
+			{
+				ImGui::OpenPopup("AddComponent");
+			}
+
+			DrawAddComponentPopup(entity);
+			ImGui::EndGroup();
+
+			ImGui::Spacing();
+		}
+	}
+
+	void PropertyEditor::DrawAddComponentPopup(Entity entity)
+	{
+		if (ImGui::BeginPopup("AddComponent"))
+		{
+			bool isUIEntity = entity.HasComponent<ControlComponent>();
+			auto* scene = entity.GetRegistry().ctx().find<Scene*>();
+			bool is3DScene = scene && (*scene)->GetSettings().Mode == BackgroundMode::Environment3D;
+
+			// Group components by category
+			std::map<std::string, std::vector<const ComponentMetadata*>> categorized;
+
+			for (auto& [id, metadata] : ComponentRegistry::GetRegistry())
+			{
+				if (!metadata.AllowAdd)
+				{
+					continue;
+				}
+				if (metadata.IsWidget && !isUIEntity)
+				{
+					continue;
+				}
+				if (is3DScene && (metadata.IsWidget || id == entt::type_hash<ControlComponent>::value()))
+				{
+					continue;
+				}
+
+				auto& registry = entity.GetRegistry();
+				auto* storage = registry.storage(id);
+				if (storage && storage->contains(entity))
+				{
+					continue;
+				}
+
+				categorized[metadata.Category].push_back(&metadata);
+			}
+
+			// Render categorized menus
+			for (auto& [category, components] : categorized)
+			{
+				if (ImGui::BeginMenu(category.c_str()))
+				{
+					for (const auto* metadata : components)
+					{
+						std::string label = (metadata->Icon ? std::string(metadata->Icon) + " " : "") + metadata->Name;
+						if (ImGui::MenuItem(label.c_str()))
+						{
+							metadata->Add(entity);
+							ImGui::CloseCurrentPopup();
+						}
+					}
+					ImGui::EndMenu();
+				}
+			}
+
+			ImGui::EndPopup();
+		}
+	}
+} // namespace Chained

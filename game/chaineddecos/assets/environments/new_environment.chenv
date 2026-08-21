@@ -1,15 +1,29 @@
 Environment:
-  LightDirection: [-1, -1, -1]
-  LightColor: [200, 170, 170, 255]
-  AmbientIntensity: 0.300000012
-  Skybox:
-    TexturePath: skyboxes/Starry night preview4.png
+  Lighting:
+    Direction:
+      X: 0.99000001
+      Y: 0.519999981
+      Z: 0.980000019
+    LightColor:
+      R: 255
+      G: 255
+      B: 255
+      A: 255
+    Ambient: 0.0850000009
     Exposure: 1
-    Brightness: 0
-    Contrast: 1
+    Gamma: 2.20000005
+  Skybox:
+    TexturePath: skyboxes/qwantani_dusk_2_puresky_8k.hdr
+    Exposure: 1.00999999
+    Brightness: -0.699999988
+    Contrast: 0.449999988
   Fog:
-    Enabled: true
-    Color: [130, 130, 130, 255]
-    Density: 0.00999999978
-    Start: 10
-    End: 100
+    Enabled: false
+    Color:
+      R: 255
+      G: 255
+      B: 255
+      A: 255
+    Density: 0.100000001
+    Start: 180
+    End: 174

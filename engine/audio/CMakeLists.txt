@@ -1,28 +1,24 @@
-add_library(engine_audio OBJECT
-    audio.cpp
-    sound_asset.cpp
-    audio_importer.cpp
-
+add_library(engine_audio STATIC
     audio.h
-    sound_asset.h
-    audio_importer.h
+    audio.cpp
 )
 
 target_include_directories(engine_audio PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-target_link_libraries(engine_audio PUBLIC 
-    raylib 
+target_link_libraries(engine_audio PUBLIC
+    engine_core
+    engine_project
+    glm
+    engine_external_miniaudio
 )
 
-if(MSVC)
-    target_compile_options(engine_audio PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_audio PRIVATE -Wa,-mbig-obj)
+if(WIN32)
+    target_link_libraries(engine_audio PUBLIC winmm ole32)
 endif()
 
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_audio)
+if(TARGET engine_pch)
+    target_link_libraries(engine_audio PRIVATE engine_pch)
 endif()

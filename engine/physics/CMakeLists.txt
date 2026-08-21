@@ -1,38 +1,26 @@
-add_library(engine_physics OBJECT
-    physics.cpp
-    dynamics.cpp
-    narrow_phase.cpp
-    scene_trace.cpp
-    bvh/bvh.cpp
-
+add_library(engine_physics STATIC
     physics.h
-    dynamics.h
-    narrow_phase.h
-    scene_trace.h
-    bvh/bvh.h
-    bvh/bvh_node.h
-    collision/collision.h
-    collision/collision_triangle.h
+    physics.cpp
+    iphysics_world.h
+    physics_types.h
+    raycast_result.h
+    jolt_physics_world.h
+    jolt_physics_world.cpp
 )
 
 target_include_directories(engine_physics PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/entt/src
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-target_link_libraries(engine_physics PUBLIC 
-    raylib 
-    EnTT
+target_link_libraries(engine_physics PUBLIC
+    engine_core
+    engine_project
+    engine_external_entt
+    glm
+    Jolt
 )
 
-if(MSVC)
-    target_compile_options(engine_physics PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_physics PRIVATE -Wa,-mbig-obj)
-endif()
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_physics)
+if(TARGET engine_pch)
+    target_link_libraries(engine_physics PRIVATE engine_pch)
 endif()

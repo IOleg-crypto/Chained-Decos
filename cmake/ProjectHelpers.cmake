@@ -1,107 +1,138 @@
-# Helper function to create a standalone game project
-# Usage: chained_add_game(TARGET_NAME DISPLAY_NAME CSHARP_PROJECT_PATH [native_sources...])
-function(chained_add_game TARGET_NAME DISPLAY_NAME CSHARP_PROJECT_PATH)
-    set(NATIVE_SOURCES ${ARGN})
-
-    # 1. Locate the entry point (main.cpp)
-    if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
-        set(ENTRY_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
-    else()
-        message(FATAL_ERROR "chained_add_game: Could not find src/main.cpp for ${TARGET_NAME}")
+# Helper function to compile C# scripts for a game project
+# Usage: chained_add_csharp_scripts(TARGET_NAME CSHARP_PROJECT_PATH)
+function(chained_add_csharp_scripts TARGET_NAME CSHARP_PROJECT_PATH)
+    set(SCRIPT_TARGET "BuildScripts_${TARGET_NAME}")
+    if(TARGET ${SCRIPT_TARGET})
+        return()
     endif()
 
-    # 2. Create C++ libraries ONLY if native sources are provided
-    if(NATIVE_SOURCES)
-        # Create a STATIC LIBRARY for game logic (for static linking/tests)
-        add_library(${TARGET_NAME} STATIC ${NATIVE_SOURCES})
-        target_link_libraries(${TARGET_NAME} PUBLIC engine)
-        
-        # Create a SHARED LIBRARY for dynamic loading (Hot Reload / Native Runtime)
-        add_library(${TARGET_NAME}Module SHARED ${NATIVE_SOURCES})
-        target_link_libraries(${TARGET_NAME}Module PUBLIC engine)
-        target_compile_definitions(${TARGET_NAME}Module PRIVATE GAME_BUILD_DLL)
-        set_target_properties(${TARGET_NAME}Module PROPERTIES OUTPUT_NAME "${TARGET_NAME}")
-        
-        if(COMMAND apply_engine_optimizations)
-            apply_engine_optimizations(${TARGET_NAME})
-            apply_engine_optimizations(${TARGET_NAME}Module)
-        endif()
+    set(FULL_CSPROJ_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${CSHARP_PROJECT_PATH}")
+    if(NOT EXISTS "${FULL_CSPROJ_PATH}")
+        message(WARNING "chained_add_csharp_scripts: Could not find ${FULL_CSPROJ_PATH}")
+        return()
     endif()
 
-    # 3. Create the EXECUTABLE target
-    add_executable(${TARGET_NAME}Exe ${ENTRY_SOURCE})
-    
-    # Link against dependencies
-    target_link_libraries(${TARGET_NAME}Exe PRIVATE RuntimeCore)
-    if(NATIVE_SOURCES)
-         target_link_libraries(${TARGET_NAME}Exe PRIVATE ${TARGET_NAME})
-    endif()
-    
-    # Set the output name and metadata
-    set_target_properties(${TARGET_NAME}Exe PROPERTIES OUTPUT_NAME "${TARGET_NAME}")
-    set_target_properties(${TARGET_NAME}Exe PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}")
-    
-    # Pass metadata to the app
-    target_compile_definitions(${TARGET_NAME}Exe PRIVATE 
-        GAME_BUILD_EXE
-        CH_PROJECT_NAME="${DISPLAY_NAME}"
+    set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/vendor/coral")
+    set(SCRIPT_OUTPUT_DIR "${CMAKE_BINARY_DIR}/bin/$<CONFIG>/scripts/${TARGET_NAME}")
+    set(SCRIPT_DLL_PATH "${SCRIPT_OUTPUT_DIR}/${TARGET_NAME}.dll")
+
+    add_custom_target(${SCRIPT_TARGET}
+        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/build_managed.py"
+            --project "${FULL_CSPROJ_PATH}"
+            --configuration $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release>
+            --output "${SCRIPT_OUTPUT_DIR}"
+            --coral-dir "${CORAL_MANAGED_DIR}"
+            --parallel
+        COMMAND "${CH_PYTHON_EXECUTABLE}" "${CMAKE_SOURCE_DIR}/tools/sync_scripts.py"
+            --build-dir "${CMAKE_BINARY_DIR}/bin/$<CONFIG>"
+            --game-dir "${CMAKE_CURRENT_SOURCE_DIR}"
+        WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+        COMMENT "Building C# Scripts for ${TARGET_NAME} (incremental)"
+        BYPRODUCTS "${SCRIPT_DLL_PATH}"
+        VERBATIM
     )
-
-    if(COMMAND apply_engine_optimizations)
-        apply_engine_optimizations(${TARGET_NAME}Exe)
+    
+    # Ensure scripts build AFTER Chained_Managed to avoid dotnet race condition
+    if(TARGET Chained_Managed)
+        add_dependencies(${SCRIPT_TARGET} Chained_Managed)
     endif()
+endfunction()
 
-    # 4. Configure include directories
-    target_include_directories(${TARGET_NAME}Exe PUBLIC 
+# Internal helper to apply common configuration to game-related targets
+macro(_chained_configure_game_target TGT)
+    target_include_directories(${TGT} PUBLIC 
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_SOURCE_DIR}
     )
-    if(TARGET ${TARGET_NAME})
-        target_include_directories(${TARGET_NAME} PUBLIC 
-            ${CMAKE_CURRENT_SOURCE_DIR}/src
-            ${CMAKE_SOURCE_DIR}
+    if(TARGET engine_pch)
+        target_link_libraries(${TGT} PRIVATE engine_pch)
+    endif()
+endmacro()
+
+# Main helper function to create a standalone game project
+# Usage: 
+# chained_add_game(TARGET_NAME
+#    DISPLAY_NAME "Project Title"
+#    CSHARP_PROJECT "src/Scripts.csproj" # Optional
+#    SOURCES src/file1.cpp src/file2.cpp # Optional
+# )
+function(chained_add_game TARGET_NAME)
+    set(options)
+    set(oneValueArgs PROJECT_GAME CSHARP_PROJECT)
+    set(multiValueArgs SOURCES)
+    cmake_parse_arguments(GAME "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
+
+    # 1. Locate the entry point (main.cpp) (OPTIONAL)
+    set(ENTRY_SOURCE "${CMAKE_CURRENT_SOURCE_DIR}/src/main.cpp")
+    set(HAS_ENTRY_POINT OFF)
+    if(EXISTS "${ENTRY_SOURCE}")
+        set(HAS_ENTRY_POINT ON)
+    endif()
+
+    # 2. Compile game sources as a static library (saves RAM and compile time)
+    if(GAME_SOURCES)
+        add_library(${TARGET_NAME} STATIC ${GAME_SOURCES})
+        # Rename static lib so its .lib doesn't clash with the IMPLIB generated
+        # by the exe on MSVC (both would be ChainedDecos.lib otherwise → LNK1181).
+        set_target_properties(${TARGET_NAME} PROPERTIES OUTPUT_NAME "${TARGET_NAME}Game")
+        target_link_libraries(${TARGET_NAME} PUBLIC ChainedEngine::Framework)
+        _chained_configure_game_target(${TARGET_NAME})
+    endif()
+
+    # 3. Create the EXECUTABLE target
+    if(HAS_ENTRY_POINT)
+        add_executable(${TARGET_NAME}Exe ${ENTRY_SOURCE})
+        target_link_libraries(${TARGET_NAME}Exe PRIVATE engine_runtime_core)
+
+        if(GAME_SOURCES)
+             target_link_libraries(${TARGET_NAME}Exe PRIVATE ${TARGET_NAME})
+        endif()
+
+        set_target_properties(${TARGET_NAME}Exe PROPERTIES
+            OUTPUT_NAME "${TARGET_NAME}"
+            VS_DEBUGGER_WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
         )
-    endif()
-    if(TARGET ${TARGET_NAME}Module)
-        target_include_directories(${TARGET_NAME}Module PUBLIC 
-            ${CMAKE_CURRENT_SOURCE_DIR}/src
-            ${CMAKE_SOURCE_DIR}
+
+        target_compile_definitions(${TARGET_NAME}Exe PRIVATE
+            GAME_BUILD_EXE
         )
+        _chained_configure_game_target(${TARGET_NAME}Exe)
     endif()
 
-    # 5. Installation
-    set(INSTALL_TARGETS ${TARGET_NAME}Exe)
-    if(TARGET ${TARGET_NAME})
-        list(APPEND INSTALL_TARGETS ${TARGET_NAME})
-    endif()
-    if(TARGET ${TARGET_NAME}Module)
-        list(APPEND INSTALL_TARGETS ${TARGET_NAME}Module)
-    endif()
-
-    install(TARGETS ${INSTALL_TARGETS}
-        RUNTIME DESTINATION bin COMPONENT Runtime
-        ARCHIVE DESTINATION lib COMPONENT Runtime
-        LIBRARY DESTINATION lib COMPONENT Runtime
-    )
-
-    # 6. Handle C# Script Building if provided
-    if(CSHARP_PROJECT_PATH)
-        set(SCRIPT_TARGET "BuildScripts_${TARGET_NAME}")
-        if(NOT TARGET ${SCRIPT_TARGET})
-            set(FULL_CSPROJ_PATH "${CMAKE_CURRENT_SOURCE_DIR}/${CSHARP_PROJECT_PATH}")
-            set(CORAL_MANAGED_DIR "${CMAKE_BINARY_DIR}/include/coral/cmake")
-            add_custom_target(${SCRIPT_TARGET} ALL
-                COMMAND dotnet build "${FULL_CSPROJ_PATH}" -c $<IF:$<OR:$<CONFIG:Debug>,$<CONFIG:>>,Debug,Release> --no-incremental --output "${CMAKE_CURRENT_SOURCE_DIR}/scripts/bin" -p:CoralManagedDir="${CORAL_MANAGED_DIR}"
-                WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-                COMMENT "Building C# Scripts for ${TARGET_NAME}"
-            )
-            add_dependencies(${TARGET_NAME}Exe ${SCRIPT_TARGET})
-            # Ensure scripts build AFTER CHEngine_Managed to avoid dotnet race condition
-            if(TARGET CHEngine_Managed)
-                add_dependencies(${SCRIPT_TARGET} CHEngine_Managed)
-            endif()
+    # 4. Handle C# Script Building
+    if(GAME_CSHARP_PROJECT)
+        chained_add_csharp_scripts(${TARGET_NAME} "${GAME_CSHARP_PROJECT}")
+        if(HAS_ENTRY_POINT)
+            add_dependencies(${TARGET_NAME}Exe "BuildScripts_${TARGET_NAME}")
         endif()
     endif()
 
-    message(STATUS "Configured Project: ${DISPLAY_NAME} (Exe=${TARGET_NAME}Exe, Output=${TARGET_NAME})")
+    # 5. Installation
+    if(HAS_ENTRY_POINT)
+        set(INSTALL_TARGETS ${TARGET_NAME}Exe)
+        if(TARGET ${TARGET_NAME})
+            list(APPEND INSTALL_TARGETS ${TARGET_NAME})
+        endif()
+
+        install(TARGETS ${INSTALL_TARGETS}
+            RUNTIME DESTINATION bin COMPONENT Runtime
+            ARCHIVE DESTINATION lib COMPONENT Runtime
+        )
+    endif()
+
+    message(STATUS "Configured Project: ${GAME_PROJECT_GAME} (Output=${TARGET_NAME})")
 endfunction()
+
+# Copy engine resources (shaders, fonts, icons, config) to a target's output directory
+function(ch_add_resource_sync TARGET)
+    set(RESOURCES_SRC "${CMAKE_SOURCE_DIR}/resources")
+    set(RESOURCES_DST "$<TARGET_FILE_DIR:${TARGET}>/resources")
+
+    add_custom_command(TARGET ${TARGET} POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E make_directory "${RESOURCES_DST}"
+        COMMAND ${CMAKE_COMMAND} -DSOURCE="${RESOURCES_SRC}" -DDEST="${RESOURCES_DST}" -P "${CMAKE_SOURCE_DIR}/cmake/CopyIfDifferent.cmake"
+        COMMENT "Syncing engine resources to ${RESOURCES_DST}..."
+    )
+endfunction()
+
+

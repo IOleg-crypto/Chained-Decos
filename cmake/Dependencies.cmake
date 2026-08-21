@@ -1,220 +1,62 @@
-
-# Chained Engine - Dependencies
-# Extracted from root CMakeLists.txt for modularity
-
-# yaml-cpp
-set(YAML_CPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(YAML_CPP_BUILD_TOOLS OFF CACHE BOOL "" FORCE)
-set(YAML_CPP_BUILD_CONTRIB OFF CACHE BOOL "" FORCE)
-
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/yaml-cpp/CMakeLists.txt")
-    add_subdirectory(include/yaml-cpp)
-    set(yaml-cpp_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/yaml-cpp" CACHE INTERNAL "")
-else()
-    message(FATAL_ERROR "yaml-cpp submodule not found! Run: git submodule update --init --recursive")
-endif()
-
-# ImGuizmo (Manipulators)
-set(imguizmo_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/imguizmo")
-
-# GLM
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/glm/CMakeLists.txt")
-    # GLM is header-only but provides CMake integration
-    add_subdirectory(include/glm)
-    set(glm_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/glm" CACHE INTERNAL "")
-else()
-    message(FATAL_ERROR "glm submodule not found! Run: git submodule update --init --recursive")
-endif()
-
-# Coral (for C# scripting integration)
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/coral/cmake/CMakeLists.txt")
-    add_subdirectory(include/coral/cmake)
-    set(coral_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/coral" CACHE INTERNAL "")
-    
-    # --- CI Fixes for Coral (Injection) ---
-    if(WIN32)
-        set(CORAL_FIX_DIR "${CMAKE_BINARY_DIR}/coral_fixes")
-        file(MAKE_DIRECTORY "${CORAL_FIX_DIR}")
-        
-        # 1. ShlObj_core.h shim (MinGW fix)
-        if(MINGW)
-            file(WRITE "${CORAL_FIX_DIR}/ShlObj_core.h" "#pragma once\n#include <shlobj.h>\n")
-        endif()
-        
-        # 2. MSVC wchar_t stream fix (C2280 fix)
-        file(WRITE "${CORAL_FIX_DIR}/StreamFix.hpp" 
-            "#pragma once\n"
-            "#include <iostream>\n"
-            "#include <string>\n"
-            "// Standalone fix for deleted operator<< in Coral logging\n"
-            "inline std::ostream& operator<<(std::ostream& os, const wchar_t* str) { return os << \"[wide string]\"; }\n"
-            "inline std::ostream& operator<<(std::ostream& os, const std::wstring& str) { return os << \"[wide string]\"; }\n"
-        )
-        
-        if(TARGET Coral.Native)
-            if(MINGW)
-                target_include_directories(Coral.Native PRIVATE "${CORAL_FIX_DIR}")
-            endif()
-            
-            if(MSVC)
-                target_compile_options(Coral.Native PRIVATE "/FI${CORAL_FIX_DIR}/StreamFix.hpp")
-            else()
-                target_compile_options(Coral.Native PRIVATE "-include${CORAL_FIX_DIR}/StreamFix.hpp")
-            endif()
-        endif()
-    endif()
-else()
-    message(FATAL_ERROR "coral submodule not found! Run: git submodule update --init --recursive")
-endif()
-
-# assimp (Asset Importer Library)
-set(ASSIMP_BUILD_ASSIMP_TOOLS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-set(ASSIMP_INSTALL OFF CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_ZLIB ON CACHE BOOL "" FORCE)
-set(ASSIMP_BUILD_DRACO OFF CACHE BOOL "" FORCE)
-set(ASSIMP_NO_EXPORT ON CACHE BOOL "" FORCE)
-
-# Ensure no unity build for assimp or its subprojects
-set(CMAKE_UNITY_BUILD OFF) 
-
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/assimp/CMakeLists.txt")
-    add_subdirectory(include/assimp)
-    set(assimp_SOURCE_DIR "${CMAKE_SOURCE_DIR}/include/assimp" CACHE INTERNAL "")
-    set(assimp_BINARY_DIR "${CMAKE_CURRENT_BINARY_DIR}/include/assimp" CACHE INTERNAL "")
-    # Disable unity build for assimp to avoid header/namespace conflicts
-    if(TARGET assimp)
-        set_target_properties(assimp PROPERTIES UNITY_BUILD OFF)
-        if(NOT MSVC)
-            target_compile_options(assimp PRIVATE -Wno-error)
-        endif()
-    endif()
-else()
-    message(FATAL_ERROR "assimp submodule not found! Run: git submodule update --init --recursive")
-endif()
-
 # ============================================================================
-# Raylib
+# Chained Engine - Dependencies Configuration
 # ============================================================================
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/raylib/CMakeLists.txt")
-    message(STATUS "Loading Raylib from submodule...")
-    
-    # Raylib build configuration - static only
-    set(BUILD_EXAMPLES OFF CACHE BOOL "" FORCE)
-    set(BUILD_GAMES OFF CACHE BOOL "" FORCE)
-    set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
-    # Platform-specific raylib options
-    if(UNIX AND NOT APPLE)
-        set(USE_WAYLAND OFF CACHE BOOL "" FORCE)
-        set(PLATFORM Desktop CACHE STRING "" FORCE)
-        set(OPENGL_VERSION "4.3" CACHE STRING "" FORCE)
-        set(GLFW_BUILD_X11 ON CACHE BOOL "" FORCE)
-        set(USE_EXTERNAL_GLFW IF_POSSIBLE CACHE STRING "" FORCE)
-    endif()
 
-    if(WIN32)
-        set(OPENGL_VERSION "4.3" CACHE STRING "" FORCE)
-    endif()
+# Add external modules directory to search path
+list(APPEND CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/external")
 
-    add_subdirectory(include/raylib)
-    message(STATUS "Raylib loaded from submodule")
-    
-    # Disable unity build for raylib to avoid GLAD header conflicts
-    set_target_properties(raylib PROPERTIES UNITY_BUILD OFF)
-    
-    # Suppress warnings for raylib and glfw on Linux (fixes CI with strict compiler flags)
-    if(UNIX AND NOT APPLE)
-        if(TARGET raylib)
-            target_compile_options(raylib PRIVATE -Wno-implicit-function-declaration -Wno-error)
-            find_package(X11 REQUIRED)
-            target_link_libraries(raylib PUBLIC ${X11_LIBRARIES})
-        endif()
-        if(TARGET glfw)
-            target_compile_options(glfw PRIVATE -Wno-implicit-function-declaration -Wno-error)
-        endif()
-    endif()
-else()
-    message(FATAL_ERROR "Raylib submodule not found. Run: git submodule update --init --recursive")
-endif()
+# Core dependencies (independent)
+include(yaml-cpp)
+include(glm)
+include(entt)
+include(miniaudio)
+include(cereal)
+include(stb)
+# zstd is provided by pack — no separate include needed.
+include(spdlog)
+include(jolt)
+include(freetype)
+include(freetype_gl)
 
-# ============================================================================
-# GoogleTest (for unit tests)
-# ============================================================================
-if(BUILD_TESTS)
-    if(EXISTS "${CMAKE_SOURCE_DIR}/include/googletest/CMakeLists.txt")
-        message(STATUS "Loading GoogleTest from submodule...")
-        set(gtest_force_shared_crt OFF CACHE BOOL "" FORCE)
-        
-        if(CMAKE_BUILD_TYPE STREQUAL "Debug")
-            add_compile_definitions(_DEBUG)
-        else()
-            add_compile_definitions(NDEBUG)
-        endif()
-        
-        add_subdirectory(include/googletest)
-        message(STATUS "GoogleTest loaded from submodule")
-    else()
-        message(WARNING "GoogleTest submodule not found. Tests will be disabled.")
-    endif()
-endif()
+# Platform & Graphics (independent)
+include(glfw)
+include(glad)
 
-# ============================================================================
-# EnTT (header-only library)
-# ============================================================================
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/entt/src")
-    message(STATUS "Loading EnTT from submodule...")
-    add_library(EnTT INTERFACE)
-    target_include_directories(EnTT INTERFACE ${CMAKE_SOURCE_DIR}/include/entt/src)
-    add_library(EnTT::EnTT ALIAS EnTT)
-    message(STATUS "EnTT loaded from submodule (header-only)")
-else()
-    message(FATAL_ERROR "EnTT submodule not found. Run: git submodule update --init --recursive")
-endif()
+# UI (depends on GLFW and GLAD)
+include(imgui)
 
-# ============================================================================
-# ImGui + rlImGui + ImGuizmo
-# ============================================================================
-set(IMGUI_SOURCES
-    include/imgui/imgui.cpp
-    include/imgui/imgui_draw.cpp
-    include/imgui/imgui_widgets.cpp
-    include/imgui/imgui_tables.cpp
-    include/imgui/imgui_demo.cpp
-    include/imgui/misc/cpp/imgui_stdlib.cpp
-    include/imgui/backends/imgui_impl_glfw.cpp
-    include/imgui/backends/imgui_impl_glfw.h
-    include/imgui/backends/imgui_impl_opengl3.cpp
-    include/imgui/backends/imgui_impl_opengl3.h
-    ${imguizmo_SOURCE_DIR}/ImGuizmo.cpp
-    ${imguizmo_SOURCE_DIR}/ImGuizmo.h
+# Complex modules
+include(assimp)
+
+include(coral)
+include(external_gtest)
+include(pack)
+include(portable-file-dialogs)
+# enet + sodium are the networking transport (added via engine/CMakeLists.txt)
+include(reflect-cpp)
+include(miniupnpc)
+
+# Disable unity builds for third-party libraries to avoid symbol redefinitions
+# (e.g., zstd cover.h has no include guard, causing redefinition under unity build)
+# Coral.Native is specifically excluded because MSVC's unity PCH in C++20 mode
+# deletes operator<<(wchar_t*) which is used internally by Coral's cerr logging.
+foreach(_ext_target
+    libzstd_static yaml-cpp
+    glm entt cereal stb spdlog miniaudio
+    imgui imguizmo
+    glfw glad
+    Jolt
+    GTest gmock
+    Coral.Native
+    assimp
+    freetype engine_freetype_gl
 )
+    if(TARGET ${_ext_target})
+        set_target_properties(${_ext_target} PROPERTIES UNITY_BUILD OFF)
+    endif()
+endforeach()
 
-add_library(imguilib STATIC ${IMGUI_SOURCES})
-
-target_include_directories(imguilib PUBLIC
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/rlImGui
-    ${CMAKE_SOURCE_DIR}/include/raylib/src/external/glfw/include
-    ${imguizmo_SOURCE_DIR}
-)
-target_link_libraries(imguilib PRIVATE raylib)
-
-# Define IMGUI math operators and GLFW settings
-target_compile_definitions(imguilib PUBLIC 
-    IMGUI_DEFINE_MATH_OPERATORS
-    GLFW_INCLUDE_NONE
-)
-
-# Disable unity build for imguilib to avoid GLAD header conflicts
-set_target_properties(imguilib PROPERTIES UNITY_BUILD OFF)
-
-# ============================================================================
-# Native File Dialog (nfd)
-# ============================================================================
-if(EXISTS "${CMAKE_SOURCE_DIR}/include/nfd/CMakeLists.txt")
-    message(STATUS "Loading nfd from submodule...")
-    set(NFD_BUILD_TESTS OFF CACHE BOOL "" FORCE)
-    add_subdirectory(include/nfd)
-    message(STATUS "nfd loaded from submodule")
+if(NOT TARGET libzstd_static AND NOT TARGET libzstd)
+    add_subdirectory(thirdparty/zstd/build/cmake/lib)
 endif()
