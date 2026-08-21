@@ -1,74 +1,96 @@
-add_library(engine_graphics OBJECT
-    renderer.cpp
-    ui_renderer.cpp
-    asset_manager.cpp
-    shader_asset.cpp
-    shader_library.cpp
-    scene_renderer.cpp
-    renderer2d.cpp
-    model_asset.cpp
-    texture_asset.cpp
-    font_asset.cpp
-    mesh_importer.cpp
-    texture_importer.cpp
-    shader_importer.cpp
-    font_importer.cpp
-    environment_importer.cpp
-    render_command.cpp
-    renderer_api.cpp
-    raylib_renderer_api.cpp
-    buffer.cpp
-    raylib_buffer.cpp
-    vertex_array.cpp
-    raylib_vertex_array.cpp
-
-    renderer.h
-    scene_renderer.h
-    ui_renderer.h
-    asset.h
-    asset_manager.h
-    shader_asset.h
-    shader_library.h
-    model_asset.h
-    texture_asset.h
-    font_asset.h
-    environment.h
-    material.h
-    mesh_importer.h
-    texture_importer.h
-    shader_importer.h
-    font_importer.h
-    environment_importer.h
-    asset_importer.h
-    frustum.h
+add_library(engine_graphics STATIC
+    camera_types.h
+    api/buffer.h
+    api/buffer.cpp
+    api/framebuffer.h
+    api/framebuffer.cpp
+    api/graphics_device.h
+    api/graphics_device.cpp
+    api/renderer_types.h
+    api/shader.h
+    api/shader.cpp
+    api/storage_buffer.h
+    api/storage_buffer.cpp
+    api/texture.h
+    api/texture.cpp
+    api/vertex_array.h
+    api/vertex_array.cpp
+    api/opengl/gl_buffer.h
+    api/opengl/gl_buffer.cpp
+    api/opengl/gl_device.h
+    api/opengl/gl_device.cpp
+    api/opengl/gl_framebuffer.h
+    api/opengl/gl_framebuffer.cpp
+    api/opengl/gl_shader_program.h
+    api/opengl/gl_shader_program.cpp
+    api/opengl/gl_storage_buffer.h
+    api/opengl/gl_storage_buffer.cpp
+    api/opengl/gl_texture.h
+    api/opengl/gl_texture.cpp
+    api/opengl/gl_uniform_buffer.h
+    api/opengl/gl_uniform_buffer.cpp
+    api/opengl/gl_vertex_array.h
+    api/opengl/gl_vertex_array.cpp
+    pipeline/debug_renderer.h
+    pipeline/debug_renderer.cpp
+    pipeline/frustum.h
+    pipeline/geometry_generator.h
+    pipeline/geometry_generator.cpp
+    pipeline/material.h
+    pipeline/renderer.h
+    pipeline/renderer.cpp
+    pipeline/renderer_data.h
+    pipeline/lighting_manager.h
+    pipeline/lighting_manager.cpp
+    pipeline/geometry_factory.h
+    pipeline/geometry_factory.cpp
+    pipeline/entity_collector.h
+    pipeline/entity_collector.cpp
+    pipeline/material_manager.h
+    pipeline/material_manager.cpp
+    pipeline/render_pass.h
+    pipeline/scene_renderer.h
+    pipeline/scene_renderer.cpp
+    pipeline/shader_storage.h
+    pipeline/shader_storage.cpp
+    pipeline/shader_uniform_utils.h
+    text_renderer.h
+    text_renderer.cpp
+    freetype_gl_atlas.h
+    freetype_gl_atlas.cpp
+    pipeline/passes/composite_pass.h
+    pipeline/passes/composite_pass.cpp
+    pipeline/passes/geometry_pass.h
+    pipeline/passes/geometry_pass.cpp
+    pipeline/passes/shadow_pass.h
+    pipeline/passes/shadow_pass.cpp
+    pipeline/passes/skybox_pass.h
+    pipeline/passes/skybox_pass.cpp
+    nametag_system.h
+    nametag_system.cpp
 )
 
 target_include_directories(engine_graphics PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${imguizmo_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-# Graphics module depends on Core, assimp, raylib, imgui
-target_link_libraries(engine_graphics PUBLIC 
-    raylib 
-    imguilib 
-    assimp::assimp 
+target_link_libraries(engine_graphics PUBLIC
+    engine_scene_core
+    engine_core
+    engine_project
+    engine_assets
+    engine_network
     yaml-cpp
-    EnTT
+    engine_external_entt
+    glm
+    engine_external_stb
+    engine_external_imgui
+    engine_external_glad
+    assimp
+    engine_freetype_gl
 )
 
-if(MSVC)
-    target_compile_options(engine_graphics PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_graphics PRIVATE -Wa,-mbig-obj)
-endif()
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_graphics)
+if(TARGET engine_pch)
+    target_link_libraries(engine_graphics PRIVATE engine_pch)
 endif()

@@ -1,15 +1,25 @@
 Project:
   Name: TestProject
+  IconPath: ""
   StartScene: ""
   AssetDirectory: assets
-  ActiveScene: assets\scenes\untitled.chscene
+  ActiveScene: assets/scenes/untitled.chscene
+  Environment: ""
   Physics:
     Gravity: 20
+    FixedTimestep: 0.0166666675
   Animation:
     TargetFPS: 30
   Render:
     AmbientIntensity: 0.300000012
     DefaultExposure: 1
+  Texture:
+    GenerateMipmaps: true
+    Filter: 1
+  Mesh:
+    ImportMaterials: true
+    CalculateTangents: true
+    FlipUVs: true
   Window:
     Width: 1280
     Height: 720
@@ -19,4 +29,15 @@ Project:
     Fullscreen: false
     ShowStats: true
     EnableConsole: false
+  Editor:
+    CameraMoveSpeed: 10
+    CameraRotationSpeed: 0.100000001
+    CameraBoostMultiplier: 5
+  Scripting:
+    ModuleName: ""
+    ModuleDirectory: ""
+    AutoLoad: true
+  LaunchProfiles:
+    []
+  ActiveLaunchProfile: 0
   BuildConfig: 0

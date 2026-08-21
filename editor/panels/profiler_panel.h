@@ -3,21 +3,21 @@
 
 #include "panel.h"
 
-namespace CHEngine
+namespace Chained
 {
-class ProfilerPanel : public Panel
-{
-public:
-    ProfilerPanel();
-    virtual void OnImGuiRender(bool readOnly = false) override;
+	class ProfilerPanel : public Panel
+	{
+	public:
+		ProfilerPanel();
+		virtual void OnImGuiRender(bool readOnly = false) override;
 
-private:
-    void DrawProfileResult(const struct ProfileResult& result);
-    void UpdateHistory();
+	private:
+		void DrawProfileResult(const struct ProfileResult& result);
+		void UpdateHistory();
 
-private:
-    std::vector<float> m_FrameTimeHistory;
-};
-} // namespace CHEngine
+	private:
+		std::vector<float> m_FrameTimeHistory;
+	};
+} // namespace Chained
 
 #endif // CH_PROFILER_PANEL_H

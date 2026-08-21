@@ -3,37 +3,47 @@
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
-uniform float time;
-uniform float intensity; // 0.0 to 1.0
-uniform vec3 color;
-
-float random(vec2 st) {
-    return fract(sin(dot(st.xy, vec2(12.9898, 78.233))) * 43758.5453123);
-}
+uniform float uTime;
+uniform float uIntensity = 0.0; // Default to 0.0
+uniform sampler2D texture0;
+uniform float uExposure;
+uniform float uGamma;
 
 void main()
 {
-    if (intensity < 0.01) discard;
-
     vec2 uv = fragTexCoord;
+    float safeIntensity = clamp(uIntensity, 0.0, 1.0);
+
+    if (safeIntensity < 0.05) // Increased deadzone
+    {
+        vec3 color = texture(texture0, uv).rgb;
+        // Apply engine lighting settings (Exposure & Gamma)
+        color *= uExposure;
+        color = pow(color, vec3(1.0 / uGamma));
+        finalColor = vec4(color, 1.0);
+        return;
+    }
+
+    // Generate high-frequency sine waves for organic camera shake
+    float shakeX = sin(uTime * 45.0) * cos(uTime * 20.0) * sin(uTime * 35.0);
+    float shakeY = cos(uTime * 50.0) * sin(uTime * 25.0) * cos(uTime * 40.0);
     
-    // Vertical speed lines
-    float lineCount = 100.0;
-    float x = floor(uv.x * lineCount);
+    // Max offset is 2% of the screen
+    vec2 offset = vec2(shakeX, shakeY) * safeIntensity * 0.02;
+
+    // Sample the scene with the offset and blur
+    vec3 c1 = texture(texture0, uv + offset).rgb;
+    vec3 c2 = texture(texture0, uv + offset * 0.5).rgb;
+    vec3 c3 = texture(texture0, uv).rgb;
+    vec3 c4 = texture(texture0, uv - offset * 0.5).rgb;
+    vec3 c5 = texture(texture0, uv - offset).rgb;
     
-    // Randomize speed and offset for each line
-    float randVal = random(vec2(x, 123.0));
-    float speed = 5.0 + randVal * 10.0;
-    float offset = randVal * 10.0;
-    
-    // Calculate line pattern
-    float y = uv.y * 5.0 + time * speed + offset;
-    float line = step(0.9, fract(y * (0.5 + randVal)));
-    
-    // Fade at the edges of the screen
-    float edgeFade = smoothstep(0.0, 0.2, uv.y) * smoothstep(1.0, 0.8, uv.y);
-    
-    float alpha = line * intensity * edgeFade * (0.1 + randVal * 0.4);
-    
-    finalColor = vec4(color, alpha);
+    vec3 blurredShake = (c1 + c2 + c3 + c4 + c5) / 5.0;
+
+    // Apply engine lighting settings (Exposure & Gamma)
+    blurredShake *= uExposure;
+    blurredShake = pow(blurredShake, vec3(1.0 / uGamma));
+
+    finalColor = vec4(blurredShake, 1.0);
 }
+

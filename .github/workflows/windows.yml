@@ -1,0 +1,224 @@
+name: Windows
+
+on:
+  workflow_call:
+
+env:
+  CI: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_NOLOGO: true
+  NODE_OPTIONS: "--no-deprecation"
+
+jobs:
+  build-windows:
+    name: build (windows-latest, ${{ matrix.build_type }}, ${{ matrix.compiler }})
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: bash
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - preset: windows-clang
+            compiler: clang
+            build_type: Release
+          - preset: windows-clang
+            compiler: clang
+            build_type: Debug
+          - preset: windows-vs2026
+            compiler: vs2026
+            build_type: Release
+          - preset: windows-vs2026
+            compiler: vs2026
+            build_type: Debug
+          - preset: windows-gcc
+            compiler: gcc
+            build_type: Release
+          - preset: windows-gcc
+            compiler: gcc
+            build_type: Debug
+          
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: false
+          fetch-depth: 1
+
+      - name: Write submodule SHA manifest
+        run: git submodule status | tee submodule-shas.txt
+
+      - name: Cache submodules
+        uses: actions/cache@v4
+        with:
+          path: |
+            .git/modules
+            thirdparty
+          key: submodules-${{ runner.os }}-${{ hashFiles('submodule-shas.txt') }}
+          restore-keys: |
+            submodules-${{ runner.os }}-
+
+      - name: Init submodules
+        run: git submodule update --init --recursive --depth 1
+
+      - name: Setup MSYS2
+        if: "contains(matrix.preset, 'clang') || contains(matrix.preset, 'gcc')"
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          update: false
+          path-type: inherit
+          install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make mingw-w64-x86_64-gdb
+
+      - name: Setup MSVC
+        if: "contains(matrix.preset, 'msvc') || contains(matrix.preset, 'vs')"
+        uses: ilammy/msvc-dev-cmd@v1
+
+      - name: Setup lld-link (MSVC only)
+        if: matrix.use_lld == true
+        shell: pwsh
+        run: |
+          # LLVM is pre-installed on windows-latest; find lld-link and put it on PATH.
+          # Prefer the LLVM install that ships with VS, fall back to standalone LLVM.
+          $candidates = @(
+            "C:\Program Files\LLVM\bin",
+            "C:\Program Files (x86)\LLVM\bin"
+          )
+          $llvmBin = $candidates | Where-Object { Test-Path "$_\lld-link.exe" } | Select-Object -First 1
+          if (-not $llvmBin) {
+            # Standalone LLVM not found — install via winget (fast, no choco overhead)
+            choco install llvm --no-progress -y | Out-Null
+            $llvmBin = "C:\Program Files\LLVM\bin"
+          }
+          Write-Host "Using lld-link from: $llvmBin"
+          "$llvmBin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          lld-link --version
+
+      - name: Prefer MSYS2 toolchain over preinstalled MinGW
+        if: "contains(matrix.preset, 'clang') || contains(matrix.preset, 'gcc')"
+        shell: msys2 {0}
+        run: |
+          # The windows-latest image preinstalls a MinGW-Builds GCC at C:\mingw64
+          # which shadows the MSYS2 toolchain installed above (jobs run in Git
+          # Bash, not the msys2 shell). That build's libstdc++ segfaults in
+          # std::format Debug code, and it is NOT the toolchain anyone tests
+          # against locally. Put MSYS2's mingw64/bin first on PATH.
+          cygpath -w /mingw64/bin >> "$GITHUB_PATH"
+
+      - name: Get CMake and Ninja
+        uses: lukka/get-cmake@latest
+
+      - name: Setup Compiler Cache
+        uses: hendrikmuhs/ccache-action@v1.2
+        with:
+          variant: sccache
+          key: Windows-${{ matrix.preset }}-${{ matrix.build_type }}${{ matrix.use_lld == true && '-lld' || '' }}
+          max-size: 5G
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install jinja2
+
+      - name: Setup .NET SDK
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            9.0.x
+            10.0.x
+
+      - name: Preflight
+        run: |
+          set -euo pipefail
+          cmake --version
+          dotnet --info
+          if [[ "${{ matrix.preset }}" == *"clang"* ]]; then
+            clang --version | head -n 1
+          elif [[ "${{ matrix.preset }}" == *"msvc"* || "${{ matrix.preset }}" == *"vs"* ]]; then
+            cl || true
+          elif [[ "${{ matrix.preset }}" == *"gcc"* ]]; then
+            gcc --version | head -n 1
+          fi
+
+      - name: Configure
+        run: |
+          set -euo pipefail
+          SANITIZERS_FLAG="OFF"
+          # Disable ASan on Windows Clang due to static CRT conflicts (libucrtd.lib vs clang_rt.asan)
+          mkdir -p "build/${{ matrix.preset }}"
+          PYTHON_EXE=$(python -c "import sys; print(sys.executable)")
+
+          LLD_FLAG=""
+          if [[ "${{ matrix.use_lld }}" == "true" ]]; then
+            LLD_FLAG="-DCMAKE_LINKER_TYPE=LLD"
+          fi
+
+          cmake --preset ${{ matrix.preset }} \
+            -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/install" \
+            -DCMAKE_C_COMPILER_LAUNCHER=sccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=sccache \
+            -DPython_EXECUTABLE="${PYTHON_EXE}" \
+            -DPython3_EXECUTABLE="${PYTHON_EXE}" \
+            -DCH_CI=ON \
+            -DENABLE_UNITY_BUILD=OFF \
+            -DENABLE_SANITIZERS=$SANITIZERS_FLAG \
+            -DENABLE_LTO=OFF \
+            -DENABLE_PCH=OFF \
+            ${LLD_FLAG} \
+            2>&1 | tee "build/${{ matrix.preset }}/configure.log"
+
+      - name: Build
+        run: |
+          set -euo pipefail
+          cmake --build "build/${{ matrix.preset }}" --config ${{ matrix.build_type }} --parallel \
+            2>&1 | tee "build/${{ matrix.preset }}/build_${{ matrix.build_type }}.log"
+
+      - name: Test
+        env:
+          COREHOST_TRACE: 1
+        run: |
+          set -euo pipefail
+          BUILD_DIR="${{ github.workspace }}/build/${{ matrix.preset }}"
+          ctest --test-dir "$BUILD_DIR" -C "${{ matrix.build_type }}" --output-on-failure --timeout 300 --output-junit "$BUILD_DIR/junit_${{ matrix.build_type }}.xml" \
+            2>&1 | tee "$BUILD_DIR/ctest_${{ matrix.build_type }}.log"
+
+      - name: Crash backtrace (gcc Debug only)
+        if: failure() && matrix.compiler == 'gcc' && matrix.build_type == 'Debug'
+        env:
+          COREHOST_TRACE: 1
+          ENGINE_ROOT: ${{ github.workspace }}
+        run: |
+          # The integration tests crash with an access violation on this runner
+          # but pass locally with the identical build config. Run one failing
+          # test directly under gdb to capture the faulting module and stack.
+          BIN_DIR="build/${{ matrix.preset }}/bin/${{ matrix.build_type }}"
+          cd "$BIN_DIR"
+          gdb -batch -return-child-result \
+            -ex "set pagination off" \
+            -ex run \
+            -ex "bt" \
+            -ex "info registers" \
+            -ex "info sharedlibrary" \
+            --args ./engine_tests_integration.exe --gtest_filter=RegressionTest.CopyEntityResetsUUID || true
+
+      - name: Upload Artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-${{ matrix.preset }}-${{ matrix.build_type }}-binaries
+          if-no-files-found: ignore
+          path: |
+            build/${{ matrix.preset }}/**/*.log
+            build/${{ matrix.preset }}/**/junit_*.xml
+            build/${{ matrix.preset }}/${{ matrix.build_type }}/*.exe
+            build/${{ matrix.preset }}/${{ matrix.build_type }}/*.dll
+          retention-days: 7

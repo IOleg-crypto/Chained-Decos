@@ -1,87 +1,76 @@
 #ifndef CH_PHYSICS_H
 #define CH_PHYSICS_H
 
-#include "engine/core/base.h"
-#include "engine/core/timestep.h"
-#include "entt/entt.hpp"
-#include "raylib.h"
-#include <future>
+#include "engine/core/service.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
+#include "engine/physics/raycast_result.h"
+#include "engine/scene/components.h"
+#include "iphysics_world.h"
+#include <entt/entt.hpp>
 #include <memory>
-#include <mutex>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
-namespace CHEngine
+namespace Chained
 {
-class Scene;
-class ModelAsset;
-class BVH;
+	class Scene;
+	class IPhysicsWorld;
 
-// Represents the physics simulation and spatial query context for a specific scene.
-// Following the 'Action-Based' naming convention (Physics instead of PhysicsSystem).
-// Organized with encapsulated instance state.
-struct RaycastResult
-{
-    bool Hit = false;
-    float Distance = 0.0f;
-    Vector3 Position = {0.0f, 0.0f, 0.0f};
-    Vector3 Normal = {0.0f, 0.0f, 0.0f};
-    entt::entity Entity = entt::null;
-    int MeshIndex = -1;
-};
+	// High-level physics module that owns the Jolt world and orchestrates
+	// body creation, fixed-timestep stepping, and component synchronization.
+	class CH_API Physics : public Service
+	{
+	public:
+		Physics();
+		virtual ~Physics() override;
 
-class PhysicsSystem
-{
-public:
-    PhysicsSystem();
-    ~PhysicsSystem();
+		// Service lifecycle
+		virtual void Initialize() override;
+		virtual void Shutdown() override;
 
-    void Init();
-    void Shutdown();
+		// Core API
 
-    static PhysicsSystem& Get();
-};
+		/// Returns the Jolt world, creating it lazily on first access.
+		IPhysicsWorld* GetWorld();
 
-class Physics
-{
-public: // Life Cycle
-    Physics(Scene* scene);
-    ~Physics();
+		/// Destroys the current world and creates a fresh one, applying
+		/// gravity from the active project configuration.
+		/// If scene is provided, invalidates all RigidBodyComponent handles.
+		void ResetWorld(Scene* scene = nullptr);
 
-public: // Simulation & Queries
-    // Steps the physics simulation and updates collider states.
-    void Update(Timestep deltaTime, bool runtime = false);
+		/// Iterates all entities with TransformComponent + RigidBodyComponent
+		/// that don't yet have a physics body, and creates Jolt bodies for them.
+		void InitializeBodies(Scene* scene);
 
-    // Performs a spatial raycast query within the owned scene.
-    RaycastResult Raycast(Ray ray);
+		/// Runs the fixed-timestep physics loop (up to kMaxStepsPerFrame sub-steps),
+		/// then synchronizes dynamic body transforms and velocities back to components.
+		void Update(Scene* scene, Timestep deltaTime, bool runtime = false);
 
-    // Retrieves or starts building a BVH for a model asset.
-    std::shared_ptr<BVH> GetBVH(ModelAsset* asset);
+		/// Casts a ray through the Jolt world and returns the closest hit.
+		RaycastResult Raycast(Ray ray);
 
-    // Invalidates the cached BVH for a specific asset, forcing a rebuild on next update.
-    void InvalidateBVH(ModelAsset* asset);
+		/// Sets the velocity on a body unconditionally. Use for respawn teleports.
+		void ForceSetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity);
 
-    // Directly updates the cache with a pre-built BVH.
-    void UpdateBVHCache(ModelAsset* asset, std::shared_ptr<BVH> bvh);
+		// Scene context helpers
+		void ResetAccumulator(Scene* scene);
+		void ClearContext(Scene* scene);
 
-private: // Internal Helpers
-    void UpdateColliders();
-    void ResolveSimulation(Timestep deltaTime);
+	private:
+		/// Reads back position, rotation, velocity, and grounded state from Jolt
+		/// for all Dynamic bodies. Static and Kinematic bodies are skipped because
+		/// their transforms are driven by scripts or remain fixed.
+		void UpdateColliders(Scene* scene);
 
-private: // Members
-    Scene* m_Scene = nullptr;
+	private:
+		std::unique_ptr<IPhysicsWorld> m_World;
 
-    std::unique_ptr<class NarrowPhase> m_NarrowPhase;
-    std::unique_ptr<class Dynamics> m_Dynamics;
-    std::unique_ptr<class SceneTrace> m_SceneTrace;
+		// Per-scene fixed-timestep accumulator (replaces PhysicsContext in entt ctx)
+		std::unordered_map<Scene*, float> m_Accumulators;
+	};
 
-    // Localized BVH cache to avoid global static state
-    std::unordered_map<ModelAsset*, std::shared_future<std::shared_ptr<BVH>>> m_BVHCache;
-    mutable std::mutex m_BVHMutex;
-    float m_Accumulator = 0.0f;
-
-    // Persistent asset cache for collider shape computation (avoids per-frame allocation)
-    std::unordered_map<std::string, std::shared_ptr<ModelAsset>> m_ColliderAssetCache;
-};
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_PHYSICS_H

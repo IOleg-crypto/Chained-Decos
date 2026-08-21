@@ -1,0 +1,7 @@
+# EnTT dependency (Header-only)
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/entt/src")
+    add_library(engine_external_entt INTERFACE)
+    target_include_directories(engine_external_entt INTERFACE "${CMAKE_SOURCE_DIR}/thirdparty/entt/src")
+else()
+    message(FATAL_ERROR "EnTT submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/entt/src")
+endif()

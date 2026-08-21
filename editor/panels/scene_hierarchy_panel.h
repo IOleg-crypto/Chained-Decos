@@ -4,31 +4,35 @@
 #include "panel.h"
 #include "unordered_set"
 
-namespace CHEngine
+namespace Chained
 {
-class SceneHierarchyPanel : public Panel
-{
-public:
-    SceneHierarchyPanel();
-    SceneHierarchyPanel(const std::shared_ptr<Scene>& context);
 
-    virtual void OnImGuiRender(bool readOnly = false) override;
+	class CommandHistory;
+	struct EditorState;
 
-private:
-    entt::entity DrawEntityNodeRecursive(Entity entity);
-    void DrawComponents(Entity entity);
-    void DrawContextMenu();
-    const char* GetEntityIcon(Entity entity);
+	class SceneHierarchyPanel : public Panel
+	{
+	public:
+		SceneHierarchyPanel();
 
-private:
-    std::unordered_set<entt::entity> m_DrawnEntities;
+		virtual void OnImGuiRender(bool readOnly = false) override;
 
-    char m_SearchBuffer[128] = {0};
-    bool m_Renaming = false;
-    char m_RenameBuffer[128] = {0};
-    Entity m_RenamingEntity;
-};
+	private:
+		void DrawEntityNodeRecursive(Entity entity, bool readOnly);
+		void DrawContextMenu();
+		const char* GetEntityIcon(Entity entity);
+		void StartRename(Entity entity);
 
-} // namespace CHEngine
+	private:
+		std::unordered_set<entt::entity> m_DrawnEntities;
+		std::vector<entt::entity> m_EntitiesToDestroyPending;
+
+		char m_SearchBuffer[128] = {0};
+		bool m_Renaming = false;
+		char m_RenameBuffer[128] = {0};
+		Entity m_RenamingEntity;
+	};
+
+} // namespace Chained
 
 #endif // CH_SCENE_HIERARCHY_PANEL_H
