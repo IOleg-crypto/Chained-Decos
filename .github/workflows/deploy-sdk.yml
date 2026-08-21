@@ -178,43 +178,84 @@ jobs:
           set -euo pipefail
           python tools/sync_resources.py --root . --bin "build/${{ matrix.preset }}/bin" --config ${{ matrix.config }}
 
-      - name: Package SDK
+      - name: Package all archives
         id: package
         shell: bash
         run: |
           set -euo pipefail
-          PACKAGE_NAME="ChainedEngine-SDK-v${{ steps.info.outputs.version }}-${{ steps.info.outputs.date }}-${{ matrix.platform }}"
-          PACKAGE_DIR="${{ github.workspace }}/package"
-          mkdir -p "$PACKAGE_DIR"
+          VERSION="${{ steps.info.outputs.version }}"
+          DATE="${{ steps.info.outputs.date }}"
+          PLATFORM="${{ matrix.platform }}"
+          IS_WINDOWS="${{ matrix.os == 'windows-latest' }}"
 
           BIN_DIR="${{ github.workspace }}/build/${{ matrix.preset }}/bin/${{ matrix.config }}"
           if [[ ! -d "$BIN_DIR" ]]; then
             BIN_DIR="${{ github.workspace }}/build/${{ matrix.preset }}/bin"
           fi
 
-          cp -r "$BIN_DIR"/* "$PACKAGE_DIR/"
-          if [[ -d "${{ github.workspace }}/assets" ]]; then
-            cp -r "${{ github.workspace }}/assets" "$PACKAGE_DIR/"
-          fi
+          make_archive() {
+            local NAME="$1"
+            local SRC_DIR="$2"
+            local ARCHIVE_NAME="${NAME}-v${VERSION}-${DATE}-${PLATFORM}"
+            local DEST="${{ github.workspace }}/${ARCHIVE_NAME}"
+            cd "$SRC_DIR"
+            if [[ "$IS_WINDOWS" == "true" ]]; then
+              powershell -Command "Compress-Archive -Path * -DestinationPath '${DEST}.zip' -Force"
+              echo "${ARCHIVE_NAME}.zip"
+            else
+              tar -czf "${DEST}.tar.gz" .
+              echo "${ARCHIVE_NAME}.tar.gz"
+            fi
+          }
 
-          cd "$PACKAGE_DIR"
-          DEST_ZIP="${{ github.workspace }}/${PACKAGE_NAME}.zip"
-          DEST_TAR="${{ github.workspace }}/${PACKAGE_NAME}.tar.gz"
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            powershell -Command "Compress-Archive -Path * -DestinationPath '$DEST_ZIP' -Force"
-            echo "package_file=$PACKAGE_NAME.zip" >> $GITHUB_OUTPUT
-            echo "package_path=$DEST_ZIP" >> $GITHUB_OUTPUT
-          else
-            tar -czf "$DEST_TAR" .
-            echo "package_file=$PACKAGE_NAME.tar.gz" >> $GITHUB_OUTPUT
-            echo "package_path=$DEST_TAR" >> $GITHUB_OUTPUT
+          # --- SDK (editor + game + assets + resources) ---
+          SDK_DIR="${{ github.workspace }}/package-sdk"
+          mkdir -p "$SDK_DIR"
+          cp -r "$BIN_DIR"/* "$SDK_DIR/"
+          if [[ -d "${{ github.workspace }}/assets" ]]; then
+            cp -r "${{ github.workspace }}/assets" "$SDK_DIR/"
           fi
+          SDK_ARCHIVE=$(make_archive "ChainedEngine-SDK" "$SDK_DIR")
+          echo "sdk_archive=$SDK_ARCHIVE" >> $GITHUB_OUTPUT
+
+          # --- Game (ChainedDecos + assets + resources) ---
+          GAME_DIR="${{ github.workspace }}/package-game"
+          mkdir -p "$GAME_DIR"
+          cp "$BIN_DIR/ChainedDecos" "$GAME_DIR/" 2>/dev/null || true
+          cp "$BIN_DIR/ChainedDecos.exe" "$GAME_DIR/" 2>/dev/null || true
+          if [[ -d "${{ github.workspace }}/assets" ]]; then
+            cp -r "${{ github.workspace }}/assets" "$GAME_DIR/"
+          fi
+          GAME_ARCHIVE=$(make_archive "ChainedDecos-Game" "$GAME_DIR")
+          echo "game_archive=$GAME_ARCHIVE" >> $GITHUB_OUTPUT
+
+          # --- Editor (ChainedEditor only) ---
+          EDITOR_DIR="${{ github.workspace }}/package-editor"
+          mkdir -p "$EDITOR_DIR"
+          cp "$BIN_DIR/ChainedEditor" "$EDITOR_DIR/" 2>/dev/null || true
+          cp "$BIN_DIR/ChainedEditor.exe" "$EDITOR_DIR/" 2>/dev/null || true
+          EDITOR_ARCHIVE=$(make_archive "ChainedEditor" "$EDITOR_DIR")
+          echo "editor_archive=$EDITOR_ARCHIVE" >> $GITHUB_OUTPUT
 
       - name: Upload SDK artifact
         uses: actions/upload-artifact@v4
         with:
           name: SDK-${{ matrix.platform }}
-          path: ${{ steps.package.outputs.package_path }}
+          path: ${{ github.workspace }}/${{ steps.package.outputs.sdk_archive }}
+          retention-days: 30
+
+      - name: Upload Game artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Game-${{ matrix.platform }}
+          path: ${{ github.workspace }}/${{ steps.package.outputs.game_archive }}
+          retention-days: 30
+
+      - name: Upload Editor artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Editor-${{ matrix.platform }}
+          path: ${{ github.workspace }}/${{ steps.package.outputs.editor_archive }}
           retention-days: 30
 
   release:
@@ -238,24 +279,28 @@ jobs:
           TAG_VERSION=${GITHUB_REF#refs/tags/v}
           echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Download all SDK artifacts
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           path: release-assets
-          pattern: SDK-*
+          pattern: "{SDK,Game,Editor}-*"
           merge-multiple: true
 
       - name: Create Release
         uses: softprops/action-gh-release@v2
         with:
-          name: "Chained Engine SDK v${{ steps.info.outputs.version }}"
+          name: "Chained Engine v${{ steps.info.outputs.version }}"
           tag_name: "release-v${{ steps.info.outputs.version }}-${{ steps.info.outputs.date }}"
           files: release-assets/*
           body: |
-            ### Chained Engine SDK
-            - **Version**: v${{ steps.info.outputs.version }}
+            ### Chained Engine v${{ steps.info.outputs.version }}
             - **Build Date**: ${{ steps.info.outputs.date }}
             - **Platforms**: Linux (clang), Windows (clang)
+
+            #### Assets
+            - **ChainedEngine-SDK** — повний SDK (editor + game + engine)
+            - **ChainedDecos-Game** — тільки гра
+            - **ChainedEditor** — тільки редактор
           draft: false
           prerelease: false
         env:
