@@ -10,7 +10,7 @@ Canvas:
   MatchWidthOrHeight: 0.5
 EnvironmentPath: environments/new_environment.chenv
 Lighting:
-  Direction: [0.419999987, -0.709999979, 1]
+  Direction: [0.419999987, -0.660000026, 0.670000017]
   LightColor: [255, 255, 255, 255]
   Ambient: 0.170000002
 Skybox:
@@ -46,324 +46,171 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 1047207412683106544
-    ModelComponent:
-      ModelPath: models/skeleton_animated.glb
-      ModelUUID: 7289248424465903313
-      MaterialPaths:
-        []
+  - Entity: 1388532700694720608
     TransformComponent:
-      Translation: [-385.506042, 210.6026, 185.502914]
-      Rotation: [-0.016154483, 0.863519788, -0.00596364681]
-      Scale: [0.999939144, 0.999887109, 0.999927402]
-    TagComponent:
-      Tag: object_new
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/arena.glb
-      ModelUUID: 0
-      IsColliding: false
-    AnimationComponent:
-      GraphPath: ""
-      GraphUUID: 0
-      BlendDuration: 0.25
-      DefaultIsLooping: true
-      PlayOnStart: true
-      Variables:
-        {}
-  - Entity: 17087174313452565854
-    ModelComponent:
-      ModelPath: models/island.glb
-      ModelUUID: 580609141673989832
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [-22.9906006, -4.32776642, -2881.44678]
-      Rotation: [-0.0117486976, 0.0380410925, -0.00385736162]
-      Scale: [0.99993974, 0.999890089, 0.999929249]
-    TagComponent:
-      Tag: island_good
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/arena.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 10552313136623897289
-    ModelComponent:
-      ModelPath: models/building/scene.gltf
-      ModelUUID: 891151930191489760
-      MaterialPaths:
-        - models/building/scene_material_0.chmat
-        - models/building/scene_material_1.chmat
-        - models/building/scene_material_2.chmat
-        - models/building/scene_material_3.chmat
-        - models/building/scene_material_4.chmat
-        - models/building/scene_material_5.chmat
-    TransformComponent:
-      Translation: [23.264637, -27.1361389, -506.157532]
-      Rotation: [0, -0, 0]
-      Scale: [342.240997, 325.262634, 245.059052]
-    TagComponent:
-      Tag: buildings_6_pack
-    IDComponent:
-      {}
-  - Entity: 262959682445428938
-    ModelComponent:
-      ModelPath: models/bridge.glb
-      ModelUUID: 9850403329235179652
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [428.76062, 30.1878853, 305.481506]
-      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
-      Scale: [0.999992847, 0.999961555, 0.999930501]
-    TagComponent:
-      Tag: anim_mode
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/bridge.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 1269210360813176908
-    ModelComponent:
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-      ModelUUID: 4537241321556691418
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [226.774567, 10.7833824, 119.315414]
-      Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
-      Scale: [7.04011488, 8.74738693, 19.0374851]
-    TagComponent:
-      Tag: wooden_bridge
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 6868553143367474650
-    ModelComponent:
-      ModelPath: models/bridge.glb
-      ModelUUID: 9850403329235179652
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [440.960266, 32.5502625, 581.221497]
-      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
-      Scale: [0.999992847, 0.999961555, 0.999930501]
-    TagComponent:
-      Tag: anim_mode#3
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/bridge.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 1608587864667650697
-    ModelComponent:
-      ModelPath: models/bridge.glb
-      ModelUUID: 9850403329235179652
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [456.769592, 92.3261108, 838.863159]
-      Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
-      Scale: [0.999980867, 1.0000428, 1.00002789]
-    TagComponent:
-      Tag: anim_mode#4
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/bridge.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 12834900341709125804
-    ModelComponent:
-      ModelPath: models/bridge.glb
-      ModelUUID: 9850403329235179652
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [424.876801, 17.5073452, 22.4167747]
-      Rotation: [-1.59236383, 0.0545779206, 0.0118380217]
-      Scale: [0.999992907, 1.36125314, 0.999930501]
-    TagComponent:
-      Tag: anim_mode#2
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/bridge.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 926554578977384312
-    TransformComponent:
-      Translation: [-8.81565094, 14.7408161, -39.2663612]
+      Translation: [-326.500214, 311.823425, 1022.66998]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: Static Collider
+      Tag: SpawnZone
     IDComponent:
       {}
-    ManagedScriptComponent:
-      Scripts:
-        - ClassName: chaineddecos.scripts.endgamezone
+    SpawnComponent:
+      IsActive: true
+      IsCheckpoint: true
+      SpawnPoint: [0, 0, 0]
+      ZoneSize: [2.5999999, 4.4000001, 3.0999999]
+      RenderSpawnZoneInScene: true
+  - Entity: 9960371382411008385
+    ModelComponent:
+      ModelPath: models/city/after_the_rain..._-_vr__sound.glb
+      ModelUUID: 9063345529843979990
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [750.026367, 29.4887199, 157.773407]
+      Rotation: [3.14158845, -1.54755747, -3.14157939]
+      Scale: [6.91140509, 5.33406591, 4.08035278]
+    TagComponent:
+      Tag: cathedral
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: models/city/after_the_rain..._-_vr__sound.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 909307703803186220
+    ModelComponent:
+      ModelPath: models/stairs.glb
+      ModelUUID: 2777666302803713364
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [46.4636726, -11088.8096, 14.3364639]
+      Rotation: [-3.14153385, -0.624083161, -3.1415863]
+      Scale: [2.29999304, 2.70000005, 0.979451716]
+    TagComponent:
+      Tag: Entity_copy
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/stairs.glb
+      ModelUUID: 0
+      IsColliding: false
+  - Entity: 983662873606794579
+    TransformComponent:
+      Translation: [-40.4501495, 79.567894, 0]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: Empty Entity
+    IDComponent:
+      {}
+    AudioComponent:
+      SoundPath: audio/soundreality-wind-plain-sfx-522910.mp3
+      SoundUUID: 18016372891088584835
+      Volume: 2
+      Pitch: 3
+      Loop: true
+      PlayOnStart: false
+      Spatialized: false
+      Position: [0, 0, 0]
+      MinDistance: 1
+      MaxDistance: 100
+      IsPlaying: false
+  - Entity: 15849216189391956439
+    ModelComponent:
+      ModelPath: models/arena.glb
+      ModelUUID: 10755992412146045657
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [-18.6856194, -4.32776833, -35.4009895]
+      Rotation: [-0.0117486976, 0.0380410925, -0.00385736162]
+      Scale: [0.99993974, 0.999890089, 0.999929249]
+    TagComponent:
+      Tag: Arena
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/arena.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 3119751222396764761
+    ModelComponent:
+      ModelPath: models/mystery_skulls_ghost_lewis/scene.gltf
+      ModelUUID: 9161924301726423648
+      MaterialPaths:
+        - models/mystery_skulls_ghost_lewis/scene_material_0.chmat
+    TransformComponent:
+      Translation: [60.8389587, 88.6849136, 37.5509796]
+      Rotation: [0, -0, 0]
+      Scale: [26.4252186, 28.1715183, 26.7638988]
+    TagComponent:
+      Tag: ghost
+    IDComponent:
+      {}
     ColliderComponent:
       Type: 0
-      Size: [19.1000004, 4.19999981, 16]
-      Offset: [8.60000038, 0, 0]
+      Size: [1.21000004, 3.83999991, 0.449999988]
+      Offset: [0, 10.3000002, 0]
       Radius: 0.5
       Height: 1
       Friction: 0.5
@@ -375,170 +222,34 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 8683304692384631908
-    ModelComponent:
-      ModelPath: models/toy_train/wooden_train.glb
-      ModelUUID: 6503497834854385828
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [-3565.1311, -45.4531631, 621.43158]
-      Rotation: [0.18592523, -1.13752759, -0.188373342]
-      Scale: [1.00000036, 0.999993503, 0.99999553]
-    TagComponent:
-      Tag: toy_train_platform
-    IDComponent:
-      {}
-  - Entity: 3052808691587277336
-    ModelComponent:
-      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
-      ModelUUID: 6922423336282928323
-      MaterialPaths:
-        - models/pilot/animated_civilian_helicopter/scene_material_0.chmat
-    TransformComponent:
-      Translation: [-216.192169, -6.67572021e-06, 0]
-      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
-      Scale: [46.0502167, 47.251339, 53.7656708]
-    TagComponent:
-      Tag: Empty Entity
-    IDComponent:
-      {}
     AnimationComponent:
-      GraphPath: ""
+      GraphPath: animations/new_graph.chag
       GraphUUID: 0
       BlendDuration: 0.25
       DefaultIsLooping: true
       PlayOnStart: true
       Variables:
-        {}
-  - Entity: 3948577800838464108
-    ModelComponent:
-      ModelPath: models/container_ship/scene.gltf
-      ModelUUID: 16650958288931697221
-      MaterialPaths:
-        - models/container_ship/scene_material_0.chmat
-        - models/container_ship/scene_material_1.chmat
-        - models/container_ship/scene_material_2.chmat
+        speed: 0
+        isMoving: 0
+  - Entity: 8266505162762917547
     TransformComponent:
-      Translation: [-949.601318, 51.8037796, 331.382965]
-      Rotation: [2.86779284, 1.33893979, 2.90103149]
-      Scale: [20.9453735, 17.1169147, 17.6528664]
-    TagComponent:
-      Tag: arena_two
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0, 0, 0]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/container_ship/scene.gltf
-      ModelUUID: 0
-      IsColliding: false
-    AnimationComponent:
-      GraphPath: ""
-      GraphUUID: 0
-      BlendDuration: 0.25
-      DefaultIsLooping: true
-      PlayOnStart: true
-      Variables:
-        {}
-  - Entity: 4715066359261955126
-    CameraComponent:
-      Primary: true
-      FixedAspectRatio: false
-      IsOrbitCamera: true
-      TargetEntityTag: Player
-      OrbitDistance: 0
-      OrbitYaw: 0
-      OrbitPitch: 0
-      LookSensitivity: 0.899999976
-    TransformComponent:
-      Translation: [5.60443401, -1.58330917, -8.12917233]
-      Rotation: [-0.159000024, -2.53800106, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: Camera
-    IDComponent:
-      {}
-  - Entity: 11214551571334466962
-    ModelComponent:
-      ModelPath: models/stairs.glb
-      ModelUUID: 2777666302803713364
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [411.734222, 21.1899738, 188.952682]
-      Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
-      Scale: [0.999889433, 1, 0.979455113]
-    TagComponent:
-      Tag: Entity
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 1
-      Size: [0.5, 0.5, 0.5]
-      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/stairs.glb
-      ModelUUID: 0
-      IsColliding: false
-  - Entity: 2910439523622598395
-    ModelComponent:
-      ModelPath: models/minigames/hub_for_minigames_server.glb
-      ModelUUID: 8378150816431493396
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [-118.395287, 12.3910465, 826.530884]
+      Translation: [-148.822327, 65.1090927, 0]
       Rotation: [0, -0, 0]
-      Scale: [673.435242, 411.5466, 440.887085]
+      Scale: [2.92739296, 3.31053686, 5.81883764]
     TagComponent:
-      Tag: island_minigames
+      Tag: CubeWithTexture
+    PrimitiveComponent:
+      Type: 8
+      Radius: 13.1099997
+      InnerRadius: 3.5999999
+      Height: 13.25
+      Slices: 49
+      Stacks: 145
+      Dimensions: [8.60000038, 16, 10.5]
+      MeshPath: ""
     IDComponent:
       {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/minigames/hub_for_minigames_server.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 17030008943498569240
+  - Entity: 7406597226916280637
     ModelComponent:
       ModelPath: models/player_low.glb
       ModelUUID: 6152005881347795059
@@ -595,42 +306,185 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 3855414609574109619
-    TransformComponent:
-      Translation: [-148.822327, 65.1090927, 0]
-      Rotation: [0, -0, 0]
-      Scale: [2.92739296, 3.31053686, 5.81883764]
-    TagComponent:
-      Tag: CubeWithTexture
-    PrimitiveComponent:
-      Type: 8
-      Radius: 13.1099997
-      InnerRadius: 3.5999999
-      Height: 13.25
-      Slices: 49
-      Stacks: 145
-      Dimensions: [8.60000038, 16, 10.5]
-      MeshPath: ""
-    IDComponent:
-      {}
-  - Entity: 7280370257649515229
+  - Entity: 8569528578311606949
     ModelComponent:
-      ModelPath: models/mystery_skulls_ghost_lewis/scene.gltf
-      ModelUUID: 9161924301726423648
+      ModelPath: models/minigames/hub_for_minigames_server.glb
+      ModelUUID: 8378150816431493396
       MaterialPaths:
-        - models/mystery_skulls_ghost_lewis/scene_material_0.chmat
+        []
     TransformComponent:
-      Translation: [60.8389587, 88.6849136, 37.5509796]
+      Translation: [-118.395287, 12.3910465, 826.530884]
       Rotation: [0, -0, 0]
-      Scale: [26.4252186, 28.1715183, 26.7638988]
+      Scale: [673.435242, 411.5466, 440.887085]
     TagComponent:
-      Tag: ghost
+      Tag: island_minigames
     IDComponent:
       {}
     ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/minigames/hub_for_minigames_server.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
       Type: 0
-      Size: [1.21000004, 3.83999991, 0.449999988]
-      Offset: [0, 10.3000002, 0]
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 7330455815488835022
+    ModelComponent:
+      ModelPath: models/stairs.glb
+      ModelUUID: 2777666302803713364
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [411.734222, 21.1899738, 188.952682]
+      Rotation: [3.63230574e-05, -1.51887417, -1.12990801e-05]
+      Scale: [0.999889433, 1, 0.979455113]
+    TagComponent:
+      Tag: Entity
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 1
+      Size: [0.5, 0.5, 0.5]
+      Offset: [-14.1946049, -9.53674316e-07, -8.94524384]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/stairs.glb
+      ModelUUID: 0
+      IsColliding: false
+  - Entity: 12281907651891245889
+    CameraComponent:
+      Primary: true
+      FixedAspectRatio: false
+      IsOrbitCamera: true
+      TargetEntityTag: Player
+      OrbitDistance: 0
+      OrbitYaw: 0
+      OrbitPitch: 0
+      LookSensitivity: 0.899999976
+    TransformComponent:
+      Translation: [165.648392, 671.06134, 166.822937]
+      Rotation: [0.698999822, -2.4989996, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: Camera
+    IDComponent:
+      {}
+  - Entity: 4580184106581322309
+    ModelComponent:
+      ModelPath: models/container_ship/scene.gltf
+      ModelUUID: 16650958288931697221
+      MaterialPaths:
+        - models/container_ship/scene_material_0.chmat
+        - models/container_ship/scene_material_1.chmat
+        - models/container_ship/scene_material_2.chmat
+    TransformComponent:
+      Translation: [-949.601318, 51.8037796, 331.382965]
+      Rotation: [2.86779284, 1.33893979, 2.90103149]
+      Scale: [20.9453735, 17.1169147, 17.6528664]
+    TagComponent:
+      Tag: arena_two
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0, 0, 0]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/container_ship/scene.gltf
+      ModelUUID: 0
+      IsColliding: false
+    AnimationComponent:
+      GraphPath: ""
+      GraphUUID: 0
+      BlendDuration: 0.25
+      DefaultIsLooping: true
+      PlayOnStart: true
+      Variables:
+        {}
+  - Entity: 519589233602031965
+    ModelComponent:
+      ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
+      ModelUUID: 6922423336282928323
+      MaterialPaths:
+        - models/pilot/animated_civilian_helicopter/scene_material_0.chmat
+    TransformComponent:
+      Translation: [-216.192169, -6.67572021e-06, 0]
+      Rotation: [0.0617936067, 0.0883244723, -0.0563300997]
+      Scale: [46.0502167, 47.251339, 53.7656708]
+    TagComponent:
+      Tag: Empty Entity
+    IDComponent:
+      {}
+    AnimationComponent:
+      GraphPath: ""
+      GraphUUID: 0
+      BlendDuration: 0.25
+      DefaultIsLooping: true
+      PlayOnStart: true
+      Variables:
+        {}
+  - Entity: 17788316681746480228
+    ModelComponent:
+      ModelPath: models/toy_train/wooden_train.glb
+      ModelUUID: 6503497834854385828
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [-3565.1311, -45.4531631, 621.43158]
+      Rotation: [0.18592523, -1.13752759, -0.188373342]
+      Scale: [1.00000036, 0.999993503, 0.99999553]
+    TagComponent:
+      Tag: toy_train_platform
+    IDComponent:
+      {}
+  - Entity: 17136403959904282428
+    TransformComponent:
+      Translation: [-8.81565094, 14.7408161, -39.2663612]
+      Rotation: [0, -0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: Static Collider
+    IDComponent:
+      {}
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.endgamezone
+    ColliderComponent:
+      Type: 0
+      Size: [19.1000004, 4.19999981, 16]
+      Offset: [8.60000038, 0, 0]
       Radius: 0.5
       Height: 1
       Friction: 0.5
@@ -642,159 +496,307 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
+  - Entity: 12093105580418733898
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      ModelUUID: 9850403329235179652
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [424.876801, 17.5073452, 22.4167747]
+      Rotation: [-1.59236383, 0.0545779206, 0.0118380217]
+      Scale: [0.999992907, 1.36125314, 0.999930501]
+    TagComponent:
+      Tag: anim_mode#2
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/bridge.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 17292455411607182348
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      ModelUUID: 9850403329235179652
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [456.769592, 92.3261108, 838.863159]
+      Rotation: [-1.9903754, 0.0549046658, -0.0102301203]
+      Scale: [0.999980867, 1.0000428, 1.00002789]
+    TagComponent:
+      Tag: anim_mode#4
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/bridge.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 6815571250947141964
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      ModelUUID: 9850403329235179652
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [440.960266, 32.5502625, 581.221497]
+      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
+      Scale: [0.999992847, 0.999961555, 0.999930501]
+    TagComponent:
+      Tag: anim_mode#3
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/bridge.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 11670811948117573060
+    ModelComponent:
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+      ModelUUID: 4537241321556691418
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [226.774567, 10.7833824, 119.315414]
+      Rotation: [-6.31075409e-07, 1.2072463, -6.78071274e-07]
+      Scale: [7.04011488, 8.74738693, 19.0374851]
+    TagComponent:
+      Tag: wooden_bridge
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 5764371495021089224
+    ModelComponent:
+      ModelPath: models/bridge.glb
+      ModelUUID: 9850403329235179652
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [428.76062, 30.1878853, 305.481506]
+      Rotation: [-1.59236383, 0.0545778051, 0.0118374834]
+      Scale: [0.999992847, 0.999961555, 0.999930501]
+    TagComponent:
+      Tag: anim_mode
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/bridge.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 8372797272213547214
+    ModelComponent:
+      ModelPath: models/building/scene.gltf
+      ModelUUID: 891151930191489760
+      MaterialPaths:
+        - models/building/scene_material_0.chmat
+        - models/building/scene_material_1.chmat
+        - models/building/scene_material_2.chmat
+        - models/building/scene_material_3.chmat
+        - models/building/scene_material_4.chmat
+        - models/building/scene_material_5.chmat
+    TransformComponent:
+      Translation: [23.264637, -27.1361389, -506.157532]
+      Rotation: [0, -0, 0]
+      Scale: [342.240997, 325.262634, 245.059052]
+    TagComponent:
+      Tag: buildings_6_pack
+    IDComponent:
+      {}
+  - Entity: 1513280067487115410
+    ModelComponent:
+      ModelPath: models/island.glb
+      ModelUUID: 580609141673989832
+      MaterialPaths:
+        []
+    TransformComponent:
+      Translation: [-22.9906006, -4.32776642, -2881.44678]
+      Rotation: [-0.0117486976, 0.0380410925, -0.00385736162]
+      Scale: [0.99993974, 0.999890089, 0.999929249]
+    TagComponent:
+      Tag: island_good
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/arena.glb
+      ModelUUID: 0
+      IsColliding: false
+    RigidBodyComponent:
+      Type: 0
+      Mass: 1
+      LinearDamping: 0.00999999978
+      AngularDamping: 0.0500000007
+      UseGravity: true
+      IsFixedRotation: false
+      Handle: 0
+      Velocity: [0, 0, 0]
+      IsGrounded: false
+      VelocityForced: false
+      IsNetworkDriven: false
+  - Entity: 3336568568209062724
+    ModelComponent:
+      ModelPath: models/skeleton_animated.glb
+      ModelUUID: 7289248424465903313
+      MaterialPaths:
+        - models/skeleton_animated_material_0.chmat
+        - models/skeleton_animated_material_1.chmat
+        - models/skeleton_animated_material_2.chmat
+    TransformComponent:
+      Translation: [-378.762115, 205.69989, 185.502914]
+      Rotation: [-0.016154483, 0.863519788, -0.00596364681]
+      Scale: [0.999939144, 0.999887109, 0.999927402]
+    TagComponent:
+      Tag: object_new
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 3
+      Size: [0.5, 0.5, 0.5]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: false
+      Enabled: true
+      AutoCalculate: true
+      UseFastBuildQuality: true
+      ModelPath: models/arena.glb
+      ModelUUID: 0
+      IsColliding: false
     AnimationComponent:
-      GraphPath: animations/new_graph.chag
+      GraphPath: ""
       GraphUUID: 0
       BlendDuration: 0.25
       DefaultIsLooping: true
       PlayOnStart: true
       Variables:
-        speed: 0
-        isMoving: 0
-  - Entity: 70362916053062223
-    ModelComponent:
-      ModelPath: models/arena.glb
-      ModelUUID: 10755992412146045657
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [-18.6856194, -4.32776833, -35.4009895]
-      Rotation: [-0.0117486976, 0.0380410925, -0.00385736162]
-      Scale: [0.99993974, 0.999890089, 0.999929249]
-    TagComponent:
-      Tag: Arena
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/arena.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 18186989575100975282
-    TransformComponent:
-      Translation: [-40.4501495, 79.567894, 0]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: Empty Entity
-    IDComponent:
-      {}
-    AudioComponent:
-      SoundPath: audio/soundreality-wind-plain-sfx-522910.mp3
-      SoundUUID: 18016372891088584835
-      Volume: 2
-      Pitch: 3
-      Loop: true
-      PlayOnStart: false
-      Spatialized: false
-      Position: [0, 0, 0]
-      MinDistance: 1
-      MaxDistance: 100
-      IsPlaying: false
-  - Entity: 9982162109706525384
-    ModelComponent:
-      ModelPath: models/stairs.glb
-      ModelUUID: 2777666302803713364
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [46.4636726, -11088.8096, 14.3364639]
-      Rotation: [-3.14153385, -0.624083161, -3.1415863]
-      Scale: [2.29999304, 2.70000005, 0.979451716]
-    TagComponent:
-      Tag: Entity_copy
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: true
-      UseFastBuildQuality: true
-      ModelPath: models/stairs.glb
-      ModelUUID: 0
-      IsColliding: false
-  - Entity: 130577409590866654
-    ModelComponent:
-      ModelPath: models/city/after_the_rain..._-_vr__sound.glb
-      ModelUUID: 9063345529843979990
-      MaterialPaths:
-        []
-    TransformComponent:
-      Translation: [750.026367, 29.4887199, 157.773407]
-      Rotation: [3.14158845, -1.54755747, -3.14157939]
-      Scale: [6.91140509, 5.33406591, 4.08035278]
-    TagComponent:
-      Tag: cathedral
-    IDComponent:
-      {}
-    ColliderComponent:
-      Type: 3
-      Size: [0.5, 0.5, 0.5]
-      Offset: [0, 0, 0]
-      Radius: 0.5
-      Height: 1
-      Friction: 0.5
-      Restitution: 0
-      IsTrigger: false
-      Enabled: true
-      AutoCalculate: false
-      UseFastBuildQuality: true
-      ModelPath: models/city/after_the_rain..._-_vr__sound.glb
-      ModelUUID: 0
-      IsColliding: false
-    RigidBodyComponent:
-      Type: 0
-      Mass: 1
-      LinearDamping: 0.00999999978
-      AngularDamping: 0.0500000007
-      UseGravity: true
-      IsFixedRotation: false
-      Handle: 0
-      Velocity: [0, 0, 0]
-      IsGrounded: false
-      VelocityForced: false
-      IsNetworkDriven: false
-  - Entity: 17876936902469701584
-    TransformComponent:
-      Translation: [-326.500214, 311.823425, 1022.66998]
-      Rotation: [0, -0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: SpawnZone
-    IDComponent:
-      {}
-    SpawnComponent:
-      IsActive: true
-      IsCheckpoint: true
-      SpawnPoint: [0, 0, 0]
-      ZoneSize: [2.5999999, 4.4000001, 3.0999999]
-      RenderSpawnZoneInScene: true
+        {}

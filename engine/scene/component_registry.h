@@ -216,6 +216,10 @@ namespace Chained
 					{
 						comp.Reflect(props);
 					}
+					// Fire on_update so observer-driven systems (e.g. PrimitiveSystem)
+					// can react to the fully-populated component after deserialization.
+					// on_construct fired above with default data; on_update carries the real data.
+					e.GetRegistry().template patch<T>(e, [](T&) {});
 				}
 				else if (e.HasComponent<T>())
 				{

@@ -10,6 +10,7 @@
 #include "engine/scene/components/core/tag_component.h"
 #include "engine/scene/components/render/model_component.h"
 #include "engine/scene/components/render/primitive_component.h"
+#include "engine/assets/types/material_asset.h"
 
 #include <cereal/archives/binary.hpp>
 #include <cereal/types/string.hpp>
@@ -185,15 +186,7 @@ namespace Chained::PrimitiveSystem
 			return {};
 		}
 
-		std::string rel;
-		if (!prim->MeshPath.empty() && (prim->MeshPath.ends_with(".chmesh") || prim->MeshPath.ends_with(".chasset")))
-		{
-			rel = prim->MeshPath;
-		}
-		else
-		{
-			rel = MakeRelativePath(reg, e, prim->Type);
-		}
+		std::string rel = MakeRelativePath(reg, e, prim->Type);
 
 		auto* am = ServiceLocator::TryGet<AssetManager>();
 		std::string abs = am ? am->ResolvePath(rel) : (s_PrimitiveDir.empty() ? rel : s_PrimitiveDir + "/" + rel);
@@ -210,6 +203,45 @@ namespace Chained::PrimitiveSystem
 			{
 				modelAsset->SetPendingData(std::move(data));
 				modelAsset->OnLoaded();
+
+				// Restore custom material from ModelComponent or .chmat on disk
+				if (auto* mc = reg.try_get<ModelComponent>(e))
+				{
+					for (size_t i = 0; i < mc->MaterialPaths.size(); ++i)
+					{
+						if (!mc->MaterialPaths[i].empty())
+						{
+							auto matAsset = am->Get<MaterialAsset>(mc->MaterialPaths[i]);
+							if (matAsset && matAsset->IsReady())
+							{
+								if (i >= modelAsset->GetMaterials().size())
+								{
+									modelAsset->GetMaterials().resize(i + 1);
+								}
+								modelAsset->GetMaterials()[i] = matAsset->GetMaterial();
+							}
+						}
+					}
+				}
+				else
+				{
+					std::filesystem::path modelPath(rel);
+					std::string modelName = modelPath.stem().string();
+					std::filesystem::path modelDir = modelPath.parent_path();
+					for (size_t i = 0; i < modelAsset->GetMaterials().size(); ++i)
+					{
+						std::string autoMatRel =
+							(modelDir / (modelName + "_material_" + std::to_string(i) + ".chmat")).generic_string();
+						if (am->FileExists(autoMatRel))
+						{
+							auto matAsset = am->Get<MaterialAsset>(autoMatRel);
+							if (matAsset && matAsset->IsReady())
+							{
+								modelAsset->GetMaterials()[i] = matAsset->GetMaterial();
+							}
+						}
+					}
+				}
 			}
 		}
 
@@ -261,6 +293,24 @@ namespace Chained::PrimitiveSystem
 			mc.ModelPath = newRelPath;
 			mc.ModelHandle = AssetHandle(0); // force re-resolve
 		}
+
+		// Auto-populate MaterialPaths if a saved .chmat file exists on disk
+		if (auto* am = ServiceLocator::TryGet<AssetManager>())
+		{
+			std::filesystem::path modelPath(newRelPath);
+			std::string modelName = modelPath.stem().string();
+			std::filesystem::path modelDir = modelPath.parent_path();
+			std::string autoMatRel = (modelDir / (modelName + "_material_0.chmat")).generic_string();
+			if ((mc.MaterialPaths.empty() || mc.MaterialPaths[0].empty()) && am->FileExists(autoMatRel))
+			{
+				if (mc.MaterialPaths.empty())
+				{
+					mc.MaterialPaths.resize(1);
+				}
+				mc.MaterialPaths[0] = autoMatRel;
+			}
+		}
+
 		reg.patch<ModelComponent>(e, [](ModelComponent&) {});
 	}
 

@@ -45,6 +45,12 @@ namespace Chained
 			out << YAML::EndMap;
 			out << YAML::EndMap;
 
+			std::filesystem::path filePath(path);
+			if (filePath.has_parent_path())
+			{
+				std::filesystem::create_directories(filePath.parent_path());
+			}
+
 			std::ofstream file(path);
 			if (!file.is_open())
 			{

@@ -122,21 +122,34 @@ namespace Chained
 			auto& modelComponent = registry.get<ModelComponent>(entity);
 			if (auto* materialAssets = ServiceLocator::TryGet<AssetManager>())
 			{
-				for (size_t i = 0; i < modelComponent.MaterialPaths.size(); ++i)
+				std::filesystem::path modelPath(modelComponent.ModelPath);
+				std::string modelName = modelPath.stem().string();
+				std::filesystem::path modelDir = modelPath.parent_path();
+
+				for (size_t i = 0; i < materials.size(); ++i)
 				{
-					if (modelComponent.MaterialPaths[i].empty())
+					std::string matPath;
+					if (i < modelComponent.MaterialPaths.size() && !modelComponent.MaterialPaths[i].empty())
 					{
-						continue;
+						matPath = modelComponent.MaterialPaths[i];
+					}
+					else if (!modelComponent.ModelPath.empty())
+					{
+						std::string autoName = modelName + "_material_" + std::to_string(i) + ".chmat";
+						std::string autoRel = (modelDir / autoName).generic_string();
+						if (materialAssets->FileExists(autoRel))
+						{
+							matPath = autoRel;
+						}
 					}
 
-					auto materialAsset = materialAssets->Get<MaterialAsset>(modelComponent.MaterialPaths[i]);
-					if (materialAsset && materialAsset->IsReady())
+					if (!matPath.empty())
 					{
-						if (i >= materials.size())
+						auto materialAsset = materialAssets->Get<MaterialAsset>(matPath);
+						if (materialAsset && materialAsset->IsReady())
 						{
-							materials.resize(i + 1);
+							materials[i] = materialAsset->GetMaterial();
 						}
-						materials[i] = materialAsset->GetMaterial();
 					}
 				}
 			}

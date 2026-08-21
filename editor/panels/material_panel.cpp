@@ -9,6 +9,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
 #include "engine/assets/types/material_asset.h"
+#include "editor/layer.h"
 #include <filesystem>
 
 namespace Chained
@@ -168,7 +169,10 @@ namespace Chained
 			{
 				auto& mc = m_SelectedEntity.GetComponent<ModelComponent>();
 
-				if (m_Materials.empty() && !mc.ModelPath.empty())
+				// Reload materials if: path changed, or materials not yet loaded while asset is ready.
+				bool pathChanged = (mc.ModelPath != m_LoadedModelPath);
+				bool shouldLoad = !mc.ModelPath.empty() && (pathChanged || m_Materials.empty());
+				if (shouldLoad)
 				{
 					auto* assetMgr = ServiceLocator::TryGet<AssetManager>();
 					if (assetMgr)
@@ -177,6 +181,41 @@ namespace Chained
 						if (asset && asset->IsReady())
 						{
 							m_Materials = asset->GetMaterials();
+							m_LoadedModelPath = mc.ModelPath;
+
+							std::filesystem::path modelPath(mc.ModelPath);
+							std::string modelName = modelPath.stem().string();
+							std::filesystem::path modelDir = modelPath.parent_path();
+
+							for (size_t i = 0; i < m_Materials.size(); ++i)
+							{
+								if (i < mc.MaterialPaths.size() && !mc.MaterialPaths[i].empty())
+								{
+									auto matAsset = assetMgr->Get<MaterialAsset>(mc.MaterialPaths[i]);
+									if (matAsset && matAsset->IsReady())
+									{
+										m_Materials[i] = matAsset->GetMaterial();
+									}
+								}
+								else
+								{
+									std::string matFileName = modelName + "_material_" + std::to_string(i) + ".chmat";
+									std::string autoMatRel = (modelDir / matFileName).generic_string();
+									if (assetMgr->FileExists(autoMatRel))
+									{
+										auto matAsset = assetMgr->Get<MaterialAsset>(autoMatRel);
+										if (matAsset && matAsset->IsReady())
+										{
+											m_Materials[i] = matAsset->GetMaterial();
+											if (i >= mc.MaterialPaths.size())
+											{
+												mc.MaterialPaths.resize(i + 1);
+											}
+											mc.MaterialPaths[i] = autoMatRel;
+										}
+									}
+								}
+							}
 						}
 					}
 				}
@@ -381,6 +420,14 @@ namespace Chained
 				mc.MaterialPaths.resize(i + 1);
 			}
 			mc.MaterialPaths[i] = matPath;
+
+			// Invalidate asset cache and update loaded instance
+			assets->Invalidate(matPath);
+			auto loadedMat = assets->Get<MaterialAsset>(matPath);
+			if (loadedMat)
+			{
+				loadedMat->SetMaterial(m_Materials[i]);
+			}
 		}
 
 		// Write back to ModelAsset so renderer picks up changes immediately
@@ -389,6 +436,9 @@ namespace Chained
 		{
 			modelAsset->GetMaterials() = m_Materials;
 		}
+
+		m_SelectedEntity.GetRegistry().patch<ModelComponent>(m_SelectedEntity, [](ModelComponent&) {});
+		EditorLayer::Get().GetSceneManager().MarkSceneDirty();
 	}
 
 	void MaterialPanel::DeleteMaterials()
@@ -454,6 +504,9 @@ namespace Chained
 		{
 			m_Materials.clear();
 		}
+
+		m_SelectedEntity.GetRegistry().patch<ModelComponent>(m_SelectedEntity, [](ModelComponent&) {});
+		EditorLayer::Get().GetSceneManager().MarkSceneDirty();
 	}
 
 	void MaterialPanel::OnEvent(Event& e)
@@ -467,6 +520,7 @@ namespace Chained
 			m_SelectedMeshIndex = ev.GetMeshIndex();
 			m_SelectedMaterialIndex = 0;
 			m_Materials.clear();
+			m_LoadedModelPath.clear();
 			return false;
 		});
 	}
@@ -478,6 +532,7 @@ namespace Chained
 			Panel::SetContext(context);
 			m_SelectedEntity = {};
 			m_Materials.clear();
+			m_LoadedModelPath.clear();
 		}
 	}
 

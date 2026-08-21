@@ -298,9 +298,9 @@ jobs:
             - **Platforms**: Linux (clang), Windows (clang)
 
             #### Assets
-            - **ChainedEngine-SDK** — повний SDK (editor + game + engine)
-            - **ChainedDecos-Game** — тільки гра
-            - **ChainedEditor** — тільки редактор
+            - **ChainedEngine-SDK** — full SDK (editor + game + engine)
+            - **ChainedDecos-Game** — game only
+            - **ChainedEditor** — editor only
           draft: false
           prerelease: false
         env:

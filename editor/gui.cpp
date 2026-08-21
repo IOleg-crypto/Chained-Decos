@@ -185,7 +185,7 @@ namespace Chained
 	}
 
 	bool EditorGUI::FilePropertyImpl(const char* label, std::string& value, const char* filter,
-									 std::function<void()> thumbnailFn)
+									 std::function<void()> thumbnailFn, const char* placeholder)
 	{
 		if (!label)
 		{
@@ -214,9 +214,10 @@ namespace Chained
 		strncpy(inputTextBuf, displayPath.c_str(), sizeof(inputTextBuf) - 1);
 
 		bool changed = false;
-		if (ImGui::InputText("##prop", inputTextBuf, sizeof(inputTextBuf)))
+		const char* hint = placeholder ? placeholder : "";
+		if (ImGui::InputTextWithHint("##prop", hint, inputTextBuf, sizeof(inputTextBuf)))
 		{
-			value = project ? project->GetAbsolutePath(inputTextBuf).string() : std::string(inputTextBuf);
+			value = project ? project->GetRelativePath(inputTextBuf) : std::string(inputTextBuf);
 			changed = true;
 		}
 		if (ImGui::BeginDragDropTarget())
@@ -255,27 +256,31 @@ namespace Chained
 
 	bool EditorGUI::FileProperty(const char* label, std::string& value, const char* filter)
 	{
-		return FilePropertyImpl(label, value, filter, nullptr);
+		return FilePropertyImpl(label, value, filter, nullptr, nullptr);
 	}
 
 	bool EditorGUI::FileProperty(const char* label, std::string& path, uint32_t textureId, const char* filter)
 	{
-		return FilePropertyImpl(label, path, filter, [textureId]() {
-			float buttonSize = GetButtonSize();
-			float thumbnailSize = GetThumbnailSize(buttonSize);
-			if (textureId > 0)
-			{
-				ImGui::Image((void*)(intptr_t)textureId, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
-			}
-			else
-			{
-				ImGui::Button("##empty", {thumbnailSize, thumbnailSize});
-				if (ImGui::IsItemHovered())
+		const char* placeholder = (textureId > 0 && path.empty()) ? "<embedded>" : nullptr;
+		return FilePropertyImpl(
+			label, path, filter,
+			[textureId]() {
+				float buttonSize = GetButtonSize();
+				float thumbnailSize = GetThumbnailSize(buttonSize);
+				if (textureId > 0)
 				{
-					ImGui::SetTooltip("No texture loaded");
+					ImGui::Image((void*)(intptr_t)textureId, {thumbnailSize, thumbnailSize}, {0, 1}, {1, 0});
 				}
-			}
-		});
+				else
+				{
+					ImGui::Button("##empty", {thumbnailSize, thumbnailSize});
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("No texture loaded");
+					}
+				}
+			},
+			placeholder);
 	}
 
 	bool EditorGUI::ActionButton(const char* icon, const char* label)
