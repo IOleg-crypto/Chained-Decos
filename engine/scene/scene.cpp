@@ -311,6 +311,8 @@ namespace Chained
 		{
 			m_PendingScenePath = *target;
 		}
+
+		m_Dispatcher.update();
 	}
 
 	void Scene::OnUpdateSimulation(Timestep ts)
@@ -335,6 +337,8 @@ namespace Chained
 		{
 			physics->Update(this, ts, true);
 		}
+
+		m_Dispatcher.update();
 	}
 
 	void Scene::InitializePhysicsStartup()
@@ -372,7 +376,6 @@ namespace Chained
 			}
 		}
 		m_IsStartingUp = false;
-		FinishRuntimeStart();
 	}
 
 	void Scene::OnUpdateEditor(Timestep timestep)
@@ -391,6 +394,8 @@ namespace Chained
 		AssetResolutionSystem::Update(*m_Registry);
 		AnimationSystem::Update(*m_Registry, timestep);
 		AudioSystem::Update(*m_Registry);
+
+		m_Dispatcher.update();
 	}
 
 	void Scene::OnViewportResize(uint32_t width, uint32_t height)

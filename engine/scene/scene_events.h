@@ -157,7 +157,20 @@ namespace Chained
 	public:
 		SceneModifiedEvent() = default;
 		EVENT_CLASS_TYPE(SceneModified)
-		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication | EventCategoryScene)
+	};
+
+	// ── EnTT Dispatcher Event Structs (Zero-allocation / Modern C++) ───
+	struct SceneModifiedData
+	{
+		class Scene* scene = nullptr;
+	};
+
+	struct EntitySelectedData
+	{
+		entt::entity entity = entt::null;
+		class Scene* scene = nullptr;
+		int meshIndex = -1;
 	};
 
 } // namespace Chained
