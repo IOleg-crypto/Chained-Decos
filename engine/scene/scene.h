@@ -162,6 +162,16 @@ namespace Chained
 		std::future<std::shared_ptr<Scene>> LoadSceneAsync(const std::string& path);
 		void SwapScene(std::shared_ptr<Scene> newScene);
 
+		// EnTT Dispatcher for Zero-Allocation Publish/Subscribe
+		entt::dispatcher& GetDispatcher()
+		{
+			return m_Dispatcher;
+		}
+		const entt::dispatcher& GetDispatcher() const
+		{
+			return m_Dispatcher;
+		}
+
 		// Pending scene change (from SceneTransitionSystem)
 		const std::string& GetPendingScenePath() const
 		{
@@ -189,6 +199,7 @@ namespace Chained
 		SceneState m_State = SceneState::Edit;
 
 		std::unique_ptr<entt::registry> m_Registry;
+		entt::dispatcher m_Dispatcher;
 		SceneSettings m_Settings;
 
 		std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
