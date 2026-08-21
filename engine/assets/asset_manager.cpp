@@ -789,6 +789,11 @@ namespace Chained
 		}
 
 		std::error_code ec;
+		std::string resolved = ResolvePath(path);
+		if (!resolved.empty() && std::filesystem::exists(resolved, ec))
+		{
+			return true;
+		}
 		return std::filesystem::exists(path, ec);
 	}
 

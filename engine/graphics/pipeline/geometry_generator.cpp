@@ -420,7 +420,7 @@ namespace Chained
 				{
 					uint32_t row0 = stackIndex * (slices + 1) + sliceIndex;
 					uint32_t row1 = (stackIndex + 1) * (slices + 1) + sliceIndex;
-					raw.indices.insert(raw.indices.end(), {row1, row1 + 1, row0 + 1, row1, row0 + 1, row0});
+					raw.indices.insert(raw.indices.end(), {row0, row0 + 1, row1 + 1, row0, row1 + 1, row1});
 				}
 			}
 
@@ -493,7 +493,7 @@ namespace Chained
 				{
 					uint32_t row0 = stackIndex * (slices + 1) + sliceIndex;
 					uint32_t row1 = (stackIndex + 1) * (slices + 1) + sliceIndex;
-					raw.indices.insert(raw.indices.end(), {row1, row1 + 1, row0 + 1, row1, row0 + 1, row0});
+					raw.indices.insert(raw.indices.end(), {row0, row0 + 1, row1 + 1, row0, row1 + 1, row1});
 				}
 			}
 
@@ -540,7 +540,8 @@ namespace Chained
 			{
 				uint32_t b = sideStart + i * 2;
 				// quad (b bottom, b+1 top, b+2 next bottom, b+3 next top)
-				raw.indices.insert(raw.indices.end(), {b, b + 2, b + 3, b, b + 3, b + 1});
+				// CCW winding from outside: reverse original order
+				raw.indices.insert(raw.indices.end(), {b + 2, b, b + 1, b + 2, b + 1, b + 3});
 			}
 
 			// --- Bottom cap (facing -Y) at Y=0 ---
@@ -623,11 +624,11 @@ namespace Chained
 				{
 					uint32_t row0 = st * (slices + 1) + sl;
 					uint32_t row1 = (st + 1) * (slices + 1) + sl;
-					raw.indices.insert(raw.indices.end(), {row1, row1 + 1, row0 + 1, row1, row0 + 1, row0});
+					raw.indices.insert(raw.indices.end(), {row0, row0 + 1, row1 + 1, row0, row1 + 1, row1});
 				}
 			}
 
-			// Flat bottom cap at y = 0, facing -Y
+			// Flat bottom cap at y = 0 (single-sided, downward-facing normal -Y, CCW when viewed from -Y)
 			uint32_t center = (uint32_t)(raw.vertices.size() / 3);
 			pushVert({0.0f, 0.0f, 0.0f}, {0, -1, 0}, {0.5f, 0.5f});
 			uint32_t ringStart = (uint32_t)(raw.vertices.size() / 3);
@@ -640,7 +641,7 @@ namespace Chained
 			}
 			for (int sl = 0; sl < slices; ++sl)
 			{
-				raw.indices.insert(raw.indices.end(), {center, ringStart + sl + 1, ringStart + sl});
+				raw.indices.insert(raw.indices.end(), {center, ringStart + sl, ringStart + sl + 1});
 			}
 
 			raw.MinBounds = {-radius, 0.0f, -radius};

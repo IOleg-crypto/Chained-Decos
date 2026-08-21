@@ -46,7 +46,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 2525119390104269515
+  - Entity: 6620577793129614267
     TransformComponent:
       Translation: [-51.6971283, 137.265976, 0]
       Rotation: [0, -0, 0]
@@ -67,7 +67,7 @@ Entities:
       MinDistance: 0
       MaxDistance: 6000000
       IsPlaying: true
-  - Entity: 5438471299595663768
+  - Entity: 9968249221617756662
     ModelComponent:
       ModelPath: models/new_model/a109082005619/scene.gltf
       ModelUUID: 0
@@ -99,7 +99,7 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 18114284475973278151
+  - Entity: 4489245997486649276
     ModelComponent:
       ModelPath: models/toy_train/wooden_train.glb
       ModelUUID: 0
@@ -121,7 +121,7 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 5218549793685129261
+  - Entity: 954056561415483965
     TransformComponent:
       Translation: [-321.279785, 312.607849, 1022.75677]
       Rotation: [0, -0, 0]
@@ -154,7 +154,7 @@ Entities:
       SpawnPoint: [0, 0, 0]
       ZoneSize: [1, 1, 1]
       RenderSpawnZoneInScene: true
-  - Entity: 16190054640143772674
+  - Entity: 8754814226370440161
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -183,7 +183,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 10607399182892511614
+  - Entity: 14068722925010663045
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 0
@@ -224,7 +224,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 6290078038017198520
+  - Entity: 14785249455830027977
     ModelComponent:
       ModelPath: models/wooden_bridge/wooden_bridge_roofed_bridge_cap_-24mb.glb
       ModelUUID: 0
@@ -265,7 +265,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 2034710247971842495
+  - Entity: 4451044661605941965
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 0
@@ -306,7 +306,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 16540451883349554906
+  - Entity: 594316199404450463
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 0
@@ -347,7 +347,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 2003698178108880510
+  - Entity: 9954015502289383108
     ModelComponent:
       ModelPath: models/bridge.glb
       ModelUUID: 0
@@ -388,7 +388,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 2140193644716528966
+  - Entity: 10659751230184587372
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -397,7 +397,7 @@ Entities:
       Tag: train_vagons
     IDComponent:
       {}
-  - Entity: 18275078287229286725
+  - Entity: 10135000870636135384
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -426,7 +426,7 @@ Entities:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
       IsColliding: false
-  - Entity: 12628317982577851925
+  - Entity: 13840599170011934680
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       ModelUUID: 0
@@ -448,7 +448,7 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 3633422114494766135
+  - Entity: 12725153589027954487
     ModelComponent:
       ModelPath: models/container_ship/scene.gltf
       ModelUUID: 0
@@ -491,7 +491,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 3665946727156420448
+  - Entity: 9642386323589461645
     CameraComponent:
       Primary: true
       FixedAspectRatio: false
@@ -502,8 +502,8 @@ Entities:
       OrbitPitch: 0
       LookSensitivity: 0
     TransformComponent:
-      Translation: [-60.7539597, 139.946396, 21.8474731]
-      Rotation: [0.105000138, -6.34196806, 0]
+      Translation: [8.83619404, 127.508331, 62.2051468]
+      Rotation: [0.083999902, -0.377999872, 0]
       Scale: [1, 1, 1]
     TagComponent:
       Tag: Camera
@@ -518,7 +518,7 @@ Entities:
         - Name: color
           Value: 0
       Enabled: true
-  - Entity: 18240865490441804832
+  - Entity: 12350849250478651556
     ModelComponent:
       ModelPath: models/stone_floor.glb
       ModelUUID: 0
@@ -559,7 +559,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 16038089437179250350
+  - Entity: 10978021145741798796
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -600,7 +600,7 @@ Entities:
       IsGrounded: true
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 15773169572740939025
+  - Entity: 2876881851641803008
     ModelComponent:
       ModelPath: models/skeleton/scene.gltf
       ModelUUID: 0
@@ -671,7 +671,7 @@ Entities:
       Variables:
         speed: 0
         isMoving: 0
-  - Entity: 12370129983957905763
+  - Entity: 8939336275616141315
     ModelComponent:
       ModelPath: models/pilot/animated_civilian_helicopter/scene.gltf
       ModelUUID: 0
@@ -693,15 +693,15 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 12339756833758347855
+  - Entity: 13240069471599542495
     ModelComponent:
       ModelPath: models/mystery_skulls_ghost_lewis/scene.gltf
       ModelUUID: 0
       MaterialPaths:
         - models/mystery_skulls_ghost_lewis/scene_material_0.chmat
     TransformComponent:
-      Translation: [60.8389587, 103.205635, 4.72679806]
-      Rotation: [0.0431710109, -0.0900942832, 0.0843906254]
+      Translation: [101.32692, 103.205635, 4.72679806]
+      Rotation: [0.0431710109, -0.0900942832, 0.0843905658]
       Scale: [26.4252377, 28.1725788, 26.7647877]
     TagComponent:
       Tag: ghost
@@ -730,7 +730,7 @@ Entities:
       PlayOnStart: true
       Variables:
         {}
-  - Entity: 3293545925561068315
+  - Entity: 9653530641166721187
     ModelComponent:
       ModelPath: models/arena.glb
       ModelUUID: 0
@@ -771,7 +771,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 1721428265194297419
+  - Entity: 11081535343102149063
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -800,7 +800,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 13909660055400972980
+  - Entity: 17437030531632222394
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -829,7 +829,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 17226330136156719622
+  - Entity: 17106948317205715037
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -858,7 +858,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 4588381057889908230
+  - Entity: 17349221709146664496
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -887,7 +887,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 10158249174451106735
+  - Entity: 2759079793220661855
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -916,7 +916,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 1769617011100678966
+  - Entity: 10542281969929113626
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -945,7 +945,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 657820321944947145
+  - Entity: 18170221746895908249
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -974,7 +974,7 @@ Entities:
       ModelPath: ""
       ModelUUID: 0
       IsColliding: false
-  - Entity: 5912071417799724842
+  - Entity: 5412998569261016128
     ModelComponent:
       ModelPath: models/toy_train/train_vagon.glb
       ModelUUID: 0
@@ -1015,7 +1015,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 6735443387698697209
+  - Entity: 1415482655088457930
     ModelComponent:
       ModelPath: models/stairs.glb
       ModelUUID: 0
@@ -1056,7 +1056,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 12238802210926138934
+  - Entity: 13431319711732673400
     ModelComponent:
       ModelPath: models/building/scene.gltf
       ModelUUID: 0
@@ -1102,7 +1102,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 4500185427480867219
+  - Entity: 2342924946086842961
     ModelComponent:
       ModelPath: models/minigames/hub_for_minigames_server.glb
       ModelUUID: 0
@@ -1143,7 +1143,7 @@ Entities:
       IsGrounded: false
       VelocityForced: false
       IsNetworkDriven: false
-  - Entity: 15995979988346636742
+  - Entity: 11246862981655443996
     ModelComponent:
       ModelPath: models/tavern/the_thankful_glory_-_fantasy_tavern/scene.gltf
       ModelUUID: 0
@@ -1158,7 +1158,7 @@ Entities:
       Tag: Island_copy
     IDComponent:
       {}
-  - Entity: 11006139981456310664
+  - Entity: 3958823216796022183
     TransformComponent:
       Translation: [-6.22665596, 65.9147491, -2.61718202]
       Rotation: [0, -0, 0]
@@ -1175,21 +1175,26 @@ Entities:
       InnerCutoff: 15
       OuterCutoff: 20
       Shadows: true
-  - Entity: 380478603517986505
+  - Entity: 9567745381684583883
+    ModelComponent:
+      ModelPath: primitives/Hemisphere.chmesh
+      ModelUUID: 0
+      MaterialPaths:
+        - primitives/Hemisphere_material_0.chmat
     TransformComponent:
-      Translation: [0.267148644, 121.029785, 0]
+      Translation: [0.267148972, 121.029785, 0]
       Rotation: [0, -0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: Cube
+      Tag: Hemisphere
     PrimitiveComponent:
-      Type: 5
-      Radius: 0.560000002
-      InnerRadius: 0.200000003
-      Height: 1
-      Slices: 16
-      Stacks: 16
+      Type: 8
+      Radius: 4.11000013
+      InnerRadius: 0.0500000007
+      Height: 2
+      Slices: 128
+      Stacks: 128
       Dimensions: [3.29999995, 4, 1]
-      MeshPath: assets/primitives/16002549200946283646.chasset
+      MeshPath: primitives/Hemisphere.chmesh
     IDComponent:
       {}

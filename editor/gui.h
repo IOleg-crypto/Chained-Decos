@@ -53,7 +53,7 @@ namespace Chained
 		template <typename F> static bool PropertyWidget(const char* label, F&& widgetFn);
 
 		static bool FilePropertyImpl(const char* label, std::string& value, const char* filter,
-									 std::function<void()> thumbnailFn);
+									 std::function<void()> thumbnailFn, const char* placeholder = nullptr);
 
 		template <int N>
 		static bool DrawVecImpl(const char* label, float* values, float resetValue, const ImVec4* colors,

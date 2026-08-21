@@ -1,0 +1,17 @@
+Material:
+  Name: Primitive Material
+  AlbedoColor:
+    - 0.309803933
+    - 0.470588237
+    - 0.172549024
+    - 1
+  EmissiveColor:
+    - 0
+    - 0
+    - 0
+    - 1
+  EmissiveIntensity: 0
+  Metalness: 0
+  Roughness: 0.5
+  Transparent: true
+  Alpha: 0

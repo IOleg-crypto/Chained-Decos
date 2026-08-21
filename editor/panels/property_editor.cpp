@@ -625,12 +625,28 @@ namespace Chained
 						mc.MaterialPaths.resize(1);
 					}
 
+					std::filesystem::path modelPath(mc.ModelPath);
+					std::string modelName = modelPath.stem().string();
+					std::filesystem::path modelDir = modelPath.parent_path();
+
 					for (size_t matIdx = 0; matIdx < mc.MaterialPaths.size(); ++matIdx)
 					{
+						if (mc.MaterialPaths[matIdx].empty() && !mc.ModelPath.empty())
+						{
+							auto* am = ServiceLocator::TryGet<AssetManager>();
+							std::string autoName = modelName + "_material_" + std::to_string(matIdx) + ".chmat";
+							std::string autoRel = (modelDir / autoName).generic_string();
+							if (am && am->FileExists(autoRel))
+							{
+								mc.MaterialPaths[matIdx] = autoRel;
+							}
+						}
+
 						std::string matLabel = "Material " + std::to_string(matIdx);
 						if (ui.File(matLabel.c_str(), mc.MaterialPaths[matIdx], ".chmat"))
 						{
 							entity.GetRegistry().patch<ModelComponent>(entity, [](ModelComponent&) {});
+							EditorLayer::Get().GetSceneManager().MarkSceneDirty();
 							changed = true;
 						}
 					}
