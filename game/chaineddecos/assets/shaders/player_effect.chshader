@@ -1,6 +1,6 @@
 # Player Effect Shader Metadata
-VertexShader: "player_effect.vs"
-FragmentShader: "player_effect.fs"
+VertexShader: "player_effect.vert"
+FragmentShader: "player_effect.frag"
 
 Uniforms:
   - fallSpeed

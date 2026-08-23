@@ -48,11 +48,9 @@ namespace Chained
 		return nullptr;
 	}
 
-} // namespace Chained
-namespace Chained
-{
-	std::shared_ptr<Texture> Texture::WrapNative(uint32_t handle, uint32_t width, uint32_t height)
+	std::shared_ptr<Texture> Texture::WrapNative(uint32_t handle, uint32_t width, uint32_t height, TextureType type)
 	{
-		return std::make_shared<GLTexture>(handle, width, height);
+		return std::make_shared<GLTexture>(handle, width, height, type);
 	}
+
 } // namespace Chained

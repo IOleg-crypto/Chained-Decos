@@ -1,6 +1,6 @@
 # Skinned Lighting Shader Metadata
-VertexShader: "skinned.vs"
-FragmentShader: "lighting.fs"
+VertexShader: "skinned.vert"
+FragmentShader: "lighting.frag"
 
 Uniforms:
   - Name: "colDiffuse"

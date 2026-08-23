@@ -1,7 +1,5 @@
 #version 430 core
 
-
-
 in vec2 fragTexCoord;
 out vec4 finalColor;
 
@@ -28,20 +26,15 @@ void main()
     float depth = texture(texture1, fragTexCoord).r;
 
     // 1. Reconstruct World Position from depth
-    // map [0,1] depth to [-1,1] NDC
     float z = depth * 2.0 - 1.0;
     vec4 clipPos = vec4(fragTexCoord * 2.0 - 1.0, z, 1.0);
     vec4 worldPos = matInverseViewProj * clipPos;
     worldPos /= worldPos.w;
 
-    // 2. Fog is handled in forward passes (lighting.fs, skybox.fs, etc.)
-    // color = ApplyFog(color, worldPos.xyz, viewPos, uTime);
-
-    // 3. Tonemapping (ACES Filmic)
+    // 2. Tonemapping (ACES Filmic)
     float exposure = (uExposure > 0.0) ? uExposure : 1.0;
     vec3 outColor = color.rgb * exposure;
     
-    // ACES Filmic Tone Mapping
     float a = 2.51;
     float b = 0.03;
     float c = 2.43;
@@ -49,13 +42,11 @@ void main()
     float e = 0.14;
     outColor = clamp((outColor * (a * outColor + b)) / (outColor * (c * outColor + d) + e), 0.0, 1.0);
     
-    // 4. Dithering (Crucial for smooth skies/gradients)
-    // We add a tiny amount of noise to hide bit-depth transitions (Banding)
-    // Using floor(gl_FragCoord.xy) for consistent noise per-pixel
+    // 3. Dithering (smooth gradients)
     float dither = InterleavedGradientNoise(floor(gl_FragCoord.xy));
     outColor += (dither - 0.5) / 255.0;
 
-    // 5. Gamma Correction
+    // 4. Gamma Correction
     float gamma = (uGamma > 0.0) ? uGamma : 2.2;
     outColor = pow(outColor, vec3(1.0 / gamma));
 

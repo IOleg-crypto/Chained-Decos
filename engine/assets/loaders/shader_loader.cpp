@@ -67,11 +67,25 @@ namespace Chained
 		else if (ext == ".vs" || ext == ".vert" || ext == ".glsl")
 		{
 			std::filesystem::path fsPath = absolutePath;
-			fsPath.replace_extension(".fs");
-			if (!assetManager->FileExists(fsPath.string()))
+
+			// Prefer the modern .frag extension; fall back to legacy .fs
+			if (ext == ".vs")
+			{
+				fsPath.replace_extension(".fs");
+				if (!assetManager->FileExists(fsPath.string()))
+				{
+					fsPath.replace_extension(".frag");
+				}
+			}
+			else // .vert / .glsl  — try .frag first, then .fs for backwards compat
 			{
 				fsPath.replace_extension(".frag");
+				if (!assetManager->FileExists(fsPath.string()))
+				{
+					fsPath.replace_extension(".fs");
+				}
 			}
+
 			if (assetManager->FileExists(fsPath.string()))
 			{
 				return LoadShaderFromPaths(absolutePath.string(), fsPath.string());

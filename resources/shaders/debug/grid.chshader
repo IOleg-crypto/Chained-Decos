@@ -1,11 +1,12 @@
-# Grid Shader
-VertexShader: "grid.vs"
-FragmentShader: "grid.fs"
+# Grid Shader Metadata
+VertexShader: "grid.vert"
+FragmentShader: "grid.frag"
 
 Uniforms:
   - u_Model
   - u_CameraPos
   - u_GridColor
   - u_GridSize
+  - u_SecondarySpacing
   - u_FadeStart
   - u_FadeEnd

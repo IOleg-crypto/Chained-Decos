@@ -79,7 +79,7 @@ namespace Chained
 
 		shader->Bind();
 
-		// Lighting uniforms
+		// ── Scene Lighting ──────────────────────────────────────────────────────
 		const auto& lighting = m_Lighting.CurrentLighting;
 
 		glm::vec4 lightColor = {lighting.LightColor.r / 255.0f, lighting.LightColor.g / 255.0f,
@@ -87,25 +87,39 @@ namespace Chained
 		glm::vec4 skyColor = lightColor;
 		skyColor.w = lighting.Ambient * 0.35f;
 
+		glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f ? glm::normalize(lighting.Direction)
+																		   : glm::vec3(0.0f, -1.0f, 0.0f);
+
+		// Camera / frame state
 		shader->SetVec3("viewPos", frame.CameraPosition);
 		shader->SetFloat("uTime", frame.Time);
 		shader->SetFloat("uMode", frame.DiagnosticMode);
-		glm::vec3 lightDirNorm = glm::length(lighting.Direction) > 0.0001f ? glm::normalize(lighting.Direction)
-																		   : glm::vec3(0.0f, -1.0f, 0.0f);
+		shader->SetFloat("uExposure", lighting.Exposure);
+		shader->SetFloat("uGamma", lighting.Gamma);
+
+		// Legacy flat uniforms (kept for older shaders and unlit/sprite/postfx paths)
 		shader->SetVec3("lightDir", lightDirNorm);
 		shader->SetVec4("lightColor", lightColor);
 		shader->SetFloat("ambient", lighting.Ambient);
 		shader->SetVec4("skyAmbientColor", skyColor);
 		shader->SetInt("uLightCount", m_Lighting.LightCount);
-		shader->SetFloat("uExposure", lighting.Exposure);
-		shader->SetFloat("uGamma", lighting.Gamma);
 
+		// Struct-style uniform for the generic directional light
+		// (used by the new lighting.glsl / lighting.frag).
+		// Note: u_MainLight represents the scene's primary directional light source
+		// (could be sun, moon, or any global directional light set per scene).
+		shader->SetVec3("u_MainLight.direction", lightDirNorm);
+		shader->SetVec4("u_MainLight.color", lightColor);
+		shader->SetFloat("u_MainLight.intensity", 1.0f);
+		shader->SetFloat("u_MainLight.ambient", lighting.Ambient);
+
+		// ── SSBO ────────────────────────────────────────────────────────────────
 		if (m_Lighting.LightSSBO)
 		{
 			m_Lighting.LightSSBO->BindBase(0);
 		}
 
-		// Shadow uniforms
+		// ── Shadows ─────────────────────────────────────────────────────────────
 		shader->SetInt("u_ShadowsEnabled", m_Shadow.Enabled ? 1 : 0);
 		shader->SetMatrix("u_LightSpaceMatrix", m_Shadow.LightSpaceMatrix);
 		shader->SetFloat("u_ShadowBias", m_Shadow.Bias);
@@ -115,19 +129,17 @@ namespace Chained
 			shader->SetInt("u_ShadowMap", 6);
 		}
 
-		// Fog uniforms
+		// ── Fog ─────────────────────────────────────────────────────────────────
 		const auto& fog = m_Lighting.CurrentFog;
-		int enabled = fog.Enabled ? 1 : 0;
-		int mode = (int)fog.Mode;
-		glm::vec4 color = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
-						   fog.FogColor.a / 255.0f};
+		glm::vec4 fogColorVec = {fog.FogColor.r / 255.0f, fog.FogColor.g / 255.0f, fog.FogColor.b / 255.0f,
+								 fog.FogColor.a / 255.0f};
 
-		shader->SetInt("fogEnabled", enabled);
-		shader->SetVec4("fogColor", color);
+		shader->SetInt("fogEnabled", fog.Enabled ? 1 : 0);
+		shader->SetVec4("fogColor", fogColorVec);
 		shader->SetFloat("fogDensity", fog.Density);
 		shader->SetFloat("fogStart", fog.Start);
 		shader->SetFloat("fogEnd", fog.End);
-		shader->SetInt("fogMode", mode);
+		shader->SetInt("fogMode", (int)fog.Mode);
 		shader->SetFloat("fogHeightFalloff", fog.HeightFalloff);
 	}
 

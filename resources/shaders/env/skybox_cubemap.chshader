@@ -1,6 +1,6 @@
 # Skybox Cubemap Shader Metadata
-VertexShader: "skybox_cubemap.vs"
-FragmentShader: "skybox_cubemap.fs"
+VertexShader: "skybox_cubemap.vert"
+FragmentShader: "skybox_cubemap.frag"
 
 Uniforms:
   - u_Projection

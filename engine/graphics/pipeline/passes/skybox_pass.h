@@ -6,6 +6,8 @@
 namespace Chained
 {
 
+	class Texture;
+
 	class SkyboxPass : public IRenderPass
 	{
 	public:
@@ -15,6 +17,10 @@ namespace Chained
 			static std::string name = "SkyboxPass";
 			return name;
 		}
+
+	private:
+		std::shared_ptr<Texture> m_CachedSixFacesCubemap;
+		std::string m_CachedFacesKey;
 	};
 
 } // namespace Chained

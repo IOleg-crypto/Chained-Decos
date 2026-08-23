@@ -346,6 +346,11 @@ namespace Chained
 
 					out << YAML::Key << "Skybox" << YAML::BeginMap;
 					out << YAML::Key << "TexturePath" << YAML::Value << s.Skybox.TexturePath;
+					out << YAML::Key << "Mode" << YAML::Value << s.Skybox.Mode;
+					for (int i = 0; i < 6; ++i)
+					{
+						out << YAML::Key << ("CubeFace" + std::to_string(i)) << YAML::Value << s.Skybox.CubeFaces[i];
+					}
 					out << YAML::Key << "Exposure" << YAML::Value << s.Skybox.Exposure;
 					out << YAML::Key << "Brightness" << YAML::Value << s.Skybox.Brightness;
 					out << YAML::Key << "Contrast" << YAML::Value << s.Skybox.Contrast;
@@ -435,47 +440,92 @@ namespace Chained
 				ImGui::BeginDisabled();
 			}
 
-			char buffer[256];
-			snprintf(buffer, sizeof(buffer), "%s", settings.Skybox.TexturePath.c_str());
-
-			ImGui::AlignTextToFramePadding();
-			ImGui::Text("Texture");
-			ImGui::SameLine(100);
-			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
-			if (ImGui::InputText("##SkyPath", buffer, sizeof(buffer)))
-			{
-				settings.Skybox.TexturePath = buffer;
-			}
-
-			ImGui::SameLine();
-			if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
-			{
-				std::vector<DialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
-				auto result = Chained::Dialogs::OpenFile(filters);
-				if (result)
-				{
-					std::filesystem::path p = *result;
-					if (Project::GetActive())
-					{
-						settings.Skybox.TexturePath =
-							std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
-					}
-					else
-					{
-						settings.Skybox.TexturePath = p.filename().string();
-					}
-				}
-			}
-
-			const char* mapModes[] = {"Sphere", "Cross", "Cubemap"};
+			const char* mapModes[] = {"Sphere", "Cross", "Cubemap", "Six Faces"};
 			ImGui::AlignTextToFramePadding();
 			ImGui::Text("Mapping");
 			ImGui::SameLine(100);
 			ImGui::SetNextItemWidth(-1);
-			ImGui::Combo("##MapMode", &settings.Skybox.Mode, mapModes, 3);
+			ImGui::Combo("##MapMode", &settings.Skybox.Mode, mapModes, 4);
 			if (ImGui::IsItemHovered())
 			{
-				ImGui::SetTooltip("Sphere: Equirectangular\nCross: Horizontal Cross\nCubemap: GPU Generated");
+				ImGui::SetTooltip("Sphere: Equirectangular\nCross: Horizontal Cross\nCubemap: GPU Generated\nSix "
+								  "Faces: 6 Separate Images");
+			}
+
+			if (settings.Skybox.Mode == 3)
+			{
+				const char* faceLabels[] = {"Right (+X)", "Left (-X)",	"Up (+Y)",
+											"Down (-Y)",  "Front (+Z)", "Back (-Z)"};
+				for (int i = 0; i < 6; ++i)
+				{
+					char buffer[256];
+					snprintf(buffer, sizeof(buffer), "%s", settings.Skybox.CubeFaces[i].c_str());
+
+					ImGui::AlignTextToFramePadding();
+					ImGui::Text("%s", faceLabels[i]);
+					ImGui::SameLine(100);
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
+					std::string inputId = "##SkyFace" + std::to_string(i);
+					if (ImGui::InputText(inputId.c_str(), buffer, sizeof(buffer)))
+					{
+						settings.Skybox.CubeFaces[i] = buffer;
+					}
+
+					ImGui::SameLine();
+					std::string btnId = ICON_FA_FOLDER_OPEN "##SkyFaceBtn" + std::to_string(i);
+					if (ImGui::Button(btnId.c_str()))
+					{
+						std::vector<DialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
+						auto result = Chained::Dialogs::OpenFile(filters);
+						if (result)
+						{
+							std::filesystem::path p = *result;
+							if (Project::GetActive())
+							{
+								settings.Skybox.CubeFaces[i] =
+									std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
+							}
+							else
+							{
+								settings.Skybox.CubeFaces[i] = p.filename().string();
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				char buffer[256];
+				snprintf(buffer, sizeof(buffer), "%s", settings.Skybox.TexturePath.c_str());
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Texture");
+				ImGui::SameLine(100);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
+				if (ImGui::InputText("##SkyPath", buffer, sizeof(buffer)))
+				{
+					settings.Skybox.TexturePath = buffer;
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
+				{
+					std::vector<DialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
+					auto result = Chained::Dialogs::OpenFile(filters);
+					if (result)
+					{
+						std::filesystem::path p = *result;
+						if (Project::GetActive())
+						{
+							settings.Skybox.TexturePath =
+								std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
+						}
+						else
+						{
+							settings.Skybox.TexturePath = p.filename().string();
+						}
+					}
+				}
 			}
 
 			DrawDragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);

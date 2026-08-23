@@ -1,6 +1,6 @@
 # Skybox Cross Shader Metadata
-VertexShader: "skybox_cubemap.vs"
-FragmentShader: "skybox_cross.fs"
+VertexShader: "skybox_cubemap.vert"
+FragmentShader: "skybox_cross.frag"
 
 Uniforms:
   - u_Projection

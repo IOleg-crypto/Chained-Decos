@@ -1,6 +1,6 @@
 # Sprite Shader
-VertexShader: lighting.vs
-FragmentShader: sprite.fs
+VertexShader: "lighting.vert"
+FragmentShader: "sprite.frag"
 
 Uniforms:
   - mvp

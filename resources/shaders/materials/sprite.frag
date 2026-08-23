@@ -1,6 +1,6 @@
 #version 430 core
 
-#include "../include/lighting_common.glsl"
+#include "../include/lighting.glsl"
 #include "../include/fog.glsl"
 
 in vec3 fragPosition;

@@ -111,6 +111,14 @@ namespace Chained
 				{
 					settings.Skybox.Mode = skyboxNode["Mode"].as<int>();
 				}
+				for (int i = 0; i < 6; ++i)
+				{
+					std::string key = "CubeFace" + std::to_string(i);
+					if (skyboxNode[key])
+					{
+						settings.Skybox.CubeFaces[i] = skyboxNode[key].as<std::string>();
+					}
+				}
 				if (skyboxNode["Exposure"])
 				{
 					settings.Skybox.Exposure = skyboxNode["Exposure"].as<float>();

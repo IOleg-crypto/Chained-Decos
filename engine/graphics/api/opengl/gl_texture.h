@@ -12,7 +12,8 @@ namespace Chained
 	public:
 		GLTexture(uint32_t width, uint32_t height, TextureFormat format);
 		GLTexture(uint32_t size, TextureFormat format); // Cubemap constructor
-		GLTexture(uint32_t handle, uint32_t width, uint32_t height);
+		GLTexture(uint32_t handle, uint32_t width, uint32_t height, TextureType type = TextureType::Texture2D,
+				  bool ownsResource = false);
 		virtual ~GLTexture();
 
 		virtual uint32_t GetWidth() const override
