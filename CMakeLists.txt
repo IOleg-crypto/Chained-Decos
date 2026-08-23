@@ -19,6 +19,7 @@ project(ChainedDecos LANGUAGES CXX C)
 option(BUILD_TESTS "Build unit tests" ON)
 option(BUILD_SHARED_LIBS "Build shared libraries" OFF)
 option(CH_CI "Set to ON for CI environments" OFF)
+option(CH_NETWORKING "Enable networking features in the editor" ON)
 
 if(CH_CI)
     add_compile_definitions(CH_CI)

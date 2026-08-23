@@ -16,7 +16,7 @@ namespace ChainedDecos.Scripts
         public string LobbyScene = "scenes/lobby.chscene";
         public string DefaultIp    = "127.0.0.1";
         public ushort DefaultPort  = 7777;
-        public float  ConnectTimeout = 5f;
+        public float  ConnectTimeout = 15f;
 
         private bool   m_IsConnecting = false;
         private float  m_ConnectTimer = 0f;
@@ -76,9 +76,22 @@ namespace ChainedDecos.Scripts
                     port = parsed;
             }
 
-            // Smart check: If user pasted "IP:PORT" into the IP field, parse both
-            if (ip.Contains(":"))
+            // Smart check: If user pasted "IP:PORT" or "[IPv6]:port" into the IP field, parse both
+            if (ip.StartsWith("[") && ip.Contains("]"))
             {
+                // Format: [IPv6]:port
+                int closeBracket = ip.IndexOf(']');
+                string ipv6Part = ip.Substring(1, closeBracket - 1).Trim();
+                string afterBracket = ip.Substring(closeBracket + 1).Trim();
+                if (afterBracket.StartsWith(":") && ushort.TryParse(afterBracket.Substring(1), out ushort extractedPort) && extractedPort > 0)
+                {
+                    port = extractedPort;
+                }
+                ip = ipv6Part;
+            }
+            else if (ip.Contains(":"))
+            {
+                // Format: IPv4:port (not IPv6 — IPv6 without brackets should be entered without port in the same field)
                 int colonIndex = ip.LastIndexOf(':');
                 string ipPart = ip.Substring(0, colonIndex).Trim();
                 string portPart = ip.Substring(colonIndex + 1).Trim();

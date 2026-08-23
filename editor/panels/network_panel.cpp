@@ -22,9 +22,11 @@ namespace Chained
 	/// Performs a blocking HTTP GET to api.ipify.org and returns the plain-text
 	/// public IP. Called from a background thread via std::async — must not touch
 	/// ImGui or any engine state.
-	static std::string FetchPublicIPBlocking()
+	/// @param useIPv6 If true, fetches IPv6 address from ipv6.api.ipify.org
+	static std::string FetchPublicIPBlocking(bool useIPv6 = false)
 	{
 #ifdef _WIN32
+		const wchar_t* host = useIPv6 ? L"ipv6.api.ipify.org" : L"api.ipify.org";
 		HINTERNET hSession = WinHttpOpen(L"ChainedEditor/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
 										 WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
 		if (!hSession)
@@ -32,7 +34,7 @@ namespace Chained
 			return "(error: WinHttpOpen)";
 		}
 
-		HINTERNET hConnect = WinHttpConnect(hSession, L"api.ipify.org", INTERNET_DEFAULT_HTTP_PORT, 0);
+		HINTERNET hConnect = WinHttpConnect(hSession, host, INTERNET_DEFAULT_HTTP_PORT, 0);
 		if (!hConnect)
 		{
 			WinHttpCloseHandle(hSession);
@@ -74,13 +76,15 @@ namespace Chained
 		WinHttpCloseHandle(hSession);
 		return result.empty() ? "(empty response)" : result;
 #else
-		// On Linux use curl if available, otherwise return a hint.
-		FILE* pipe = popen("curl -s --max-time 5 https://api.ipify.org 2>/dev/null", "r");
+		const char* url = useIPv6 ? "https://ipv6.api.ipify.org" : "https://api.ipify.org";
+		char cmd[256];
+		snprintf(cmd, sizeof(cmd), "curl -s --max-time 5 %s 2>/dev/null", url);
+		FILE* pipe = popen(cmd, "r");
 		if (!pipe)
 		{
 			return "(install curl)";
 		}
-		char buf[64] = {};
+		char buf[128] = {};
 		fgets(buf, sizeof(buf), pipe);
 		pclose(pipe);
 		std::string r(buf);
@@ -183,6 +187,16 @@ namespace Chained
 			}
 		}
 
+		// --- Poll async IPv6 public IP result ---
+		if (m_FetchingIPv6 && m_IpFutureIPv6.valid())
+		{
+			if (m_IpFutureIPv6.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+			{
+				m_PublicIPv6 = m_IpFutureIPv6.get();
+				m_FetchingIPv6 = false;
+			}
+		}
+
 		if (net && net->IsHost())
 		{
 			ImGui::Text("Server is running.");
@@ -194,8 +208,8 @@ namespace Chained
 
 			ImGui::Separator();
 
-			// ── Public IP block ───────────────────────────────────────────────
-			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "Public IP (for internet play):");
+			// ── Public IPv4 block ───────────────────────────────────────────────
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "Public IPv4 (for internet play):");
 			ImGui::SameLine();
 			if (m_FetchingIP)
 			{
@@ -205,17 +219,17 @@ namespace Chained
 			{
 				ImGui::TextDisabled("(not fetched)");
 				ImGui::SameLine();
-				if (ImGui::SmallButton("Fetch##ip"))
+				if (ImGui::SmallButton("Fetch##ipv4"))
 				{
 					m_FetchingIP = true;
-					m_IpFuture = std::async(std::launch::async, FetchPublicIPBlocking);
+					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
 				}
 			}
 			else
 			{
 				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "%s:%u", m_PublicIP.c_str(), net->GetPort());
 				ImGui::SameLine();
-				if (ImGui::SmallButton("Copy##ip"))
+				if (ImGui::SmallButton("Copy##ipv4"))
 				{
 					std::string full = m_PublicIP + ":" + std::to_string(net->GetPort());
 					ImGui::SetClipboardText(full.c_str());
@@ -223,14 +237,59 @@ namespace Chained
 					m_StatusIsError = false;
 				}
 				ImGui::SameLine();
-				if (ImGui::SmallButton("Refresh##ip"))
+				if (ImGui::SmallButton("Refresh##ipv4"))
 				{
 					m_PublicIP.clear();
 					m_FetchingIP = true;
-					m_IpFuture = std::async(std::launch::async, FetchPublicIPBlocking);
+					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
 				}
 			}
 			ImGui::TextDisabled("Forward UDP port %u on your router to play over the internet.", net->GetPort());
+
+			ImGui::Separator();
+
+			// ── Public IPv6 block ───────────────────────────────────────────────
+			ImGui::TextColored(ImVec4(0.6f, 0.4f, 1.0f, 1.0f), "Public IPv6 (if available):");
+			ImGui::SameLine();
+			if (m_FetchingIPv6)
+			{
+				ImGui::TextDisabled("fetching...");
+			}
+			else if (m_PublicIPv6.empty())
+			{
+				ImGui::TextDisabled("(not fetched)");
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Fetch##ipv6"))
+				{
+					m_FetchingIPv6 = true;
+					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
+				}
+			}
+			else if (m_PublicIPv6.find("error") != std::string::npos || m_PublicIPv6.find("empty") != std::string::npos)
+			{
+				ImGui::TextDisabled("IPv6 not available (CGNAT or no IPv6 support)");
+			}
+			else
+			{
+				// IPv6 addresses need brackets in URLs
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "[%s]:%u", m_PublicIPv6.c_str(), net->GetPort());
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Copy##ipv6"))
+				{
+					std::string full = "[" + m_PublicIPv6 + "]:" + std::to_string(net->GetPort());
+					ImGui::SetClipboardText(full.c_str());
+					m_StatusMessage = "Copied IPv6: " + full;
+					m_StatusIsError = false;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Refresh##ipv6"))
+				{
+					m_PublicIPv6.clear();
+					m_FetchingIPv6 = true;
+					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
+				}
+				ImGui::TextDisabled("IPv6 bypasses CGNAT — share this address with friends!");
+			}
 
 			ImGui::Separator();
 
@@ -269,7 +328,9 @@ namespace Chained
 				m_StatusMessage = "Server stopped.";
 				m_StatusIsError = false;
 				m_PublicIP.clear();
+				m_PublicIPv6.clear();
 				m_FetchingIP = false;
+				m_FetchingIPv6 = false;
 			}
 		}
 		else
@@ -312,8 +373,11 @@ namespace Chained
 					net->HostGame(port, m_MaxClients);
 					// Auto-fetch public IP when server starts
 					m_PublicIP.clear();
+					m_PublicIPv6.clear();
 					m_FetchingIP = true;
-					m_IpFuture = std::async(std::launch::async, FetchPublicIPBlocking);
+					m_FetchingIPv6 = true;
+					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
+					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
 
 					m_StatusMessage = "Server started on port " + std::string(m_HostPort);
 					m_StatusIsError = false;

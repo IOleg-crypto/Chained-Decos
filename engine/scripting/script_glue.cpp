@@ -342,6 +342,7 @@ namespace Chained
 		assembly.AddInternalCall("Chained.Network", "Network_IsClient_Ptr", (void*)&Network_IsClient);
 		assembly.AddInternalCall("Chained.Network", "Network_IsConnected_Ptr", (void*)&Network_IsConnected);
 		assembly.AddInternalCall("Chained.Network", "Network_GetClientCount_Ptr", (void*)&Network_GetClientCount);
+		assembly.AddInternalCall("Chained.Network", "Network_GetMaxClients_Ptr", (void*)&Network_GetMaxClients);
 		assembly.AddInternalCall("Chained.Network", "Network_GetRole_Ptr", (void*)&Network_GetRole);
 		assembly.AddInternalCall("Chained.Network", "Network_GetListenAddress_Ptr", (void*)&Network_GetListenAddress);
 		assembly.AddInternalCall("Chained.Network", "Network_GetPublicAddress_Ptr", (void*)&Network_GetPublicAddress);

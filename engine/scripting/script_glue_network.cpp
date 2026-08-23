@@ -126,6 +126,12 @@ namespace Chained
 		return net ? static_cast<int>(net->GetClientCount()) : 0;
 	}
 
+	CH_SCRIPT_FUNC int Network_GetMaxClients()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		return net ? net->GetMaxClients() : 0;
+	}
+
 	CH_SCRIPT_FUNC int Network_GetRole()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
@@ -160,6 +166,22 @@ namespace Chained
 			return;
 		}
 		std::string addr = net->GetPublicAddress();
+		std::strncpy(outBuffer, addr.c_str(), bufferSize - 1);
+		outBuffer[bufferSize - 1] = '\0';
+	}
+
+	CH_SCRIPT_FUNC void Network_GetPublicIPv6Address(char* outBuffer, int bufferSize)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !outBuffer || bufferSize <= 0)
+		{
+			if (outBuffer && bufferSize > 0)
+			{
+				outBuffer[0] = '\0';
+			}
+			return;
+		}
+		std::string addr = net->GetPublicIPv6Address();
 		std::strncpy(outBuffer, addr.c_str(), bufferSize - 1);
 		outBuffer[bufferSize - 1] = '\0';
 	}
