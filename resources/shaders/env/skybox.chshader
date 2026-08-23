@@ -1,6 +1,6 @@
 # Skybox Shader Metadata
-VertexShader: "skybox.vs"
-FragmentShader: "skybox.fs"
+VertexShader: "skybox.vert"
+FragmentShader: "skybox.frag"
 
 Uniforms:
   - u_Projection

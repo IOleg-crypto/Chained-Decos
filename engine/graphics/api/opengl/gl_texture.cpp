@@ -1,5 +1,8 @@
 #include "gl_texture.h"
 #include "engine/graphics/api/graphics_device.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/core/service_locator.h"
+#include "engine/core/log.h"
 #include <stb_image.h>
 
 namespace Chained
@@ -92,14 +95,14 @@ namespace Chained
 		m_IsReady = true;
 	}
 
-	GLTexture::GLTexture(uint32_t handle, uint32_t width, uint32_t height)
+	GLTexture::GLTexture(uint32_t handle, uint32_t width, uint32_t height, TextureType type, bool ownsResource)
 		: m_RendererID(handle),
 		  m_Width(width),
 		  m_Height(height),
 		  m_Format(TextureFormat::RGBA8),
-		  m_Type(TextureType::Texture2D),
+		  m_Type(type),
 		  m_IsReady(true),
-		  m_OwnsResource(false)
+		  m_OwnsResource(ownsResource)
 	{
 		m_InternalFormat = GL_RGBA8;
 		m_DataFormat = GL_RGBA;
@@ -147,6 +150,85 @@ namespace Chained
 	{
 		glActiveTexture(GL_TEXTURE0 + slot);
 		glBindTexture(m_Type == TextureType::Cubemap ? GL_TEXTURE_CUBE_MAP : GL_TEXTURE_2D, m_RendererID);
+	}
+
+	std::shared_ptr<Texture> Texture::CreateCubemapFromFiles(const std::string faces[6])
+	{
+		if (GraphicsDevice::GetAPI() != GraphicsDevice::API::OpenGL)
+		{
+			return nullptr;
+		}
+
+		uint32_t textureID = 0;
+		glGenTextures(1, &textureID);
+		glBindTexture(GL_TEXTURE_CUBE_MAP, textureID);
+
+		stbi_set_flip_vertically_on_load(false);
+
+		int width = 0, height = 0;
+		auto* assetManager = ServiceLocator::TryGet<AssetManager>();
+
+		for (uint32_t i = 0; i < 6; ++i)
+		{
+			std::string resolvedPath = faces[i];
+			if (assetManager && !resolvedPath.empty())
+			{
+				resolvedPath = assetManager->ResolvePath(resolvedPath);
+			}
+
+			int w = 0, h = 0, channels = 0;
+			unsigned char* data = nullptr;
+
+			if (!resolvedPath.empty())
+			{
+				if (assetManager && assetManager->IsPacked())
+				{
+					auto fileData = assetManager->ReadAssetData(faces[i]);
+					if (!fileData.empty())
+					{
+						data = stbi_load_from_memory(fileData.data(), (int)fileData.size(), &w, &h, &channels, 4);
+						channels = 4;
+					}
+				}
+				else
+				{
+					data = stbi_load(resolvedPath.c_str(), &w, &h, &channels, 4);
+					channels = 4;
+				}
+			}
+
+			if (data)
+			{
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, data);
+				stbi_image_free(data);
+				if (width == 0)
+				{
+					width = w;
+					height = h;
+				}
+			}
+			else
+			{
+				CH_CORE_WARN("GLTexture: Cubemap face {} failed to load: {}", i, faces[i]);
+				uint32_t black = 0xFF000000;
+				glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, GL_RGBA8, 1, 1, 0, GL_RGBA, GL_UNSIGNED_BYTE,
+							 &black);
+				if (width == 0)
+				{
+					width = 1;
+					height = 1;
+				}
+			}
+		}
+
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+		glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+		glGenerateMipmap(GL_TEXTURE_CUBE_MAP);
+
+		return std::make_shared<GLTexture>(textureID, (uint32_t)width, (uint32_t)height, TextureType::Cubemap, true);
 	}
 
 } // namespace Chained

@@ -1,6 +1,6 @@
 # Cubemap Conversion Shader Metadata
-VertexShader: "cubemap.vs"
-FragmentShader: "cubemap.fs"
+VertexShader: "cubemap.vert"
+FragmentShader: "cubemap.frag"
 
 Uniforms:
   - projection

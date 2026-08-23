@@ -298,7 +298,7 @@ namespace Chained
 		HandlePicking(activeScene.get(), viewportSize, viewportScreenPos);
 
 		// 7. Toolbars
-		RenderToolbar(activeScene.get(), viewportSize, viewportScreenPos);
+		RenderToolbar(activeScene.get(), viewportScreenPos);
 
 		// Shortcuts & Keyboard Input — must be before ImGui::End() so IsWindowFocused works
 		if (m_Focused || m_Hovered)
@@ -527,7 +527,7 @@ namespace Chained
 		if (EditorLayer::Get().GetSceneManager().GetSceneState() != SceneState::Play &&
 			EditorLayer::Get().GetConfig().ShowEditorIcons)
 		{
-			RenderEditorIcons(activeScene->GetRegistry(), activeScene->GetSettings(), camera);
+			RenderEditorIcons(activeScene->GetRegistry(), camera);
 		}
 
 		m_HDRFramebuffer->Unbind();
@@ -831,7 +831,7 @@ namespace Chained
 		}
 	}
 
-	void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos)
+	void ViewportPanel::RenderToolbar(Scene* activeScene, const ImVec2& viewportScreenPos)
 	{
 		SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
 		if (sceneState == SceneState::Play || sceneState == SceneState::Simulate)
@@ -1025,8 +1025,7 @@ namespace Chained
 		}
 	}
 
-	void ViewportPanel::RenderEditorIcons(entt::registry& registry, const SceneSettings& settings,
-										  const Camera3D& camera)
+	void ViewportPanel::RenderEditorIcons(entt::registry& registry, const Camera3D& camera)
 	{
 		const glm::vec3 activeCameraPos = camera.Position;
 

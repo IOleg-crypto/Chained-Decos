@@ -16,7 +16,6 @@ void main()
     
     vec4 pos = projection * viewRotationOnly * vec4(a_Position, 1.0);
     
-    // We don't use .xyww here because we raw into an empty FBO without depth buffer.
-    // Otherwise Z=1.0 might be clipped.
+    // We don't use .xyww here because we draw into an empty FBO without depth buffer.
     gl_Position = pos;
 }

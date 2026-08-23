@@ -5,6 +5,7 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 #include "engine/assets/types/model_asset.h"
+#include "engine/graphics/api/texture.h"
 #include "types/environment_asset.h"
 
 namespace Chained
@@ -22,7 +23,41 @@ namespace Chained
 		{
 			const auto& envSettings = environment->GetSettings();
 			const auto& skySettings = envSettings.Skybox;
-			if (!skySettings.TexturePath.empty())
+
+			if (skySettings.Mode == 3)
+			{
+				// Mode 3: Six Faces Cubemap
+				std::string key;
+				bool hasAny = false;
+				for (int i = 0; i < 6; ++i)
+				{
+					key += skySettings.CubeFaces[i] + ";";
+					if (!skySettings.CubeFaces[i].empty())
+					{
+						hasAny = true;
+					}
+				}
+
+				if (hasAny)
+				{
+					if (key != m_CachedFacesKey || !m_CachedSixFacesCubemap)
+					{
+						m_CachedSixFacesCubemap = Texture::CreateCubemapFromFiles(skySettings.CubeFaces);
+						m_CachedFacesKey = key;
+					}
+
+					if (m_CachedSixFacesCubemap)
+					{
+						uint32_t texId = m_CachedSixFacesCubemap->GetNativeHandle();
+						if (auto* r = ServiceLocator::TryGet<Renderer>())
+						{
+							r->DrawSkybox(texId, 2, false, skySettings.Exposure, skySettings.Brightness,
+										  skySettings.Contrast, ctx.Camera, false);
+						}
+					}
+				}
+			}
+			else if (!skySettings.TexturePath.empty())
 			{
 				auto* am = ServiceLocator::TryGet<AssetManager>();
 				if (!am)

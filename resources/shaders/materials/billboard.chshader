@@ -1,6 +1,6 @@
 # Billboard Shader
-VertexShader: billboard.vs
-FragmentShader: billboard.fs
+VertexShader: "billboard.vert"
+FragmentShader: "billboard.frag"
 
 Uniforms:
   - mvp

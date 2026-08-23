@@ -9,10 +9,19 @@
 namespace Chained
 {
 
+	// Face index constants for mode 3 (Six Faces cubemap)
+	constexpr int SKYBOX_FACE_PX = 0; // Right  (+X)
+	constexpr int SKYBOX_FACE_NX = 1; // Left   (-X)
+	constexpr int SKYBOX_FACE_PY = 2; // Up     (+Y)
+	constexpr int SKYBOX_FACE_NY = 3; // Down   (-Y)
+	constexpr int SKYBOX_FACE_PZ = 4; // Front  (+Z)
+	constexpr int SKYBOX_FACE_NZ = 5; // Back   (-Z)
+
 	struct SkyboxSettings
 	{
 		std::string TexturePath;
-		int Mode = 0; // 0: Equirectangular, 1: Cross (Horizontal), 2: Cubemap (GPU)
+		std::string CubeFaces[6]; // [0]=+X, [1]=-X, [2]=+Y, [3]=-Y, [4]=+Z, [5]=-Z
+		int Mode = 0;			  // 0: Sphere, 1: Cross, 2: Cubemap (GPU), 3: Six Faces
 		float Exposure = 1.0f;
 		float Brightness = 0.0f;
 		float Contrast = 1.0f;

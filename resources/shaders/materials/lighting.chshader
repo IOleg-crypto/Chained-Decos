@@ -1,6 +1,6 @@
 # Lighting Shader Metadata
-VertexShader: "lighting.vs"
-FragmentShader: "lighting.fs"
+VertexShader: "lighting.vert"
+FragmentShader: "lighting.frag"
 
 Uniforms:
   - Name: "colDiffuse"

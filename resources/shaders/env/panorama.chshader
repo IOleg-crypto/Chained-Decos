@@ -1,6 +1,6 @@
 # Panorama Shader Metadata
-VertexShader: "resources/shaders/skybox.vs"
-FragmentShader: "resources/shaders/skybox_panorama.fs"
+VertexShader: "skybox.vert"
+FragmentShader: "skybox_panorama.frag"
 
 Uniforms:
   - u_Projection

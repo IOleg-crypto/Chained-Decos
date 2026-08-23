@@ -1,6 +1,6 @@
-# Nametag Billboard Shader
-VertexShader: nametag.vs
-FragmentShader: nametag.fs
+# Nametag Shader Metadata
+VertexShader: "nametag.vert"
+FragmentShader: "nametag.frag"
 
 Uniforms:
   - projection

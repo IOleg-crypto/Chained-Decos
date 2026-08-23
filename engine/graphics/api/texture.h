@@ -42,7 +42,9 @@ namespace Chained
 		static std::shared_ptr<Texture> Create(uint32_t width, uint32_t height,
 											   TextureFormat format = TextureFormat::RGBA8);
 		static std::shared_ptr<Texture> CreateCubemap(uint32_t size, TextureFormat format = TextureFormat::RGBA16F);
-		static std::shared_ptr<Texture> WrapNative(uint32_t handle, uint32_t width, uint32_t height);
+		static std::shared_ptr<Texture> CreateCubemapFromFiles(const std::string faces[6]);
+		static std::shared_ptr<Texture> WrapNative(uint32_t handle, uint32_t width, uint32_t height,
+												   TextureType type = TextureType::Texture2D);
 
 		// Asset loading (Hazel-style)
 		static std::shared_ptr<Texture> CreateFromFile(const std::string& path);

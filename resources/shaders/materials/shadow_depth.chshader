@@ -1,6 +1,6 @@
 # Shadow Depth Shader Metadata
-VertexShader: "shadow_depth.vs"
-FragmentShader: "shadow_depth.fs"
+VertexShader: "shadow_depth.vert"
+FragmentShader: "shadow_depth.frag"
 
 Uniforms:
   - Name: "u_LightSpaceMatrix"

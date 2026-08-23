@@ -94,7 +94,7 @@ namespace Chained
 		void HandleDragDrop(Scene* activeScene);
 		void RenderOverlays(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
 		void HandlePicking(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
-		void RenderToolbar(Scene* activeScene, const ImVec2& viewportSize, const ImVec2& viewportScreenPos);
+		void RenderToolbar(Scene* activeScene, const ImVec2& viewportScreenPos);
 		void HandleKeyboardShortcuts();
 
 		// Toolbar sub-sections
@@ -109,7 +109,7 @@ namespace Chained
 		// Icon rendering helpers
 		void DrawBillboardIcon(const Camera3D& camera, uint32_t textureId, const glm::vec3& worldPos, float iconSize,
 							   const glm::vec4& tint);
-		void RenderEditorIcons(entt::registry& registry, const SceneSettings& settings, const Camera3D& camera);
+		void RenderEditorIcons(entt::registry& registry, const Camera3D& camera);
 		void RenderLightIcons(entt::registry& registry, const Camera3D& camera, float iconMin, float iconMax,
 							  float iconScale);
 		void ClearSceneBackground(Scene* scene);

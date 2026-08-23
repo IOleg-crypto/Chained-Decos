@@ -1,6 +1,6 @@
 # KISS Unlit Shader
-VertexShader: lighting.vs
-FragmentShader: unlit.fs
+VertexShader: "lighting.vert"
+FragmentShader: "unlit.frag"
 
 Uniforms:
   - mvp
