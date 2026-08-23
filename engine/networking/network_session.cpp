@@ -1,8 +1,5 @@
 #include "network_session.h"
 
-#ifndef ENET_IPV4_ONLY
-#define ENET_IPV4_ONLY 1
-#endif
 #include <enet.h>
 
 namespace Chained
@@ -270,6 +267,11 @@ namespace Chained
 			return {};
 		}
 
+		char ip[INET6_ADDRSTRLEN] = {};
+		if (enet_address_get_host_ip_new(&m_Host->address, ip, sizeof(ip)) == 0)
+		{
+			return std::string(ip) + ":" + std::to_string(m_Port);
+		}
 		return "127.0.0.1:" + std::to_string(m_Port);
 	}
 

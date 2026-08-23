@@ -121,8 +121,11 @@ namespace Chained
 
 		if (m_Type == TextureType::Cubemap)
 		{
-			uint32_t bpp = m_DataFormat == GL_RGBA ? 4 : 3;
-			uint32_t faceSize = m_Width * m_Height * bpp;
+			// bpp = bytes per pixel: float formats use 4 bytes per component, byte formats use 1.
+			uint32_t bytesPerComponent =
+				(m_Format == TextureFormat::RGB16F || m_Format == TextureFormat::RGBA16F) ? sizeof(float) : 1;
+			uint32_t channels = (m_DataFormat == GL_RGBA) ? 4 : 3;
+			uint32_t faceSize = m_Width * m_Height * channels * bytesPerComponent;
 			uint8_t* ptr = static_cast<uint8_t*>(data);
 			glBindTexture(GL_TEXTURE_CUBE_MAP, m_RendererID);
 			for (uint32_t i = 0; i < 6; ++i)

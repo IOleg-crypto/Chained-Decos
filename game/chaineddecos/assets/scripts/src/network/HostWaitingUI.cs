@@ -36,9 +36,10 @@ namespace ChainedDecos.Scripts
                 if (lbl != null)
                 {
                     int count = Network.ClientCount;
+                    int max = Network.MaxClients > 0 ? Network.MaxClients : LobbyManager.MaxClients;
                     lbl.Text = count == 0
-                        ? "Waiting for players..."
-                        : $"{count} player(s) connected";
+                        ? $"Waiting for players... (0/{max})"
+                        : $"{count}/{max} player(s) connected";
                 }
             }
         }

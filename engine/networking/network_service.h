@@ -45,6 +45,7 @@ namespace Chained
 
 		std::string GetListenAddress();
 		std::string GetPublicAddress();
+		std::string GetPublicIPv6Address();
 
 		bool HasPendingSceneChange() const
 		{
@@ -185,6 +186,7 @@ namespace Chained
 		UpnpPortMapper m_UpnpMapper;
 
 		std::string m_CachedPublicIP;
+		std::string m_CachedPublicIPv6;
 		std::mutex m_PublicIPMutex;
 		bool m_FirewallRuleActive = false;
 		bool m_TestMode = false;

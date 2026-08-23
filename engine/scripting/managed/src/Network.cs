@@ -19,9 +19,11 @@ namespace Chained
         internal static unsafe delegate* unmanaged<byte> Network_IsConnected_Ptr;
         internal static unsafe delegate* unmanaged<byte> Network_IsFullyConnected_Ptr;
         internal static unsafe delegate* unmanaged<int> Network_GetClientCount_Ptr;
+        internal static unsafe delegate* unmanaged<int> Network_GetMaxClients_Ptr;
         internal static unsafe delegate* unmanaged<int> Network_GetRole_Ptr;
         internal static unsafe delegate* unmanaged<char*, int, void> Network_GetListenAddress_Ptr;
         internal static unsafe delegate* unmanaged<char*, int, void> Network_GetPublicAddress_Ptr;
+        internal static unsafe delegate* unmanaged<char*, int, void> Network_GetPublicIPv6Address_Ptr;
         internal static unsafe delegate* unmanaged<char*, void> Network_BroadcastSceneChange_Ptr;
         internal static unsafe delegate* unmanaged<byte> Network_HasPendingSceneChange_Ptr;
         internal static unsafe delegate* unmanaged<char*, int, void> Network_GetPendingSceneChange_Ptr;
@@ -87,6 +89,9 @@ namespace Chained
         /// <summary>Number of connected clients (host-side only).</summary>
         public static unsafe int ClientCount => Network_GetClientCount_Ptr != null ? Network_GetClientCount_Ptr() : 0;
 
+        /// <summary>Maximum number of clients allowed on this server (set via HostGame).</summary>
+        public static unsafe int MaxClients => Network_GetMaxClients_Ptr != null ? Network_GetMaxClients_Ptr() : 0;
+
         /// <summary>Network role: 0=Offline, 1=Host, 2=Client.</summary>
         public static unsafe int GetRole() => Network_GetRole_Ptr != null ? Network_GetRole_Ptr() : 0;
 
@@ -112,6 +117,19 @@ namespace Chained
             if (Network_GetPublicAddress_Ptr == null) return string.Empty;
             sbyte* buf = stackalloc sbyte[64];
             Network_GetPublicAddress_Ptr((char*)buf, 64);
+            return new string(buf);
+        }
+
+        /// <summary>
+        /// Public IPv6 address string for internet hosting (e.g. "[2001:db8::1]:7777").
+        /// Returns "Not available" if the host has no public IPv6.
+        /// IPv6 bypasses CGNAT — prefer this over IPv4 when available.
+        /// </summary>
+        public static unsafe string GetPublicIPv6Address()
+        {
+            if (Network_GetPublicIPv6Address_Ptr == null) return string.Empty;
+            sbyte* buf = stackalloc sbyte[128];
+            Network_GetPublicIPv6Address_Ptr((char*)buf, 128);
             return new string(buf);
         }
 

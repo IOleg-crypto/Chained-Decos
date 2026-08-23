@@ -23,7 +23,7 @@ namespace Chained
 	static std::string FetchPublicIPFromWeb()
 	{
 		struct addrinfo hints = {}, *res = nullptr;
-		hints.ai_family = AF_INET;
+		hints.ai_family = AF_UNSPEC; // Підтримка IPv4 та IPv6
 		hints.ai_socktype = SOCK_STREAM;
 		if (getaddrinfo("api.ipify.org", "80", &hints, &res) != 0 || !res)
 		{
@@ -98,6 +98,86 @@ namespace Chained
 		ip.erase(std::remove_if(ip.begin(), ip.end(), [](unsigned char c) { return std::isspace(c); }), ip.end());
 		return ip;
 	}
+	static std::string FetchPublicIPv6FromWeb()
+	{
+		struct addrinfo hints = {}, *res = nullptr;
+		hints.ai_family = AF_INET6;
+		hints.ai_socktype = SOCK_STREAM;
+		hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
+		if (getaddrinfo("ipv6.api.ipify.org", "80", &hints, &res) != 0 || !res)
+		{
+			return {};
+		}
+
+		auto sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
+		if (sock == -1
+#ifdef _WIN32
+			|| sock == INVALID_SOCKET
+#endif
+		)
+		{
+			freeaddrinfo(res);
+			return {};
+		}
+
+#ifdef _WIN32
+		DWORD timeout = 3000;
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
+#else
+		struct timeval tv = {3, 0};
+		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
+		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
+#endif
+
+		if (connect(sock, res->ai_addr, (int)res->ai_addrlen) != 0)
+		{
+#ifdef _WIN32
+			closesocket(sock);
+#else
+			close(sock);
+#endif
+			freeaddrinfo(res);
+			return {};
+		}
+		freeaddrinfo(res);
+
+		const char* request = "GET /?format=text HTTP/1.1\r\nHost: ipv6.api.ipify.org\r\nConnection: "
+							  "close\r\nUser-Agent: ChainedEngine\r\n\r\n";
+		send(sock, request, (int)strlen(request), 0);
+
+		char buffer[1024] = {};
+		int totalBytes = 0;
+		int bytes = 0;
+		while ((bytes = recv(sock, buffer + totalBytes, sizeof(buffer) - 1 - totalBytes, 0)) > 0)
+		{
+			totalBytes += bytes;
+		}
+
+#ifdef _WIN32
+		closesocket(sock);
+#else
+		close(sock);
+#endif
+
+		if (totalBytes <= 0)
+		{
+			return {};
+		}
+		buffer[totalBytes] = '\0';
+
+		const char* body = strstr(buffer, "\r\n\r\n");
+		if (!body)
+		{
+			return {};
+		}
+		body += 4;
+
+		std::string ip(body);
+		ip.erase(std::remove_if(ip.begin(), ip.end(), [](unsigned char c) { return std::isspace(c); }), ip.end());
+		return ip;
+	}
+
 	Network::~Network()
 	{
 		if (m_Session.IsConnected())
@@ -202,6 +282,7 @@ namespace Chained
 		{
 			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
 			m_CachedPublicIP = "Fetching...";
+			m_CachedPublicIPv6 = "Fetching...";
 		}
 
 		// Asynchronously resolve true public WAN IP from web (api.ipify.org)
@@ -211,11 +292,10 @@ namespace Chained
 			if (!ip.empty())
 			{
 				m_CachedPublicIP = ip + ":" + std::to_string(port);
-				CH_CORE_INFO("Network: Public IP resolved: {}", m_CachedPublicIP);
+				CH_CORE_INFO("Network: Public IPv4 resolved: {}", m_CachedPublicIP);
 			}
 			else
 			{
-				// Fallback to UPnP WAN IP if available
 				std::string upnpIp = m_UpnpMapper.GetPublicIP();
 				if (!upnpIp.empty())
 				{
@@ -225,6 +305,21 @@ namespace Chained
 				{
 					m_CachedPublicIP = "Manual (Port " + std::to_string(port) + ")";
 				}
+			}
+		}).detach();
+
+		// Asynchronously resolve public IPv6 address
+		std::thread([this, port]() {
+			std::string ipv6 = FetchPublicIPv6FromWeb();
+			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+			if (!ipv6.empty() && ipv6.find("error") == std::string::npos)
+			{
+				m_CachedPublicIPv6 = "[" + ipv6 + "]:" + std::to_string(port);
+				CH_CORE_INFO("Network: Public IPv6 resolved: {}", m_CachedPublicIPv6);
+			}
+			else
+			{
+				m_CachedPublicIPv6 = "Not available";
 			}
 		}).detach();
 
@@ -254,6 +349,7 @@ namespace Chained
 		{
 			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
 			m_CachedPublicIP.clear();
+			m_CachedPublicIPv6.clear();
 		}
 		CH_CORE_INFO("Network: Disconnected.");
 	}
@@ -314,6 +410,16 @@ namespace Chained
 		if (!m_CachedPublicIP.empty())
 		{
 			return m_CachedPublicIP;
+		}
+		return "Fetching...";
+	}
+
+	std::string Network::GetPublicIPv6Address()
+	{
+		std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+		if (!m_CachedPublicIPv6.empty())
+		{
+			return m_CachedPublicIPv6;
 		}
 		return "Fetching...";
 	}

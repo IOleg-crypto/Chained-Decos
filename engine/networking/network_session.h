@@ -4,9 +4,6 @@
 #include "network_types.h"
 #include "net_packet.h"
 
-#ifndef ENET_IPV4_ONLY
-#define ENET_IPV4_ONLY 1
-#endif
 #include <enet.h>
 
 #include <atomic>

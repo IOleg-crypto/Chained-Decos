@@ -25,11 +25,15 @@ namespace Chained
 
 	CH_SCRIPT_FUNC int Network_GetClientCount();
 
+	CH_SCRIPT_FUNC int Network_GetMaxClients();
+
 	CH_SCRIPT_FUNC int Network_GetRole();
 
 	CH_SCRIPT_FUNC void Network_GetListenAddress(char* outBuffer, int bufferSize);
 
 	CH_SCRIPT_FUNC void Network_GetPublicAddress(char* outBuffer, int bufferSize);
+
+	CH_SCRIPT_FUNC void Network_GetPublicIPv6Address(char* outBuffer, int bufferSize);
 
 	CH_SCRIPT_FUNC void Network_BroadcastSceneChange(const Coral::UCChar* scenePath);
 

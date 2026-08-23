@@ -11,9 +11,11 @@ namespace ChainedDecos.Scripts
     {
         public string PortInputTag = "input_port";
         public string NickInputTag = "input_nick";
+        public string MaxClientsInputTag = "input_max_clients";
         public string LobbyScene = "scenes/lobby.chscene";
         public string PlayerPrefabPath = "prefab/player.chprefab";
         public ushort DefaultPort = 7777;
+        public int DefaultMaxClients = 4;
 
         public override void OnUpdate(float deltaTime)
         {
@@ -39,12 +41,22 @@ namespace ChainedDecos.Scripts
                     PlayerSettings.Nickname = input.Text.Trim();
             }
 
-            Log.Info($"[StartServerButton] Hosting on port {port}");
+            int maxClients = DefaultMaxClients;
+            Entity? maxEntity = Scene.FindEntityByTag(MaxClientsInputTag);
+            if (maxEntity != null && maxEntity.HasComponent<InputTextControl>())
+            {
+                InputTextControl? input = maxEntity.GetComponent<InputTextControl>();
+                if (input != null && int.TryParse(input.Text, out int parsedMax) && parsedMax > 0)
+                    maxClients = parsedMax;
+            }
+
+            Log.Info($"[StartServerButton] Hosting on port {port}, maxClients={maxClients}");
             Network.SetPlayerPrefab(PlayerPrefabPath);
             Network.SetLocalPlayerInfo(PlayerSettings.Nickname, (byte)LobbyManager.SelectedSkinIndex);
-            Network.HostGame(port);
+            Network.HostGame(port, maxClients);
 
             LobbyManager.SelectedPort = port;
+            LobbyManager.MaxClients = maxClients;
 
             Scene.LoadScene(LobbyScene);
         }

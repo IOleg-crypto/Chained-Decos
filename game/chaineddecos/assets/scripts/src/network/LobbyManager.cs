@@ -20,6 +20,7 @@ namespace ChainedDecos.Scripts
         public static ushort SelectedPort = 7777;
         public static int SelectedSkinIndex = 0;
         public static string SelectedMap = "scenes/rpg_strategy_scene_mp.chscene";
+        public static int MaxClients = 4;
 
         private float m_RefreshTimer = 0.0f;
 

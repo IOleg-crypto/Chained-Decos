@@ -10,6 +10,7 @@ namespace Chained
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_DEPTH_TEST);
+		glDepthMask(GL_TRUE);
 		glDepthFunc(GL_LEQUAL);
 #ifdef GLM_FORCE_DEPTH_ZERO_TO_ONE
 		if (glClipControl)
@@ -19,6 +20,17 @@ namespace Chained
 #endif
 		SetCullMode(CullMode::Back);
 		glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+
+		// Sync the state cache with what we just set above via raw GL calls,
+		// so that IsBlendEnabled(), IsDepthTestEnabled(), etc. return correct
+		// values immediately after Init() without requiring a round-trip to GL.
+		m_StateCache.Blend = true;
+		m_StateCache.SrcBlend = BlendFactor::SrcAlpha;
+		m_StateCache.DstBlend = BlendFactor::OneMinusSrcAlpha;
+		m_StateCache.DepthTest = true;
+		m_StateCache.DepthMask = true;
+		m_StateCache.DepthFunction = DepthFunc::LEqual;
+		m_StateCache.PolyMode = PolygonMode::Fill;
 	}
 
 	void GLDevice::Shutdown()
