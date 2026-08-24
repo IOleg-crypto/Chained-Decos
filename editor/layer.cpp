@@ -22,11 +22,16 @@
 #include "panels/property_editor.h"
 #include "panels/viewport_panel.h"
 #include "engine/scripting/scriptengine.h"
+#include "engine/graphics/pipeline/renderer.h"
+#include "engine/graphics/pipeline/scene_renderer.h"
+#include "engine/graphics/api/framebuffer.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "ui/project_selector_ui.h"
 #include <ImGuizmo.h>
 #include <imgui.h>
 #include <imgui_internal.h>
+#include <glad/gl.h>
+#include <GLFW/glfw3.h>
 #include <yaml-cpp/yaml.h>
 
 namespace Chained

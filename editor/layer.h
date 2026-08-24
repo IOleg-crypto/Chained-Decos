@@ -22,6 +22,8 @@ namespace Chained
 	class EditorMenu;
 	class KeyPressedEvent;
 	class FontManager;
+	class Framebuffer;
+	class SceneRenderer;
 
 	class EditorLayer : public Layer
 	{

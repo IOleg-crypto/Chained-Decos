@@ -22,7 +22,7 @@
 
 namespace Chained
 {
-	constexpr float kPlaybackBarWidth = 160.0f;
+	constexpr float kPlaybackBarWidth = 330.0f;
 
 	void EditorMenu::DrawMenuBar(EditorPanels& panels)
 	{

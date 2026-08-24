@@ -27,6 +27,8 @@
 #include "engine/scripting/scriptengine.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "undo/entity_commands.h"
+#include <GLFW/glfw3.h>
+#include <glad/gl.h>
 #include <limits>
 
 namespace Chained
@@ -211,13 +213,32 @@ namespace Chained
 		m_CameraController = std::make_unique<EditorCameraController>();
 	}
 
-	ViewportPanel::~ViewportPanel() = default;
+	ViewportPanel::~ViewportPanel()
+	{
+		if (m_CursorLocked && m_LockedWindow)
+		{
+			glfwSetInputMode(m_LockedWindow, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			m_CursorLocked = false;
+			m_LockedWindow = nullptr;
+		}
+	}
 
 	void ViewportPanel::OnImGuiRender(bool readOnly)
 	{
 		if (!m_IsOpen)
 		{
 			return;
+		}
+
+		// Track the current platform window (native GLFW window) hosting this panel
+		ImGuiViewport* vp = ImGui::GetWindowViewport();
+		if (vp && vp->PlatformHandle)
+		{
+			m_PlatformWindow = static_cast<GLFWwindow*>(vp->PlatformHandle);
+		}
+		else
+		{
+			m_PlatformWindow = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
 		}
 
 		auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
@@ -312,11 +333,24 @@ namespace Chained
 
 	void ViewportPanel::OnUpdate(Timestep ts)
 	{
-		// Unlock cursor if the window lost focus while locked
-		if (m_CursorLocked && !Application::Get().GetWindow().IsFocused())
+		bool hasImGui = ImGui::GetCurrentContext() != nullptr;
+		bool rightDown = hasImGui ? ImGui::IsMouseDown(ImGuiMouseButton_Right)
+								  : Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
+
+		// Unlock cursor if right mouse is released while locked
+		if (m_CursorLocked && !rightDown)
 		{
-			Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
+			GLFWwindow* win = m_LockedWindow ? m_LockedWindow : m_PlatformWindow;
+			if (!win)
+			{
+				win = static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+			}
+			if (win)
+			{
+				glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+			}
 			m_CursorLocked = false;
+			m_LockedWindow = nullptr;
 		}
 
 		// Auto-switch camera 2D mode based on scene type
@@ -336,19 +370,17 @@ namespace Chained
 			}
 		}
 
-		// Cursor lock/unlock for camera rotation
-		if (m_Hovered || m_CursorLocked)
+		// Cursor lock for camera rotation
+		if ((m_Hovered || m_CursorLocked) && rightDown && !m_CursorLocked)
 		{
-			bool rightDown = Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
-			if (rightDown && !m_CursorLocked)
+			GLFWwindow* win = m_PlatformWindow
+								  ? m_PlatformWindow
+								  : static_cast<GLFWwindow*>(Application::Get().GetWindow().GetNativeWindow());
+			if (win)
 			{
-				Application::Get().GetWindow().SetCursorMode(CursorMode::Locked);
+				glfwSetInputMode(win, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 				m_CursorLocked = true;
-			}
-			else if (!rightDown && m_CursorLocked)
-			{
-				Application::Get().GetWindow().SetCursorMode(CursorMode::Normal);
-				m_CursorLocked = false;
+				m_LockedWindow = win;
 			}
 		}
 
@@ -359,8 +391,7 @@ namespace Chained
 			auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
 			// Use m_Hovered that was set in the PREVIOUS frame's ImGuiRender.
 			// Also allow update if right mouse is held (user clicked into viewport from outside).
-			bool mouseInViewport =
-				m_Hovered || Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
+			bool mouseInViewport = m_Hovered || rightDown;
 			if (activeScene && mouseInViewport)
 			{
 				const auto& editorCfg = EditorLayer::Get().GetConfig();
@@ -397,16 +428,50 @@ namespace Chained
 
 	void ViewportPanel::HandleKeyboardShortcuts()
 	{
-		for (const auto& btn : s_GizmoBtns)
+		bool hasImGui = ImGui::GetCurrentContext() != nullptr;
+		bool rightDown = hasImGui ? ImGui::IsMouseDown(ImGuiMouseButton_Right)
+								  : Chained::Core::Input::IsMouseButtonDown(Chained::MouseCode::ButtonRight);
+
+		if (!rightDown)
 		{
-			if (Chained::Core::Input::IsKeyPressed(btn.key))
+			if (hasImGui)
 			{
-				m_CurrentTool = btn.type;
+				if (ImGui::IsKeyPressed(ImGuiKey_Q, false))
+				{
+					m_CurrentTool = GizmoType::NONE;
+				}
+				else if (ImGui::IsKeyPressed(ImGuiKey_W, false))
+				{
+					m_CurrentTool = GizmoType::TRANSLATE;
+				}
+				else if (ImGui::IsKeyPressed(ImGuiKey_E, false))
+				{
+					m_CurrentTool = GizmoType::ROTATE;
+				}
+				else if (ImGui::IsKeyPressed(ImGuiKey_R, false))
+				{
+					m_CurrentTool = GizmoType::SCALE;
+				}
+			}
+			else
+			{
+				for (const auto& btn : s_GizmoBtns)
+				{
+					if (Chained::Core::Input::IsKeyPressed(btn.key))
+					{
+						m_CurrentTool = btn.type;
+					}
+				}
 			}
 		}
 
-		if (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) &&
-			Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D))
+		bool isCtrl = hasImGui ? (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl))
+							   : (Chained::Core::Input::IsKeyDown(Chained::KeyCode::LeftControl) ||
+								  Chained::Core::Input::IsKeyDown(Chained::KeyCode::RightControl));
+		bool isDPressed =
+			hasImGui ? ImGui::IsKeyPressed(ImGuiKey_D, false) : Chained::Core::Input::IsKeyPressed(Chained::KeyCode::D);
+
+		if (isCtrl && isDPressed)
 		{
 			Entity selected = EditorLayer::Get().GetEditorState().SelectedEntity;
 			if (selected)
@@ -619,18 +684,8 @@ namespace Chained
 		SceneState sceneState = EditorLayer::Get().GetSceneManager().GetSceneState();
 		if (activeScene && (sceneState == SceneState::Play || sceneState == SceneState::Simulate))
 		{
-			ImGui::SetNextWindowPos(viewportScreenPos);
-			ImGui::SetNextWindowSize(viewportSize);
-
-			ImGuiWindowFlags scriptUIFlags = ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoBackground |
-											 ImGuiWindowFlags_NoDocking | ImGuiWindowFlags_NoSavedSettings |
-											 ImGuiWindowFlags_NoFocusOnAppearing | ImGuiWindowFlags_NoNav;
-
-			if (ImGui::Begin("##ViewportScriptUIOverlay", nullptr, scriptUIFlags))
-			{
-				activeScene->OnRenderUI();
-			}
-			ImGui::End();
+			ImGui::SetCursorScreenPos(ImVec2(viewportScreenPos.x + 10.0f, viewportScreenPos.y + 10.0f));
+			activeScene->OnRenderUI();
 		}
 
 		// 3. Selection Highlight

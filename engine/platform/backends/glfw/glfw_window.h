@@ -90,6 +90,7 @@ namespace Chained
 		int m_WindowedX = 0, m_WindowedY = 0, m_WindowedWidth = 0, m_WindowedHeight = 0;
 		int m_TargetFPS = 60;
 		int m_Samples = 0; // MSAA sample count the window/framebuffer was actually created with (0 = none)
+		bool m_ForwardToImGui = true;
 		EventCallbackFn m_EventCallback;
 	};
 

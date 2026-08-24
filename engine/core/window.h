@@ -25,6 +25,7 @@ namespace Chained
 		int TargetFramesPerSecond = 60;
 		std::string IconPath;
 		int Samples = 0;
+		void* SharedContext = nullptr;
 	};
 
 	// Abstract native window interface used by the application and renderer.

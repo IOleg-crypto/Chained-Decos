@@ -5,6 +5,7 @@
 #include "engine/scene/components/render/camera_component.h"
 #include "engine/scene/systems/transform_system.h"
 #include "engine/scene/components/core/transform_component.h"
+#include "imgui.h"
 
 #include <algorithm>
 #include <glm/gtx/quaternion.hpp>
@@ -87,14 +88,36 @@ namespace Chained
 		float moveSpeed = m_MoveSpeed;
 		float boostMultiplier = m_BoostMultiplier;
 
+		bool hasImGui = ImGui::GetCurrentContext() != nullptr;
+
+		bool rightDown = hasImGui ? ImGui::IsMouseDown(ImGuiMouseButton_Right)
+								  : Core::Input::IsMouseButtonDown(MouseCode::ButtonRight);
+		bool middleDown = hasImGui ? ImGui::IsMouseDown(ImGuiMouseButton_Middle)
+								   : Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle);
+		bool leftDown = hasImGui ? ImGui::IsMouseDown(ImGuiMouseButton_Left)
+								 : Core::Input::IsMouseButtonDown(MouseCode::ButtonLeft);
+
+		bool shiftDown =
+			hasImGui ? (ImGui::IsKeyDown(ImGuiKey_LeftShift) || ImGui::IsKeyDown(ImGuiKey_RightShift))
+					 : (Core::Input::IsKeyDown(KeyCode::LeftShift) || Core::Input::IsKeyDown(KeyCode::RightShift));
+		bool altDown = hasImGui
+						   ? (ImGui::IsKeyDown(ImGuiKey_LeftAlt) || ImGui::IsKeyDown(ImGuiKey_RightAlt))
+						   : (Core::Input::IsKeyDown(KeyCode::LeftAlt) || Core::Input::IsKeyDown(KeyCode::RightAlt));
+
+		auto isKeyDown = [hasImGui](KeyCode coreKey, ImGuiKey imguiKey) -> bool {
+			if (hasImGui)
+			{
+				return ImGui::IsKeyDown(imguiKey);
+			}
+			return Core::Input::IsKeyDown(coreKey);
+		};
+
 		bool hasEntity = cameraEntity && cameraEntity.HasComponent<TransformComponent>() &&
 						 cameraEntity.HasComponent<CameraComponent>();
 
 		// In Play mode: sync editor camera FROM TransformComponent (e.g. scripts or inspector changes).
 		// In Edit mode: skip — the editor camera is authoritative, TransformComponent write-back happens below.
-		if (hasEntity && EditorLayer::Get().GetSceneState() == SceneState::Play &&
-			!Core::Input::IsMouseButtonDown(MouseCode::ButtonRight) &&
-			!Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle))
+		if (hasEntity && EditorLayer::Get().GetSceneState() == SceneState::Play && !rightDown && !middleDown)
 		{
 			auto& tc = cameraEntity.GetComponent<TransformComponent>();
 			if (std::isfinite(tc.Rotation.x) && std::isfinite(tc.Rotation.y))
@@ -108,14 +131,23 @@ namespace Chained
 			}
 		}
 
-		glm::vec2 delta = Core::Input::GetMouseDelta() * kMouseSensitivity;
+		glm::vec2 delta = {0.0f, 0.0f};
+		if (hasImGui)
+		{
+			ImVec2 imguiDelta = ImGui::GetIO().MouseDelta;
+			delta = {imguiDelta.x * kMouseSensitivity, imguiDelta.y * kMouseSensitivity};
+		}
+		else
+		{
+			delta = Core::Input::GetMouseDelta() * kMouseSensitivity;
+		}
 
-		if (Core::Input::IsMouseButtonDown(MouseCode::ButtonRight))
+		if (rightDown)
 		{
 			MouseRotate(delta);
 
 			float speed = moveSpeed * deltaTime;
-			if (Core::Input::IsKeyDown(KeyCode::LeftShift))
+			if (shiftDown)
 			{
 				speed *= boostMultiplier;
 			}
@@ -126,27 +158,27 @@ namespace Chained
 
 			glm::vec3 currentPos = CalculatePosition();
 
-			if (Core::Input::IsKeyDown(KeyCode::W))
+			if (isKeyDown(KeyCode::W, ImGuiKey_W))
 			{
 				currentPos += (m_Is2DMode ? upg : fwd) * speed;
 			}
-			if (Core::Input::IsKeyDown(KeyCode::S))
+			if (isKeyDown(KeyCode::S, ImGuiKey_S))
 			{
 				currentPos -= (m_Is2DMode ? upg : fwd) * speed;
 			}
-			if (Core::Input::IsKeyDown(KeyCode::D))
+			if (isKeyDown(KeyCode::D, ImGuiKey_D))
 			{
 				currentPos += rgt * speed;
 			}
-			if (Core::Input::IsKeyDown(KeyCode::A))
+			if (isKeyDown(KeyCode::A, ImGuiKey_A))
 			{
 				currentPos -= rgt * speed;
 			}
-			if (Core::Input::IsKeyDown(KeyCode::E))
+			if (isKeyDown(KeyCode::E, ImGuiKey_E))
 			{
 				currentPos += upg * speed;
 			}
-			if (Core::Input::IsKeyDown(KeyCode::Q))
+			if (isKeyDown(KeyCode::Q, ImGuiKey_Q))
 			{
 				currentPos -= upg * speed;
 			}
@@ -155,9 +187,9 @@ namespace Chained
 			UpdateView();
 		}
 
-		if (Core::Input::IsMouseButtonDown(MouseCode::ButtonMiddle))
+		if (middleDown)
 		{
-			if (Core::Input::IsKeyDown(KeyCode::LeftShift))
+			if (shiftDown)
 			{
 				MousePan(delta);
 			}
@@ -167,13 +199,13 @@ namespace Chained
 			}
 		}
 
-		if (Core::Input::IsKeyDown(KeyCode::LeftAlt) && Core::Input::IsMouseButtonDown(MouseCode::ButtonLeft))
+		if (altDown && leftDown)
 		{
 			MouseRotate(delta);
 		}
 
-		float wheel = Core::Input::GetMouseWheelMove();
-		if (wheel != 0 && !m_DisableZoom)
+		float wheel = hasImGui ? ImGui::GetIO().MouseWheel : Core::Input::GetMouseWheelMove();
+		if (wheel != 0.0f && !m_DisableZoom)
 		{
 			MouseZoom(wheel);
 		}
