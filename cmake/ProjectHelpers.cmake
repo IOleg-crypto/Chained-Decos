@@ -115,8 +115,8 @@ function(chained_add_game TARGET_NAME)
         endif()
 
         install(TARGETS ${INSTALL_TARGETS}
-            RUNTIME DESTINATION bin COMPONENT Runtime
-            ARCHIVE DESTINATION lib COMPONENT Runtime
+            RUNTIME DESTINATION bin COMPONENT Game
+            ARCHIVE DESTINATION lib COMPONENT SDK
         )
     endif()
 

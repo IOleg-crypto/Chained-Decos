@@ -39,6 +39,8 @@ namespace Chained
 		// Docking and viewports are always enabled
 		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
 		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
+		io.BackendFlags |= ImGuiBackendFlags_PlatformHasViewports;
+		io.BackendFlags |= ImGuiBackendFlags_RendererHasViewports;
 
 		// Setup style
 		ImGui::StyleColorsDark();

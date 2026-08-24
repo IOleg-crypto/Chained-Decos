@@ -15,6 +15,8 @@
 #include <entt/entt.hpp>
 #include "engine/core/key_codes.h"
 
+struct GLFWwindow;
+
 namespace Chained
 {
 
@@ -65,11 +67,18 @@ namespace Chained
 		void DrawCameraSelector(Scene* scene);
 		Ray GetMouseRay(const glm::vec2& mousePosition);
 
+		std::shared_ptr<Framebuffer> GetViewportFramebuffer() const
+		{
+			return m_ViewportFramebuffer;
+		}
+
 	private:
 		glm::vec2 m_ViewportSize = {0, 0};
 		bool m_Focused = false;
 		bool m_Hovered = false;
 		bool m_CursorLocked = false;
+		GLFWwindow* m_PlatformWindow = nullptr;
+		GLFWwindow* m_LockedWindow = nullptr;
 		GizmoType m_CurrentTool = GizmoType::TRANSLATE;
 
 		std::unique_ptr<EditorCameraController> m_CameraController;

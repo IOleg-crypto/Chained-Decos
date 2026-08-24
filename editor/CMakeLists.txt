@@ -64,7 +64,7 @@ endif()
 
 # Installation
 install(TARGETS ChainedEditor
-    RUNTIME DESTINATION bin COMPONENT Runtime
+    RUNTIME DESTINATION bin COMPONENT Editor
 )
 
 # Copy global assets to the install directory if they exist

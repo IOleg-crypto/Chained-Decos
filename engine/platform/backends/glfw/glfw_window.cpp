@@ -44,6 +44,7 @@ namespace Chained
 		m_Title = properties.Title;
 		m_VSync = properties.VSync;
 		m_TargetFPS = properties.TargetFramesPerSecond;
+		m_ForwardToImGui = (properties.SharedContext == nullptr);
 
 		if (!s_GLFWInitialized)
 		{
@@ -94,7 +95,8 @@ namespace Chained
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #endif
 
-		m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, nullptr);
+		GLFWwindow* share = static_cast<GLFWwindow*>(properties.SharedContext);
+		m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, share);
 		CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
 		glfwSetWindowSizeLimits(m_WindowHandle, minimumWidth, minimumHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 
@@ -135,26 +137,47 @@ namespace Chained
 
 		glfwSetScrollCallback(m_WindowHandle, [](GLFWwindow* window, double xOffset, double yOffset) {
 			Core::Input::OnMouseScroll((float)xOffset, (float)yOffset);
-			ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
+			auto* userPtr = glfwGetWindowUserPointer(window);
+			if (userPtr && static_cast<GlfwWindow*>(userPtr)->m_ForwardToImGui)
+			{
+				ImGui_ImplGlfw_ScrollCallback(window, xOffset, yOffset);
+			}
 		});
 
 		glfwSetKeyCallback(m_WindowHandle, [](GLFWwindow* window, int key, int scancode, int action, int mods) {
 			Core::Input::OnKey(GlfwInputMapper::MapKey(key), action != GLFW_RELEASE);
-			ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+			auto* userPtr = glfwGetWindowUserPointer(window);
+			if (userPtr && static_cast<GlfwWindow*>(userPtr)->m_ForwardToImGui)
+			{
+				ImGui_ImplGlfw_KeyCallback(window, key, scancode, action, mods);
+			}
 		});
 
 		glfwSetMouseButtonCallback(m_WindowHandle, [](GLFWwindow* window, int button, int action, int mods) {
 			Core::Input::OnMouseButton(GlfwInputMapper::MapMouseButton(button), action != GLFW_RELEASE);
-			ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+			auto* userPtr = glfwGetWindowUserPointer(window);
+			if (userPtr && static_cast<GlfwWindow*>(userPtr)->m_ForwardToImGui)
+			{
+				ImGui_ImplGlfw_MouseButtonCallback(window, button, action, mods);
+			}
 		});
 
 		glfwSetCursorPosCallback(m_WindowHandle, [](GLFWwindow* window, double xpos, double ypos) {
 			Core::Input::OnMouseMove((float)xpos, (float)ypos);
-			ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+			auto* userPtr = glfwGetWindowUserPointer(window);
+			if (userPtr && static_cast<GlfwWindow*>(userPtr)->m_ForwardToImGui)
+			{
+				ImGui_ImplGlfw_CursorPosCallback(window, xpos, ypos);
+			}
 		});
 
-		glfwSetCharCallback(m_WindowHandle,
-							[](GLFWwindow* window, unsigned int c) { ImGui_ImplGlfw_CharCallback(window, c); });
+		glfwSetCharCallback(m_WindowHandle, [](GLFWwindow* window, unsigned int c) {
+			auto* userPtr = glfwGetWindowUserPointer(window);
+			if (userPtr && static_cast<GlfwWindow*>(userPtr)->m_ForwardToImGui)
+			{
+				ImGui_ImplGlfw_CharCallback(window, c);
+			}
+		});
 
 		glfwSetWindowFocusCallback(m_WindowHandle, [](GLFWwindow* window, int focused) {
 			if (!focused)

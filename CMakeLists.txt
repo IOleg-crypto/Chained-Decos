@@ -123,3 +123,6 @@ add_custom_target(sync-scripts
     COMMENT "Syncing C# scripts to game assets"
     VERBATIM
 )
+
+# ── Packaging (CPack) ────────────────────────────────────────────────────────
+include(cmake/Packaging.cmake)
