@@ -80,7 +80,9 @@ namespace Chained
 		}
 
 	private:
-		void CacheGlyph(uint32_t codepoint);
+		const AtlasGlyphMetrics* CacheGlyph(uint32_t codepoint);
+		bool SetupFont(ftgl::texture_font_t* font);
+		std::string CodepointToUTF8(uint32_t codepoint) const;
 
 		ftgl::texture_atlas_t* m_Atlas = nullptr;
 		ftgl::texture_font_t* m_Font = nullptr;
