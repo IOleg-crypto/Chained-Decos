@@ -308,7 +308,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: release-assets
-          pattern: "{SDK,Game,Editor}-*"
+          pattern: "{SDK,Game,Editor,CPack}-*"
           merge-multiple: true
 
       - name: Create Release
