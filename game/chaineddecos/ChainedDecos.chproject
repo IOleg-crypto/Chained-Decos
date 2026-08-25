@@ -1,32 +1,18 @@
 Project:
   Name: ChainedDecos
-  IconPath: resources/icons/chaineddecos.jpg
+  IconPath: engine/resources/icons/chaineddecos.jpg
   StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/rpg_strategy_scene.chscene
-  Environment: ""
-  BuildScenes:
-    - scenes/start_menu.chscene
-    - scenes/title_image.chscene
-    - scenes/main_menu.chscene
-    - scenes/game_mode_selection.chscene
-    - scenes/map_selection.chscene
-    - scenes/video_scene.chscene
-    - scenes/info_scene.chscene
-    - scenes/untitled100.chscene
-    - scenes/scene_tem.chscene
-    - scenes/test_platform_scene.chscene
+  ActiveScene: assets/scenes/untitled100.chscene
   Physics:
-    Gravity: 20
+    Gravity: 17.2999992
     FixedTimestep: 0.00416666688
   Animation:
     TargetFPS: 60
   Render:
-    AmbientIntensity: 1
-    DefaultExposure: 0.140000001
-  Texture:
-    GenerateMipmaps: true
-    Filter: 5
+    ShadowResolution: 2048
+    EnableShadows: true
+    AntiAliasingSamples: 8
   Mesh:
     ImportMaterials: true
     CalculateTangents: true
@@ -35,23 +21,23 @@ Project:
     Width: 1920
     Height: 1080
     VSync: false
-    Resizable: true
+  Audio:
+    MasterVolume: 1
+    MusicVolume: 1
+    SFXVolume: 1
   Runtime:
-    Fullscreen: true
-    ShowStats: false
+    Fullscreen: false
+    ShowStats: true
     EnableConsole: false
-  Editor:
-    CameraMoveSpeed: 47
-    CameraRotationSpeed: 1
-    CameraBoostMultiplier: 11.8000002
+    TargetFPS: 0
   Scripting:
     ModuleName: ChainedDecos.Scripts.dll
-    ModuleDirectory: scripts/bin
+    ModuleDirectory: assets/bin
     AutoLoad: true
-  LaunchProfiles:
-    - Name: Debug Runtime
-      BinaryPath: ${BUILD}/ChainedRuntime.exe
-      Arguments: --project "${PROJECT_FILE}"
-      UseDefaultArgs: false
-  ActiveLaunchProfile: 0
+  Export:
+    Mode: 2
+    ZipThreshold: 1
+    DataVersion: 0
+    SplitSizeMB: 0
+    PackName: resources
   BuildConfig: 0

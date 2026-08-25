@@ -1,108 +1,96 @@
-add_library(engine_graphics ${SUBMODULE_LIB_TYPE}
-        stb_impl.cpp
-    # Pipeline
-        pipeline/renderer.cpp
-        pipeline/renderer_types.cpp
-        pipeline/ui_renderer.cpp
-        pipeline/ui_widget_renderer.cpp
-        pipeline/ui_font_registry.cpp
-        pipeline/shader_library.cpp
-        pipeline/scene_renderer.cpp
-
-        pipeline/render_command.cpp
-        pipeline/texture_utility.cpp
-        texture_system.cpp
-        pipeline/geometry_generator.cpp
-        pipeline/renderer.h
-        pipeline/scene_renderer.h
-        pipeline/ui_renderer.h
-        pipeline/ui_widget_renderer.h
-        pipeline/ui_font_registry.h
-        pipeline/shader_library.h
-        pipeline/material.h
-        pipeline/frustum.h
-        pipeline/texture_utility.h
-        texture_system.h
-        pipeline/geometry_generator.h
-
-    # Assets
-        assets/shader_asset.cpp
-        assets/model_asset.cpp
-        assets/texture_asset.cpp
-        assets/font_asset.cpp
-        assets/shader_asset.h
-        assets/model_asset.h
-        assets/texture_asset.h
-        assets/font_asset.h
-        assets/environment.h
-
-    # Loaders
-        loaders/texture_loader.cpp
-        loaders/model_loader.cpp
-        loaders/assimp_importer.cpp
-        loaders/shader_loader.cpp
-        loaders/font_loader.cpp
-        loaders/environment_loader.cpp
-        loaders/texture_loader.h
-        loaders/model_loader.h
-        loaders/assimp_importer.h
-        loaders/shader_loader.h
-        loaders/font_loader.h
-        loaders/environment_loader.h
-
-    # API & Backend
-        api/renderer_api.cpp
-        api/buffer.cpp
-        api/buffer.h
-        api/vertex_array.cpp
-        api/vertex_array.h
-        api/texture.cpp
-        api/texture.h
-        api/framebuffer.cpp
-        api/framebuffer.h
-        api/renderer_api.h
-        api/model_data.h
-        api/shader.h
-        api/shader.cpp
-        api/opengl/opengl_renderer_api.cpp
-        api/opengl/opengl_renderer_api.h
-        api/opengl/opengl_buffer.cpp
-        api/opengl/opengl_buffer.h
-        api/opengl/opengl_vertex_array.cpp
-        api/opengl/opengl_vertex_array.h
-        api/opengl/opengl_texture.cpp
-        api/opengl/opengl_texture.h
-        api/opengl/opengl_framebuffer.cpp
-        api/opengl/opengl_framebuffer.h
-        api/opengl/opengl_shader.h
-        api/opengl/opengl_shader.cpp
+add_library(engine_graphics STATIC
+    camera_types.h
+    api/buffer.h
+    api/buffer.cpp
+    api/framebuffer.h
+    api/framebuffer.cpp
+    api/graphics_device.h
+    api/graphics_device.cpp
+    api/renderer_types.h
+    api/shader.h
+    api/shader.cpp
+    api/storage_buffer.h
+    api/storage_buffer.cpp
+    api/texture.h
+    api/texture.cpp
+    api/vertex_array.h
+    api/vertex_array.cpp
+    api/opengl/gl_buffer.h
+    api/opengl/gl_buffer.cpp
+    api/opengl/gl_device.h
+    api/opengl/gl_device.cpp
+    api/opengl/gl_framebuffer.h
+    api/opengl/gl_framebuffer.cpp
+    api/opengl/gl_shader_program.h
+    api/opengl/gl_shader_program.cpp
+    api/opengl/gl_storage_buffer.h
+    api/opengl/gl_storage_buffer.cpp
+    api/opengl/gl_texture.h
+    api/opengl/gl_texture.cpp
+    api/opengl/gl_uniform_buffer.h
+    api/opengl/gl_uniform_buffer.cpp
+    api/opengl/gl_vertex_array.h
+    api/opengl/gl_vertex_array.cpp
+    pipeline/debug_renderer.h
+    pipeline/debug_renderer.cpp
+    pipeline/frustum.h
+    pipeline/geometry_generator.h
+    pipeline/geometry_generator.cpp
+    pipeline/material.h
+    pipeline/renderer.h
+    pipeline/renderer.cpp
+    pipeline/renderer_data.h
+    pipeline/lighting_manager.h
+    pipeline/lighting_manager.cpp
+    pipeline/geometry_factory.h
+    pipeline/geometry_factory.cpp
+    pipeline/entity_collector.h
+    pipeline/entity_collector.cpp
+    pipeline/material_manager.h
+    pipeline/material_manager.cpp
+    pipeline/render_pass.h
+    pipeline/scene_renderer.h
+    pipeline/scene_renderer.cpp
+    pipeline/shader_storage.h
+    pipeline/shader_storage.cpp
+    pipeline/shader_uniform_utils.h
+    text_renderer.h
+    text_renderer.cpp
+    freetype_gl_atlas.h
+    freetype_gl_atlas.cpp
+    pipeline/passes/composite_pass.h
+    pipeline/passes/composite_pass.cpp
+    pipeline/passes/geometry_pass.h
+    pipeline/passes/geometry_pass.cpp
+    pipeline/passes/shadow_pass.h
+    pipeline/passes/shadow_pass.cpp
+    pipeline/passes/skybox_pass.h
+    pipeline/passes/skybox_pass.cpp
+    nametag_system.h
+    nametag_system.cpp
 )
-
-# Prevents multiple definition errors when using unity builds
-set_source_files_properties(stb_impl.cpp PROPERTIES SKIP_UNITY_BUILD_INCLUSION ON)
 
 target_include_directories(engine_graphics PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${yaml-cpp_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/stb
-    ${imguizmo_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-target_link_libraries(engine_graphics PUBLIC 
+target_link_libraries(engine_graphics PUBLIC
+    engine_scene_core
     engine_core
-    imguilib 
-    assimp::assimp 
+    engine_project
+    engine_assets
+    engine_network
     yaml-cpp
-    EnTT::EnTT
-    glfw
-    glad
+    engine_external_entt
+    glm
+    engine_external_stb
+    engine_external_imgui
+    engine_external_glad
+    assimp
+    engine_freetype_gl
 )
 
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_graphics)
+if(TARGET engine_pch)
+    target_link_libraries(engine_graphics PRIVATE engine_pch)
 endif()

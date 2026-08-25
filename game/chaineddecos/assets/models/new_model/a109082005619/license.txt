@@ -1,0 +1,11 @@
+Model Information:
+* title:	A109082005619
+* source:	https://sketchfab.com/3d-models/a109082005619-97dd7b8410074ede888821943b4cb000
+* author:	A109082019 (https://sketchfab.com/A109082019)
+
+Model License:
+* license type:	CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)
+* requirements:	Author must be credited. Commercial use is allowed.
+
+If you use this 3D model in your project be sure to copy paste this credit wherever you share it:
+This work is based on "A109082005619" (https://sketchfab.com/3d-models/a109082005619-97dd7b8410074ede888821943b4cb000) by A109082019 (https://sketchfab.com/A109082019) licensed under CC-BY-4.0 (http://creativecommons.org/licenses/by/4.0/)

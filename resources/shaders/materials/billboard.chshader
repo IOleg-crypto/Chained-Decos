@@ -1,0 +1,8 @@
+# Billboard Shader
+VertexShader: "billboard.vert"
+FragmentShader: "billboard.frag"
+
+Uniforms:
+  - mvp
+  - texture0
+  - colDiffuse

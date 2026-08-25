@@ -1,0 +1,8 @@
+# Collider Debug Shader Metadata
+VertexShader: "collider_debug.vert"
+FragmentShader: "collider_debug.frag"
+
+Uniforms:
+  - u_ViewProj
+  - u_Transform
+  - u_Color

@@ -1,150 +1,178 @@
 #ifndef CH_SCENE_EVENTS_H
 #define CH_SCENE_EVENTS_H
 
-#include "engine/core/events.h"
+#include "engine/core/events/events.h"
 #include "entt/entt.hpp"
 #include <string>
 
-namespace CHEngine
+namespace Chained
 {
 
-// Project Events
-class ProjectCreatedEvent : public Event
-{
-public:
-    ProjectCreatedEvent(const std::string& name, const std::string& path)
-        : m_Name(name),
-          m_Path(path)
-    {
-    }
+	// Project Events
+	class ProjectCreatedEvent : public Event
+	{
+	public:
+		ProjectCreatedEvent(const std::string& name, const std::string& path)
+			: m_Name(name),
+			  m_Path(path)
+		{
+		}
 
-    const std::string& GetProjectName() const
-    {
-        return m_Name;
-    }
-    const std::string& GetPath() const
-    {
-        return m_Path;
-    }
+		const std::string& GetProjectName() const
+		{
+			return m_Name;
+		}
+		const std::string& GetPath() const
+		{
+			return m_Path;
+		}
 
-    EVENT_CLASS_TYPE(ProjectCreated)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_TYPE(ProjectCreated)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
-private:
-    std::string m_Name;
-    std::string m_Path;
-};
+	private:
+		std::string m_Name;
+		std::string m_Path;
+	};
 
-class ProjectOpenedEvent : public Event
-{
-public:
-    ProjectOpenedEvent(const std::string& path)
-        : m_Path(path)
-    {
-    }
+	class ProjectOpenedEvent : public Event
+	{
+	public:
+		ProjectOpenedEvent(const std::string& path)
+			: m_Path(path)
+		{
+		}
 
-    const std::string& GetPath() const
-    {
-        return m_Path;
-    }
+		const std::string& GetPath() const
+		{
+			return m_Path;
+		}
 
-    EVENT_CLASS_TYPE(ProjectOpened)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_TYPE(ProjectOpened)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
-private:
-    std::string m_Path;
-};
+	private:
+		std::string m_Path;
+	};
 
-class SceneOpenedEvent : public Event
-{
-public:
-    SceneOpenedEvent(const std::string& path)
-        : m_Path(path)
-    {
-    }
+	class SceneOpenedEvent : public Event
+	{
+	public:
+		SceneOpenedEvent(const std::string& path)
+			: m_Path(path)
+		{
+		}
 
-    const std::string& GetPath() const
-    {
-        return m_Path;
-    }
+		const std::string& GetPath() const
+		{
+			return m_Path;
+		}
 
-    EVENT_CLASS_TYPE(SceneOpened)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_TYPE(SceneOpened)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
-private:
-    std::string m_Path;
-};
+	private:
+		std::string m_Path;
+	};
 
-// Selection Events
-class EntitySelectedEvent : public Event
-{
-public:
-    EntitySelectedEvent(entt::entity entity, class Scene* scene, int meshIndex = -1)
-        : m_Entity(entity),
-          m_Scene(scene),
-          m_MeshIndex(meshIndex)
-    {
-    }
+	// Selection Events
+	class EntitySelectedEvent : public Event
+	{
+	public:
+		EntitySelectedEvent(entt::entity entity, class Scene* scene, int meshIndex = -1)
+			: m_Entity(entity),
+			  m_Scene(scene),
+			  m_MeshIndex(meshIndex)
+		{
+		}
 
-    entt::entity GetEntity() const
-    {
-        return m_Entity;
-    }
-    class Scene* GetScene() const
-    {
-        return m_Scene;
-    }
-    int GetMeshIndex() const
-    {
-        return m_MeshIndex;
-    }
+		entt::entity GetEntity() const
+		{
+			return m_Entity;
+		}
+		class Scene* GetScene() const
+		{
+			return m_Scene;
+		}
+		int GetMeshIndex() const
+		{
+			return m_MeshIndex;
+		}
 
-    EVENT_CLASS_TYPE(EntitySelected)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_TYPE(EntitySelected)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
-private:
-    entt::entity m_Entity;
-    class Scene* m_Scene;
-    int m_MeshIndex = -1;
-};
+	private:
+		entt::entity m_Entity;
+		class Scene* m_Scene;
+		int m_MeshIndex = -1;
+	};
 
-class ScenePlayEvent : public Event
-{
-public:
-    ScenePlayEvent() = default;
-    EVENT_CLASS_TYPE(ScenePlay)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
+	class ScenePlayEvent : public Event
+	{
+	public:
+		ScenePlayEvent() = default;
+		EVENT_CLASS_TYPE(ScenePlay)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	};
 
+	class SceneSimulateEvent : public Event
+	{
+	public:
+		SceneSimulateEvent() = default;
+		EVENT_CLASS_TYPE(SceneSimulate)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	};
 
-class SceneStopEvent : public Event
-{
-public:
-    SceneStopEvent() = default;
-    EVENT_CLASS_TYPE(SceneStop)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
-};
+	class SceneStopEvent : public Event
+	{
+	public:
+		SceneStopEvent() = default;
+		EVENT_CLASS_TYPE(SceneStop)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
+	};
 
-class SceneChangeRequestEvent : public Event
-{
-public:
-    SceneChangeRequestEvent(const std::string& path)
-        : m_Path(path)
-    {
-    }
+	class SceneChangeRequestEvent : public Event
+	{
+	public:
+		SceneChangeRequestEvent(const std::string& path)
+			: m_Path(path)
+		{
+		}
 
-    const std::string& GetPath() const
-    {
-        return m_Path;
-    }
+		const std::string& GetPath() const
+		{
+			return m_Path;
+		}
 
-    EVENT_CLASS_TYPE(SceneChangeRequest)
-    EVENT_CLASS_CATEGORY(EventCategoryApplication)
+		EVENT_CLASS_TYPE(SceneChangeRequest)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication)
 
-private:
-    std::string m_Path;
-};
+	private:
+		std::string m_Path;
+	};
 
-} // namespace CHEngine
+	class SceneModifiedEvent : public Event
+	{
+	public:
+		SceneModifiedEvent() = default;
+		EVENT_CLASS_TYPE(SceneModified)
+		EVENT_CLASS_CATEGORY(EventCategoryApplication | EventCategoryScene)
+	};
+
+	// ── EnTT Dispatcher Event Structs (Zero-allocation / Modern C++) ───
+	struct SceneModifiedData
+	{
+		class Scene* scene = nullptr;
+	};
+
+	struct EntitySelectedData
+	{
+		entt::entity entity = entt::null;
+		class Scene* scene = nullptr;
+		int meshIndex = -1;
+	};
+
+} // namespace Chained
 
 #endif // CH_SCENE_EVENTS_H

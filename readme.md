@@ -1,14 +1,16 @@
-# Chained Decos
 
-## A 3D Parkour Game Built on Chained Engine
+# ChainedEngine
+
+## Custom C++/C# Game Engine with Editor, OpenGL Renderer, and Managed Scripting
 
 [![C++23](https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white)](https://isocpp.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![CI](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/ci.yml?label=CI)](https://github.com/IOleg-crypto/Chained-Decos/actions/workflows/ci.yml)
-[![SDK Deploy](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Decos/deploy-sdk.yml?label=SDK%20Deploy)](https://github.com/IOleg-crypto/Chained-Decos/actions/workflows/deploy-sdk.yml)
+![Workflow Status](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml/badge.svg?branch=opengl)
+[![Linux](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Engine/ci.yml?branch=opengl&job=Linux&label=Linux)](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml)
+[![Windows](https://img.shields.io/github/actions/workflow/status/IOleg-crypto/Chained-Engine/ci.yml?branch=opengl&job=Windows&label=Windows)](https://github.com/IOleg-crypto/Chained-Engine/actions/workflows/ci.yml)
 [![OpenGL](https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl)](https://www.khronos.org/opengl/)
 
-Chained Decos is the game project built on top of Chained Engine, a modular C++23 engine with editor tooling, runtime packaging, ECS architecture, physics, and managed gameplay scripting.
+ChainedEngine is a modular C++23 game engine with editor tooling, runtime packaging, ECS architecture, physics, OpenGL 4.3+ rendering, and managed C# gameplay scripting via Coral. Ships with a parkour game **Chained Decos**.
 
 ![Game Screenshot](https://i.imgur.com/MLIxRhB.png)
 
@@ -18,158 +20,188 @@ Chained Decos is the game project built on top of Chained Engine, a modular C++2
 ## Table of Contents
 
 - [Overview](#overview)
-- [Developer Resources (Deep Dives)](#developer-resources-deep-dives)
-- [Editor and Simulation Workflow](#editor-and-simulation-workflow)
-- [Engine Feature Highlights](#engine-feature-highlights)
-- [Architecture](#architecture)
+- [Quick Start](#quick-start)
+- [Build](#build)
+- [Run](#run)
 - [Working with Projects](#working-with-projects)
 - [Project Structure](#project-structure)
 - [Dependencies](#dependencies)
 - [Prerequisites](#prerequisites)
-- [Quick Start](#quick-start)
-- [Build](#build)
-- [Run](#run)
-- [Gameplay Scripting (C#)](#gameplay-scripting-c)
-- [Assets and Resources](#assets-and-resources)
-- [Physics and Collisions](#physics-and-collisions)
-- [In-Game UI](#in-game-ui)
-- [Extending the Engine (C++)](#extending-the-engine-c)
-- [Debugging and Profiling](#debugging-and-profiling)
 - [Testing](#testing)
 - [CI/CD](#cicd)
 - [Troubleshooting](#troubleshooting)
 - [Known Issues](#known-issues)
+- [Documentation](#documentation)
 - [Contributing](#contributing)
 - [License](#license)
 
 ## Overview
 
-Chained Decos and Chained Engine currently target Windows and Linux.
+Chained Decos and Chained Engine target Windows and Linux.
 
-Main capabilities:
+- OpenGL 4.3+ rendering pipeline with PBR, fog, and shadow mapping
+- ECS-driven scene model using EnTT
+- YAML-based project and scene serialization
+- Editor with hierarchy/inspector/panels and in-editor play mode
+- Managed C# gameplay scripting through Coral (.NET/CoreCLR)
+- UDP networking with client/server model, UPnP port forwarding, and encryption
+- Project export pipeline with compressed asset packs (ZSTD)
+- Visual Animation Graph system (`.chag`)
 
-- OpenGL 4.3+ rendering pipeline with system-specific asset loader registration.
-- ECS-driven scene model using EnTT.
-- YAML-based project and scene serialization with deep configuration support.
-- Editor workflow with hierarchy/inspector/panels and in-editor play mode.
-- Flexible bootstrapping via `ProjectLauncher` for Headless, Runtime, and Editor modes.
-- Managed C# gameplay scripting through Coral (.NET/CoreCLR host).
-
-## Developer Resources (Deep Dives)
-
-For a more detailed look at specific engine systems, please refer to the following guides:
-
-*   [**Engine Architecture**](docs/ARCHITECTURE.md): Bootstrapping, system initialization (SRP), and the main loop.
-*   [**Component Reference**](docs/COMPONENTS.md): Complete list of available ECS components and their roles.
-*   [**Scripting API Guide**](docs/SCRIPTING_API.md): Detailed reference for managed C# development.
-
-## Editor and Simulation Workflow
-
-The editor is the main authoring environment for scene creation, iteration, and play-mode testing.
-
-> [!IMPORTANT]
-> Simulation controls:
->
-> - Press PLAY to enter simulation and capture cursor.
-> - Press Escape to leave simulation control and return to editor interaction.
+> **Inspiration:** ChainedEngine is inspired by [Hazel](https://github.com/TheCherno/Hazel) by TheCherno, with significant custom additions — C# scripting via Coral, Jolt physics, animation graph system, project export pipeline, and multi-platform support.
 
 ![Editor Screenshot 1](https://i.imgur.com/jey25o0.png)
 ![Editor Screenshot 2](https://i.imgur.com/VMhs9Zm.jpeg)
-![Editor Screenshot 3](https://i.imgur.com/4RpCh2P.png)
 
-> [!WARNING]
-> ChainedRuntime is a dedicated wrapper executable for loading and running your project data without the full editor UI.
+## Quick Start
 
-## Engine Feature Highlights
+**Clone:**
+```bash
+git clone --recurse-submodules https://github.com/IOleg-crypto/ChainedEngine.git
+cd ChainedEngine
+git submodule update --init --recursive
+```
 
-- High-performance OpenGL renderer with custom shader workflows.
-- EnTT-based ECS architecture for scalable scene/entity management.
-- Managed C# gameplay scripting through Coral and CoreCLR.
-- BVH-assisted collision and physics systems for gameplay diagnostics.
-- YAML scene/project serialization with UUID-centered identity tracking.
-- Editor undo/redo command history for common content workflows.
-- Asset loading pipeline with dedup-oriented task handling.
-- Virtual file system support is currently planned/in-progress.
+**Configure + Build + Run:**
+```bash
+# Linux
+cmake --preset linux-clang
+cmake --build --preset linux-clang --parallel
+./build/linux-clang/bin/ChainedEditor
 
-## Architecture
+# Windows (MSYS2 Clang)
+cmake --preset windows-clang
+cmake --build --preset windows-clang --parallel
+.\build\windows-clang\bin\ChainedEditor.exe
 
-Chained Engine follows a layered architecture with a Hazel-inspired service/singleton baseline, adapted for this project's engine/editor/runtime split.
+# Windows (MSVC Ninja)
+cmake --preset windows-msvc
+cmake --build --preset windows-msvc --parallel
 
-Core layers:
+# Windows (VS 2026 .sln)
+cmake --preset windows-vs2026
+```
 
-- **Engine Core**: Rendering, scene, physics, audio, assets, platform abstractions.
-- **Bootstrapping**: `ProjectLauncher` utility that handles headless/runtime/editor initialization using a data-driven approach.
-- **Editor**: Content workflows, scene inspection/manipulation, panel-based tooling.
-- **Runtime**: Lightweight executable that loads and runs a project based on its `.chproject` metadata.
-- **Scripting Bridge**: C++/C# interop through Coral.Native and managed assemblies.
+> **Editor play mode:** Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
 
-The game selection itself is build-time, not runtime: `CH_ACTIVE_GAME` chooses which game folder is added to the build graph, while the `.chproject` file decides what the runtime opens.
+## Build
+
+### Presets
+
+| Preset | Generator | Compiler | Use case |
+| :--- | :--- | :--- | :--- |
+| `windows-clang` | Ninja Multi-Config | Clang (MSYS2) | Primary dev |
+| `windows-msvc` | Ninja Multi-Config | MSVC (cl) | MSVC Ninja |
+| `windows-vs2026` | Visual Studio 18 2026 | MSVC | VS solution / CI |
+| `linux-clang` | Ninja Multi-Config | Clang | Linux CI |
+| `linux-gcc` | Ninja Multi-Config | GCC | Linux |
+| `windows-gcc` | Ninja Multi-Config | GCC (MinGW) | MinGW |
+
+**Key CMake variables:**
+- `CH_ACTIVE_GAME` — `chaineddecos` (default) or `testproject`. Build-time only. Switching requires reconfigure.
+- `BUILD_TESTS` — ON by default.
+- `CH_ENGINE_SHARED` — OFF by default (static engine).
+
+If you use Clang on Windows and see Intellisense errors in VS Code, ensure `.vscode/settings.json` points to the correct build dir:
+```json
+"clangd.arguments": ["--compile-commands-dir=${workspaceFolder}/build/windows-clang"]
+```
+
+## Run
+
+Binaries are generated under `build/{preset}/bin/`:
+
+```bash
+# Editor
+./build/linux-clang/bin/ChainedEditor
+.\build\windows-clang\bin\ChainedEditor.exe
+
+# Runtime
+./build/linux-clang/bin/ChainedRuntime path/to/project.chproject
+.\build\windows-clang\bin\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
+```
+
+Runtime CLI: `--project` / `-p`, `--name`, `--width`, `--height`.
 
 ## Working with Projects
 
-The engine supports multiple game projects inside the same repository. Right now, there are two:
-
-- **`chaineddecos`**: the main parkour game.
-- **`testproject`**: a lightweight sandbox project to test features safely.
+The engine supports multiple game projects under `game/`. Currently:
+- **`chaineddecos`** — the main parkour game
+- **`testproject`** — a lightweight sandbox for testing features
 
 ### Switching the Active Game
 
-To keep compile times fast, only one game project is generated in the build graph at a time. This is controlled by the `CH_ACTIVE_GAME` CMake variable.
+```bash
+cmake -S . -B build/windows-clang -DCH_ACTIVE_GAME=testproject
+```
 
-**How to switch:**
-1. **Command Line:** Run CMake with `-DCH_ACTIVE_GAME=...`.
-   ```bash
-   cmake -S . -B build/windows-ninja -DCH_ACTIVE_GAME=testproject
-   ```
-2. **VS Code:** Open the Command Palette (`Ctrl+Shift+P`), choose `CMake: Edit CMake Cache (UI)`, find `CH_ACTIVE_GAME`, change it, and save.
-
-After changing the game, just rebuild the project. The executable name and assets will automatically switch to the new game.
+Or in VS Code: Command Palette → `CMake: Edit CMake Cache (UI)` → change `CH_ACTIVE_GAME`.
 
 ### Creating a New Project
 
-Want to start a new game from scratch? Here is how to hook it up:
+Use the scaffolding script:
+```bash
+python tools/create_game.py MyGame
+python tools/create_game.py MyGame --csproj assets/scripts/MyGame.Scripts.csproj
+```
 
-1. **Create the folder structure:** Make a new directory `game/mygame`.
-2. **Add a CMake script:** Create `game/mygame/CMakeLists.txt` and use the engine's helper macro:
-   ```cmake
-   chained_add_game(MyGameTarget
-       PROJECT_GAME mygame
-       CSHARP_PROJECT "scripts/MyGame.Scripts.csproj" # Omit if you don't use C# yet
-   )
-   ```
-3. **Add the entry point:** Create `game/mygame/src/main.cpp`. The engine uses a modular `ProjectLauncher` to bootstrap the application:
-   ```cpp
-   #include "engine/core/application.h"
-   #include "engine/core/entry_point.h"
-   #include "engine/core/project_launcher.h"
+This creates `game/mygame/` with:
+- `CMakeLists.txt` — wired into the build via auto-discovery
+- `src/main.cpp` — `CreateApplication` entry point
+- `MyGame.chproject` — project metadata
+- `assets/scripts/` — for C# scripts
 
-   namespace CHEngine {
-       Application* CreateApplication(ApplicationCommandLineArgs args) {
-           // Prepare runtime specifications from project data
-           auto details = ProjectLauncher::PrepareRuntime(args);
-           return new Application(details.Spec);
-       }
-   }
-   ```
-4. **Register it:** Open the *root* `CMakeLists.txt`, find the `if(CH_ACTIVE_GAME STREQUAL "...")` block, and add your new game to the list.
+New games are auto-discovered by the root `CMakeLists.txt` — any directory under `game/` with a `CMakeLists.txt` is included when `CH_ACTIVE_GAME` matches.
+
+### Editor‑created projects
+
+The editor (**Project → New Project**) now also generates CMake build scaffolding:
+
+- `{project}/CMakeLists.txt` — `chained_add_game()` boilerplate
+- `{project}/src/main.cpp` — `CreateApplication` entry point
+
+For a standalone build, move the project directory under `game/` (e.g. `game/mygame/`) so it is auto‑discovered by the root `CMakeLists.txt`.
+
+### Project Configuration (`.chproject`)
+
+Each game has a YAML metadata file defining its entry scene, physics, rendering, and window settings. See [User Guide](docs/USER_GUIDE.md) for the full reference.
 
 ## Project Structure
 
-- engine/: core engine modules (graphics, scene, physics, audio, platform, assets).
-- editor/: ChainedEditor application and editor panels/tools.
-- runtime/: ChainedRuntime application and runtime layer.
-- scripting/: script host, glue bindings, and managed build integration.
-- game/chaineddecos/: main game project, gameplay scripts under src/, and managed scripts/tests under scripts/.
-- game/testproject/: alternate standalone game project used for project switching and smaller experiments.
-- tests/: native C++ test target (EngineTests).
-- include/: third-party dependencies as git submodules.
+- `engine/` — core engine modules (graphics, scene, physics, audio, platform, assets, networking)
+- `editor/` — ChainedEditor application and editor panels/tools
+- `runtime/` — ChainedRuntime application and runtime layer
+- `engine/scripting/` — script host, glue bindings, and managed build integration
+- `game/chaineddecos/` — main game project
+- `game/testproject/` — alternate sandbox project
+- `tests/` — native C++ tests (GoogleTest)
+- `thirdparty/` — third-party dependencies (git submodules)
+- `tools/` — build scripts, glue code generator, resource sync
 
 ## Dependencies
 
-This repository relies on git submodules for core third-party libraries (for example EnTT, Assimp, Coral, ImGui, GLFW, GLM, yaml-cpp, GoogleTest, and others under include/).
+| Library | Purpose |
+| :--- | :--- |
+| EnTT | ECS framework |
+| Assimp | 3D model import |
+| Coral | C#/C++ interop |
+| ImGui + ImGuizmo | Editor UI |
+| GLFW + GLAD | Window/OpenGL |
+| GLM | Math library |
+| yaml-cpp | YAML serialization |
+| GoogleTest | Unit/integration tests |
+| JoltPhysics | Physics simulation |
+| zstd + pack (cfnptr) | Asset pack compression |
+| miniaudio | Audio |
+| spdlog | Logging |
+| stb | Image loading |
+| cereal | Binary serialization |
+| reflect-cpp | Runtime reflection |
+| ENet | UDP networking |
+| libsodium | Encryption (xchacha20poly1305) |
+| miniupnpc | UPnP port forwarding |
 
-Always initialize/update submodules before configuring CMake:
-
+Always init submodules before building:
 ```bash
 git submodule update --init --recursive
 ```
@@ -178,16 +210,14 @@ git submodule update --init --recursive
 
 | Tool | Version | Notes |
 | :--- | :--- | :--- |
-| CMake | 3.31+ | Required by top-level CMake configuration. |
-| Compiler | C++23 | GCC 14+, Clang 18+, or MSYS2/MinGW-w64 GCC and Clang on Windows. |
-| Ninja | Latest | Recommended for fast parallel builds. |
-| .NET SDK | 9.0.x | Required for managed scripting/test workflows. |
-| Graphics Driver | OpenGL 4.3+ | Needed for editor/runtime rendering. |
+| CMake | 3.31+ | Required by top-level CMakeLists |
+| Compiler | C++23 | Clang 18+, MSVC (VS2022+), or MSYS2/MinGW-w64 |
+| Ninja | Latest | Recommended for fast parallel builds |
+| .NET SDK | 10.0.x | Required for managed scripting |
+| Graphics Driver | OpenGL 4.3+ | Needed for rendering |
 
-Linux packages used by CI (Ubuntu reference):
-
+Linux packages (Ubuntu reference):
 ```bash
-sudo apt-get update
 sudo apt-get install -y build-essential cmake ninja-build \
   libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
   libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
@@ -195,340 +225,70 @@ sudo apt-get install -y build-essential cmake ninja-build \
   xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
 ```
 
-## Quick Start
-
-1. Clone with submodules:
-
-```bash
-git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Decos.git
-cd Chained-Decos
-git submodule update --init --recursive
-```
-
-1. Configure (examples):
-
-```bash
-# Linux (Ninja)
-cmake --preset linux-clang
-
-# Windows (MSYS2 GCC)
-cmake --preset windows-gcc
-
-# Windows (MSYS2 Clang)
-cmake --preset windows-clang
-```
-
-1. Build:
-
-```bash
-# Ninja presets
-cmake --build --preset linux-clang --parallel
-cmake --build --preset windows-gcc --parallel
-cmake --build --preset windows-clang --parallel
-```
-
-1. Run editor:
-
-```bash
-# Linux
-./build/linux-clang/bin/ChainedEditor
-
-# Windows
-.\build\windows-gcc\bin\ChainedEditor.exe
-```
-
-## Build
-
-CMake presets defined in CMakePresets.json:
-
-- linux-gcc
-- linux-clang
-- windows-gcc
-- windows-clang
-
-Notes:
-
-- BUILD_TESTS defaults to ON in presets.
-- If you switch presets or major toolchains, do a clean configure for that build directory.
-- `CH_ACTIVE_GAME` defaults to `chaineddecos` in CMakePresets.json. Set it to `testproject` when you want the alternate game.
-- Optional compiler cache support is built in through ccache/sccache integration in CI and CMake options.
-- If you use Clang on Windows and see Intellisense errors in VS Code, ensure that `.vscode/settings.json` points to the correct build directory for `clangd`:
-  ```json
-  "clangd.arguments": [
-      "--compile-commands-dir=${workspaceFolder}/build/windows-ninja"
-  ]
-  ```
-
-## Run
-
-Binary outputs are generated under build/{preset}/bin.
-
-Editor:
-
-```bash
-# Linux
-./build/linux-clang/bin/ChainedEditor
-
-# Windows
-.\build\windows-gcc\bin\ChainedEditor.exe
-```
-
-Runtime:
-
-```bash
-# Positional project path
-./build/linux-clang/bin/ChainedRuntime path/to/project.chproject
-
-# Or explicit flag form
-./build/linux-clang/bin/ChainedRuntime --project path/to/project.chproject
-./build/linux-clang/bin/ChainedRuntime --project path/to/project.chproject --name "My Runtime" --width 1600 --height 900
-
-# Windows example
-.\build\windows-gcc\bin\ChainedRuntime.exe --project path\to\project.chproject --name "My Runtime" --width 1600 --height 900
-```
-
-Runtime CLI flags currently supported:
-
-- --project or -p
-- --name
-- --width
-- --height
-
-When you build the alternate game project, the executable name changes with the active target. The runtime still discovers the `.chproject` file from the executable/project directory.
-
-Editor play-mode note:
-
-- Enter Play mode to capture cursor.
-- Press Escape to return control to editor interaction.
-
-## Gameplay Scripting (C#)
-
-Chained Engine uses managed C# for gameplay, powered by Coral (.NET/CoreCLR). This means you write your game logic in C# while the heavy lifting (rendering, physics) stays in C++.
-
-### Writing Your First Script
-
-Scripts live inside your game's source folder (e.g., [game/chaineddecos/src](game/chaineddecos/src)). Here is a practical example of a basic script:
-
-```csharp
-using System;
-using CHEngine;
-
-namespace ChainedDecos
-{
-    public class PlayerController : Script
-    {
-        public float Speed = 5.0f;
-        private TransformComponent _transform;
-
-        protected override void OnCreate()
-        {
-            // Called once when the Entity is initialized
-            _transform = GetComponent<TransformComponent>();
-            Log.Info("Player Controller initialized!");
-        }
-
-        protected override void OnUpdate(float deltaTime)
-        {
-            // Called every frame
-            if (Input.IsKeyDown(KeyCode.W))
-            {
-                Vector3 pos = _transform.Translation;
-                pos.Z -= Speed * deltaTime;
-                _transform.Translation = pos;
-            }
-        }
-    }
-}
-```
-
-### Connecting the Script in the Editor
-
-Once you've written your magical gameplay code, how does the engine know about it?
-
-1. **Build the scripts:** Either rebuild the project through CMake/Ninja, or navigate to your `.csproj` folder and run `dotnet build`.
-2. **Open the Editor** and select the Entity you want to control.
-3. **Add Component:** In the Inspector panel, click **Add Component** and choose **Managed Script Component**.
-4. **Link it:** In the `Class Name` text field, type the **fully qualified name** of your script — namespace included (for example: `ChainedDecos.PlayerController`).
-5. **Play:** Hit the Play button in the editor. The engine will instantly instantiate your C# class and execute your lifecycle methods!
-
-### Under the Hood: Architecture & Registration
-
-If you are modifying the engine itself, you will find the native-to-managed bridge here:
-- **Native Host:** [scripting/scriptengine.h](scripting/scriptengine.h) initializes Coral and loads assemblies.
-- **Interops:** Native C++ calls are exposed to C# via `script_glue.cpp`.
-- **Discovery:** At startup, `ScriptTypeRegistry::Discover()` scans the game DLL for classes deriving from `CHEngine.Script`.
-- **Lifecycle:** `SceneScripting` instantiates your script in C++, calls `__Init()` to cache delegates, and smoothly passes events from the C++ Scene to C#.
-
-### Managed API Surface
-
-- [scripting/managed/src/Script.cs](scripting/managed/src/Script.cs) defines the script lifecycle base class.
-- [scripting/managed/src/Entity.cs](scripting/managed/src/Entity.cs) exposes entity/component access.
-- [scripting/managed/src/SceneAndApplication.cs](scripting/managed/src/SceneAndApplication.cs) exposes scene, audio, application, time, and window helpers.
-- [scripting/managed/src/Input.cs](scripting/managed/src/Input.cs) wraps input queries.
-- [scripting/managed/src/Log.cs](scripting/managed/src/Log.cs) wraps logging.
-- [scripting/managed/src/Math.cs](scripting/managed/src/Math.cs) provides vector and scalar helpers.
-- [scripting/managed/src/UI.cs](scripting/managed/src/UI.cs) exposes minimal UI helpers.
-
-Managed artifacts are built as part of the scripting target when dotnet is available.
-
-## Assets and Resources
-
-All of your 3D models, textures, animations, and sound files must go into your game's `assets/` or `resources/` folder. The engine uses a unified Asset Manager to register files and assign a UUID to them so they are not loaded multiple times.
-
-1. **Importing:** Drag and drop your source file (e.g., `.gltf` model, `.png` texture) directly into the **Content Browser Panel** in the Editor. The system registers it.
-2. **Usage:** Select the Entity in your scene, find the relevant Component (like `MeshComponent`), and assign the newly loaded asset from the browser.
-
-## Physics and Collisions
-
-Chained Engine uses a built-in 3D physics simulation, which is heavily used by parkour traversal scripts in `chaineddecos`.
-
-To add physical behavior to an Entity in the Editor:
-1. Click **Add Component** and select **RigidBodyComponent**. This determines if the object falls (Dynamic) or stays still (Kinematic/Static).
-2. Add a physical shape like a **BoxColliderComponent** or **SphereColliderComponent**.
-
-If you are writing a C# script (inherited from `CHEngine.Script`), you can hook into these collisions directly:
-
-```csharp
-protected override void OnCollisionEnter(Entity other)
-{
-    Log.Info($"Hit something: {other.Name}");
-    if (other.HasComponent<DamageZone>())
-    {
-        // Example: Handle player taking damage
-    }
-}
-```
-
-## In-Game UI
-
-While the Editor UI is drawn using ImGui, the gameplay (In-Game) UI meant for players is accessed through the managed scripting wrapper.
-
-To draw simple HUDs or text menus:
-1. Override the `OnGUI` method in your C# script.
-2. Call static helpers from the `UI` class.
-
-```csharp
-protected override void OnGUI()
-{
-    // Draw some simple text on screen
-    UI.DrawText("Stamina: 100", new Vector2(10.0f, 10.0f), Color.White);
-
-    // Render a button and check if clicked
-    if (UI.DrawButton("Restart Parkour", new Vector2(100.0f, 200.0f)))
-    {
-        // Restart logic here
-    }
-}
-```
-
-## Extending the Engine (C++)
-
-Need performance that scripting can't provide, or want to create a brand new foundational Component? Here is the flow for a native ECS update:
-
-1. **Define the Data:** Add a fast `struct` in `engine/scene/components.h`. We use `EnTT`, so components are simple structs. 
-   ```cpp
-   struct ParkourStateComponent {
-       float Stamina = 100.0f;
-       bool  IsWallRunning = false;
-   };
-   ```
-2. **Support Serialization:** If you want editors to save or load it with the level, update `scene_serializer.cpp` or `yaml_extensions` so YAML knows how to read/write it.
-3. **Expose It to the Editor:** Open `editor/editor_panels.cpp` and add the `ImGui` draw logic for `ParkourStateComponent`.
-4. **Register Loaders (if needed):** If your component needs a custom asset type, register its loader in the appropriate system (e.g., `Renderer::Init()` for graphics assets) to maintain Single Responsibility Principle compliance.
-
-## Debugging and Profiling
-
-If `Chained Decos` ever suffers a frame-rate drop (a lag spike), do not optimize blindly. Use the tools:
-
-- **Built-in Editor Profiler:** Open the **Profiler** panel. It displays a breakdown (in `ms`) of where your frame time went — `Rendering`, `Physics Update`, or `Scripting Update`. Check this first.
-- **C# Debugging with CoreCLR:** Because the engine wraps .NET via Coral, you can attach a C# IDE debugger (like Visual Studio or Rider) to the running Engine/Editor process. Your breakpoints inside `OnUpdate` or `OnCreate` will pause the simulation.
-
 ## Testing
 
-There are two test layers.
-
-Native tests (GoogleTest + CTest):
+Native tests use GoogleTest + CTest, split into unit (fast, no engine runtime) and integration (full engine) targets.
 
 ```bash
-# Build native test target
-cmake --build --preset windows-gcc --target EngineTests --parallel
-
-# Windows Clang variant
-cmake --build --preset windows-clang --target EngineTests --parallel
-
-# Linux variant
-cmake --build --preset linux-clang --target EngineTests --parallel
-
-# Run native tests
-ctest --test-dir build/windows-gcc --output-on-failure
-
-# Windows Clang variant
+# Run all tests
 ctest --test-dir build/windows-clang --output-on-failure
 
-# Linux variant
-ctest --test-dir build/linux-clang --output-on-failure
+# Unit tests only
+ctest --test-dir build/windows-clang -L Unit --output-on-failure
+
+# Integration tests only
+ctest --test-dir build/windows-clang -L Integration --output-on-failure
 ```
 
-Managed gameplay tests (xUnit):
-
-```bash
-dotnet restore ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj
-dotnet test ./game/chaineddecos/scripts/tests/ChainedDecos.Scripts.Tests.csproj -c Release --no-restore
-```
+Managed (C#) tests require .NET SDK 10.0.x on PATH. Without it, the scripting target is silently skipped.
 
 ## CI/CD
 
-CI workflow (.github/workflows/ci.yml):
+CI workflow (`.github/workflows/ci.yml`) fans out to:
+- **Format Check** (`format.yml`): `clang-format-18 --dry-run -Werror` on changed C++ files
+- **Linux Builds** (`linux.yml`): Debug + Release under `xvfb` + Mesa software rendering
+- **Windows Builds** (`windows.yml`): Debug + Release matrix (Clang, MSVC, GCC)
 
-- Dispatches native builds to `.github/workflows/linux.yml` and `.github/workflows/windows.yml`.
-- Dispatches managed tests to `.github/workflows/managed.yml`.
-- Runs CTest for native tests.
-- Runs managed script tests with .NET 9.0.x.
-- Uses software rendering setup for Linux test execution (xvfb + Mesa environment variables).
+Debug builds use `-DENABLE_SANITIZERS=ON` (ASan + UBSan). CTest output is captured as JUnit XML.
 
-Deploy workflow (.github/workflows/deploy-sdk.yml):
-
-- Triggered by v* tags or manual dispatch.
-- Runs managed tests.
-- Builds and packages ChainedEditor and ChainedRuntime artifacts for Linux/Windows.
+Deploy workflow (`.github/workflows/deploy-sdk.yml`): triggered by `v*` tags, packages ChainedEditor + ChainedRuntime artifacts.
 
 ## Troubleshooting
 
-Submodule errors during configure/build:
-
-```bash
-git submodule update --init --recursive
-```
-
-Generator switch conflicts:
-
-- If reusing a build directory with another generator family, reconfigure from a clean build folder for that preset.
-
-Managed build not available:
-
-- Ensure dotnet SDK 9.0.x is installed and available in PATH.
-
-Headless Linux test issues:
-
-- Install the Linux packages listed in Prerequisites.
-- Use xvfb and Mesa software rendering for CI-like environments.
-
-Changing `CH_ACTIVE_GAME` without reconfiguring the build tree can leave stale generated files behind. Reconfigure the same build directory when you switch between `chaineddecos` and `testproject`.
+- **Submodule errors:** `git submodule update --init --recursive`
+- **Generator conflicts:** Reconfigure from a clean build folder when switching generator families
+- **No managed build:** Ensure `dotnet` SDK 10.0.x is on PATH
+- **Linux headless:** Install packages from Prerequisites, use `xvfb` + Mesa
+- **Stale files after `CH_ACTIVE_GAME` change:** Reconfigure the build directory, don't just rebuild
 
 ## Known Issues
 
-- Some native test areas are currently being reworked and may be skipped or gated in CI depending on environment constraints.
-- Runtime and editor workflows are under active iteration.
-- Virtual file system support is planned/in-progress and should not be treated as fully delivered yet.
+- Font system needs rework for in-scene text and editor
+- Some native tests are being reworked and may be skipped in CI
+- Runtime and editor workflows are under active iteration
+- Virtual file system is planned/in-progress
+- **Runtime may have bugs and issues — known problems include font rendering, physics edge cases, and occasional crashes under specific scenarios**
+
+## Documentation
+
+Full guides and references:
+
+| Document | Description |
+| :--- | :--- |
+| [User Guide](docs/USER_GUIDE.md) | Step-by-step: build, run, create scenes, write scripts, export |
+| [Engine Architecture](docs/ARCHITECTURE.md) | Bootstrapping, system initialization, main loop |
+| [Component Reference](docs/COMPONENTS.md) | All ECS components, adding new ones |
+| [Scripting API](docs/SCRIPTING_API.md) | C# API reference: lifecycle, entities, input, UI |
+| [Scripting Interop](docs/SCRIPTING_INTEROP.md) | C++/C# bridge internals |
+| [Animation Graphs](docs/ANIMATION_GRAPHS.md) | Visual animation graph system tutorial |
+| [Export Guide](docs/EXPORT.md) | Project packaging and distribution |
+| [FAQ](docs/FAQ.md) | Common patterns and solutions |
 
 ## Contributing
 
-Contributions are welcome.
-
-- Open issues for bugs/regressions.
-- Submit pull requests for fixes and improvements.
-- Platform/build workflow improvements are especially helpful.
-- Keep documentation changes in this README or in nearby code comments when the detail is local.
+- Open issues for bugs/regressions
+- Submit pull requests for fixes and improvements
+- Platform/build workflow improvements are especially helpful
 
 ## License
 

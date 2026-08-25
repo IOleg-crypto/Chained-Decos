@@ -1,29 +1,24 @@
-add_library(engine_audio ${SUBMODULE_LIB_TYPE}
-        audio.cpp
-        audio.h
+add_library(engine_audio STATIC
+    audio.h
+    audio.cpp
 )
 
 target_include_directories(engine_audio PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/miniaudio
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-
-target_link_libraries(engine_audio PUBLIC 
+target_link_libraries(engine_audio PUBLIC
     engine_core
+    engine_project
+    glm
+    engine_external_miniaudio
 )
 
 if(WIN32)
     target_link_libraries(engine_audio PUBLIC winmm ole32)
 endif()
 
-if(MSVC)
-    target_compile_options(engine_audio PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_audio PRIVATE -Wa,-mbig-obj)
-endif()
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_audio)
+if(TARGET engine_pch)
+    target_link_libraries(engine_audio PRIVATE engine_pch)
 endif()

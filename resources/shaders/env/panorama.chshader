@@ -1,0 +1,11 @@
+# Panorama Shader Metadata
+VertexShader: "skybox.vert"
+FragmentShader: "skybox_panorama.frag"
+
+Uniforms:
+  - u_Projection
+  - u_View
+  - u_Panorama
+  - u_Exposure
+  - u_Brightness
+  - u_Contrast

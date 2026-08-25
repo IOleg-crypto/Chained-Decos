@@ -1,0 +1,10 @@
+set(REFLECTCPP_YAML ON CACHE BOOL "" FORCE)
+set(REFLECTCPP_JSON ON CACHE BOOL "" FORCE)
+set(REFLECTCPP_BUILD_TESTS OFF CACHE BOOL "" FORCE)
+set(REFLECTCPP_BUILD_SHARED OFF CACHE BOOL "" FORCE)
+
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/reflect-cpp/CMakeLists.txt")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/reflect-cpp" EXCLUDE_FROM_ALL)
+else()
+    message(FATAL_ERROR "reflect-cpp submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/reflect-cpp")
+endif()

@@ -2,31 +2,46 @@ name: CI
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, develop, opengl]
     paths:
       - "**/*.cpp"
       - "**/*.h"
+      - "**/*.hpp"
+      - "**/*.c"
+      - "**/*.inl"
       - "**/*.cs"
       - "**/*.csproj"
+      - "**/*.props"
+      - "**/*.py"
+      - "tools/**"
+      - "resources/shaders/**"
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
-      - "cmake/*.cmake"
-      - ".github/workflows/*.yml"
+      - "cmake/**"
+      - ".github/**"
   pull_request:
-    branches: [main, develop, chained-gui, refactor-branch]
+    branches: [main, develop, opengl]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - "**/*.cpp"
       - "**/*.h"
+      - "**/*.hpp"
+      - "**/*.c"
+      - "**/*.inl"
       - "**/*.cs"
       - "**/*.csproj"
+      - "**/*.props"
+      - "**/*.py"
+      - "tools/**"
+      - "resources/shaders/**"
       - "**/CMakeLists.txt"
       - "**/CMakePresets.json"
-      - "cmake/*.cmake"
-      - ".github/workflows/*.yml"
+      - "cmake/**"
+      - ".github/**"
   workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 env:
@@ -36,6 +51,10 @@ env:
   DOTNET_NOLOGO: true
 
 jobs:
+  format:
+    name: Format Check
+    uses: ./.github/workflows/format.yml
+
   linux:
     name: Linux Builds
     uses: ./.github/workflows/linux.yml
@@ -46,14 +65,25 @@ jobs:
     uses: ./.github/workflows/windows.yml
     secrets: inherit
 
-  managed:
-    name: Managed Tests
-    uses: ./.github/workflows/managed.yml
-    secrets: inherit
-
-  quality-gate:
-    name: PR Gate
+  ci-success:
+    name: CI Passed
     runs-on: ubuntu-latest
-    needs: [linux, windows, managed]
+    needs: [format, linux, windows]
+    if: always()
     steps:
-      - run: echo "Native builds and managed tests passed."
+      - name: Evaluate CI status
+        run: |
+          echo "Format Check: ${{ needs.format.result }}"
+          echo "Linux Builds: ${{ needs.linux.result }}"
+          echo "Windows Builds: ${{ needs.windows.result }}"
+
+          if [[ "${{ needs.format.result }}" != "success" ]] || \
+             [[ "${{ needs.linux.result }}" != "success" ]] || \
+             [[ "${{ needs.windows.result }}" != "success" ]]; then
+            echo "CI failed: One or more required workflow jobs did not succeed."
+            exit 1
+          fi
+
+          echo "All CI workflow jobs passed successfully!"
+
+

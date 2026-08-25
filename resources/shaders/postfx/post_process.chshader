@@ -1,0 +1,17 @@
+# Post-Process Shader Metadata
+VertexShader: "post_process.vert"
+FragmentShader: "post_process.frag"
+
+Uniforms:
+  - texture0
+  - texture1
+  - matInverseViewProj
+  - viewPos
+  - uTime
+  - uExposure
+  - uGamma
+  - fogEnabled
+  - fogColor
+  - fogDensity
+  - fogStart
+  - fogEnd

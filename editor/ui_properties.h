@@ -1,372 +1,357 @@
 #ifndef CH_UI_PROPERTIES_H
 #define CH_UI_PROPERTIES_H
 
-#include "editor_gui.h"
-#include "engine/core/reflection.h"
-#include "scripting/scriptengine.h"
-#include "IconsFontAwesome6.h"
+#include "thirdparty/IconsFontAwesome6.h"
+#include "gui.h"
+#include "engine/reflection/reflection.h"
 #include "imgui.h"
 #include "imgui_internal.h"
 
 #include <algorithm>
+#include <cstring>
+#include <functional>
 #include <string_view>
+#include <unordered_map>
+#include <vector>
 
-namespace CHEngine
+namespace Chained
 {
-// Implementation of the Archive concept for ImGui UI
-class UIProperties
-{
-public:
-    UIProperties() = default;
+	// Implementation of the Archive concept for ImGui UI
+	class UIProperties : public IPropertyArchive
+	{
+	public:
+		UIProperties() = default;
 
-    template <typename T> bool Property(const char* name, T& value)
-    {
-        bool changed = false;
-        if constexpr (is_variant_v<T>)
-        {
-            changed = std::visit([&](auto&& v) { return EditorGUI::Property(name, v); }, value);
-        }
-        else if constexpr (std::is_same_v<T, float[4]>)
-        {
-            changed = EditorGUI::Property(name, *(glm::vec4*)&value);
-        }
-        else
-        {
-            changed = EditorGUI::Property(name, value);
-        }
+		virtual ReflectionMode GetReflectionMode() const override
+		{
+			return ReflectionMode::UI;
+		}
+		virtual bool HasChanged() const override
+		{
+			return m_Changed;
+		}
+		virtual void SetChanged(bool changed) override
+		{
+			m_Changed = changed;
+		}
 
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        
-        return changed;
-    }
+		// IPropertyArchive overrides
+		virtual bool Property(const char* name, int& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, float& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, bool& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, std::string& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, glm::vec2& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, glm::vec3& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, glm::vec4& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Property(const char* name, Color& value, const PropertyMeta& meta = {}) override
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		virtual bool Enum(const char* name, int& value, const char** names, int count,
+						  const PropertyMeta& meta = {}) override
+		{
+			return EnumPropertyInternal(name, value, names, count, meta);
+		}
 
-    // Overload for enums
-    bool Property(const char* name, int& value, const char** names, int count)
-    {
-        bool changed = EditorGUI::Property(name, value, names, count);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        return changed;
-    }
+		virtual bool StringEnum(const char* name, std::string& value, const std::vector<std::string>& options,
+								const PropertyMeta& meta = {}) override
+		{
+			return StringEnumInternal(name, value, options, meta);
+		}
 
-    // --- Property methods with metadata ---
-    template <typename T> bool Property(const char* name, T& value, const PropertyMeta& meta)
-    {
-        bool changed = false;
-        
-        // Use metadata hint to select widget
-        if constexpr (std::is_same_v<T, float>)
-        {
-            if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
-            {
-                changed = ImGui::SliderFloat(name, &value, meta.MinValue, meta.MaxValue);
-            }
-            else if (meta.Hint == PropertyMeta::WidgetHint::Default)
-            {
-                changed = ImGui::DragFloat(name, &value, meta.Speed);
-            }
-            else
-            {
-                changed = ImGui::InputFloat(name, &value);
-            }
-        }
-        else if constexpr (std::is_same_v<T, int>)
-        {
-            if (meta.Hint == PropertyMeta::WidgetHint::Slider && meta.MaxValue > meta.MinValue)
-            {
-                changed = ImGui::SliderInt(name, &value, (int)meta.MinValue, (int)meta.MaxValue);
-            }
-            else
-            {
-                changed = EditorGUI::Property(name, value);
-            }
-        }
-        else if constexpr (std::is_same_v<T, std::string>)
-        {
-            if (meta.Hint == PropertyMeta::WidgetHint::Enum && std::string_view(name) == "ClassName")
-            {
-                std::vector<std::string> options;
-                options.emplace_back("-- Select script --");
+		virtual bool Property(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override
+		{
+			return Handle(name, value, meta);
+		}
+		virtual bool Handle(const char* name, uint64_t& value, const PropertyMeta& meta = {}) override
+		{
+			bool changed = EditorGUI::Property(name, value);
+			UpdateState(changed);
+			return changed;
+		}
+		virtual bool File(const char* name, std::string& value, const char* extensions = nullptr,
+						  const PropertyMeta& meta = {}) override
+		{
+			ImGui::BeginDisabled(meta.ReadOnly);
+			bool changed = EditorGUI::FileProperty(name, value, extensions);
+			ImGui::EndDisabled();
+			if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", meta.Tooltip.c_str());
+			}
+			UpdateState(changed);
+			return changed;
+		}
+		virtual void Header(const char* label) override
+		{
+			HeaderInternal(label);
+		}
+		virtual void Separator() override
+		{
+			SeparatorInternal();
+		}
+		bool HasFinished() const
+		{
+			return m_Started && m_Finished;
+		}
+		bool HasStarted() const
+		{
+			return m_Started;
+		}
 
-                for (const auto& [scriptName, scriptType] : ScriptEngine::Get().GetScriptClasses())
-                {
-                    (void)scriptType;
-                    options.emplace_back(scriptName);
-                }
+		// Template methods for non-virtual calls (still used by Properties<UIProperties>)
+		template <typename T> bool Property(const char* name, T& value)
+		{
+			return PropertyInternal(name, value, {});
+		}
+		template <typename T_Enum> bool Property(const char* name, T_Enum& value, const char** names, int count)
+		{
+			return EnumPropertyInternal(name, (int&)value, names, count, {});
+		}
+		template <typename T> bool Property(const char* name, T& value, const PropertyMeta& meta)
+		{
+			return PropertyInternal(name, value, meta);
+		}
+		template <typename T_Enum>
+		bool Property(const char* name, T_Enum& value, const char** names, int count, const PropertyMeta& meta)
+		{
+			return EnumPropertyInternal(name, (int&)value, names, count, meta);
+		}
 
-                if (options.size() > 2)
-                {
-                    std::sort(options.begin() + 1, options.end());
-                }
+		virtual void BeginSequence(const char* name, size_t& size) override
+		{
+			if (ImGui::GetCurrentTable() != nullptr)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+			}
 
-                int currentIndex = 0;
-                for (size_t i = 1; i < options.size(); ++i)
-                {
-                    if (options[i] == value)
-                    {
-                        currentIndex = (int)i;
-                        break;
-                    }
-                }
+			ImGuiTreeNodeFlags flags =
+				ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+			if (ImGui::GetCurrentTable() != nullptr)
+			{
+				flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+			}
 
-                std::vector<const char*> optionNames;
-                optionNames.reserve(options.size());
-                for (const auto& option : options)
-                {
-                    optionNames.push_back(option.c_str());
-                }
+			m_InSequence = ImGui::TreeNodeEx(name, flags);
+			if (m_InSequence && ImGui::GetCurrentTable() != nullptr)
+			{
+				ImGui::TableSetColumnIndex(1);
+			}
+		}
 
-                if (ImGui::Combo(name, &currentIndex, optionNames.data(), (int)optionNames.size()))
-                {
-                    value = (currentIndex > 0 && currentIndex < (int)options.size()) ? options[currentIndex] : std::string();
-                    changed = true;
-                }
-            }
-            else
-            {
-                changed = EditorGUI::Property(name, value);
-            }
-        }
-        else
-        {
-            // Fall back to default for other types
-            changed = EditorGUI::Property(name, value);
-        }
+		virtual void EndSequence() override
+		{
+			if (m_InSequence)
+			{
+				ImGui::TreePop();
+				m_InSequence = false;
+			}
+		}
 
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        return changed;
-    }
+		virtual bool Nested(const char* name, std::function<void(IPropertyArchiveBase&)> callback) override
+		{
+			if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
+			{
+				callback(*this);
+				ImGui::TreePop();
+				return true; // Simplified: assume changed if we opened and called callback
+			}
+			return false;
+		}
 
-    // Enum with metadata
-    bool Property(const char* name, int& value, const char** names, int count, const PropertyMeta& meta)
-    {
-        bool changed = EditorGUI::Property(name, value, names, count);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        return changed;
-    }
+		virtual void BeginMap(const char* name, size_t& size) override
+		{
+			// Not used directly in UI mode — Map() template handles rendering
+		}
 
-    // File with metadata
-    bool File(const char* name, std::string& path, const char* extensions, const PropertyMeta& meta)
-    {
-        bool changed = EditorGUI::FileProperty(name, path, extensions);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        return changed;
-    }
+		virtual void EndMap() override
+		{
+		}
 
-    bool Handle(const char* name, uint64_t& value)
-    {
-        bool changed = EditorGUI::Property(name, value);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        return changed;
-    }
+		virtual bool MapNextKey(std::string& key) override
+		{
+			return false;
+		}
 
-    bool File(const char* name, std::string& path, const char* extensions = nullptr)
-    {
-        bool changed = EditorGUI::FileProperty(name, path, extensions);
-        if (changed) m_Changed = true;
-        if (ImGui::IsItemActivated()) m_Started = true;
-        if (ImGui::IsItemDeactivatedAfterEdit()) m_Finished = true;
-        return changed;
-    }
+		template <typename V> bool Map(const char* name, std::unordered_map<std::string, V>& map)
+		{
+			if (ImGui::GetCurrentTable() != nullptr)
+			{
+				ImGui::TableNextRow();
+				ImGui::TableSetColumnIndex(0);
+				ImGui::AlignTextToFramePadding();
+			}
 
-    void Action(const char* label, std::function<void()> func)
-    {
-        if (EditorGUI::ActionButton(nullptr, label))
-        {
-            func();
-        }
-    }
+			bool localChanged = false;
+			ImGuiTreeNodeFlags flags =
+				ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
+			if (ImGui::GetCurrentTable() != nullptr)
+			{
+				flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+			}
 
-    template <typename T> bool Sequence(const char* name, std::vector<T>& values)
-    {
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-        }
+			if (ImGui::TreeNodeEx(name, flags))
+			{
+				auto it = map.begin();
+				while (it != map.end())
+				{
+					ImGui::PushID(it->first.c_str());
 
-        bool localChanged = false;
-        ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_SpanAvailWidth;
-        if (ImGui::GetCurrentTable() != nullptr) flags |= ImGuiTreeNodeFlags_SpanAllColumns;
+					if (ImGui::GetCurrentTable() != nullptr)
+					{
+						ImGui::TableNextRow();
+						ImGui::TableSetColumnIndex(1);
+					}
 
-        if (ImGui::TreeNodeEx(name, flags))
-        {
-            for (size_t i = 0; i < (int)values.size(); i++)
-            {
-                ImGui::PushID((int)i);
+					if (ImGui::Button(ICON_FA_TRASH))
+					{
+						it = map.erase(it);
+						m_Changed = localChanged = true;
+						ImGui::PopID();
+						continue;
+					}
 
-                if (ImGui::GetCurrentTable() != nullptr)
-                {
-                    ImGui::TableNextRow();
-                    ImGui::TableSetColumnIndex(1);
-                }
+					ImGui::SameLine();
 
-                if (ImGui::Button(ICON_FA_TRASH))
-                {
-                    values.erase(values.begin() + i);
-                    m_Changed = true;
-                    localChanged = true;
-                    ImGui::PopID();
-                    break;
-                }
-                
-                ImGui::SameLine();
-                
-                if constexpr (requires(T t, Properties<UIProperties>& p) { t.Reflect(p); })
-                {
-                    char label[32];
-                    sprintf(label, "Item %d", (int)i);
-                    // Use a nested tree node for complex items
-                    if (ImGui::TreeNodeEx(label, ImGuiTreeNodeFlags_DefaultOpen | ImGuiTreeNodeFlags_SpanAvailWidth))
-                    {
-                        Properties<UIProperties> itemProps(*this);
-                        values[i].Reflect(itemProps);
-                        ImGui::TreePop();
-                    }
-                }
-                else if constexpr (std::is_same_v<T, std::string>)
-                {
-                    char buf[256];
-                    strncpy(buf, values[i].c_str(), sizeof(buf) - 1);
-                    ImGui::SetNextItemWidth(-1);
-                    if (ImGui::InputText("##val", buf, sizeof(buf)))
-                    {
-                        values[i] = buf;
-                        m_Changed = true;
-                        localChanged = true;
-                    }
-                }
-                else
-                {
-                    ImGui::Text("Item %d", (int)i);
-                }
+					// Key input
+					char keyBuf[128];
+					strncpy(keyBuf, it->first.c_str(), sizeof(keyBuf));
+					keyBuf[sizeof(keyBuf) - 1] = '\0';
+					ImGui::SetNextItemWidth(120);
+					if (ImGui::InputText("##key", keyBuf, sizeof(keyBuf)))
+					{
+						std::string newKey = keyBuf;
+						if (newKey != it->first && map.find(newKey) == map.end())
+						{
+							float val = it->second;
+							auto next = map.erase(it);
+							it = map.insert_or_assign(next, newKey, val).first;
+							m_Changed = localChanged = true;
+						}
+						ImGui::PopID();
+						continue;
+					}
 
-                ImGui::PopID();
-                if constexpr (!requires(T t, Properties<UIProperties>& p) { t.Reflect(p); }) 
-                    ImGui::Separator();
-            }
+					ImGui::SameLine();
+					ImGui::Text("=");
+					ImGui::SameLine();
 
-            ImGui::Spacing();
-            if (ImGui::GetCurrentTable() != nullptr)
-            {
-                ImGui::TableNextRow();
-                ImGui::TableSetColumnIndex(1);
-            }
+					// Value input
+					float val = it->second;
+					ImGui::SetNextItemWidth(-1);
+					if (ImGui::DragFloat("##val", &val, 0.01f))
+					{
+						it->second = val;
+						m_Changed = localChanged = true;
+					}
 
-            if (ImGui::Button(ICON_FA_PLUS " Add New Item", ImVec2(-1, 0)))
-            {
-                values.push_back({});
-                m_Changed = true;
-                localChanged = true;
-            }
+					++it;
+					ImGui::PopID();
+					ImGui::Separator();
+				}
 
-            ImGui::TreePop();
-        }
-        return localChanged;
-    }
+				ImGui::Spacing();
+				if (ImGui::GetCurrentTable() != nullptr)
+				{
+					ImGui::TableNextRow();
+					ImGui::TableSetColumnIndex(1);
+				}
 
-    template <typename T> bool Nested(const char* name, T& value)
-    {
-        bool localChanged = false;
-        if (ImGui::TreeNodeEx(name, ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_DefaultOpen))
-        {
-            Properties<UIProperties> itemProps(*this);
-            value.Reflect(itemProps);
-            ImGui::TreePop();
-        }
-        return localChanged;
-    }
+				if (EditorGUI::ActionButton(ICON_FA_PLUS, "Add Variable"))
+				{
+					std::string newKey = "var_" + std::to_string(map.size());
+					map[newKey] = 0.0f;
+					m_Changed = localChanged = true;
+				}
+				ImGui::TreePop();
+			}
+			return localChanged;
+		}
 
-    void Header(const char* label)
-    {
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-        }
-        ImGui::Spacing();
-        ImGui::TextColored({0.2f, 0.7f, 0.9f, 1.0f}, "%s", label);
-        ImGui::Separator();
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-        }
-    }
+	private:
+		bool m_InSequence = false;
 
-    void Separator()
-    {
-        ImGui::Separator();
-    }
+	public:
+		// --- Legacy types or internal helpers if needed ---
+		// Note: Most templates are now handled by the base class Properties<T_Archive>.
 
-    bool BeginGroup(const char* label, bool defaultOpen = true)
-    {
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            ImGui::TableNextRow();
-            ImGui::TableSetColumnIndex(0);
-            ImGui::AlignTextToFramePadding();
-        }
+	private:
+		template <typename T> bool PropertyInternal(const char* name, T& value, const PropertyMeta& meta)
+		{
+			bool changed = false;
+			ImGui::BeginDisabled(meta.ReadOnly);
+			if constexpr (std::is_same_v<T, float>)
+			{
+				changed = EditorGUI::Property(name, value, meta.Speed, meta.MinValue, meta.MaxValue);
+			}
+			else if constexpr (std::is_same_v<T, int>)
+			{
+				changed = EditorGUI::Property(name, value, (int)meta.MinValue, (int)meta.MaxValue);
+			}
+			else if constexpr (std::is_same_v<T, std::string>)
+			{
+				changed = EditorGUI::Property(name, value);
+			}
+			else if constexpr (is_variant_v<T>)
+			{
+				changed = std::visit([&](auto&& v) { return EditorGUI::Property(name, v); }, value);
+			}
+			else if constexpr (std::is_same_v<T, float[4]>)
+			{
+				changed = EditorGUI::Property(name, *(glm::vec4*)&value);
+			}
+			else
+			{
+				if constexpr (requires { EditorGUI::Property(name, value); })
+				{
+					changed = EditorGUI::Property(name, value);
+				}
+			}
+			ImGui::EndDisabled();
 
-        ImGuiTreeNodeFlags flags =
-            ImGuiTreeNodeFlags_Framed | ImGuiTreeNodeFlags_AllowOverlap | ImGuiTreeNodeFlags_FramePadding | 
-            ImGuiTreeNodeFlags_SpanAvailWidth | ImGuiTreeNodeFlags_SpanAllColumns;
-        if (defaultOpen)
-        {
-            flags |= ImGuiTreeNodeFlags_DefaultOpen;
-        }
+			if (!meta.Tooltip.empty() && ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("%s", meta.Tooltip.c_str());
+			}
+			UpdateState(changed);
+			return changed;
+		}
 
-        bool opened = ImGui::TreeNodeEx(label, flags);
-        
-        if (ImGui::GetCurrentTable() != nullptr)
-        {
-            // Move to the next column to ensure the header row context is technically "complete"
-            // although the next property will start a fresh row with TableNextRow().
-            ImGui::TableSetColumnIndex(1);
-        }
+		bool EnumPropertyInternal(const char* name, int& value, const char** names, int count,
+								  const PropertyMeta& meta);
+		bool StringEnumInternal(const char* name, std::string& value, const std::vector<std::string>& options,
+								const PropertyMeta& meta);
+		void HeaderInternal(const char* label);
+		void SeparatorInternal();
+		void UpdateState(bool changed);
 
-        return opened;
-    }
-
-    void EndGroup()
-    {
-        ImGui::TreePop();
-    }
-
-    bool HasFinished() const { return m_Started && m_Finished; }
-    bool HasStarted() const { return m_Started; }
-
-    bool HasChanged() const
-    {
-        return m_Changed;
-    }
-    void SetChanged(bool changed)
-    {
-        m_Changed = changed;
-    }
-    ReflectionMode GetReflectionMode() const
-    {
-        return ReflectionMode::UI;
-    }
-
-private:
-    bool m_Changed = false;
-    bool m_Started = false;
-    bool m_Finished = false;
-};
-} // namespace CHEngine
+		bool m_Changed = false;
+		bool m_Started = false;
+		bool m_Finished = false;
+	};
+} // namespace Chained
 
 #endif // CH_UI_PROPERTIES_H

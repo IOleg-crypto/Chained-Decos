@@ -1,26 +1,38 @@
-#include "engine/core/application.h"
-#include "engine/core/entry_point.h"
-#include "runtime/runtime_layer.h"
-#include "scripting/scriptengine.h"
+#include "engine/app/entry_point.h"
+#include "engine/core/platform.h"
+#include "engine/runtime/runtime_layer.h"
 
-namespace
+namespace Chained
 {
-constexpr const char* kProjectGame = "ChainedDecos";
-}
+	Application* CreateApplication(ApplicationCommandLineArgs args)
+	{
+		ApplicationSpecification spec;
+		spec.Name = "ChainedDecos";
+		spec.CommandLineArgs = args;
+		spec.Headless = false;
+		spec.EnableScripting = true;
+		spec.EngineRoot = Platform::GetExecutableDirectory();
+		spec.WorkingDirectory = Platform::GetExecutableDirectory().string();
 
-namespace CHEngine
-{
-Application* CreateApplication(ApplicationCommandLineArgs args)
-{
-    ApplicationSpecification spec;
-    spec.Name = kProjectGame;
-    spec.CommandLineArgs = args;
+		// Resolve project path: first CLI arg or default
+		std::filesystem::path projectPath;
+		for (int i = 0; i < args.Count; ++i)
+		{
+			std::string arg = args.Args[i];
+			if (arg.ends_with(".chproject"))
+			{
+				projectPath = arg;
+				break;
+			}
+		}
 
-    spec.InitScripting = []() { ScriptEngine::Init(); };
-    spec.ShutdownScripting = []() { ScriptEngine::Shutdown(); };
+		if (projectPath.empty() || !std::filesystem::exists(projectPath))
+		{
+			projectPath = std::filesystem::path(spec.WorkingDirectory) / (spec.Name + ".chproject");
+		}
 
-    Application* app = new Application(spec);
-    app->PushLayer(new RuntimeLayer(""));
-    return app;
-}
-} // namespace CHEngine
+		auto* app = new Application(spec);
+		app->PushLayer(std::make_unique<RuntimeLayer>(projectPath.string()));
+		return app;
+	}
+} // namespace Chained

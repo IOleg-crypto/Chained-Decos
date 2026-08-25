@@ -1,0 +1,16 @@
+# Sprite Shader
+VertexShader: "lighting.vert"
+FragmentShader: "sprite.frag"
+
+Uniforms:
+  - mvp
+  - matModel
+  - texture0
+  - u_Tint
+  - u_Flip
+  - fogEnabled
+  - fogColor
+  - fogDensity
+  - fogStart
+  - fogEnd
+  - uTime

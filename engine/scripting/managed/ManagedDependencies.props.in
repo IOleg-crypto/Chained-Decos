@@ -1,0 +1,5 @@
+<Project>
+  <PropertyGroup>
+    <CoralManagedDir>@CORAL_MANAGED_DIR@</CoralManagedDir>
+  </PropertyGroup>
+</Project>

@@ -1,450 +1,590 @@
 #include "world_panel.h"
-#include "IconsFontAwesome6.h"
-#include "editor/editor_layer.h"
-#include "engine/core/assets/asset_manager.h"
-#include "engine/graphics/assets/environment.h"
-#include "engine/platform/utils/dialogs.h"
-#include "engine/scene/project.h"
+#include "editor/layer.h"
+#include "editor/project/project_serializer.h"
+#include "engine/assets/asset_manager.h"
+#include "engine/assets/types/environment_asset.h"
+#include "engine/core/service_locator.h"
+#include "engine/ui/widget_renderer.h"
+#include "engine/imgui/imgui_layer.h"
+#include "engine/physics/physics.h"
+#include "engine/platform/dialogs/dialogs.h"
+#include "engine/project/project.h"
 #include "scene/scene.h"
+#include "thirdparty/IconsFontAwesome6.h"
 #include <filesystem>
+#include <fstream>
 
-
-namespace CHEngine
+namespace Chained
 {
 
-WorldPanel::WorldPanel()
-{
-    m_Name = "World Settings";
-}
+	static void ColorToFloat4(const Color& c, float out[4])
+	{
+		out[0] = c.r / 255.f;
+		out[1] = c.g / 255.f;
+		out[2] = c.b / 255.f;
+		out[3] = c.a / 255.f;
+	}
 
-void WorldPanel::OnImGuiRender(bool readOnly)
-{
-    if (!m_IsOpen)
-    {
-        return;
-    }
+	static Color Float4ToColor(const float c[4])
+	{
+		return {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255), (uint8_t)(c[2] * 255), (uint8_t)(c[3] * 255)};
+	}
 
-    ImGui::Begin(m_Name.c_str(), &m_IsOpen);
+	static bool DrawDragFloat(const char* label, float* value, float speed = 0.1f, float min = 0.0f, float max = 0.0f,
+							  const char* format = "%.3f")
+	{
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("%s", label);
+		ImGui::SameLine(100);
+		ImGui::SetNextItemWidth(-1);
+		ImGui::PushID(label);
+		bool changed = ImGui::DragFloat("##v", value, speed, min, max, format);
+		ImGui::PopID();
+		return changed;
+	}
 
-    if (!m_Context)
-    {
-        ImGui::Text("No active scene.");
-        ImGui::End();
-        return;
-    }
+	static void SaveProjectConfig()
+	{
+		if (auto project = Project::GetActive())
+		{
+			std::filesystem::path path = project->GetConfig().ProjectDirectory / (project->GetName() + ".chproject");
+			EditorProjectSerializer::Serialize(project, path);
+		}
+	}
 
-    if (ImGui::CollapsingHeader(ICON_FA_GLOBE "  Scene Background", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::Indent(10.0f);
-        if (readOnly)
-        {
-            ImGui::BeginDisabled();
-        }
+	WorldPanel::WorldPanel()
+	{
+		m_Name = "World Settings";
+	}
 
-        const char* bgModes[] = {"Solid Color", "Texture", "3D Environment"};
-        int currentMode = (int)m_Context->GetSettings().Mode;
+	void WorldPanel::OnImGuiRender(bool readOnly)
+	{
+		if (!m_IsOpen)
+		{
+			return;
+		}
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Mode");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(-1);
-        if (ImGui::Combo("##BGMode", &currentMode, bgModes, 3))
-        {
-            m_Context->GetSettings().Mode = (BackgroundMode)currentMode;
-        }
+		ImGui::Begin(m_Name.c_str(), &m_IsOpen);
 
-        if (m_Context->GetSettings().Mode == BackgroundMode::Color)
-        {
-            Color bgColor = m_Context->GetSettings().BackgroundColor;
-            float c[4] = {bgColor.r / 255.f, bgColor.g / 255.f, bgColor.b / 255.f, bgColor.a / 255.f};
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Color");
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::ColorEdit4("##BGColor", c))
-            {
-                m_Context->GetSettings().BackgroundColor = {(uint8_t)(c[0] * 255), (uint8_t)(c[1] * 255),
-                                                            (uint8_t)(c[2] * 255), (uint8_t)(c[3] * 255)};
-            }
-        }
-        else if (m_Context->GetSettings().Mode == BackgroundMode::Texture)
-        {
-            char buffer[256];
-            memset(buffer, 0, sizeof(buffer));
-            strncpy(buffer, m_Context->GetSettings().BackgroundTexturePath.c_str(), sizeof(buffer) - 1);
+		if (!m_Context)
+		{
+			ImGui::Text("No active scene.");
+			ImGui::End();
+			return;
+		}
 
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Texture");
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
-            if (ImGui::InputText("##BGPath", buffer, sizeof(buffer)))
-            {
-                m_Context->GetSettings().BackgroundTexturePath = buffer;
-            }
+		DrawSceneGeneral(readOnly);
+		DrawSceneBackground(readOnly);
 
-            ImGui::SameLine();
-            if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BGSelect"))
-            {
-                std::vector<FileDialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
-                auto result = Dialogs::OpenFile(filters);
-                if (result)
-                {
-                    std::filesystem::path p = *result;
-                    if (Project::GetActive())
-                    {
-                        m_Context->GetSettings().BackgroundTexturePath =
-                            std::filesystem::relative(p, Project::GetAssetDirectory()).string();
-                    }
-                    else
-                    {
-                        m_Context->GetSettings().BackgroundTexturePath = p.filename().string();
-                    }
-                }
-            }
-        }
+		if (m_Context->GetSettings().Mode == BackgroundMode::Environment3D)
+		{
+			DrawPhysicsSettings(readOnly);
+			DrawEnvironmentSection(readOnly);
+		}
 
-        if (readOnly)
-        {
-            ImGui::EndDisabled();
-        }
-        ImGui::Unindent(10.0f);
-    }
+		ImGui::End();
+	}
 
-    if (ImGui::CollapsingHeader(ICON_FA_MICROCHIP "  Physics", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::Indent(10.0f);
-        if (readOnly)
-        {
-            ImGui::BeginDisabled();
-        }
+	void WorldPanel::DrawSceneGeneral(bool readOnly)
+	{
+		if (!ImGui::CollapsingHeader(ICON_FA_SLIDERS "  Scene General", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			return;
+		}
 
-        if (auto project = Project::GetActive())
-        {
-            auto& settings = project->GetConfig().Physics;
+		ImGui::Indent(10.0f);
+		if (readOnly)
+		{
+			ImGui::BeginDisabled();
+		}
 
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Gravity");
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            ImGui::DragFloat("##Gravity", &settings.Gravity, 0.1f);
+		auto& settings = m_Context->GetSettings();
+		const char* typeModes[] = {"Default (3D)", "UI"};
+		int currentType = (int)settings.Type;
 
-            float fps = 1.0f / settings.FixedTimestep;
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("Fixed FPS");
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
-            {
-                settings.FixedTimestep = 1.0f / fps;
-            }
-        }
-        else
-        {
-            ImGui::TextDisabled("No active project.");
-        }
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("Type");
+		ImGui::SameLine(100);
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::Combo("##SceneType", &currentType, typeModes, 2))
+		{
+			settings.Type = (SceneType)currentType;
+		}
 
-        if (readOnly)
-        {
-            ImGui::EndDisabled();
-        }
-        ImGui::Unindent(10.0f);
-    }
+		if (readOnly)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::Unindent(10.0f);
+	}
 
-    ImGui::Spacing();
-    ImGui::Separator();
-    ImGui::Spacing();
+	void WorldPanel::DrawSceneBackground(bool readOnly)
+	{
+		if (!ImGui::CollapsingHeader(ICON_FA_GLOBE "  Scene Background", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			return;
+		}
 
-    auto env = m_Context->GetSettings().Environment;
+		ImGui::Indent(10.0f);
+		if (readOnly)
+		{
+			ImGui::BeginDisabled();
+		}
 
-    if (!readOnly)
-    {
-        if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
-        {
-            std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Dialogs::OpenFile(filters);
-            if (result)
-            {
-                if (auto project = Project::GetActive())
-                {
-                    m_Context->GetSettings().Environment = AssetManager::Get().Get<EnvironmentAsset>(result->string());
-                }
-            }
-        }
+		auto& settings = m_Context->GetSettings();
+		const char* bgModes[] = {"Solid Color", "Texture", "3D Environment"};
+		int currentMode = (int)settings.Mode;
 
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
-        {
-            std::vector<FileDialogFilter> filters = {{"Environment", "chenv"}};
-            auto result = Dialogs::SaveFile(filters);
-            if (result)
-            {
-                auto newEnv = std::make_shared<EnvironmentAsset>();
-                newEnv->SetPath(result->string());
-                m_Context->GetSettings().Environment = newEnv;
-            }
-        }
-    }
+		ImGui::AlignTextToFramePadding();
+		ImGui::Text("Mode");
+		ImGui::SameLine(100);
+		ImGui::SetNextItemWidth(-1);
+		if (ImGui::Combo("##BGMode", &currentMode, bgModes, 3))
+		{
+			settings.Mode = (BackgroundMode)currentMode;
+		}
 
-    if (env)
-    {
-        if (!readOnly)
-        {
-            ImGui::TextDisabled(ICON_FA_FILE_SIGNATURE " %s",
-                                std::filesystem::path(env->GetPath()).filename().string().c_str());
-            ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
+		if (settings.Mode == BackgroundMode::Color)
+		{
+			float c[4];
+			ColorToFloat4(settings.BackgroundColor, c);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Color");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::ColorEdit4("##BGColor", c))
+			{
+				settings.BackgroundColor = Float4ToColor(c);
+			}
+		}
+		else if (settings.Mode == BackgroundMode::Texture)
+		{
+			char buffer[256];
+			snprintf(buffer, sizeof(buffer), "%s", settings.BackgroundTexturePath.c_str());
 
-            if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save"))
-            {
-                const auto& settings = env->GetSettings();
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Texture");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
+			if (ImGui::InputText("##BGPath", buffer, sizeof(buffer)))
+			{
+				settings.BackgroundTexturePath = buffer;
+			}
 
-                YAML::Emitter out;
-                out << YAML::BeginMap;
-                out << YAML::Key << "Environment" << YAML::BeginMap;
-                out << YAML::Key << "Lighting" << YAML::BeginMap;
-                out << YAML::Key << "Direction" << YAML::BeginMap;
-                out << YAML::Key << "X" << YAML::Value << settings.Lighting.Direction.x;
-                out << YAML::Key << "Y" << YAML::Value << settings.Lighting.Direction.y;
-                out << YAML::Key << "Z" << YAML::Value << settings.Lighting.Direction.z;
-                out << YAML::EndMap;
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_FOLDER_OPEN "##BGSelect"))
+			{
+				std::vector<DialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
+				auto result = Chained::Dialogs::OpenFile(filters);
+				if (result)
+				{
+					std::filesystem::path p = *result;
+					if (Project::GetActive())
+					{
+						settings.BackgroundTexturePath =
+							std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
+					}
+					else
+					{
+						settings.BackgroundTexturePath = p.filename().string();
+					}
+				}
+			}
+		}
 
-                out << YAML::Key << "LightColor" << YAML::BeginMap;
-                out << YAML::Key << "R" << YAML::Value << (int)settings.Lighting.LightColor.r;
-                out << YAML::Key << "G" << YAML::Value << (int)settings.Lighting.LightColor.g;
-                out << YAML::Key << "B" << YAML::Value << (int)settings.Lighting.LightColor.b;
-                out << YAML::Key << "A" << YAML::Value << (int)settings.Lighting.LightColor.a;
-                out << YAML::EndMap;
-                out << YAML::Key << "Ambient" << YAML::Value << settings.Lighting.Ambient;
-                out << YAML::Key << "Exposure" << YAML::Value << settings.Lighting.Exposure;
-                out << YAML::Key << "Gamma" << YAML::Value << settings.Lighting.Gamma;
-                out << YAML::EndMap;
+		if (readOnly)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::Unindent(10.0f);
+	}
 
-                out << YAML::Key << "Skybox" << YAML::BeginMap;
-                out << YAML::Key << "TexturePath" << YAML::Value << settings.Skybox.TexturePath;
-                out << YAML::Key << "Exposure" << YAML::Value << settings.Skybox.Exposure;
-                out << YAML::Key << "Brightness" << YAML::Value << settings.Skybox.Brightness;
-                out << YAML::Key << "Contrast" << YAML::Value << settings.Skybox.Contrast;
-                out << YAML::EndMap;
+	void WorldPanel::DrawPhysicsSettings(bool readOnly)
+	{
+		if (!ImGui::CollapsingHeader(ICON_FA_MICROCHIP "  Physics", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			return;
+		}
 
-                out << YAML::Key << "Fog" << YAML::BeginMap;
-                out << YAML::Key << "Enabled" << YAML::Value << settings.Fog.Enabled;
-                out << YAML::Key << "Color" << YAML::BeginMap;
-                out << YAML::Key << "R" << YAML::Value << (int)settings.Fog.FogColor.r;
-                out << YAML::Key << "G" << YAML::Value << (int)settings.Fog.FogColor.g;
-                out << YAML::Key << "B" << YAML::Value << (int)settings.Fog.FogColor.b;
-                out << YAML::Key << "A" << YAML::Value << (int)settings.Fog.FogColor.a;
-                out << YAML::EndMap;
-                out << YAML::Key << "Density" << YAML::Value << settings.Fog.Density;
-                out << YAML::Key << "Start" << YAML::Value << settings.Fog.Start;
-                out << YAML::Key << "End" << YAML::Value << settings.Fog.End;
-                out << YAML::EndMap;
+		ImGui::Indent(10.0f);
+		if (readOnly)
+		{
+			ImGui::BeginDisabled();
+		}
 
-                out << YAML::EndMap;
+		if (auto project = Project::GetActive())
+		{
+			auto& physicsSettings = project->GetConfig().Physics;
 
-                out << YAML::EndMap;
-                out << YAML::EndMap;
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Gravity");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat("##Gravity", &physicsSettings.Gravity, 0.1f);
 
-                std::string path = env->GetPath();
-                std::filesystem::path fullPath(path);
-                std::filesystem::create_directories(fullPath.parent_path());
-                std::ofstream fout(fullPath);
-                if (fout.is_open())
-                {
-                    fout << out.c_str();
-                }
-            }
-        }
+			if (ImGui::IsItemDeactivatedAfterEdit())
+			{
+				SceneState state = EditorLayer::Get().GetSceneState();
+				if (state == SceneState::Play || state == SceneState::Simulate)
+				{
+					if (auto* physics = ServiceLocator::TryGet<Physics>())
+					{
+						if (auto* world = physics->GetWorld())
+						{
+							world->SetGravity(physicsSettings.Gravity);
+						}
+					}
+				}
+				SaveProjectConfig();
+			}
 
-        DrawEnvironmentSettings(env, readOnly);
-    }
+			float fps = 1.0f / physicsSettings.FixedTimestep;
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Fixed FPS");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
+			{
+				physicsSettings.FixedTimestep = 1.0f / fps;
+			}
 
-    ImGui::End();
-}
+			if (ImGui::IsItemDeactivatedAfterEdit())
+			{
+				SaveProjectConfig();
+			}
+		}
+		else
+		{
+			ImGui::TextDisabled("No active project.");
+		}
 
-void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly)
-{
-    auto& settings = env->GetSettings();
+		if (readOnly)
+		{
+			ImGui::EndDisabled();
+		}
+		ImGui::Unindent(10.0f);
 
-    if (ImGui::CollapsingHeader(ICON_FA_SUN "  Global Lighting", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::PushID("GlobalLighting");
-        ImGui::Indent(10.0f);
-        if (readOnly)
-        {
-            ImGui::BeginDisabled();
-        }
+		ImGui::Spacing();
+		ImGui::Separator();
+		ImGui::Spacing();
+	}
 
-        auto drawDragFloat = [&](const char* label, float* value, float speed, float min, float max,
-                                 const char* format = "%.3f") {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label);
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            std::string id = "##";
-            id += label;
-            return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
-        };
+	void WorldPanel::DrawEnvironmentSection(bool readOnly)
+	{
+		auto env = m_Context->GetSettings().Environment;
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Direction");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(-1);
-        ImGui::DragFloat3("##Direction", &settings.Lighting.Direction.x, 0.01f, -1.0f, 1.0f);
+		if (!readOnly)
+		{
+			if (ImGui::Button(ICON_FA_FILE_IMPORT " Load Environment"))
+			{
+				std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
+				auto result = Chained::Dialogs::OpenFile(filters);
+				if (result)
+				{
+					if (auto project = Project::GetActive())
+					{
+						if (auto* am = ServiceLocator::TryGet<AssetManager>())
+						{
+							auto handle = am->ResolveToHandle(result->string());
+							m_Context->GetSettings().Environment = am->Get<EnvironmentAsset>(result->string());
+						}
+					}
+				}
+			}
 
-        float color[4] = {settings.Lighting.LightColor.r / 255.f, settings.Lighting.LightColor.g / 255.f,
-                          settings.Lighting.LightColor.b / 255.f, settings.Lighting.LightColor.a / 255.f};
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Color");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(-1);
-        if (ImGui::ColorEdit4("##LightColor", color))
-        {
-            settings.Lighting.LightColor = {(uint8_t)(color[0] * 255), (uint8_t)(color[1] * 255),
-                                            (uint8_t)(color[2] * 255), (uint8_t)(color[3] * 255)};
-        }
+			ImGui::SameLine();
+			if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
+			{
+				std::vector<DialogFilter> filters = {{"Environment", "chenv"}};
+				auto result = Chained::Dialogs::SaveFile(filters);
+				if (result)
+				{
+					if (result->extension().empty())
+					{
+						result->replace_extension(".chenv");
+					}
 
-        drawDragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
-        drawDragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
-        drawDragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
+					auto newEnv = std::make_shared<EnvironmentAsset>();
+					newEnv->SetPath(result->string());
+					m_Context->GetSettings().Environment = newEnv;
+				}
+			}
+		}
 
-        if (readOnly)
-        {
-            ImGui::EndDisabled();
-        }
-        ImGui::Unindent(10.0f);
-        ImGui::PopID();
-    }
+		if (env)
+		{
+			if (!readOnly)
+			{
+				ImGui::TextDisabled(ICON_FA_FILE_SIGNATURE " %s",
+									std::filesystem::path(env->GetPath()).filename().string().c_str());
+				ImGui::SameLine(ImGui::GetContentRegionAvail().x - 60);
 
-    if (ImGui::CollapsingHeader(ICON_FA_CLOUD "  Skybox", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::PushID("Skybox");
-        ImGui::Indent(10.0f);
-        if (readOnly)
-        {
-            ImGui::BeginDisabled();
-        }
+				if (ImGui::Button(ICON_FA_FLOPPY_DISK " Save"))
+				{
+					const auto& s = env->GetSettings();
 
-        auto drawDragFloat = [&](const char* label, float* value, float speed, float min, float max,
-                                 const char* format = "%.3f") {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label);
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            std::string id = "##";
-            id += label;
-            return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
-        };
+					YAML::Emitter out;
+					out << YAML::BeginMap;
+					out << YAML::Key << "Environment" << YAML::BeginMap;
 
-        char buffer[256];
-        memset(buffer, 0, sizeof(buffer));
-        strncpy(buffer, settings.Skybox.TexturePath.c_str(), sizeof(buffer) - 1);
+					out << YAML::Key << "Lighting" << YAML::BeginMap;
+					out << YAML::Key << "Direction" << YAML::BeginMap;
+					out << YAML::Key << "X" << YAML::Value << s.Lighting.Direction.x;
+					out << YAML::Key << "Y" << YAML::Value << s.Lighting.Direction.y;
+					out << YAML::Key << "Z" << YAML::Value << s.Lighting.Direction.z;
+					out << YAML::EndMap;
+					out << YAML::Key << "LightColor" << YAML::BeginMap;
+					out << YAML::Key << "R" << YAML::Value << (int)s.Lighting.LightColor.r;
+					out << YAML::Key << "G" << YAML::Value << (int)s.Lighting.LightColor.g;
+					out << YAML::Key << "B" << YAML::Value << (int)s.Lighting.LightColor.b;
+					out << YAML::Key << "A" << YAML::Value << (int)s.Lighting.LightColor.a;
+					out << YAML::EndMap;
+					out << YAML::Key << "Ambient" << YAML::Value << s.Lighting.Ambient;
+					out << YAML::Key << "Exposure" << YAML::Value << s.Lighting.Exposure;
+					out << YAML::Key << "Gamma" << YAML::Value << s.Lighting.Gamma;
+					out << YAML::EndMap;
 
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Texture");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
-        if (ImGui::InputText("##SkyPath", buffer, sizeof(buffer)))
-        {
-            settings.Skybox.TexturePath = buffer;
-        }
+					out << YAML::Key << "Skybox" << YAML::BeginMap;
+					out << YAML::Key << "TexturePath" << YAML::Value << s.Skybox.TexturePath;
+					out << YAML::Key << "Mode" << YAML::Value << s.Skybox.Mode;
+					for (int i = 0; i < 6; ++i)
+					{
+						out << YAML::Key << ("CubeFace" + std::to_string(i)) << YAML::Value << s.Skybox.CubeFaces[i];
+					}
+					out << YAML::Key << "Exposure" << YAML::Value << s.Skybox.Exposure;
+					out << YAML::Key << "Brightness" << YAML::Value << s.Skybox.Brightness;
+					out << YAML::Key << "Contrast" << YAML::Value << s.Skybox.Contrast;
+					out << YAML::EndMap;
 
-        ImGui::SameLine();
-        if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
-        {
-            std::vector<FileDialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
-            auto result = Dialogs::OpenFile(filters);
-            if (result)
-            {
-                std::filesystem::path p = *result;
-                if (Project::GetActive())
-                {
-                    settings.Skybox.TexturePath = std::filesystem::relative(p, Project::GetAssetDirectory()).string();
-                }
-                else
-                {
-                    settings.Skybox.TexturePath = p.filename().string();
-                }
-            }
-        }
+					out << YAML::Key << "Fog" << YAML::BeginMap;
+					out << YAML::Key << "Enabled" << YAML::Value << s.Fog.Enabled;
+					out << YAML::Key << "Color" << YAML::BeginMap;
+					out << YAML::Key << "R" << YAML::Value << (int)s.Fog.FogColor.r;
+					out << YAML::Key << "G" << YAML::Value << (int)s.Fog.FogColor.g;
+					out << YAML::Key << "B" << YAML::Value << (int)s.Fog.FogColor.b;
+					out << YAML::Key << "A" << YAML::Value << (int)s.Fog.FogColor.a;
+					out << YAML::EndMap;
+					out << YAML::Key << "Density" << YAML::Value << s.Fog.Density;
+					out << YAML::Key << "Start" << YAML::Value << s.Fog.Start;
+					out << YAML::Key << "End" << YAML::Value << s.Fog.End;
+					out << YAML::Key << "HeightFalloff" << YAML::Value << s.Fog.HeightFalloff;
+					out << YAML::EndMap;
 
-        const char* mapModes[] = {"Sphere", "Cross", "Cubemap"};
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Mapping");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(-1);
-        ImGui::Combo("##MapMode", &settings.Skybox.Mode, mapModes, 3);
-        if (ImGui::IsItemHovered())
-        {
-            ImGui::SetTooltip("Sphere: Equirectangular\nCross: Horizontal Cross\nCubemap: GPU Generated");
-        }
+					out << YAML::EndMap;
+					out << YAML::EndMap;
+					out << YAML::EndMap;
 
-        drawDragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
-        drawDragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
-        drawDragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
+					std::string path = env->GetPath();
+					std::filesystem::path fullPath(path);
+					std::filesystem::create_directories(fullPath.parent_path());
+					std::ofstream fout(fullPath);
+					if (fout.is_open())
+					{
+						fout << out.c_str();
+					}
+				}
+			}
 
-        if (readOnly)
-        {
-            ImGui::EndDisabled();
-        }
-        ImGui::Unindent(10.0f);
-        ImGui::PopID();
-    }
+			DrawEnvironmentSettings(env, readOnly);
+		}
+	}
 
-    if (ImGui::CollapsingHeader(ICON_FA_SMOG "  Fog Visibility", ImGuiTreeNodeFlags_DefaultOpen))
-    {
-        ImGui::PushID("FogVisibility");
-        ImGui::Indent(10.0f);
-        if (readOnly)
-        {
-            ImGui::BeginDisabled();
-        }
+	void WorldPanel::DrawEnvironmentSettings(std::shared_ptr<EnvironmentAsset> env, bool readOnly)
+	{
+		auto& settings = env->GetSettings();
 
-        auto drawDragFloat = [&](const char* label, float* value, float speed, float min, float max,
-                                 const char* format = "%.3f") {
-            ImGui::AlignTextToFramePadding();
-            ImGui::Text("%s", label);
-            ImGui::SameLine(100);
-            ImGui::SetNextItemWidth(-1);
-            std::string id = "##";
-            id += label;
-            return ImGui::DragFloat(id.c_str(), value, speed, min, max, format);
-        };
+		if (ImGui::CollapsingHeader(ICON_FA_SUN "  Global Lighting", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::PushID("GlobalLighting");
+			ImGui::Indent(10.0f);
+			if (readOnly)
+			{
+				ImGui::BeginDisabled();
+			}
 
-        auto& fog = settings.Fog;
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Enabled");
-        ImGui::SameLine(100);
-        ImGui::Checkbox("##FogEnabled", &fog.Enabled);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Direction");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			ImGui::DragFloat3("##Direction", &settings.Lighting.Direction.x, 0.01f, -1.0f, 1.0f);
 
-        float fogColor[4] = {fog.FogColor.r / 255.f, fog.FogColor.g / 255.f, fog.FogColor.b / 255.f,
-                             fog.FogColor.a / 255.f};
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Color");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(-1);
-        if (ImGui::ColorEdit4("##FogColor", fogColor))
-        {
-            fog.FogColor = {(uint8_t)(fogColor[0] * 255), (uint8_t)(fogColor[1] * 255), (uint8_t)(fogColor[2] * 255),
-                            (uint8_t)(fogColor[3] * 255)};
-        }
+			float color[4];
+			ColorToFloat4(settings.Lighting.LightColor, color);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Color");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::ColorEdit4("##LightColor", color))
+			{
+				settings.Lighting.LightColor = Float4ToColor(color);
+			}
 
-        const char* fogModes[] = {"Linear", "Exponential", "Exponential Squared"};
-        ImGui::AlignTextToFramePadding();
-        ImGui::Text("Mode");
-        ImGui::SameLine(100);
-        ImGui::SetNextItemWidth(-1);
-        ImGui::Combo("##FogMode", &fog.Mode, fogModes, 3);
+			DrawDragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
+			DrawDragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
+			DrawDragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
 
-        drawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 0.1f, "%.4f");
-        drawDragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
-        drawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
+			if (readOnly)
+			{
+				ImGui::EndDisabled();
+			}
+			ImGui::Unindent(10.0f);
+			ImGui::PopID();
+		}
 
-        if (readOnly)
-        {
-            ImGui::EndDisabled();
-        }
-        ImGui::Unindent(10.0f);
-        ImGui::PopID();
-    }
-}
+		if (ImGui::CollapsingHeader(ICON_FA_CLOUD "  Skybox", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::PushID("Skybox");
+			ImGui::Indent(10.0f);
+			if (readOnly)
+			{
+				ImGui::BeginDisabled();
+			}
 
-} // namespace CHEngine
+			const char* mapModes[] = {"Sphere", "Cross", "Cubemap", "Six Faces"};
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Mapping");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			ImGui::Combo("##MapMode", &settings.Skybox.Mode, mapModes, 4);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Sphere: Equirectangular\nCross: Horizontal Cross\nCubemap: GPU Generated\nSix "
+								  "Faces: 6 Separate Images");
+			}
+
+			if (settings.Skybox.Mode == 3)
+			{
+				const char* faceLabels[] = {"Right (+X)", "Left (-X)",	"Up (+Y)",
+											"Down (-Y)",  "Front (+Z)", "Back (-Z)"};
+				for (int i = 0; i < 6; ++i)
+				{
+					char buffer[256];
+					snprintf(buffer, sizeof(buffer), "%s", settings.Skybox.CubeFaces[i].c_str());
+
+					ImGui::AlignTextToFramePadding();
+					ImGui::Text("%s", faceLabels[i]);
+					ImGui::SameLine(100);
+					ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
+					std::string inputId = "##SkyFace" + std::to_string(i);
+					if (ImGui::InputText(inputId.c_str(), buffer, sizeof(buffer)))
+					{
+						settings.Skybox.CubeFaces[i] = buffer;
+					}
+
+					ImGui::SameLine();
+					std::string btnId = ICON_FA_FOLDER_OPEN "##SkyFaceBtn" + std::to_string(i);
+					if (ImGui::Button(btnId.c_str()))
+					{
+						std::vector<DialogFilter> filters = {{"Textures", "png,jpg,tga,bmp"}};
+						auto result = Chained::Dialogs::OpenFile(filters);
+						if (result)
+						{
+							std::filesystem::path p = *result;
+							if (Project::GetActive())
+							{
+								settings.Skybox.CubeFaces[i] =
+									std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
+							}
+							else
+							{
+								settings.Skybox.CubeFaces[i] = p.filename().string();
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				char buffer[256];
+				snprintf(buffer, sizeof(buffer), "%s", settings.Skybox.TexturePath.c_str());
+
+				ImGui::AlignTextToFramePadding();
+				ImGui::Text("Texture");
+				ImGui::SameLine(100);
+				ImGui::SetNextItemWidth(ImGui::GetContentRegionAvail().x - 35);
+				if (ImGui::InputText("##SkyPath", buffer, sizeof(buffer)))
+				{
+					settings.Skybox.TexturePath = buffer;
+				}
+
+				ImGui::SameLine();
+				if (ImGui::Button(ICON_FA_FOLDER_OPEN "##SkySelect"))
+				{
+					std::vector<DialogFilter> filters = {{"Textures/HDR", "png,jpg,hdr"}};
+					auto result = Chained::Dialogs::OpenFile(filters);
+					if (result)
+					{
+						std::filesystem::path p = *result;
+						if (Project::GetActive())
+						{
+							settings.Skybox.TexturePath =
+								std::filesystem::relative(p, Project::GetActive()->GetAssetDirectory()).string();
+						}
+						else
+						{
+							settings.Skybox.TexturePath = p.filename().string();
+						}
+					}
+				}
+			}
+
+			DrawDragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
+			DrawDragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
+			DrawDragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
+
+			if (readOnly)
+			{
+				ImGui::EndDisabled();
+			}
+			ImGui::Unindent(10.0f);
+			ImGui::PopID();
+		}
+
+		if (ImGui::CollapsingHeader(ICON_FA_SMOG "  Fog Visibility", ImGuiTreeNodeFlags_DefaultOpen))
+		{
+			ImGui::PushID("FogVisibility");
+			ImGui::Indent(10.0f);
+			if (readOnly)
+			{
+				ImGui::BeginDisabled();
+			}
+
+			auto& fog = settings.Fog;
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Enabled");
+			ImGui::SameLine(100);
+			ImGui::Checkbox("##FogEnabled", &fog.Enabled);
+
+			float fogColor[4];
+			ColorToFloat4(fog.FogColor, fogColor);
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Color");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			if (ImGui::ColorEdit4("##FogColor", fogColor))
+			{
+				fog.FogColor = Float4ToColor(fogColor);
+			}
+
+			const char* fogModes[] = {"Linear", "Exponential", "Exponential Squared"};
+			ImGui::AlignTextToFramePadding();
+			ImGui::Text("Mode");
+			ImGui::SameLine(100);
+			ImGui::SetNextItemWidth(-1);
+			ImGui::Combo("##FogMode", &fog.Mode, fogModes, 3);
+
+			DrawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 10.f, "%.4f");
+			DrawDragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
+			DrawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
+			DrawDragFloat("Height Falloff", &fog.HeightFalloff, 0.01f, 0.0f, 1.0f, "%.2f");
+
+			if (readOnly)
+			{
+				ImGui::EndDisabled();
+			}
+			ImGui::Unindent(10.0f);
+			ImGui::PopID();
+		}
+	}
+
+} // namespace Chained

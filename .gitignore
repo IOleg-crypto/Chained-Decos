@@ -58,7 +58,6 @@ include/*-build/
 build/
 cmake-build-*/
 
-.cmake
 .cache
 .zencoder
 .idea/
@@ -86,3 +85,32 @@ engine/script/managed/ManagedDependencies.props
 *.log
 
 build_error.txt
+
+# Engine Cache
+*.chcache
+*.chasset
+*.pdf
+
+.opencode
+.claude
+.zcode
+AGENTS.md
+CLAUDE.md
+# CMake install directory
+install/
+
+# Deploy packaging
+package/
+
+# Test results
+*.trx
+
+# Zip archives (SDK builds)
+*.zip
+*.tar.gz
+
+exported
+
+nul
+
+.serena

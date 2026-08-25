@@ -1,86 +1,83 @@
 #ifndef CH_AUDIO_H
 #define CH_AUDIO_H
 
-#include "engine/core/timestep.h"
-#include "engine/core/uuid.h" // Assuming AssetHandle / UUID is here. If not, include where AssetHandle is.
+#include "engine/assets/asset.h"
+#include "engine/common/timestep.h"
 #include <glm/glm.hpp>
 #include <memory>
 #include <miniaudio.h>
 #include <mutex>
 #include <string>
-#include <unordered_map>
 #include <vector>
+#include "engine/core/service.h"
 
-namespace CHEngine
+namespace Chained
 {
-using AudioHandle = UUID;
 
-struct SoundInstance
-{
-    ma_sound Sound;
-    ma_audio_buffer Buffer;
-    AudioHandle Handle;
-};
-struct AudioData
-{
-    std::vector<float> PCMData;
-    uint32_t Channels = 0;
-    uint32_t SampleRate = 0;
+	struct SoundInstance
+	{
+		ma_sound Sound;
+		ma_decoder Decoder;
+		std::vector<uint8_t> SoundData;
+		bool HasDecoder = false;
+		bool HasSound = false; // true only after ma_sound_init_* succeeded
+		AssetHandle Handle;
+	};
 
-    // For play usage inside Audio
-    const float* Data() const
-    {
-        return PCMData.data();
-    }
-    uint32_t Size() const
-    {
-        return (uint32_t)PCMData.size();
-    }
-};
+	// Custom deleter for ma_engine
+	struct MiniaudioEngineDeleter
+	{
+		void operator()(ma_engine* engine) const
+		{
+			if (engine)
+			{
+				ma_engine_uninit(engine);
+				delete engine;
+			}
+		}
+	};
 
-class Audio
-{
-public:
-    static Audio& Get()
-    {
-        static Audio instance;
-        return instance;
-    }
+	class Audio : public Service
+	{
+	public:
+		virtual void Initialize() override;
+		void Update(Timestep ts);
+		virtual void Shutdown() override;
 
-    Audio(const Audio&) = delete;
-    Audio& operator=(const Audio&) = delete;
+	public:
+		Audio();
+		virtual ~Audio() override;
 
-    void Update(Timestep ts);
-    void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
+	public:
+		void SetListenerPosition(const glm::vec3& position, const glm::vec3& forward, const glm::vec3& up);
 
-    // Loads audio from disk synchronously. Returns a Handle that is fast & safe to use.
-    AudioHandle LoadSound(const std::string& filepath);
-    // Returns true if handle is valid and data is loaded. (0 is invalid handle in Hazel style)
-    bool IsSoundLoaded(AudioHandle handle) const;
-    bool IsPlaying(AudioHandle handle) const;
+	public:
+		AssetHandle LoadSound(const std::string& filepath);
+		bool IsSoundLoaded(AssetHandle handle) const;
+		bool IsPlaying(AssetHandle handle) const;
 
-    // Plays a sound.
-    void Play(AudioHandle handle, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false,
-              const glm::vec3& pos = {0, 0, 0});
+		void Play(AssetHandle handle, float volume = 1.0f, float pitch = 1.0f, bool loop = false, bool spatial = false,
+				  const glm::vec3& pos = {0, 0, 0});
 
-    // Stops any active instance that was loaded from the given path.
-    void Stop(const std::string& filepath);
-    void Stop(AudioHandle handle);
+		void SetInstancePosition(AssetHandle handle, const glm::vec3& pos);
+		void SetVolume(AssetHandle handle, float volume);
+		void SetPitch(AssetHandle handle, float pitch);
 
-    void StopAll();
+		void Stop(const std::string& filepath);
+		void Stop(AssetHandle handle);
+		void StopAll();
 
-private:
-    Audio();
-    ~Audio();
+	public:
+		ma_engine* GetEngine() const;
 
-private:
-    ma_engine* m_Engine = nullptr;
+	private:
+		std::unique_ptr<ma_engine, MiniaudioEngineDeleter> m_engine;
 
-    mutable std::mutex m_DataMutex;
-    std::unordered_map<AudioHandle, AudioData> m_AudioDataRegistry;
-    std::unordered_map<std::string, AudioHandle> m_PathRegistry;
-};
+	private:
+		mutable std::mutex m_DataMutex;
+		std::vector<std::unique_ptr<SoundInstance>> m_ActiveSounds;
+	};
 
-} // namespace CHEngine
+} // namespace Chained
 
 #endif // CH_AUDIO_H

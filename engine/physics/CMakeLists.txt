@@ -1,43 +1,26 @@
-add_library(engine_physics ${SUBMODULE_LIB_TYPE}
-        physics.cpp
-        dynamics.cpp
-    collision_core.cpp
-    raycast_query.cpp
-        bvh/bvh_cache.cpp
-        bvh/bvh.cpp
-        collision/collision_triangle.cpp
-
-        physics.h
-        dynamics.h
-    collision_core.h
-    raycast_query.h
-        bvh/bvh_cache.h
-        bvh/bvh.h
-        bvh/bvh_node.h
-        collision/collision.h
-        collision/collision_triangle.h
-        raycast_result.h
+add_library(engine_physics STATIC
+    physics.h
+    physics.cpp
+    iphysics_world.h
+    physics_types.h
+    raycast_result.h
+    jolt_physics_world.h
+    jolt_physics_world.cpp
 )
 
 target_include_directories(engine_physics PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${assimp_SOURCE_DIR}/include
-    ${assimp_BINARY_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/entt/src
-    ${CMAKE_SOURCE_DIR}/include/glfw/include
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-target_link_libraries(engine_physics PUBLIC 
+target_link_libraries(engine_physics PUBLIC
     engine_core
-    EnTT::EnTT
+    engine_project
+    engine_external_entt
+    glm
+    Jolt
 )
 
-if(MSVC)
-    target_compile_options(engine_physics PRIVATE /bigobj)
-elseif(MINGW)
-    target_compile_options(engine_physics PRIVATE -Wa,-mbig-obj)
-endif()
-
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_physics)
+if(TARGET engine_pch)
+    target_link_libraries(engine_physics PRIVATE engine_pch)
 endif()

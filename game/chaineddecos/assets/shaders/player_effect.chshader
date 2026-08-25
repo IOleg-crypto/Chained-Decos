@@ -1,14 +1,7 @@
 # Player Effect Shader Metadata
-VertexShader: "player_effect.vs"
-FragmentShader: "player_effect.fs"
+VertexShader: "player_effect.vert"
+FragmentShader: "player_effect.frag"
 
 Uniforms:
-  - mvp
-  - matModel
-  - matView
-  - matProjection
-  - texture0
-  - colDiffuse
   - fallSpeed
-  - time
   - windDirection

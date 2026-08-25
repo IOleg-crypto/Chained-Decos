@@ -3,16 +3,16 @@
 
 #include "panel.h"
 
-namespace CHEngine
+namespace Chained
 {
-class EffectsPanel : public Panel
-{
-public:
-    EffectsPanel();
+	class EffectsPanel : public Panel
+	{
+	public:
+		EffectsPanel();
 
-public:
-    virtual void OnImGuiRender(bool readOnly = false) override;
-};
-} // namespace CHEngine
+	public:
+		virtual void OnImGuiRender(bool readOnly = false) override;
+	};
+} // namespace Chained
 
 #endif // CH_EFFECTS_PANEL_H

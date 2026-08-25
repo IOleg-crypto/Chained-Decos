@@ -1,0 +1,510 @@
+#include "network_panel.h"
+#include "engine/networking/network_service.h"
+#include "engine/scene/systems/network_system.h"
+#include "engine/core/service_locator.h"
+#include "imgui.h"
+#include <cstdint>
+#include <cstdlib>
+#include <cstring>
+#include <future>
+#include <chrono>
+
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+#include <winhttp.h>
+#pragma comment(lib, "winhttp.lib")
+#endif
+
+namespace Chained
+{
+
+	/// Performs a blocking HTTP GET to api.ipify.org and returns the plain-text
+	/// public IP. Called from a background thread via std::async — must not touch
+	/// ImGui or any engine state.
+	/// @param useIPv6 If true, fetches IPv6 address from ipv6.api.ipify.org
+	static std::string FetchPublicIPBlocking(bool useIPv6 = false)
+	{
+#ifdef _WIN32
+		const wchar_t* host = useIPv6 ? L"ipv6.api.ipify.org" : L"api.ipify.org";
+		HINTERNET hSession = WinHttpOpen(L"ChainedEditor/1.0", WINHTTP_ACCESS_TYPE_AUTOMATIC_PROXY,
+										 WINHTTP_NO_PROXY_NAME, WINHTTP_NO_PROXY_BYPASS, 0);
+		if (!hSession)
+		{
+			return "(error: WinHttpOpen)";
+		}
+
+		HINTERNET hConnect = WinHttpConnect(hSession, host, INTERNET_DEFAULT_HTTP_PORT, 0);
+		if (!hConnect)
+		{
+			WinHttpCloseHandle(hSession);
+			return "(error: WinHttpConnect)";
+		}
+
+		HINTERNET hRequest = WinHttpOpenRequest(hConnect, L"GET", L"/?format=text", nullptr, WINHTTP_NO_REFERER,
+												WINHTTP_DEFAULT_ACCEPT_TYPES, 0);
+		if (!hRequest)
+		{
+			WinHttpCloseHandle(hConnect);
+			WinHttpCloseHandle(hSession);
+			return "(error: WinHttpOpenRequest)";
+		}
+
+		BOOL sent = WinHttpSendRequest(hRequest, WINHTTP_NO_ADDITIONAL_HEADERS, 0, WINHTTP_NO_REQUEST_DATA, 0, 0, 0);
+		if (!sent || !WinHttpReceiveResponse(hRequest, nullptr))
+		{
+			WinHttpCloseHandle(hRequest);
+			WinHttpCloseHandle(hConnect);
+			WinHttpCloseHandle(hSession);
+			return "(error: send/receive)";
+		}
+
+		std::string result;
+		DWORD bytesAvail = 0;
+		while (WinHttpQueryDataAvailable(hRequest, &bytesAvail) && bytesAvail > 0)
+		{
+			std::string chunk(bytesAvail, '\0');
+			DWORD bytesRead = 0;
+			if (WinHttpReadData(hRequest, chunk.data(), bytesAvail, &bytesRead))
+			{
+				result.append(chunk.data(), bytesRead);
+			}
+		}
+
+		WinHttpCloseHandle(hRequest);
+		WinHttpCloseHandle(hConnect);
+		WinHttpCloseHandle(hSession);
+		return result.empty() ? "(empty response)" : result;
+#else
+		const char* url = useIPv6 ? "https://ipv6.api.ipify.org" : "https://api.ipify.org";
+		char cmd[256];
+		snprintf(cmd, sizeof(cmd), "curl -s --max-time 5 %s 2>/dev/null", url);
+		FILE* pipe = popen(cmd, "r");
+		if (!pipe)
+		{
+			return "(install curl)";
+		}
+		char buf[128] = {};
+		fgets(buf, sizeof(buf), pipe);
+		pclose(pipe);
+		std::string r(buf);
+		while (!r.empty() && (r.back() == '\n' || r.back() == '\r'))
+		{
+			r.pop_back();
+		}
+		return r.empty() ? "(empty response)" : r;
+#endif
+	}
+
+	NetworkPanel::NetworkPanel()
+	{
+		m_Name = "Network";
+	}
+
+	NetworkPanel::~NetworkPanel() = default;
+
+	void NetworkPanel::OnImGuiRender(bool /*readOnly*/)
+	{
+		if (!m_IsOpen)
+		{
+			return;
+		}
+
+		ImGui::SetNextWindowSize(ImVec2(420, 380), ImGuiCond_FirstUseEver);
+
+		if (ImGui::Begin(m_Name.c_str(), &m_IsOpen))
+		{
+			auto* net = ServiceLocator::TryGet<Network>();
+
+			// --- Status bar ---
+			if (net && net->IsConnected())
+			{
+				const char* roleStr = net->IsHost() ? "HOST" : "CLIENT";
+				ImGui::Text("Status: %s", roleStr);
+				ImGui::SameLine();
+				ImGui::TextDisabled("(%zu connected)", net->GetClientCount());
+			}
+			else
+			{
+				ImGui::TextDisabled("Status: Offline");
+			}
+
+			ImGui::Separator();
+
+			// --- Tab Bar ---
+			if (ImGui::BeginTabBar("##NetworkTabs"))
+			{
+				if (ImGui::BeginTabItem("Host"))
+				{
+					DrawHostTab();
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Connect"))
+				{
+					DrawConnectTab();
+					ImGui::EndTabItem();
+				}
+
+				if (ImGui::BeginTabItem("Players"))
+				{
+					DrawPlayersTab();
+					ImGui::EndTabItem();
+				}
+
+				ImGui::EndTabBar();
+			}
+
+			// --- Status message ---
+			if (!m_StatusMessage.empty())
+			{
+				ImGui::Separator();
+				if (m_StatusIsError)
+				{
+					ImGui::TextColored(ImVec4(1.0f, 0.4f, 0.4f, 1.0f), "%s", m_StatusMessage.c_str());
+				}
+				else
+				{
+					ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "%s", m_StatusMessage.c_str());
+				}
+			}
+		}
+
+		ImGui::End();
+	}
+
+	void NetworkPanel::DrawHostTab()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+
+		// --- Poll async public IP result ---
+		if (m_FetchingIP && m_IpFuture.valid())
+		{
+			if (m_IpFuture.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+			{
+				m_PublicIP = m_IpFuture.get();
+				m_FetchingIP = false;
+			}
+		}
+
+		// --- Poll async IPv6 public IP result ---
+		if (m_FetchingIPv6 && m_IpFutureIPv6.valid())
+		{
+			if (m_IpFutureIPv6.wait_for(std::chrono::seconds(0)) == std::future_status::ready)
+			{
+				m_PublicIPv6 = m_IpFutureIPv6.get();
+				m_FetchingIPv6 = false;
+			}
+		}
+
+		if (net && net->IsHost())
+		{
+			ImGui::Text("Server is running.");
+			ImGui::Separator();
+
+			ImGui::Text("Port: %u", net->GetPort());
+			ImGui::Text("Max clients: %d", m_MaxClients);
+			ImGui::Text("Connected: %zu", net->GetClientCount());
+
+			ImGui::Separator();
+
+			// ── Public IPv4 block ───────────────────────────────────────────────
+			ImGui::TextColored(ImVec4(1.0f, 0.8f, 0.3f, 1.0f), "Public IPv4 (for internet play):");
+			ImGui::SameLine();
+			if (m_FetchingIP)
+			{
+				ImGui::TextDisabled("fetching...");
+			}
+			else if (m_PublicIP.empty())
+			{
+				ImGui::TextDisabled("(not fetched)");
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Fetch##ipv4"))
+				{
+					m_FetchingIP = true;
+					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
+				}
+			}
+			else
+			{
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "%s:%u", m_PublicIP.c_str(), net->GetPort());
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Copy##ipv4"))
+				{
+					std::string full = m_PublicIP + ":" + std::to_string(net->GetPort());
+					ImGui::SetClipboardText(full.c_str());
+					m_StatusMessage = "Copied: " + full;
+					m_StatusIsError = false;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Refresh##ipv4"))
+				{
+					m_PublicIP.clear();
+					m_FetchingIP = true;
+					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
+				}
+			}
+			ImGui::TextDisabled("Forward UDP port %u on your router to play over the internet.", net->GetPort());
+
+			ImGui::Separator();
+
+			// ── Public IPv6 block ───────────────────────────────────────────────
+			ImGui::TextColored(ImVec4(0.6f, 0.4f, 1.0f, 1.0f), "Public IPv6 (if available):");
+			ImGui::SameLine();
+			if (m_FetchingIPv6)
+			{
+				ImGui::TextDisabled("fetching...");
+			}
+			else if (m_PublicIPv6.empty())
+			{
+				ImGui::TextDisabled("(not fetched)");
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Fetch##ipv6"))
+				{
+					m_FetchingIPv6 = true;
+					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
+				}
+			}
+			else if (m_PublicIPv6.find("error") != std::string::npos || m_PublicIPv6.find("empty") != std::string::npos)
+			{
+				ImGui::TextDisabled("IPv6 not available (CGNAT or no IPv6 support)");
+			}
+			else
+			{
+				// IPv6 addresses need brackets in URLs
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.6f, 1.0f), "[%s]:%u", m_PublicIPv6.c_str(), net->GetPort());
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Copy##ipv6"))
+				{
+					std::string full = "[" + m_PublicIPv6 + "]:" + std::to_string(net->GetPort());
+					ImGui::SetClipboardText(full.c_str());
+					m_StatusMessage = "Copied IPv6: " + full;
+					m_StatusIsError = false;
+				}
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Refresh##ipv6"))
+				{
+					m_PublicIPv6.clear();
+					m_FetchingIPv6 = true;
+					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
+				}
+				ImGui::TextDisabled("IPv6 bypasses CGNAT — share this address with friends!");
+			}
+
+			ImGui::Separator();
+
+			if (net->IsUpnpAvailable())
+			{
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "UPnP: Active — port forwarded automatically");
+			}
+			else
+			{
+				ImGui::TextDisabled("UPnP: not available (manual port forwarding needed)");
+			}
+
+			if (net->IsFirewallRuleActive())
+			{
+				ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Firewall: Rule added for UDP %u", net->GetPort());
+			}
+			else
+			{
+				ImGui::TextDisabled("Firewall: no auto-rule (run as admin to enable)");
+			}
+
+			if (!net->IsUpnpAvailable())
+			{
+				ImGui::Separator();
+				ImGui::TextColored(ImVec4(0.3f, 0.8f, 1.0f, 1.0f), "For internet play:");
+				ImGui::BulletText("Install Radmin VPN, create/join a network");
+				ImGui::BulletText("Share your Radmin IP (e.g. 26.xx.xx.xx:7777) with friends");
+				ImGui::BulletText("Or forward UDP port %u on your router manually", net->GetPort());
+			}
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Stop Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				net->Shutdown();
+				m_StatusMessage = "Server stopped.";
+				m_StatusIsError = false;
+				m_PublicIP.clear();
+				m_PublicIPv6.clear();
+				m_FetchingIP = false;
+				m_FetchingIPv6 = false;
+			}
+		}
+		else
+		{
+			ImGui::Text("Start a server to host a game.");
+			ImGui::Separator();
+
+			ImGui::SetNextItemWidth(120);
+			ImGui::InputText("Port", m_HostPort, sizeof(m_HostPort), ImGuiInputTextFlags_CharsDecimal);
+
+			ImGui::SetNextItemWidth(120);
+			ImGui::InputInt("Max Clients", &m_MaxClients, 1, 10);
+			if (m_MaxClients < 1)
+			{
+				m_MaxClients = 1;
+			}
+			if (m_MaxClients > 32)
+			{
+				m_MaxClients = 32;
+			}
+
+			ImGui::Separator();
+
+			ImGui::TextDisabled("Direct IP connection — no NAT traversal.");
+			ImGui::TextDisabled("For internet play, use Radmin VPN or forward UDP port on your router.");
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Start Server", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				uint16_t port = static_cast<uint16_t>(std::atoi(m_HostPort));
+				if (port == 0)
+				{
+					port = 7777;
+				}
+
+				if (net)
+				{
+					NetworkSystem::GetInstance().SetPlayerPrefab("prefab/player.chprefab");
+					net->HostGame(port, m_MaxClients);
+					// Auto-fetch public IP when server starts
+					m_PublicIP.clear();
+					m_PublicIPv6.clear();
+					m_FetchingIP = true;
+					m_FetchingIPv6 = true;
+					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
+					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
+
+					m_StatusMessage = "Server started on port " + std::string(m_HostPort);
+					m_StatusIsError = false;
+				}
+				else
+				{
+					m_StatusMessage = "Network service not available!";
+					m_StatusIsError = true;
+				}
+			}
+		}
+	}
+
+	void NetworkPanel::DrawConnectTab()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+
+		if (net && net->IsClient())
+		{
+			ImGui::Text("Connected to server.");
+			ImGui::Separator();
+
+			ImGui::Text("Server: %s:%s", m_ConnectIP, m_ConnectPort);
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Disconnect", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				net->Disconnect();
+				m_StatusMessage = "Disconnected.";
+				m_StatusIsError = false;
+			}
+		}
+		else
+		{
+			ImGui::Text("Connect to an existing server.");
+			ImGui::Separator();
+
+			ImGui::SetNextItemWidth(200);
+			ImGui::InputText("IP", m_ConnectIP, sizeof(m_ConnectIP));
+
+			ImGui::SetNextItemWidth(120);
+			ImGui::InputText("Port", m_ConnectPort, sizeof(m_ConnectPort), ImGuiInputTextFlags_CharsDecimal);
+
+			ImGui::Separator();
+
+			if (ImGui::Button("Connect", ImVec2(ImGui::GetContentRegionAvail().x, 0)))
+			{
+				uint16_t port = static_cast<uint16_t>(std::atoi(m_ConnectPort));
+				if (port == 0)
+				{
+					port = 7777;
+				}
+
+				if (net)
+				{
+					NetworkSystem::GetInstance().SetPlayerPrefab("prefab/player.chprefab");
+					net->ConnectTo(m_ConnectIP, port);
+					m_StatusMessage =
+						"Connecting to " + std::string(m_ConnectIP) + ":" + std::string(m_ConnectPort) + "...";
+					m_StatusIsError = false;
+				}
+				else
+				{
+					m_StatusMessage = "Network service not available!";
+					m_StatusIsError = true;
+				}
+			}
+		}
+	}
+
+	void NetworkPanel::DrawPlayersTab()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+
+		if (!net || net->GetRole() == Role::Offline)
+		{
+			ImGui::TextDisabled("Not connected.");
+			return;
+		}
+
+		ImGui::Text("Connected players:");
+		ImGui::Separator();
+
+		// Table header
+		ImGui::Columns(3, "##PlayerColumns", true);
+		ImGui::SetColumnWidth(0, 60);
+		ImGui::SetColumnWidth(1, 180);
+		ImGui::SetColumnWidth(2, 100);
+
+		ImGui::Text("ID");
+		ImGui::NextColumn();
+		ImGui::Text("Role");
+		ImGui::NextColumn();
+		ImGui::Text("Status");
+		ImGui::NextColumn();
+		ImGui::Separator();
+
+		// Host entry (self)
+		if (net->IsHost())
+		{
+			ImGui::Text("0");
+			ImGui::NextColumn();
+			ImGui::Text("Host (You)");
+			ImGui::NextColumn();
+			ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Playing");
+			ImGui::NextColumn();
+		}
+
+		// Client entries
+		size_t clientCount = net->GetClientCount();
+		for (size_t i = 0; i < clientCount; ++i)
+		{
+			ImGui::Text("%zu", i + 1);
+			ImGui::NextColumn();
+			ImGui::Text("Client");
+			ImGui::NextColumn();
+			ImGui::TextColored(ImVec4(0.4f, 1.0f, 0.4f, 1.0f), "Connected");
+			ImGui::NextColumn();
+		}
+
+		ImGui::Columns(1);
+
+		if (clientCount == 0 && net->IsHost())
+		{
+			ImGui::TextDisabled("No clients connected yet.");
+		}
+	}
+
+} // namespace Chained

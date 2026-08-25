@@ -1,96 +1,224 @@
 #ifndef CH_SCENE_H
 #define CH_SCENE_H
 
-#include "components.h"
-#include "engine/core/base.h"
-#include "engine/core/ch_assert.h"
-#include "engine/core/events.h"
-#include "engine/core/timestep.h"
-#include "engine/graphics/api/camera_types.h"
+#include <entt/entt.hpp>
+#include <memory>
+#include <string>
+#include <vector>
+#include <future>
+
+#include "engine/core/events/events.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
 #include "engine/scene/entity.h"
 #include "engine/scene/scene_settings.h"
-#include "entt/entt.hpp"
-#include <memory>
-#include <optional>
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include "engine/scene/scene_state.h"
 
-namespace CHEngine
+namespace Chained
 {
-// Owns the scene registry, scene settings, and the runtime/editor update bridge.
-class Scene
+	enum WidgetType : int;
+}
+
+namespace Chained
 {
-public:
-    Scene();
-    ~Scene();
+	class SceneScriptingManager;
+	class Event;
 
-public:
-    // Creates a new scene with default entities (e.g. Main Camera).
-    static std::shared_ptr<Scene> CreateDefault();
-    // Creates a deep copy of another scene.
-    static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
+	class CH_API Scene
+	{
+	public:
+		Scene();
+		~Scene();
 
-public:
-    Entity CreateEntity(const std::string& name = std::string());
-    Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
-    Entity CreateUIEntity(const std::string& type, const std::string& name = std::string());
+	public:
+		static std::shared_ptr<Scene> CreateDefault();
+		static std::shared_ptr<Scene> Copy(std::shared_ptr<Scene> other);
 
-public:
-    Entity CopyEntity(entt::entity copyEntity);
-    void DestroyEntity(Entity entity);
-    Entity FindEntityByTag(const std::string& tag);
-    Entity GetEntityByUUID(UUID uuid);
+		virtual void OnEvent(Event& e);
+		virtual void OnRenderUI();
 
-public: // Life Cycle & Simulation
-    void OnRuntimeStart();
-    void OnRuntimeStop();
-    void OnUpdateRuntime(Timestep timestep);
-    void OnUpdateEditor(Timestep timestep);
-    void OnViewportResize(uint32_t width, uint32_t height);
+	public: // Scene State Management
+		void TransitionToState(SceneState newState);
+		SceneState GetSceneState() const
+		{
+			return m_State;
+		}
 
-public:
-    bool IsSimulationRunning() const;
+		void OnUpdate(Timestep timestep);
+		void OnViewportResize(uint32_t width, uint32_t height);
 
-public:
-    SceneSettings& GetSettings();
-    const SceneSettings& GetSettings() const;
+	public: // Entity Management
+		Entity CreateEntity(const std::string& name = std::string());
+		Entity CreateEntityWithUUID(UUID uuid, const std::string& name = std::string());
+		Entity CreateUIEntity(WidgetType type, const std::string& name = std::string());
 
-public: // Systems & Tools
-    entt::registry& GetRegistry();
-    const entt::registry& GetRegistry() const;
-    std::shared_ptr<entt::registry> GetRegistryPtr();
+	public:
+		entt::entity CopyEntity(entt::entity copyEntity);
+		void DestroyEntity(Entity entity);
+		Entity FindEntityByTag(const std::string& tag);
+		Entity GetEntityByUUID(UUID uuid);
 
-public:
-    std::optional<Camera3D> GetActiveCamera();
-    Entity GetPrimaryCameraEntity();
+	public:
+		SceneSettings& GetSettings();
+		const SceneSettings& GetSettings() const;
+		bool IsSimulationRunning() const;
+		const std::vector<entt::entity>& GetRootEntities() const;
+		bool IsStartingUp() const
+		{
+			return m_IsStartingUp;
+		}
 
-private:
-    Camera3D GetCameraFromEntity(entt::entity entityHandle);
+		// Validation setters — prefer these over direct GetSettings() mutation
+		void SetSceneName(const std::string& name)
+		{
+			m_Settings.Name = name;
+		}
+		void SetScenePath(const std::string& path)
+		{
+			m_Settings.ScenePath = path;
+		}
+		void SetEnvironment(std::shared_ptr<EnvironmentAsset> env)
+		{
+			m_Settings.Environment = std::move(env);
+		}
+		void SetBackgroundMode(BackgroundMode mode)
+		{
+			m_Settings.Mode = mode;
+		}
+		void SetBackgroundColor(const Color& color)
+		{
+			m_Settings.BackgroundColor = color;
+		}
+		void SetDebugFlags(const DebugRenderFlags& flags)
+		{
+			m_Settings.DebugFlags = flags;
+		}
+		void SetDiagnosticMode(float mode)
+		{
+			m_Settings.DiagnosticMode = std::clamp(mode, 0.0f, 2.0f);
+		}
+		void SetGridSlices(int slices)
+		{
+			m_Settings.Grid.Slices = std::max(1, slices);
+		}
+		void SetGridSpacing(float spacing)
+		{
+			m_Settings.Grid.Spacing = std::max(0.01f, spacing);
+		}
 
-private:
-    std::shared_ptr<entt::registry> m_Registry;
-    SceneSettings m_Settings;
-    bool m_IsSimulationRunning = false;
+	public: // Systems & Tools
+		/// Returns the underlying EnTT registry for direct access.
+		/// @deprecated Prefer typed methods below or the Entity API for component access.
+		entt::registry& GetRegistry();
+		const entt::registry& GetRegistry() const;
+		entt::registry* GetRegistryPtr();
 
-private:
-    void OnIDConstruct(entt::registry& registry, entt::entity entity);
-    void OnIDDestroy(entt::registry& registry, entt::entity entity);
-    // Hierarchy handlers.
-    void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
+		// Registry Facade — prefer these over raw GetRegistry() access
+		Entity GetEntity(entt::entity handle);
+		const Entity GetEntity(entt::entity handle) const;
 
-private: // Update Logic
-    void UpdatePhysics(Timestep deltaTime);
-    void UpdateAnimations(Timestep deltaTime);
-    void UpdateAudio(Timestep deltaTime);
-    void UpdateHierarchy();
+		template <typename... Components> auto View()
+		{
+			return m_Registry->view<Components...>();
+		}
 
-private:
-    Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
+		template <typename... Components> auto View() const
+		{
+			return m_Registry->view<Components...>();
+		}
 
-    friend class Entity;
-};
+		bool IsValid(entt::entity handle) const
+		{
+			return m_Registry && m_Registry->valid(handle);
+		}
 
-} // namespace CHEngine
+		template <typename T> T& GetContext()
+		{
+			return m_Registry->ctx().get<T>();
+		}
+
+		template <typename T> const T& GetContext() const
+		{
+			return m_Registry->ctx().get<T>();
+		}
+
+		template <typename T> T* TryGetContext()
+		{
+			return m_Registry->ctx().find<T>();
+		}
+
+		template <typename T> const T* TryGetContext() const
+		{
+			return m_Registry->ctx().find<T>();
+		}
+
+		void OnRuntimeStop();
+		void OnRuntimeStart();
+		void OnUpdateSimulation(Timestep timestep);
+		void OnUpdateEditor(Timestep timestep);
+		void OnUpdateRuntime(Timestep timestep);
+
+		// Async scene loading
+		std::future<std::shared_ptr<Scene>> LoadSceneAsync(const std::string& path);
+		void SwapScene(std::shared_ptr<Scene> newScene);
+
+		// EnTT Dispatcher for Zero-Allocation Publish/Subscribe
+		entt::dispatcher& GetDispatcher()
+		{
+			return m_Dispatcher;
+		}
+		const entt::dispatcher& GetDispatcher() const
+		{
+			return m_Dispatcher;
+		}
+
+		// Pending scene change (from SceneTransitionSystem)
+		const std::string& GetPendingScenePath() const
+		{
+			return m_PendingScenePath;
+		}
+		void ClearPendingScenePath()
+		{
+			m_PendingScenePath.clear();
+		}
+		void SetPendingScenePath(const std::string& path)
+		{
+			m_PendingScenePath = path;
+		}
+
+	private:
+		void InitializePhysicsStartup();
+		void RebuildRootCache() const;
+
+	private:
+		void OnStateEnter(SceneState state);
+		void OnStateExit(SceneState state);
+		void FinishRuntimeStart();
+
+	private:
+		SceneState m_State = SceneState::Edit;
+
+		std::unique_ptr<entt::registry> m_Registry;
+		entt::dispatcher m_Dispatcher;
+		SceneSettings m_Settings;
+
+		std::unique_ptr<SceneScriptingManager> m_ScriptingManager;
+		std::string m_PendingScenePath;
+
+		bool m_IsStartingUp = false;
+		bool m_PhysicsStartupInitialized = false;
+
+		mutable std::vector<entt::entity> m_CachedRoots;
+		mutable bool m_RootsDirty = true;
+
+	private:
+		void OnIDConstruct(entt::registry& registry, entt::entity entity);
+		void OnIDDestroy(entt::registry& registry, entt::entity entity);
+		void OnHierarchyConstruct();
+		void OnHierarchyDestroy(entt::registry& registry, entt::entity entity);
+		Entity CopyEntityInternal(entt::entity copyEntity, entt::entity parentEntity = entt::null);
+	};
+
+} // namespace Chained
 
 #endif // CH_SCENE_H

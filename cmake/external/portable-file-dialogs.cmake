@@ -1,0 +1,5 @@
+if(EXISTS "${CMAKE_SOURCE_DIR}/thirdparty/portable-file-dialogs/CMakeLists.txt")
+    add_subdirectory("${CMAKE_SOURCE_DIR}/thirdparty/portable-file-dialogs" "${CMAKE_BINARY_DIR}/vendor/portable-file-dialogs" EXCLUDE_FROM_ALL)
+else()
+    message(FATAL_ERROR "portable-file-dialogs submodule missing at ${CMAKE_SOURCE_DIR}/thirdparty/portable-file-dialogs")
+endif()

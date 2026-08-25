@@ -1,220 +1,199 @@
 #include "console_panel.h"
+#include "engine/app/application.h"
 #include "imgui.h"
+#include <algorithm>
+#include <cctype>
 
-namespace CHEngine
+namespace Chained
 {
-ConsolePanel* ConsolePanel::s_Instance = nullptr;
-std::deque<ConsoleLogEntry> ConsolePanel::s_Buffer;
-std::mutex ConsolePanel::s_BufferMutex;
+	ConsolePanel::ConsolePanel()
+	{
+		m_Name = "Console";
 
-ConsolePanel::ConsolePanel()
-{
-    s_Instance = this;
-    m_Name = "Console";
+		// Consume initially buffered messages before UI loop starts
+		auto bufferedMessages = Log::ConsumeBufferedMessages();
+		for (auto& entry : bufferedMessages)
+		{
+			m_Messages.push_back(std::move(entry));
+		}
 
-    // Flush static buffer to this instance
-    std::lock_guard<std::mutex> lock(s_BufferMutex);
-    while (!s_Buffer.empty())
-    {
-        m_Messages.push_back(std::move(s_Buffer.front()));
-        s_Buffer.pop_front();
-    }
-}
+		m_ScrollToBottom = !m_Messages.empty();
+	}
 
-ConsolePanel::~ConsolePanel()
-{
-    if (s_Instance == this)
-    {
-        s_Instance = nullptr;
-    }
-}
+	ConsolePanel::~ConsolePanel() = default;
 
-void ConsolePanel::OnImGuiRender(bool readOnly)
-{
-    if (!m_IsOpen)
-    {
-        return;
-    }
+	void ConsolePanel::OnImGuiRender(bool readOnly)
+	{
+		if (!m_IsOpen)
+		{
+			return;
+		}
 
-    ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
-    ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
+		ImGui::SetNextWindowSize(ImVec2(520, 600), ImGuiCond_FirstUseEver);
+		ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(10, 10));
 
-    if (ImGui::Begin(m_Name.c_str(), &m_IsOpen))
-    {
-        // Control Panel
-        ImGui::BeginDisabled(readOnly);
-        if (ImGui::Button("Clear"))
-        {
-            Clear();
-        }
-        ImGui::SameLine();
+		if (ImGui::Begin(m_Name.c_str(), &m_IsOpen))
+		{
+			bool filtersChanged = false;
 
-        ImGui::SetNextItemWidth(150);
-        ImGui::InputTextWithHint("##filter", "Filter...", m_FilterBuffer, sizeof(m_FilterBuffer));
-        ImGui::SameLine();
+			// --- 1. Control Panel ---
+			ImGui::BeginDisabled(readOnly);
 
-        const char* levels[] = {"TRACE", "INFO", "WARNING", "ERROR", "FATAL", "NONE"};
-        ImGui::SetNextItemWidth(120);
-        ImGui::Combo("Level", &m_LogLevel, levels, IM_ARRAYSIZE(levels));
+			if (ImGui::Button("Clear"))
+			{
+				Clear();
+				filtersChanged = true;
+			}
+			ImGui::SameLine();
 
-        ImGui::EndDisabled();
+			ImGui::SetNextItemWidth(150);
+			// If user types into filter, we flag that index rebuild is required
+			if (ImGui::InputTextWithHint("##filter", "Filter...", m_FilterBuffer, sizeof(m_FilterBuffer)))
+			{
+				filtersChanged = true;
+			}
+			ImGui::SameLine();
 
-        ImGui::Separator();
+			const char* levels[] = {"TRACE", "INFO", "WARNING", "ERROR", "FATAL", "NONE"};
+			ImGui::SetNextItemWidth(120);
+			if (ImGui::Combo("Level", &m_LogLevel, levels, IM_ARRAYSIZE(levels)))
+			{
+				filtersChanged = true;
+			}
 
-        // Rebuild visible indices if needed
-        {
-            std::lock_guard<std::mutex> lock(m_LogMutex);
-            m_VisibleIndices.clear();
-            std::string filterStr = m_FilterBuffer;
-            std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(), ::tolower);
+			ImGui::EndDisabled();
+			ImGui::Separator();
 
-            for (int i = 0; i < (int)m_Messages.size(); i++)
-            {
-                if (m_LogLevel != (int)ConsoleLogLevel::None && (int)m_Messages[i].level < m_LogLevel)
-                {
-                    continue;
-                }
+			// --- 2. Ingest New Logs ---
+			auto bufferedMessages = Log::ConsumeBufferedMessages();
+			bool hasNewMessages = !bufferedMessages.empty();
 
-                if (!filterStr.empty())
-                {
-                    std::string msgLower = m_Messages[i].message;
-                    std::transform(msgLower.begin(), msgLower.end(), msgLower.begin(), ::tolower);
-                    if (msgLower.find(filterStr) == std::string::npos)
-                    {
-                        continue;
-                    }
-                }
-                m_VisibleIndices.push_back(i);
-            }
-        }
+			if (hasNewMessages || filtersChanged)
+			{
+				std::lock_guard<std::mutex> lock(m_LogMutex);
 
-        const float footer_height_to_reserve = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
-        ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footer_height_to_reserve), false,
-                          ImGuiWindowFlags_HorizontalScrollbar);
+				if (hasNewMessages)
+				{
+					for (auto& entry : bufferedMessages)
+					{
+						m_Messages.push_back(std::move(entry));
+					}
 
-        {
-            std::lock_guard<std::mutex> lock(m_LogMutex);
+					while (m_Messages.size() > MAX_MESSAGES)
+					{
+						m_Messages.pop_front();
+					}
 
-            ImGuiListClipper clipper;
-            clipper.Begin((int)m_VisibleIndices.size());
+					m_ScrollToBottom = true;
+				}
 
-            while (clipper.Step())
-            {
-                for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; i++)
-                {
-                    int msgIdx = m_VisibleIndices[i];
-                    const auto& msg = m_Messages[msgIdx];
+				// --- 3. Optimized Rebuild of Visible Indices ---
+				// We only rebuild when new logs arrive OR UI filter parameters change.
+				m_VisibleIndices.clear();
 
-                    ImVec4 color;
-                    switch (msg.level)
-                    {
-                    case ConsoleLogLevel::Trace:
-                        color = {0.7f, 0.7f, 0.7f, 1.0f};
-                        break;
-                    case ConsoleLogLevel::Info:
-                        color = {1.0f, 1.0f, 1.0f, 1.0f};
-                        break;
-                    case ConsoleLogLevel::Warn:
-                        color = {1.0f, 0.8f, 0.0f, 1.0f};
-                        break;
-                    case ConsoleLogLevel::Error:
-                        color = {1.0f, 0.2f, 0.2f, 1.0f};
-                        break;
-                    case ConsoleLogLevel::Fatal:
-                        color = {1.0f, 0.0f, 1.0f, 1.0f};
-                        break;
-                    default:
-                        color = {1.0f, 1.0f, 1.0f, 1.0f};
-                        break;
-                    }
+				std::string filterStr = m_FilterBuffer;
+				std::transform(filterStr.begin(), filterStr.end(), filterStr.begin(),
+							   [](unsigned char ch) { return static_cast<char>(std::tolower(ch)); });
 
-                    // Timestamp
-                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
-                    ImGui::TextUnformatted(msg.timestamp.c_str());
-                    ImGui::PopStyleColor();
-                    ImGui::SameLine();
+				for (int i = 0; i < static_cast<int>(m_Messages.size()); ++i)
+				{
+					if (m_LogLevel != static_cast<int>(LogLevel::LogNone) &&
+						static_cast<int>(m_Messages[i].level) < m_LogLevel)
+					{
+						continue;
+					}
 
-                    ImGui::PushStyleColor(ImGuiCol_Text, color);
-                    ImGui::TextUnformatted(msg.message.c_str());
-                    ImGui::PopStyleColor();
-                }
-            }
-        }
+					if (!filterStr.empty())
+					{
+						// Case-insensitive substring match without heavy allocation
+						auto it =
+							std::search(m_Messages[i].message.begin(), m_Messages[i].message.end(), filterStr.begin(),
+										filterStr.end(), [](unsigned char ch1, unsigned char ch2) {
+											return std::tolower(ch1) == ch2; // filterStr is already lower
+										});
 
-        if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
-        {
-            ImGui::SetScrollHereY(1.0f);
-        }
-        m_ScrollToBottom = false;
+						if (it == m_Messages[i].message.end())
+						{
+							continue;
+						}
+					}
+					m_VisibleIndices.push_back(i);
+				}
+			}
 
-        ImGui::EndChild();
-    }
-    ImGui::End();
-    ImGui::PopStyleVar();
-}
-void ConsolePanel::Log(const std::string& message, ConsoleLogLevel level)
-{
-    std::lock_guard<std::mutex> lock(m_LogMutex);
+			// --- 4. Content Scrolling Region ---
+			const float footerHeight = ImGui::GetStyle().ItemSpacing.y + ImGui::GetFrameHeightWithSpacing();
+			ImGui::BeginChild("ScrollingRegion", ImVec2(0, -footerHeight), false, ImGuiWindowFlags_HorizontalScrollbar);
 
-    // Форматуємо час (наприклад, "14:20:05")
-    std::string timeStr = GetCurrentTimestamp();
+			{
+				std::lock_guard<std::mutex> lock(m_LogMutex);
 
-    m_Messages.push_back({level, message, timeStr});
+				ImGuiListClipper clipper;
+				clipper.Begin(static_cast<int>(m_VisibleIndices.size()));
 
-    if (m_Messages.size() > MAX_MESSAGES)
-    {
-        m_Messages.pop_front();
-    }
+				while (clipper.Step())
+				{
+					for (int i = clipper.DisplayStart; i < clipper.DisplayEnd; ++i)
+					{
+						const int msgIdx = m_VisibleIndices[i];
+						const auto& msg = m_Messages[msgIdx];
 
-    m_ScrollToBottom = true; // Сигнал для OnImGuiRender
-}
+						ImVec4 color;
+						switch (msg.level)
+						{
+						case LogLevel::LogTrace:
+							color = ImVec4(0.7f, 0.7f, 0.7f, 1.0f);
+							break;
+						case LogLevel::LogInfo:
+							color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+							break;
+						case LogLevel::LogWarning:
+							color = ImVec4(1.0f, 0.8f, 0.0f, 1.0f);
+							break;
+						case LogLevel::LogError:
+							color = ImVec4(1.0f, 0.2f, 0.2f, 1.0f);
+							break;
+						case LogLevel::LogFatal:
+							color = ImVec4(1.0f, 0.0f, 1.0f, 1.0f);
+							break;
+						default:
+							color = ImVec4(1.0f, 1.0f, 1.0f, 1.0f);
+							break;
+						}
 
-void ConsolePanel::Clear()
-{
-    std::lock_guard<std::mutex> lock(m_LogMutex);
-    m_Messages.clear();
-}
+						// Render Timestamp (Gray color)
+						ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.5f, 0.5f, 0.5f, 1.0f));
+						ImGui::TextUnformatted(msg.timestamp.c_str());
+						ImGui::PopStyleColor();
 
-void ConsolePanel::AddLog(const char* message, int level)
-{
-    if (s_Instance)
-    {
-        s_Instance->Log(message, (ConsoleLogLevel)level);
-    }
-    else
-    {
-        // Buffer logs until ConsolePanel is initialized
-        std::lock_guard<std::mutex> lock(s_BufferMutex);
-        if (s_Buffer.size() < MAX_MESSAGES)
-        {
-            s_Buffer.push_back({(ConsoleLogLevel)level, message, GetCurrentTimestamp()});
-        }
-    }
-}
+						ImGui::SameLine();
 
-std::string ConsolePanel::GetCurrentTimestamp()
-{
-    using namespace std::chrono;
+						// Render Log Message
+						ImGui::PushStyleColor(ImGuiCol_Text, color);
+						ImGui::TextUnformatted(msg.message.c_str());
+						ImGui::PopStyleColor();
+					}
+				}
+			}
 
-    auto now = system_clock::now();
-    auto in_time_t = system_clock::to_time_t(now);
+			// Stick to bottom if scrolled down or explicitly triggered
+			if (m_ScrollToBottom || (ImGui::GetScrollY() >= ImGui::GetScrollMaxY()))
+			{
+				ImGui::SetScrollHereY(1.0f);
+			}
+			m_ScrollToBottom = false;
 
-    std::tm time_info;
-#if defined(_MSC_VER)
-    localtime_s(&time_info, &in_time_t);
-#elif defined(_WIN32)
-    std::tm* tm_ptr = std::localtime(&in_time_t);
-    if (tm_ptr)
-    {
-        time_info = *tm_ptr;
-    }
-#else
-    localtime_r(&in_time_t, &time_info);
-#endif
+			ImGui::EndChild();
+		}
+		ImGui::End();
+		ImGui::PopStyleVar();
+	}
 
-    std::stringstream ss;
-    ss << "[" << std::put_time(&time_info, "%H:%M:%S") << "] ";
-    return ss.str();
-}
+	void ConsolePanel::Clear()
+	{
+		std::lock_guard<std::mutex> lock(m_LogMutex);
+		m_Messages.clear();
+		m_VisibleIndices.clear();
+	}
 
-} // namespace CHEngine
+} // namespace Chained

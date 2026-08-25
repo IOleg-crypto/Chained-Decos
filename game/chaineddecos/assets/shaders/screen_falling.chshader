@@ -1,7 +1,5 @@
-VertexShader: screen_falling.vs
-FragmentShader: screen_falling.fs
+VertexShader: "screen_falling.vert"
+FragmentShader: "screen_falling.frag"
 Uniforms:
-  - mvp
-  - time
-  - intensity
+  - uIntensity
   - color

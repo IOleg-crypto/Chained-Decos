@@ -1,64 +1,50 @@
-add_library(engine_core ${SUBMODULE_LIB_TYPE}
-        layer_stack.cpp
-        profiler.cpp
-        uuid.cpp
-        input.cpp
-        imgui_layer.cpp
-        thread_pool.cpp
-        application.cpp
-        project_launcher.cpp
-        assets/asset_manager.cpp
-        application.h
-        project_launcher.h
-        imgui_layer.h
-        base.h
-        ch_assert.h
-        platform_detection.h
-        thread_pool.h
-        entry_point.h
-        events.h
-        input.h
-        layer.h
-        layer_stack.h
-        log.h
-        profiler.h
-        timestep.h
-        uuid.h
-        window.h
-        ../platform/utils/dialogs.cpp
-        ../platform/utils/dialogs.h
-        ../platform/glfw/glfw_window.cpp
-        ../platform/glfw/glfw_window.h
+add_library(engine_core STATIC
+    service.h
+    service_registry.h
+    service_registry.cpp
+    service_locator.h
+    service_locator.cpp
+    input.h
+    input.cpp
+    key_codes.h
+    layer.h
+    layer_stack.h
+    layer_stack.cpp
+    log.h
+    mouse_codes.h
+    platform.h
+    platform.cpp
+    profiler.h
+    window.h
+    events/events.h
+    events/input_events.h
+    events/window_events.h
 )
 
 target_include_directories(engine_core PUBLIC
-    ${ENGINE_INCLUDE_DIRS}
-    ${CMAKE_SOURCE_DIR}/include/imgui
-    ${CMAKE_SOURCE_DIR}/include/imgui/backends
-    ${CMAKE_SOURCE_DIR}/include/glfw/include
-    ${CMAKE_SOURCE_DIR}/include/assimp/include
-    ${CMAKE_BINARY_DIR}/include/assimp/include
-    ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/include/stb
-    ${CMAKE_SOURCE_DIR}/include/miniaudio
+    ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_SOURCE_DIR}
 )
 
-# Core module uses yaml-cpp, glfw, glad, imguilib, EnTT, Coral.Native, nfd, assimp
-target_link_libraries(engine_core PUBLIC 
-    yaml-cpp 
-    glfw
-    glad
-    imguilib 
-    EnTT 
-    Coral.Native 
-    nfd 
-    assimp
+target_link_libraries(engine_core PUBLIC
+    engine_reflection
+    yaml-cpp
+    engine_external_entt
+    glm
+    engine_external_stb
+    Coral.Native
+    reflectcpp
+    cereal
+    spdlog
+    libzstd_static
 )
 
-# Apply common macro configurations and compiler flags
-# (Redundant /bigobj flags removed - now in CompilerSettings.cmake)
+target_include_directories(engine_core PUBLIC
+    "${CMAKE_SOURCE_DIR}/thirdparty/reflect-cpp/include"
+    "${CMAKE_SOURCE_DIR}/thirdparty/cereal/include"
+    "${ZSTD_INCLUDE_DIR}"
+)
 
-# We apply optimizations and precompiled headers specific to core
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(engine_core)
+if(TARGET engine_pch)
+    target_link_libraries(engine_core PRIVATE engine_pch)
 endif()

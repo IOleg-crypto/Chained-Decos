@@ -1,109 +1,70 @@
 
-add_library(editor_core STATIC)
-
-target_sources(editor_core PRIVATE
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layer.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_context.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_panels.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_project_manager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_project_manager.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_scene_manager.cpp
-
-    # Viewport
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_gizmo.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/editor_camera.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/viewport/ui_manipulator.cpp
-
-    ${CMAKE_CURRENT_SOURCE_DIR}/launcher/editor_launcher.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/launcher/editor_launcher.cpp
-
-    # Panels
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/scene_hierarchy_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/inspector_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/property_editor.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/property_editor.cpp
-    
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/content_browser_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/console_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/profiler_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/viewport_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_browser_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/project_settings_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/world_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/effects_panel.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/panels/material_panel.cpp
-
-    # Undo
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/command_history.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/editor_command.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/modify_component_command.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/lambda_command.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/undo/entity_commands.h
-
-    # UI
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_gui.cpp
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.h
-    ${CMAKE_CURRENT_SOURCE_DIR}/editor_layout.cpp
+file(GLOB EDITOR_CORE_SOURCES CONFIGURE_DEPENDS
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/panels/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/panels/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/project/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/project/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/undo/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/undo/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/ui/*.h"
+    "${CMAKE_CURRENT_SOURCE_DIR}/viewport/*.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/viewport/*.h"
 )
+# NetworkPanel is only compiled when the networking module is enabled
+list(REMOVE_ITEM EDITOR_CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/panels/network_panel.cpp")
+# The editor executable entry point is built separately
+list(REMOVE_ITEM EDITOR_CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp")
+if(CH_NETWORKING)
+    list(APPEND EDITOR_CORE_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/panels/network_panel.cpp")
+endif()
 
+add_library(editor_core STATIC ${EDITOR_CORE_SOURCES})
 
 target_link_libraries(editor_core PUBLIC
-    engine
-    scripting
-    imguilib
-    nfd
+    ChainedEngine::Framework
 )
-target_compile_definitions(editor_core PUBLIC IMGUI_DEFINE_MATH_OPERATORS YAML_CPP_STATIC_DEFINE)
+
+# Pack library — asset packing for shipped builds
+if(TARGET pack-static)
+    target_link_libraries(editor_core PUBLIC pack-static)
+endif()
+
+# WinHTTP — used by NetworkPanel to fetch the public IP from api.ipify.org.
+# Only needed when the networking module is enabled.
+if(WIN32 AND CH_NETWORKING)
+    target_link_libraries(editor_core PUBLIC winhttp)
+endif()
+
 target_include_directories(editor_core PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}/engine
-    ${CMAKE_SOURCE_DIR}/include
-    ${imguizmo_SOURCE_DIR}
 )
 
 # Define the Editor executable
-add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/editor_main.cpp)
+add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
+        
 target_link_libraries(ChainedEditor PRIVATE editor_core)
-target_include_directories(ChainedEditor PRIVATE 
-    ${CMAKE_CURRENT_SOURCE_DIR}
-    ${CMAKE_SOURCE_DIR}
-)
 
-# Use centralized engine resources
-chained_add_engine_resources_copy()
-add_dependencies(ChainedEditor EngineResources)
+# Packer utility — build-time tool, not linked to the editor
+if(TARGET packer)
+    add_dependencies(ChainedEditor packer)
+endif()
 
-# Apply optimizations
-if(COMMAND apply_engine_optimizations)
-    apply_engine_optimizations(editor_core)
-    apply_engine_optimizations(ChainedEditor)
+if(TARGET engine_pch)
+    target_link_libraries(editor_core PRIVATE engine_pch)
+    target_link_libraries(ChainedEditor PRIVATE engine_pch)
+endif()
+
+# Automatically sync resources/ into the correct bin/<Config>/ directory after each build
+if(COMMAND ch_add_resource_sync)
+    ch_add_resource_sync(ChainedEditor)
 endif()
 
 # Installation
-install(TARGETS ChainedEditor editor_core
-    RUNTIME DESTINATION bin COMPONENT Runtime
-    ARCHIVE DESTINATION lib COMPONENT Runtime
-    LIBRARY DESTINATION lib COMPONENT Runtime
+install(TARGETS ChainedEditor
+    RUNTIME DESTINATION bin COMPONENT Editor
 )
 
 # Copy global assets to the install directory if they exist

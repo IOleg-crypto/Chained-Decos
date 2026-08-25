@@ -1,68 +1,76 @@
 #ifndef CH_PHYSICS_H
 #define CH_PHYSICS_H
 
-#include "engine/core/base.h"
-#include "engine/core/timestep.h"
-#include "entt/entt.hpp"
-#include <functional>
+#include "engine/core/service.h"
+#include "engine/common/base.h"
+#include "engine/common/timestep.h"
+#include "engine/physics/raycast_result.h"
+#include "engine/scene/components.h"
+#include "iphysics_world.h"
+#include <entt/entt.hpp>
 #include <memory>
 #include <string>
-#include "raycast_result.h"
+#include <unordered_map>
+#include <vector>
 
-// TODO : future refactor (when link Jolt physics)
-namespace CHEngine
+namespace Chained
 {
-class Scene;
-class BVH;
+	class Scene;
+	class IPhysicsWorld;
 
-// Per-scene physics state shared across simulation frames.
-struct PhysicsContext
-{
-    // Accumulates fixed-step simulation time for this scene.
-    float Accumulator = 0.0f;
-    // Optional callback invoked when two entities begin colliding.
-    std::function<void(entt::entity, entt::entity)> CollisionCallback;
-};
+	// High-level physics module that owns the Jolt world and orchestrates
+	// body creation, fixed-timestep stepping, and component synchronization.
+	class CH_API Physics : public Service
+	{
+	public:
+		Physics();
+		virtual ~Physics() override;
 
-// Scene-scoped physics helpers, BVH cache access, and simulation entry points.
-class Physics
-{
-public: // Lifecycle
-    // Initializes the global physics subsystem.
-    static void Init();
-    // Shuts the physics subsystem down and clears global state.
-    static void Shutdown();
-    // Returns true once the physics subsystem has been initialized.
-    static bool IsInitialized();
+		// Service lifecycle
+		virtual void Initialize() override;
+		virtual void Shutdown() override;
 
-public: // BVH cache API
-    // Returns the cached BVH for the given asset path, if one exists.
-    static std::shared_ptr<BVH> GetBVH(const std::string& path);
-    // Removes the cached BVH entry for the given asset path.
-    static void InvalidateBVH(const std::string& path);
-    // Replaces or inserts the cached BVH for the given asset path.
-    static void UpdateBVHCache(const std::string& path, std::shared_ptr<BVH> bvh);
+		// Core API
 
-public: // Simulation & Queries
-    // Steps the physics simulation and updates collider states for a given scene.
-    static void Update(Scene* scene, Timestep deltaTime, bool runtime = false);
+		/// Returns the Jolt world, creating it lazily on first access.
+		IPhysicsWorld* GetWorld();
 
-    // Performs a spatial raycast query within the given scene.
-    static RaycastResult Raycast(Scene* scene, Ray ray);
+		/// Destroys the current world and creates a fresh one, applying
+		/// gravity from the active project configuration.
+		/// If scene is provided, invalidates all RigidBodyComponent handles.
+		void ResetWorld(Scene* scene = nullptr);
 
-    // Returns the mutable physics context associated with the scene.
-    static PhysicsContext& GetContext(Scene* scene);
-    // Resets the fixed-step accumulator for the scene.
-    static void ResetAccumulator(Scene* scene);
-    // Clears all cached physics context for the scene.
-    static void ClearContext(Scene* scene);
-    // Sets the collision callback invoked by the physics step.
-    static void SetCollisionCallback(Scene* scene, std::function<void(entt::entity, entt::entity)> callback);
+		/// Iterates all entities with TransformComponent + RigidBodyComponent
+		/// that don't yet have a physics body, and creates Jolt bodies for them.
+		void InitializeBodies(Scene* scene);
 
-private: // Internal Helpers
-    static void UpdateColliders(Scene* scene);
-    static void ResolveSimulation(Scene* scene, Timestep deltaTime);
-};
-} // namespace CHEngine
+		/// Runs the fixed-timestep physics loop (up to kMaxStepsPerFrame sub-steps),
+		/// then synchronizes dynamic body transforms and velocities back to components.
+		void Update(Scene* scene, Timestep deltaTime, bool runtime = false);
+
+		/// Casts a ray through the Jolt world and returns the closest hit.
+		RaycastResult Raycast(Ray ray);
+
+		/// Sets the velocity on a body unconditionally. Use for respawn teleports.
+		void ForceSetVelocity(PhysicsBodyHandle handle, const glm::vec3& velocity);
+
+		// Scene context helpers
+		void ResetAccumulator(Scene* scene);
+		void ClearContext(Scene* scene);
+
+	private:
+		/// Reads back position, rotation, velocity, and grounded state from Jolt
+		/// for all Dynamic bodies. Static and Kinematic bodies are skipped because
+		/// their transforms are driven by scripts or remain fixed.
+		void UpdateColliders(Scene* scene);
+
+	private:
+		std::unique_ptr<IPhysicsWorld> m_World;
+
+		// Per-scene fixed-timestep accumulator (replaces PhysicsContext in entt ctx)
+		std::unordered_map<Scene*, float> m_Accumulators;
+	};
+
+} // namespace Chained
 
 #endif // CH_PHYSICS_H

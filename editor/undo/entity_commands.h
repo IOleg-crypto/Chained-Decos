@@ -1,216 +1,278 @@
 #ifndef CH_ENTITY_COMMANDS_H
 #define CH_ENTITY_COMMANDS_H
 
-#include "editor_command.h"
+#include "command.h"
+#include "editor/layer.h"
 #include "engine/scene/components.h"
 #include "engine/scene/scene.h"
 #include "engine/scene/component_serializer.h"
 #include <yaml-cpp/yaml.h>
 
-namespace CHEngine
+namespace Chained
 {
-class DestroyEntityCommand : public IEditorCommand
-{
-public:
-    DestroyEntityCommand(Entity entity)
-        : m_Entity(entity),
-          m_Scene(entity.GetRegistry().ctx().get<Scene*>())
-    {
-    }
+	class DestroyEntityCommand : public IEditorCommand
+	{
+	public:
+		DestroyEntityCommand(Entity entity)
+			: m_Entity(entity),
+			  m_Scene(entity.GetRegistry().ctx().get<Scene*>())
+		{
+		}
 
-    void Execute() override
-    {
-        CH_CORE_INFO("Destroying entity via command: {}", m_Entity.GetComponent<TagComponent>().Tag);
-        
-        m_UUID = m_Entity.GetUUID();
+		void Execute() override
+		{
+			CH_CORE_INFO("Destroying entity via command: {}", m_Entity.GetComponent<TagComponent>().Tag);
 
-        // Serialize the entity before destroying
-        YAML::Emitter out;
-        out << YAML::BeginMap;
-        ComponentSerializer::Get().SerializeID(out, m_Entity);
-        ComponentSerializer::Get().SerializeAll(out, m_Entity);
-        out << YAML::EndMap;
-        m_SerializedData = out.c_str();
+			m_UUID = m_Entity.GetUUID();
 
-        m_Scene->DestroyEntity(m_Entity);
-    }
+			// Serialize the entity before destroying
+			YAML::Emitter out;
+			out << YAML::BeginMap;
+			ComponentSerializer::SerializeID(out, m_Entity);
+			ComponentSerializer::SerializeAll(out, m_Entity);
+			out << YAML::EndMap;
+			m_SerializedData = out.c_str();
 
-    void Undo() override
-    {
-        CH_CORE_INFO("Undoing DestroyEntity, restoring UUID: {}", m_UUID);
-        YAML::Node node = YAML::Load(m_SerializedData);
-        
-        std::string name = "Restored Entity";
-        auto tagComponent = node["TagComponent"];
-        if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar()) {
-            name = tagComponent["Tag"].as<std::string>();
-        }
+			if (EditorLayer::Get().GetSelectedEntity() == m_Entity)
+			{
+				EditorLayer::Get().SetSelectedEntity({});
+			}
 
-        m_Entity = m_Scene->CreateEntityWithUUID(m_UUID, name);
-        ComponentSerializer::Get().DeserializeAll(m_Entity, node);
-    }
+			m_Scene->DestroyEntity(m_Entity);
+		}
 
-    std::string GetName() const override
-    {
-        return "Destroy Entity";
-    }
+		void Undo() override
+		{
+			CH_CORE_INFO("Undoing DestroyEntity, restoring UUID: {}", m_UUID);
+			YAML::Node node = YAML::Load(m_SerializedData);
 
-private:
-    Entity m_Entity;
-    Scene* m_Scene;
-    uint64_t m_UUID;
-    std::string m_SerializedData;
-};
+			std::string name = "Restored Entity";
+			auto tagComponent = node["TagComponent"];
+			if (tagComponent && tagComponent["Tag"] && tagComponent["Tag"].IsScalar())
+			{
+				name = tagComponent["Tag"].as<std::string>();
+			}
 
-class CreateEntityCommand : public IEditorCommand
-{
-public:
-    CreateEntityCommand(Scene* scene, const std::string& name, const std::string& modelPath = "")
-        : m_Scene(scene),
-          m_Name(name),
-          m_ModelPath(modelPath)
-    {
-    }
+			m_Entity = m_Scene->CreateEntityWithUUID(m_UUID, name);
+			ComponentSerializer::DeserializeAll(m_Entity, node);
+		}
 
-    void Execute() override
-    {
-        m_Entity = m_Scene->CreateEntity(m_Name);
-        if (!m_ModelPath.empty())
-        {
-            auto& mc = m_Entity.AddComponent<ModelComponent>();
-            mc.ModelPath = m_ModelPath;
-        }
-    }
+		std::string GetName() const override
+		{
+			return "Destroy Entity";
+		}
 
-    void Undo() override
-    {
-        if (m_Entity)
-        {
-            m_Scene->DestroyEntity(m_Entity);
-        }
-    }
+	private:
+		Entity m_Entity;
+		Scene* m_Scene;
+		uint64_t m_UUID;
+		std::string m_SerializedData;
+	};
 
-    std::string GetName() const override
-    {
-        return "Create Entity";
-    }
+	class CreateEntityCommand : public IEditorCommand
+	{
+	public:
+		CreateEntityCommand(Scene* scene, const std::string& name, const std::string& modelPath = "")
+			: m_Scene(scene),
+			  m_Name(name),
+			  m_ModelPath(modelPath)
+		{
+		}
 
-private:
-    Scene* m_Scene;
-    std::string m_Name;
-    std::string m_ModelPath;
-    Entity m_Entity;
-};
+		void Execute() override
+		{
+			m_Entity = m_Scene->CreateEntity(m_Name);
+			if (!m_ModelPath.empty())
+			{
+				// Procedural primitive markers start with ':' — use PrimitiveComponent.
+				if (m_ModelPath.size() > 1 && m_ModelPath.front() == ':' && m_ModelPath.back() == ':')
+				{
+					PrimitiveComponent prim;
+					if (m_ModelPath == ":cube:")
+					{
+						prim.Type = PrimitiveType::Cube;
+					}
+					else if (m_ModelPath == ":sphere:")
+					{
+						prim.Type = PrimitiveType::Sphere;
+					}
+					else if (m_ModelPath == ":plane:")
+					{
+						prim.Type = PrimitiveType::Plane;
+					}
+					else if (m_ModelPath == ":cylinder:")
+					{
+						prim.Type = PrimitiveType::Cylinder;
+					}
+					else if (m_ModelPath == ":cone:")
+					{
+						prim.Type = PrimitiveType::Cone;
+					}
+					else if (m_ModelPath == ":torus:")
+					{
+						prim.Type = PrimitiveType::Torus;
+					}
+					else if (m_ModelPath == ":knot:")
+					{
+						prim.Type = PrimitiveType::Knot;
+					}
+					else if (m_ModelPath == ":hemisphere:")
+					{
+						prim.Type = PrimitiveType::Hemisphere;
+					}
+					else
+					{
+						prim.Type = PrimitiveType::Sphere; // fallback
+					}
+					m_Entity.AddComponent<PrimitiveComponent>(prim);
+				}
+				else
+				{
+					// Real file path — use ModelComponent.
+					auto& mc = m_Entity.AddComponent<ModelComponent>();
+					mc.ModelPath = m_ModelPath;
+				}
+			}
+		}
 
-class DuplicateEntityCommand : public IEditorCommand
-{
-public:
-    DuplicateEntityCommand(Entity entity)
-        : m_SourceEntity(entity),
-          m_Scene(entity.GetRegistry().ctx().get<Scene*>())
-    {
-    }
+		void Undo() override
+		{
+			if (m_Entity)
+			{
+				m_Scene->DestroyEntity(m_Entity);
+			}
+		}
 
-    void Execute() override
-    {
-        m_DuplicateEntity = m_Scene->CopyEntity(m_SourceEntity);
-    }
+		std::string GetName() const override
+		{
+			return "Create Entity";
+		}
 
-    void Undo() override
-    {
-        if (m_DuplicateEntity)
-        {
-            m_Scene->DestroyEntity(m_DuplicateEntity);
-        }
-    }
+	private:
+		Scene* m_Scene;
+		std::string m_Name;
+		std::string m_ModelPath;
+		Entity m_Entity;
+	};
 
-    std::string GetName() const override
-    {
-        return "Duplicate Entity";
-    }
+	class DuplicateEntityCommand : public IEditorCommand
+	{
+	public:
+		DuplicateEntityCommand(Entity entity)
+			: m_SourceEntity(entity),
+			  m_Scene(entity.GetRegistry().ctx().get<Scene*>())
+		{
+		}
 
-private:
-    Entity m_SourceEntity;
-    Entity m_DuplicateEntity;
-    Scene* m_Scene;
-};
+		void Execute() override
+		{
+			m_DuplicateEntity = Entity(m_Scene->CopyEntity(m_SourceEntity), m_Scene->GetRegistryPtr());
+		}
 
-class ParentEntityCommand : public IEditorCommand
-{
-public:
-    ParentEntityCommand(Entity entity, Entity newParent, Scene* scene)
-        : m_Entity(entity), m_NewParent(newParent), m_Scene(scene)
-    {
-        if (m_Entity && m_Entity.HasComponent<HierarchyComponent>())
-        {
-            auto parentID = m_Entity.GetComponent<HierarchyComponent>().Parent;
-            if (parentID != entt::null)
-                m_OldParent = Entity(parentID, m_Entity.GetRegistryPtr());
-        }
-    }
+		void Undo() override
+		{
+			if (m_DuplicateEntity)
+			{
+				m_Scene->DestroyEntity(m_DuplicateEntity);
+			}
+		}
 
-    void Execute() override
-    {
-        SetParent(m_Entity, m_NewParent);
-    }
+		std::string GetName() const override
+		{
+			return "Duplicate Entity";
+		}
 
-    void Undo() override
-    {
-        SetParent(m_Entity, m_OldParent);
-    }
+	private:
+		Entity m_SourceEntity;
+		Entity m_DuplicateEntity;
+		Scene* m_Scene;
+	};
 
-    std::string GetName() const override
-    {
-        return "Parent Entity";
-    }
+	class ParentEntityCommand : public IEditorCommand
+	{
+	public:
+		ParentEntityCommand(Entity entity, Entity newParent, Scene* scene)
+			: m_Entity(entity),
+			  m_NewParent(newParent),
+			  m_Scene(scene)
+		{
+			if (m_Entity && m_Entity.HasComponent<HierarchyComponent>())
+			{
+				auto parentID = m_Entity.GetComponent<HierarchyComponent>().Parent;
+				if (parentID != entt::null)
+				{
+					m_OldParent = Entity(parentID, m_Entity.GetRegistryPtr());
+				}
+			}
+		}
 
-private:
-    void SetParent(Entity child, Entity parent)
-    {
-        if (!child) return;
-        
-        if (!child.HasComponent<HierarchyComponent>())
-            child.AddComponent<HierarchyComponent>();
-        
-        auto& hc = child.GetComponent<HierarchyComponent>();
-        
-        // Remove from old parent
-        if (hc.Parent != entt::null && m_Scene->GetRegistryPtr()->valid(hc.Parent))
-        {
-            Entity oldParent(hc.Parent, m_Scene->GetRegistryPtr());
-            if (oldParent && oldParent.HasComponent<HierarchyComponent>())
-            {
-                auto& oldPhc = oldParent.GetComponent<HierarchyComponent>();
-                auto it = std::find(oldPhc.Children.begin(), oldPhc.Children.end(), (entt::entity)child);
-                if (it != oldPhc.Children.end())
-                {
-                    oldPhc.Children.erase(it);
-                }
-            }
-        }
+		void Execute() override
+		{
+			SetParent(m_Entity, m_NewParent);
+		}
 
-        // Set new parent
-        if (parent)
-        {
-            hc.Parent = (entt::entity)parent;
-            if (!parent.HasComponent<HierarchyComponent>())
-            {
-                parent.AddComponent<HierarchyComponent>();
-            }
-            parent.GetComponent<HierarchyComponent>().Children.push_back((entt::entity)child);
-        }
-        else
-        {
-            hc.Parent = entt::null;
-        }
-    }
+		void Undo() override
+		{
+			SetParent(m_Entity, m_OldParent);
+		}
 
-    Entity m_Entity;
-    Entity m_NewParent;
-    Entity m_OldParent;
-    Scene* m_Scene;
-};
+		std::string GetName() const override
+		{
+			return "Parent Entity";
+		}
 
-} // namespace CHEngine
+	private:
+		void SetParent(Entity child, Entity parent)
+		{
+			if (!child)
+			{
+				return;
+			}
+
+			if (!child.HasComponent<HierarchyComponent>())
+			{
+				child.AddComponent<HierarchyComponent>();
+			}
+
+			auto& hc = child.GetComponent<HierarchyComponent>();
+
+			// Remove from old parent
+			if (hc.Parent != entt::null && m_Scene->GetRegistryPtr()->valid(hc.Parent))
+			{
+				Entity oldParent(hc.Parent, m_Scene->GetRegistryPtr());
+				if (oldParent && oldParent.HasComponent<HierarchyComponent>())
+				{
+					auto& oldPhc = oldParent.GetComponent<HierarchyComponent>();
+					auto it = std::find(oldPhc.Children.begin(), oldPhc.Children.end(), (entt::entity)child);
+					if (it != oldPhc.Children.end())
+					{
+						oldPhc.Children.erase(it);
+					}
+				}
+			}
+
+			// Set new parent
+			if (parent)
+			{
+				hc.Parent = (entt::entity)parent;
+				if (!parent.HasComponent<HierarchyComponent>())
+				{
+					parent.AddComponent<HierarchyComponent>();
+				}
+				parent.GetComponent<HierarchyComponent>().Children.push_back((entt::entity)child);
+			}
+			else
+			{
+				hc.Parent = entt::null;
+			}
+		}
+
+		Entity m_Entity;
+		Entity m_NewParent;
+		Entity m_OldParent;
+		Scene* m_Scene;
+	};
+
+} // namespace Chained
 
 #endif // CH_ENTITY_COMMANDS_H

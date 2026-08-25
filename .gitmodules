@@ -1,65 +1,102 @@
+[submodule "thirdparty/imgui"]
+    path = thirdparty/imgui
+    url = https://github.com/ocornut/imgui.git
+    branch = master
 
-[submodule "include/imgui"]
-	path = include/imgui
-	url = https://github.com/ocornut/imgui.git
-	branch = master
+[submodule "thirdparty/nfd"]
+    path = thirdparty/nfd
+    url = https://github.com/btzy/nativefiledialog-extended.git
+    branch = master
 
-[submodule "include/nfd"]
-	path = include/nfd
-	url = https://github.com/btzy/nativefiledialog-extended.git
-	branch = master
+[submodule "thirdparty/googletest"]
+    path = thirdparty/googletest
+    url = https://github.com/google/googletest.git
+    branch = main
 
-[submodule "include/googletest"]
-	path = include/googletest
-	url = https://github.com/google/googletest.git
-	branch = main
+[submodule "thirdparty/JoltPhysics"]
+    path = thirdparty/JoltPhysics
+    url = https://github.com/jrouwe/JoltPhysics.git
+    branch = master
 
-[submodule "include/entt"]
-	path = include/entt
-	url = https://github.com/skypjack/entt.git
-	branch = master
+[submodule "thirdparty/entt"]
+    path = thirdparty/entt
+    url = https://github.com/skypjack/entt.git
+    branch = master
 
-[submodule "include/yaml-cpp"]
-	path = include/yaml-cpp
-	url = https://github.com/jbeder/yaml-cpp.git
+[submodule "thirdparty/yaml-cpp"]
+    path = thirdparty/yaml-cpp
+    url = https://github.com/jbeder/yaml-cpp.git
 
-[submodule "include/imguizmo"]
-	path = include/imguizmo
-	url = https://github.com/CedricGuillemet/ImGuizmo.git
+[submodule "thirdparty/imguizmo"]
+    path = thirdparty/imguizmo
+    url = https://github.com/CedricGuillemet/ImGuizmo.git
 
-[submodule "include/glm"]
-	path = include/glm
-	url = https://github.com/g-truc/glm.git
+[submodule "thirdparty/glm"]
+    path = thirdparty/glm
+    url = https://github.com/g-truc/glm.git
 
-[submodule "include/assimp"]
-	path = include/assimp
-	url = https://github.com/assimp/assimp.git
+[submodule "thirdparty/assimp"]
+    path = thirdparty/assimp
+    url = https://github.com/assimp/assimp.git
 
-[submodule "include/coral"]
-	path = include/coral
-	url = https://github.com/StudioCherno/Coral.git
+[submodule "thirdparty/coral"]
+    path = thirdparty/coral
+    url = https://github.com/StudioCherno/Coral.git
 
-[submodule "include/enet"]
-	path = include/enet
+[submodule "thirdparty/miniaudio"]
+    path = thirdparty/miniaudio
+    url = https://github.com/mackron/miniaudio.git
+
+[submodule "thirdparty/stb"]
+    path = thirdparty/stb
+    url = https://github.com/nothings/stb.git
+
+[submodule "thirdparty/glad"]
+    path = thirdparty/glad
+    url = https://github.com/Dav1dde/glad.git
+    branch = glad2
+
+[submodule "thirdparty/glfw"]
+    path = thirdparty/glfw
+    url = https://github.com/glfw/glfw.git
+
+[submodule "thirdparty/cereal"]
+    path = thirdparty/cereal
+    url = https://github.com/USCiLab/cereal.git
+
+[submodule "thirdparty/zstd"]
+    path = thirdparty/zstd
+    url = https://github.com/facebook/zstd.git
+
+[submodule "thirdparty/spdlog"]
+    path = thirdparty/spdlog
+    url = https://github.com/gabime/spdlog.git
+
+[submodule "thirdparty/reflect-cpp"]
+    path = thirdparty/reflect-cpp
+    url = https://github.com/getml/reflect-cpp.git
+
+[submodule "thirdparty/portable-file-dialogs"]
+    path = thirdparty/portable-file-dialogs
+    url = https://github.com/samhocevar/portable-file-dialogs.git
+[submodule "cmake/external/thirdparty/portable-file-dialogs"]
+	path = cmake/external/thirdparty/portable-file-dialogs
+	url = https://github.com/samhocevar/portable-file-dialogs.git
+    
+[submodule "thirdparty/pack"]
+	path = thirdparty/pack
+	url = https://github.com/cfnptr/pack.git
+
+[submodule "thirdparty/miniupnp"]
+	path = thirdparty/miniupnp
+	url = https://github.com/miniupnp/miniupnp.git
+
+[submodule "thirdparty/enet"]
+	path = thirdparty/enet
 	url = https://github.com/zpl-c/enet.git
-	branch = master
-
-[submodule "include/GameNetworkingSockets"]
-	path = include/GameNetworkingSockets
-	url = https://github.com/ValveSoftware/GameNetworkingSockets.git
-	branch = master
-
-[submodule "include/miniaudio"]
-	path = include/miniaudio
-	url = https://github.com/mackron/miniaudio.git
-
-[submodule "include/stb"]
-	path = include/stb
-	url = https://github.com/nothings/stb.git
-[submodule "include/glad"]
-	path = include/glad
-	url = https://github.com/Dav1dde/glad.git
-	branch = glad2
-[submodule "include/glfw"]
-	path = include/glfw
-	url = https://github.com/glfw/glfw.git
+[submodule "thirdparty/freetype"]
+	path = thirdparty/freetype
+	url = https://github.com/freetype/freetype.git
+[submodule "thirdparty/freetype-gl"]
+	path = thirdparty/freetype-gl
+	url = https://github.com/rougier/freetype-gl.git
