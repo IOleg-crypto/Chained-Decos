@@ -209,89 +209,133 @@ jobs:
           set -euo pipefail
           python tools/sync_resources.py --root . --bin "build/${{ matrix.preset }}/bin" --config ${{ matrix.config }}
 
-      - name: Package with CPack
+      - name: Pack game resources into .pack
         run: |
           set -euo pipefail
-          cd "build/${{ matrix.preset }}"
-          cpack -C ${{ matrix.config }} || true
+          WS="${{ github.workspace }}"
+          BIN_DIR="$WS/build/${{ matrix.preset }}/bin/${{ matrix.config }}"
+          if [[ ! -d "$BIN_DIR" ]]; then
+            BIN_DIR="$WS/build/${{ matrix.preset }}/bin"
+          fi
 
-      - name: Package all archives
+          # Find packer executable (multi-config or single-config)
+          PACKER="$BIN_DIR/packer"
+          [[ -f "$PACKER.exe" ]] && PACKER="$PACKER.exe"
+          if [[ ! -f "$PACKER" ]]; then
+            # Try searching the whole build tree
+            PACKER=$(find "$WS/build/${{ matrix.preset }}" -name "packer" -o -name "packer.exe" 2>/dev/null | head -1)
+          fi
+          if [[ ! -f "$PACKER" ]]; then
+            echo "ERROR: packer executable not found" >&2
+            exit 1
+          fi
+          echo "Using packer: $PACKER"
+
+          # Find .chproject file for the active game
+          CHPROJECT=""
+          for f in "$WS/game/chaineddecos"/*.chproject; do
+            [[ -f "$f" ]] && CHPROJECT="$f" && break
+          done
+
+          # Create resources.pack from assets/ + resources/
+          python "$WS/tools/create_pack.py" \
+            --packer "$PACKER" \
+            --output "$BIN_DIR" \
+            ${CHPROJECT:+--chproject "$CHPROJECT"} \
+            --assets "$WS/game/chaineddecos/assets" \
+            --resources "$WS/resources" \
+            --split-mb 0 \
+            --zip-threshold 5 \
+            --data-version 0
+
+      - name: Package Game and Editor bundles
         id: package
         shell: bash
         run: |
           set -euo pipefail
           VERSION="${{ steps.info.outputs.version }}"
-          DATE="${{ steps.info.outputs.date }}"
           PLATFORM="${{ matrix.platform }}"
           IS_WINDOWS="${{ matrix.os == 'windows-latest' }}"
+          WS="${{ github.workspace }}"
 
-          BIN_DIR="${{ github.workspace }}/build/${{ matrix.preset }}/bin/${{ matrix.config }}"
+          # Locate the build output directory (multi-config vs single-config generators)
+          BIN_DIR="$WS/build/${{ matrix.preset }}/bin/${{ matrix.config }}"
           if [[ ! -d "$BIN_DIR" ]]; then
-            BIN_DIR="${{ github.workspace }}/build/${{ matrix.preset }}/bin"
+            BIN_DIR="$WS/build/${{ matrix.preset }}/bin"
           fi
 
-          make_archive() {
-            local NAME="$1"
-            local SRC_DIR="$2"
-            local ARCHIVE_NAME="${NAME}-${VERSION}-${DATE}-${PLATFORM}"
-            local DEST="${{ github.workspace }}/${ARCHIVE_NAME}"
-            cd "$SRC_DIR"
+          # Collect runtime DLLs / shared libs needed by both executables
+          RUNTIME_FILES=()
+          for f in "$BIN_DIR"/*.dll "$BIN_DIR"/*.so "$BIN_DIR"/*.so.* "$BIN_DIR"/*.dylib; do
+            [[ -f "$f" ]] && RUNTIME_FILES+=("$f")
+          done
+
+          # Helper: assemble a bundle directory and compress it
+          make_bundle() {
+            local BUNDLE_NAME="$1"   # e.g. ChainedDecos-Game
+            local BUNDLE_DIR="$WS/pkg-$BUNDLE_NAME"
+            shift
+            mkdir -p "$BUNDLE_DIR"
+
+            # Copy files/dirs passed as remaining arguments
+            while (( "$#" )); do
+              local SRC="$1"; shift
+              if [[ -e "$SRC" ]]; then
+                cp -r "$SRC" "$BUNDLE_DIR/"
+              fi
+            done
+
+            # Copy runtime DLLs / shared libs
+            for f in "${RUNTIME_FILES[@]:-}"; do
+              [[ -f "$f" ]] && cp "$f" "$BUNDLE_DIR/"
+            done
+
+            # Copy .NET managed assemblies (Coral + Chained scripting)
+            for f in "$BIN_DIR"/*.dll "$BIN_DIR"/*.runtimeconfig.json "$BIN_DIR"/*.deps.json; do
+              [[ -f "$f" ]] && cp "$f" "$BUNDLE_DIR/" 2>/dev/null || true
+            done
+
+            local ARCHIVE_PATH="$WS/${BUNDLE_NAME}-${VERSION}-${PLATFORM}"
             if [[ "$IS_WINDOWS" == "true" ]]; then
-              powershell -Command "Compress-Archive -Path * -DestinationPath '${DEST}.zip' -Force"
-              echo "${ARCHIVE_NAME}.zip"
+              pushd "$BUNDLE_DIR" > /dev/null
+              powershell -Command "Compress-Archive -Path * -DestinationPath '${ARCHIVE_PATH}.zip' -Force"
+              popd > /dev/null
+              echo "${BUNDLE_NAME}-${VERSION}-${PLATFORM}.zip"
             else
-              tar -czf "${DEST}.tar.gz" .
-              echo "${ARCHIVE_NAME}.tar.gz"
+              pushd "$BUNDLE_DIR" > /dev/null
+              tar -czf "${ARCHIVE_PATH}.tar.gz" .
+              popd > /dev/null
+              echo "${BUNDLE_NAME}-${VERSION}-${PLATFORM}.tar.gz"
             fi
           }
 
-          # --- SDK (editor + game + assets + resources) ---
-          SDK_DIR="${{ github.workspace }}/package-sdk"
-          mkdir -p "$SDK_DIR"
-          cp -r "$BIN_DIR"/* "$SDK_DIR/"
-          if [[ -d "${{ github.workspace }}/assets" ]]; then
-            cp -r "${{ github.workspace }}/assets" "$SDK_DIR/"
-          fi
-          SDK_ARCHIVE=$(make_archive "ChainedEngine-SDK" "$SDK_DIR")
-          echo "sdk_archive=$SDK_ARCHIVE" >> $GITHUB_OUTPUT
+          # ── Game bundle: executable + .pack + scripts/ ─────────────────────
+          GAME_EXE=""
+          [[ -f "$BIN_DIR/ChainedDecos.exe" ]] && GAME_EXE="$BIN_DIR/ChainedDecos.exe"
+          [[ -f "$BIN_DIR/ChainedDecos"     ]] && GAME_EXE="$BIN_DIR/ChainedDecos"
 
-          # --- Game (ChainedDecos + assets + resources) ---
-          GAME_DIR="${{ github.workspace }}/package-game"
-          mkdir -p "$GAME_DIR"
-          cp "$BIN_DIR/ChainedDecos" "$GAME_DIR/" 2>/dev/null || true
-          cp "$BIN_DIR/ChainedDecos.exe" "$GAME_DIR/" 2>/dev/null || true
-          if [[ -d "${{ github.workspace }}/assets" ]]; then
-            cp -r "${{ github.workspace }}/assets" "$GAME_DIR/"
-          fi
-          GAME_ARCHIVE=$(make_archive "ChainedDecos-Game" "$GAME_DIR")
+          # Collect .pack files created by create_pack.py
+          GAME_PACKS=()
+          for f in "$BIN_DIR"/resources*.pack; do
+            [[ -f "$f" ]] && GAME_PACKS+=("$f")
+          done
+
+          GAME_ARCHIVE=$(make_bundle "ChainedDecos-Game" \
+            "$GAME_EXE" \
+            "${GAME_PACKS[@]}" \
+            "$BIN_DIR/scripts")
           echo "game_archive=$GAME_ARCHIVE" >> $GITHUB_OUTPUT
 
-          # --- Editor (ChainedEditor only) ---
-          EDITOR_DIR="${{ github.workspace }}/package-editor"
-          mkdir -p "$EDITOR_DIR"
-          cp "$BIN_DIR/ChainedEditor" "$EDITOR_DIR/" 2>/dev/null || true
-          cp "$BIN_DIR/ChainedEditor.exe" "$EDITOR_DIR/" 2>/dev/null || true
-          EDITOR_ARCHIVE=$(make_archive "ChainedEditor" "$EDITOR_DIR")
+          # ── Editor bundle: executable + engine resources only (no game assets) ──
+          EDITOR_EXE=""
+          [[ -f "$BIN_DIR/ChainedEditor.exe" ]] && EDITOR_EXE="$BIN_DIR/ChainedEditor.exe"
+          [[ -f "$BIN_DIR/ChainedEditor"     ]] && EDITOR_EXE="$BIN_DIR/ChainedEditor"
+
+          EDITOR_ARCHIVE=$(make_bundle "ChainedEditor" \
+            "$EDITOR_EXE" \
+            "$BIN_DIR/resources" \
+            "$BIN_DIR/editor_settings.yaml")
           echo "editor_archive=$EDITOR_ARCHIVE" >> $GITHUB_OUTPUT
-
-      - name: Upload CPack Packages
-        uses: actions/upload-artifact@v4
-        with:
-          name: CPack-Packages-${{ matrix.platform }}
-          path: |
-            build/${{ matrix.preset }}/*.zip
-            build/${{ matrix.preset }}/*.tar.gz
-            build/${{ matrix.preset }}/*.deb
-            build/${{ matrix.preset }}/*.exe
-          if-no-files-found: ignore
-          retention-days: 30
-
-      - name: Upload SDK artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: SDK-${{ matrix.platform }}
-          path: ${{ github.workspace }}/${{ steps.package.outputs.sdk_archive }}
-          retention-days: 30
 
       - name: Upload Game artifact
         uses: actions/upload-artifact@v4
@@ -351,7 +395,7 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           path: release-assets
-          pattern: "{SDK,Game,Editor,CPack}-*"
+          pattern: "{Game,Editor}-*"
           merge-multiple: true
 
       - name: Create Release
@@ -365,13 +409,24 @@ jobs:
             - **Build Date**: ${{ steps.info.outputs.date }}
             - **Platforms**: Linux (clang), Windows (clang)
 
-            #### Assets
-            - **ChainedEngine-SDK** — full SDK (editor + game + engine)
-            - **ChainedDecos-Game** — game only
-            - **ChainedEditor** — editor only
-            - **CPack Packages** — standalone ZIP, NSIS Windows installer, DEB, tar.gz packages
+            #### Downloads
+
+            | File | Platform | Contents |
+            |------|----------|----------|
+            | `ChainedDecos-Game-*-windows.zip` | Windows | Game executable + resources.pack + scripts + DLLs |
+            | `ChainedDecos-Game-*-linux.tar.gz` | Linux | Game executable + resources.pack + scripts |
+            | `ChainedEditor-*-windows.zip` | Windows | Editor executable + engine resources + DLLs |
+            | `ChainedEditor-*-linux.tar.gz` | Linux | Editor executable + engine resources |
+
+            > **Game** — packaged with `resources.pack` (assets + engine resources compressed). Scripts included separately.
+            > **Editor** — includes only the editor binary and engine resources (shaders, fonts, icons) — no game assets.
+
+            #### Requirements
+            - Windows: no extra dependencies (all DLLs included)
+            - Linux: requires .NET 9+ runtime for C# scripting
           draft: ${{ inputs.is_draft || false }}
           prerelease: ${{ inputs.is_prerelease || false }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
 
