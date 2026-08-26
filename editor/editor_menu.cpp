@@ -394,6 +394,18 @@ namespace Chained
 				if (ImGui::Button(btnLabel.c_str(), ImVec2(modeWidth, 0)))
 				{
 					m_ExportDialog.SelectedMode = m.mode;
+					if (m.mode == PackMode::Fast)
+					{
+						m_ExportDialog.ZipThreshold = 0.10f;
+					}
+					else if (m.mode == PackMode::Balanced)
+					{
+						m_ExportDialog.ZipThreshold = 0.05f;
+					}
+					else if (m.mode == PackMode::Max)
+					{
+						m_ExportDialog.ZipThreshold = 0.00f;
+					}
 				}
 
 				ImGui::PopStyleVar();
@@ -424,15 +436,18 @@ namespace Chained
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
 			if (m_ExportDialog.SelectedMode != PackMode::Raw)
 			{
-				int zipPercents = static_cast<int>(std::round(m_ExportDialog.ZipThreshold * 100.0f));
-				if (ImGui::SliderInt("Compression Threshold", &zipPercents, 0, 100, "%d%%"))
+				int displayPercent =
+					std::clamp(100 - static_cast<int>(std::round(m_ExportDialog.ZipThreshold * 100.0f)), 0, 100);
+				if (ImGui::SliderInt("Compression Level", &displayPercent, 0, 100, "%d%%"))
 				{
-					m_ExportDialog.ZipThreshold = static_cast<float>(zipPercents) * 0.01f;
+					m_ExportDialog.ZipThreshold = static_cast<float>(100 - displayPercent) * 0.01f;
 				}
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::SetTooltip("Files with compression savings below this percentage stay uncompressed.\n0%% = "
-									  "compress everything, 100%% = store uncompressed.");
+					ImGui::SetTooltip("Compression level / aggressiveness.\n"
+									  "100%% = compress all files (smallest pack size).\n"
+									  "Lower values skip compression for already-compressed assets (e.g. PNG, OGG).\n"
+									  "0%% = store uncompressed.");
 				}
 			}
 

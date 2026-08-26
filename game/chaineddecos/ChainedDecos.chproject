@@ -36,7 +36,7 @@ Project:
     AutoLoad: true
   Export:
     Mode: 2
-    ZipThreshold: 1
+    ZipThreshold: 0
     DataVersion: 0
     SplitSizeMB: 0
     PackName: resources
