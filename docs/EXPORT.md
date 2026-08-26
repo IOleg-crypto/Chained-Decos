@@ -100,16 +100,23 @@ At startup, `AssetManager::OpenPack()` automatically looks for `resources.pack` 
 In **Raw** mode no pack file is created. The runtime detects the absence of `resources.pack` and reads files directly from the `assets/` and `resources/` folders. This makes Raw mode ideal for rapid iteration and debugging.
 
 ```
-# Fast / Balanced output structure:
-MyGame/
-  MyGame.exe
-  resources.pack
-  engine.dll
-  ...
+# Fast / Balanced output structure (Game):
+ChainedDecos/
+  ChainedDecos.exe
+  ChainedDecos.chproject      ← project discovery (must be next to exe)
+  resources.pack              ← packed assets + engine resources
+  scripts/
+    ChainedDecos.Scripts.dll
+    *.dll                     ← .NET dependencies
+  nethost/                    ← .NET hosting libs (hostfxr.dll / libhostfxr.so)
+  *.dll / *.so                ← engine runtime libraries
+  Coral.Managed.runtimeconfig.json
+  Coral.Managed.deps.json
 
-# Raw output structure:
-MyGame/
-  MyGame.exe
+# Raw output structure (Game):
+ChainedDecos/
+  ChainedDecos.exe
+  ChainedDecos.chproject
   assets/
     scenes/
     textures/
@@ -118,9 +125,25 @@ MyGame/
     shaders/
     fonts/
     ...
-  engine.dll
-  ...
+  scripts/
+  nethost/
+  *.dll / *.so
+
+# Editor output structure:
+ChainedEditor/
+  ChainedEditor.exe
+  resources/                  ← engine resources (shaders, fonts, icons)
+  nethost/                    ← .NET hosting libs
+  *.dll / *.so
+  editor_settings.yaml
 ```
+
+## Platform Requirements
+
+| Platform | Runtime | .NET |
+|---|---|---|
+| Windows | All DLLs included in bundle | Bundled via `nethost/` |
+| Linux | Requires OpenGL 4.3+ driver | Requires .NET 9+ runtime (`sudo apt install dotnet-runtime-9.0`) |
 
 ---
 

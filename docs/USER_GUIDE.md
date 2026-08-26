@@ -249,6 +249,50 @@ Opens the default project defined in the `.chproject` file.
 5. The export starts automatically. Progress is shown in the overlay.
 6. Distribute the exported folder — it contains everything needed to run the game with ChainedRuntime.
 
+## Running the Exported Game
+
+After exporting, you can run the game directly from the output folder.
+
+### Windows
+
+```bash
+# Run the game executable directly
+ChainedDecos.exe
+```
+
+No additional installation required — all DLLs are included in the bundle.
+
+### Linux
+
+```bash
+# Make the executable runnable
+chmod +x ChainedDecos
+
+# Run the game
+./ChainedDecos
+```
+
+**Linux Requirements:**
+- OpenGL 4.3+ compatible GPU driver
+- .NET 9+ runtime for C# scripting:
+  ```bash
+  sudo apt install dotnet-runtime-9.0
+  ```
+
+### Exported Game Structure
+
+```
+ChainedDecos/
+  ChainedDecos.exe / ChainedDecos    ← game executable
+  ChainedDecos.chproject              ← project configuration
+  resources.pack                      ← packed assets + engine resources
+  scripts/                            ← C# gameplay scripts
+  nethost/                            ← .NET hosting libraries
+  *.dll / *.so                        ← engine runtime libraries
+```
+
+The game automatically loads `resources.pack` from the same directory as the executable. If you need to modify assets without repacking, use **Raw** export mode instead.
+
 ## Common Tasks
 
 ### Add a Light

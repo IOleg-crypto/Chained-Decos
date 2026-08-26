@@ -84,6 +84,21 @@ cmake --preset windows-vs2026
 
 > **Editor play mode:** Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
 
+## Downloads
+
+Pre-built binaries are available on the [Releases](https://github.com/IOleg-crypto/Chained-Engine/releases) page.
+
+| Platform | Game | Editor |
+|---|---|---|
+| Windows | `ChainedDecos-Game-*-windows.zip` | `ChainedEditor-*-windows.zip` |
+| Linux | `ChainedDecos-Game-*-linux.tar.gz` | `ChainedEditor-*-linux.tar.gz` |
+
+**Linux requirements:**
+```bash
+# .NET 9+ runtime (required for C# scripting)
+sudo apt install dotnet-runtime-9.0
+```
+
 ## Build
 
 ### Presets
