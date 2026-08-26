@@ -69,6 +69,9 @@ def split_chunks(
     return chunks
 
 
+import tempfile
+
+
 def run_packer(
     packer: str,
     output_path: Path,
@@ -77,28 +80,53 @@ def run_packer(
     data_version: int,
     prefer_speed: bool,
 ) -> None:
-    """Invoke the packer utility with file/item path pairs."""
-    cmd = [packer]
-    cmd += ["-z", str(zip_threshold)]
-    cmd += ["-v", str(data_version)]
-    if prefer_speed:
-        cmd += ["-s"]
-    cmd.append(str(output_path))
-    for fpath, item in file_items:
-        cmd.append(str(fpath))
-        cmd.append(item)
-
+    """Invoke the packer utility with file/item path pairs using manifest file."""
     print(f"  Packer: {output_path.name} ({len(file_items)} files)")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"  ERROR packer failed (rc={result.returncode}):", file=sys.stderr)
+
+    # Write manifest file (tab-separated)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as mf:
+        manifest_path = mf.name
+        for fpath, item in file_items:
+            mf.write(f"{fpath}\t{item}\n")
+
+    try:
+        # Try manifest mode (-m flag) first
+        cmd = [packer]
+        cmd += ["-z", str(zip_threshold)]
+        cmd += ["-v", str(data_version)]
+        if prefer_speed:
+            cmd += ["-s"]
+        cmd += ["-m", manifest_path]
+        cmd.append(str(output_path))
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        # If -m flag is unrecognized (legacy packer.exe), fallback to direct CLI args
+        if result.returncode != 0 and ("unknown option: -m" in result.stderr or "unknown option: -m" in result.stdout):
+            cmd_fallback = [packer, "-z", str(zip_threshold), "-v", str(data_version)]
+            if prefer_speed:
+                cmd_fallback += ["-s"]
+            cmd_fallback.append(str(output_path))
+            for fpath, item in file_items:
+                cmd_fallback.append(str(fpath))
+                cmd_fallback.append(item)
+            result = subprocess.run(cmd_fallback, capture_output=True, text=True)
+
+        if result.returncode != 0:
+            print(f"  ERROR packer failed (rc={result.returncode}):", file=sys.stderr)
+            if result.stdout:
+                print(result.stdout, file=sys.stderr)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            sys.exit(1)
         if result.stdout:
-            print(result.stdout, file=sys.stderr)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        sys.exit(1)
-    if result.stdout:
-        print(f"  {result.stdout.strip()}")
+            print(f"  {result.stdout.strip()}")
+    finally:
+        if os.path.exists(manifest_path):
+            try:
+                os.remove(manifest_path)
+            except OSError:
+                pass
 
 
 def main() -> None:

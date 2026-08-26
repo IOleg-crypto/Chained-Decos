@@ -6,10 +6,6 @@ on:
       - 'v*'
       - 'release/*'
       - 'release-*'
-    branches:
-      - main
-      - opengl
-      - develop
   workflow_dispatch:
     inputs:
       tag_name:
@@ -95,6 +91,7 @@ jobs:
           msystem: MINGW64
           update: false
           path-type: inherit
+          cache: true
           install: mingw-w64-x86_64-clang lld mingw-w64-x86_64-lld mingw-w64-x86_64-gcc mingw-w64-x86_64-make
 
       - name: Prefer MSYS2 toolchain over preinstalled MinGW
@@ -218,15 +215,18 @@ jobs:
             BIN_DIR="$WS/build/${{ matrix.preset }}/bin"
           fi
 
-          # Find packer executable (multi-config or single-config)
-          PACKER="$BIN_DIR/packer"
+          # Find packer executable (chpacker or packer)
+          PACKER="$BIN_DIR/chpacker"
           [[ -f "$PACKER.exe" ]] && PACKER="$PACKER.exe"
           if [[ ! -f "$PACKER" ]]; then
-            # Try searching the whole build tree
-            PACKER=$(find "$WS/build/${{ matrix.preset }}" -name "packer" -o -name "packer.exe" 2>/dev/null | head -1)
+            PACKER="$BIN_DIR/packer"
+            [[ -f "$PACKER.exe" ]] && PACKER="$PACKER.exe"
           fi
           if [[ ! -f "$PACKER" ]]; then
-            echo "ERROR: packer executable not found" >&2
+            PACKER=$(find "$WS/build/${{ matrix.preset }}" -name "chpacker" -o -name "chpacker.exe" -o -name "packer" -o -name "packer.exe" 2>/dev/null | head -1)
+          fi
+          if [[ ! -f "$PACKER" ]]; then
+            echo "ERROR: packer/chpacker executable not found" >&2
             exit 1
           fi
           echo "Using packer: $PACKER"
@@ -295,16 +295,13 @@ jobs:
               [[ -f "$f" ]] && cp "$f" "$BUNDLE_DIR/" 2>/dev/null || true
             done
 
-            local ARCHIVE_PATH="$WS/${BUNDLE_NAME}-${VERSION}-${PLATFORM}"
+            local ARCHIVE_BASE="$WS/${BUNDLE_NAME}-${VERSION}-${PLATFORM}"
             if [[ "$IS_WINDOWS" == "true" ]]; then
-              pushd "$BUNDLE_DIR" > /dev/null
-              powershell -Command "Compress-Archive -Path * -DestinationPath '${ARCHIVE_PATH}.zip' -Force"
-              popd > /dev/null
+              python -c "import shutil; shutil.make_archive(r'${ARCHIVE_BASE}', 'zip', r'${BUNDLE_DIR}')"
               echo "${BUNDLE_NAME}-${VERSION}-${PLATFORM}.zip"
             else
-              pushd "$BUNDLE_DIR" > /dev/null
-              tar -czf "${ARCHIVE_PATH}.tar.gz" .
-              popd > /dev/null
+              chmod +x "$BUNDLE_DIR"/* 2>/dev/null || true
+              python3 -c "import shutil; shutil.make_archive('${ARCHIVE_BASE}', 'gztar', '${BUNDLE_DIR}')"
               echo "${BUNDLE_NAME}-${VERSION}-${PLATFORM}.tar.gz"
             fi
           }
@@ -351,6 +348,7 @@ jobs:
         with:
           name: Game-${{ matrix.platform }}
           path: ${{ github.workspace }}/${{ steps.package.outputs.game_archive }}
+          compression-level: 1
           retention-days: 30
 
       - name: Upload Editor artifact
@@ -358,6 +356,7 @@ jobs:
         with:
           name: Editor-${{ matrix.platform }}
           path: ${{ github.workspace }}/${{ steps.package.outputs.editor_archive }}
+          compression-level: 1
           retention-days: 30
 
   release:
@@ -412,6 +411,8 @@ jobs:
         with:
           name: "Chained Engine v${{ steps.info.outputs.version }}"
           tag_name: "${{ steps.info.outputs.raw_tag }}"
+          target_commitish: ${{ github.sha }}
+          generate_release_notes: true
           files: release-assets/*
           body: |
             ### Chained Engine v${{ steps.info.outputs.version }}

@@ -99,6 +99,13 @@ foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
 endforeach()
 
 add_subdirectory(editor)
+# ── Engine Tools ─────────────────────────────────────────────────────────────
+if(TARGET pack-static)
+    add_executable(chpacker tools/chpacker.cpp)
+    target_link_libraries(chpacker PRIVATE pack-static)
+    set_target_properties(chpacker PROPERTIES FOLDER "Tools")
+endif()
+
 # Google Tests for engine
 enable_testing()
 add_subdirectory(tests)
