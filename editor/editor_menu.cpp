@@ -424,11 +424,15 @@ namespace Chained
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
 			if (m_ExportDialog.SelectedMode != PackMode::Raw)
 			{
-				ImGui::SliderFloat("Compression Threshold", &m_ExportDialog.ZipThreshold, 0.0f, 1.0f, "%.2f");
+				int zipPercents = static_cast<int>(std::round(m_ExportDialog.ZipThreshold * 100.0f));
+				if (ImGui::SliderInt("Compression Threshold", &zipPercents, 0, 100, "%d%%"))
+				{
+					m_ExportDialog.ZipThreshold = static_cast<float>(zipPercents) * 0.01f;
+				}
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::SetTooltip("Files with compression ratio above this threshold stay uncompressed.\n0.0 = "
-									  "compress everything, 1.0 = compress nothing.");
+					ImGui::SetTooltip("Files with compression savings below this percentage stay uncompressed.\n0%% = "
+									  "compress everything, 100%% = store uncompressed.");
 				}
 			}
 
