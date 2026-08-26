@@ -320,10 +320,18 @@ jobs:
             [[ -f "$f" ]] && GAME_PACKS+=("$f")
           done
 
+          # Locate .chproject for the game
+          CHPROJECT=""
+          for f in "$WS/game/chaineddecos"/*.chproject; do
+            [[ -f "$f" ]] && CHPROJECT="$f" && break
+          done
+
           GAME_ARCHIVE=$(make_bundle "ChainedDecos-Game" \
             "$GAME_EXE" \
             "${GAME_PACKS[@]}" \
-            "$BIN_DIR/scripts")
+            ${CHPROJECT:+"$CHPROJECT"} \
+            "$BIN_DIR/scripts" \
+            "$BIN_DIR/nethost")
           echo "game_archive=$GAME_ARCHIVE" >> $GITHUB_OUTPUT
 
           # ── Editor bundle: executable + engine resources only (no game assets) ──
@@ -334,7 +342,8 @@ jobs:
           EDITOR_ARCHIVE=$(make_bundle "ChainedEditor" \
             "$EDITOR_EXE" \
             "$BIN_DIR/resources" \
-            "$BIN_DIR/editor_settings.yaml")
+            "$BIN_DIR/editor_settings.yaml" \
+            "$BIN_DIR/nethost")
           echo "editor_archive=$EDITOR_ARCHIVE" >> $GITHUB_OUTPUT
 
       - name: Upload Game artifact
@@ -413,13 +422,13 @@ jobs:
 
             | File | Platform | Contents |
             |------|----------|----------|
-            | `ChainedDecos-Game-*-windows.zip` | Windows | Game executable + resources.pack + scripts + DLLs |
-            | `ChainedDecos-Game-*-linux.tar.gz` | Linux | Game executable + resources.pack + scripts |
-            | `ChainedEditor-*-windows.zip` | Windows | Editor executable + engine resources + DLLs |
-            | `ChainedEditor-*-linux.tar.gz` | Linux | Editor executable + engine resources |
+            | `ChainedDecos-Game-*-windows.zip` | Windows | Game executable + .chproject + resources.pack + scripts + nethost/ + DLLs |
+            | `ChainedDecos-Game-*-linux.tar.gz` | Linux | Game executable + .chproject + resources.pack + scripts + nethost/ |
+            | `ChainedEditor-*-windows.zip` | Windows | Editor executable + engine resources + nethost/ + DLLs |
+            | `ChainedEditor-*-linux.tar.gz` | Linux | Editor executable + engine resources + nethost/ |
 
-            > **Game** — packaged with `resources.pack` (assets + engine resources compressed). Scripts included separately.
-            > **Editor** — includes only the editor binary and engine resources (shaders, fonts, icons) — no game assets.
+            > **Game** — packaged with `resources.pack` (assets + engine resources compressed), `.chproject` project config, `scripts/` (C# assemblies), and `nethost/` (.NET hosting). On Linux, requires .NET 9+ runtime.
+            > **Editor** — includes the editor binary, engine resources (shaders, fonts, icons), and `nethost/` (.NET hosting). On Linux, requires .NET 9+ runtime.
 
             #### Requirements
             - Windows: no extra dependencies (all DLLs included)
