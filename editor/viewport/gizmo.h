@@ -84,7 +84,17 @@ namespace Chained
 			return m_IsLocalSpace;
 		}
 
+		void SetCurrentTool(GizmoType tool)
+		{
+			m_CurrentTool = tool;
+		}
+		GizmoType GetCurrentTool() const
+		{
+			return m_CurrentTool;
+		}
+
 	private:
+		GizmoType m_CurrentTool = GizmoType::TRANSLATE;
 		bool m_SnappingEnabled = false;
 
 		float m_RotationSnap = 45.0f;

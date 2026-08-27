@@ -47,6 +47,9 @@ DebugSettings:
   CollisionWireframeMode: 0
 Entities:
   - Entity: 7901133756770750101
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: ChainedDecos.Scripts.GameStartup
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]

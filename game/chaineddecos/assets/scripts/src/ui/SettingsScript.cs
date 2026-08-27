@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.IO;
 using Chained;
 
 namespace ChainedDecos.Scripts
@@ -8,121 +7,14 @@ namespace ChainedDecos.Scripts
     public class SettingsScript : Script
     {
         private bool m_WasApplied = false;
-        private string m_ConfigPath = "";
 
         public override void OnStart()
         {
-            m_ConfigPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "settings.cfg");
-            LoadSettings();
             PopulateResolutions();
             PopulateAntiAliasing();
             InitFullscreen();
             InitVSync();
             InitAudioSliders();
-        }
-
-        // ── SettingsStorage ────────────────────────────────────────────────
-
-        private static class SettingsStorage
-        {
-            public static Dictionary<string, string> Load(string path)
-            {
-                var dict = new Dictionary<string, string>();
-                if (!File.Exists(path)) return dict;
-
-                foreach (string line in File.ReadAllLines(path))
-                {
-                    string trimmed = line.Trim();
-                    if (string.IsNullOrEmpty(trimmed) || trimmed.StartsWith("#")) continue;
-
-                    int eq = trimmed.IndexOf('=');
-                    if (eq > 0)
-                    {
-                        string key = trimmed.Substring(0, eq).Trim();
-                        string value = trimmed.Substring(eq + 1).Trim();
-                        dict[key] = value;
-                    }
-                }
-                return dict;
-            }
-
-            public static void Save(string path, Dictionary<string, string> settings)
-            {
-                using (var writer = new StreamWriter(path))
-                {
-                    foreach (var kv in settings)
-                        writer.WriteLine($"{kv.Key}={kv.Value}");
-                }
-            }
-        }
-
-        // ── Load ───────────────────────────────────────────────────────────
-
-        private void LoadSettings()
-        {
-            var cfg = SettingsStorage.Load(m_ConfigPath);
-            if (cfg.Count == 0) return;
-
-            if (cfg.TryGetValue("AntiAliasingSamples", out string aaStr) && int.TryParse(aaStr, out int aa))
-                AppWindow.SetAntiAliasingSamples(aa);
-
-            if (cfg.TryGetValue("Fullscreen", out string fsStr) && bool.TryParse(fsStr, out bool fs))
-                AppWindow.SetFullscreen(fs);
-
-            if (cfg.TryGetValue("VSync", out string vsStr) && bool.TryParse(vsStr, out bool vs))
-                AppWindow.SetVSync(vs);
-
-            if (cfg.TryGetValue("Resolution", out string resStr))
-            {
-                string[] parts = resStr.Split('x');
-                if (parts.Length == 2 && int.TryParse(parts[0], out int w) && int.TryParse(parts[1], out int h))
-                    AppWindow.SetSize(w, h);
-            }
-
-            if (cfg.TryGetValue("MasterVolume", out string mvStr) && float.TryParse(mvStr, System.Globalization.CultureInfo.InvariantCulture, out float mv))
-                Audio.SetMasterVolume(mv);
-
-            if (cfg.TryGetValue("MusicVolume", out string musStr) && float.TryParse(musStr, System.Globalization.CultureInfo.InvariantCulture, out float mus))
-                Audio.SetMusicVolume(mus);
-
-            if (cfg.TryGetValue("SFXVolume", out string sfxStr) && float.TryParse(sfxStr, System.Globalization.CultureInfo.InvariantCulture, out float sfx))
-                Audio.SetSFXVolume(sfx);
-        }
-
-        // ── Save ───────────────────────────────────────────────────────────
-
-        private void SaveSettings()
-        {
-            var cfg = new Dictionary<string, string>();
-
-            Entity? resEnt = Scene.FindEntityByTag("resolution");
-            ComboBoxControl? resCombo = resEnt?.GetComponent<ComboBoxControl>();
-            if (resCombo != null && resCombo.ItemCount > 0)
-            {
-                string? resStr = resCombo.GetItem(resCombo.SelectedIndex);
-                if (!string.IsNullOrEmpty(resStr))
-                    cfg["Resolution"] = resStr;
-            }
-
-            cfg["Fullscreen"] = GetCheckboxState("option_fullscreen").ToString();
-            cfg["VSync"] = GetCheckboxState("option_vsync").ToString();
-
-            Entity? aaEnt = Scene.FindEntityByTag("anti_aliasing_combobox");
-            ComboBoxControl? aaCombo = aaEnt?.GetComponent<ComboBoxControl>();
-            if (aaCombo != null)
-            {
-                int[] aaValues = { 0, 2, 4, 8, 16 };
-                int idx = aaCombo.SelectedIndex;
-                if (idx >= 0 && idx < aaValues.Length)
-                    cfg["AntiAliasingSamples"] = aaValues[idx].ToString();
-            }
-
-            cfg["MasterVolume"] = GetSliderValue("volume_master").ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-            cfg["MusicVolume"] = GetSliderValue("volume_music").ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-            cfg["SFXVolume"] = GetSliderValue("volume_sfx").ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
-
-            SettingsStorage.Save(m_ConfigPath, cfg);
-            Log.Info("Settings saved to " + m_ConfigPath);
         }
 
         // ── UI Init ────────────────────────────────────────────────────────
@@ -294,6 +186,39 @@ namespace ChainedDecos.Scripts
 
             // 6. Save to config file
             SaveSettings();
+        }
+
+        private void SaveSettings()
+        {
+            var cfg = new Dictionary<string, string>();
+
+            Entity? resEnt = Scene.FindEntityByTag("resolution");
+            ComboBoxControl? resCombo = resEnt?.GetComponent<ComboBoxControl>();
+            if (resCombo != null && resCombo.ItemCount > 0)
+            {
+                string? resStr = resCombo.GetItem(resCombo.SelectedIndex);
+                if (!string.IsNullOrEmpty(resStr))
+                    cfg["Resolution"] = resStr;
+            }
+
+            cfg["Fullscreen"] = GetCheckboxState("option_fullscreen").ToString();
+            cfg["VSync"] = GetCheckboxState("option_vsync").ToString();
+
+            Entity? aaEnt = Scene.FindEntityByTag("anti_aliasing_combobox");
+            ComboBoxControl? aaCombo = aaEnt?.GetComponent<ComboBoxControl>();
+            if (aaCombo != null)
+            {
+                int[] aaValues = { 0, 2, 4, 8, 16 };
+                int idx = aaCombo.SelectedIndex;
+                if (idx >= 0 && idx < aaValues.Length)
+                    cfg["AntiAliasingSamples"] = aaValues[idx].ToString();
+            }
+
+            cfg["MasterVolume"] = GetSliderValue("volume_master").ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+            cfg["MusicVolume"] = GetSliderValue("volume_music").ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+            cfg["SFXVolume"] = GetSliderValue("volume_sfx").ToString("F1", System.Globalization.CultureInfo.InvariantCulture);
+
+            SettingsConfig.Save(cfg);
         }
     }
 }
