@@ -54,6 +54,86 @@ namespace Chained
 		}
 	}
 
+	int Window_GetAntiAliasingSamples()
+	{
+		if (auto project = Project::GetActive())
+		{
+			return project->GetConfig().Render.AntiAliasingSamples;
+		}
+		return 4;
+	}
+
+	uint8_t Window_GetVSync()
+	{
+		return Application::Get().GetWindow().GetVSync() ? 1 : 0;
+	}
+
+	uint8_t Window_GetFullscreen()
+	{
+		return Application::Get().GetWindow().IsFullscreen() ? 1 : 0;
+	}
+
+	int Window_GetWidth()
+	{
+		return Application::Get().GetWindow().GetWidth();
+	}
+
+	int Window_GetHeight()
+	{
+		return Application::Get().GetWindow().GetHeight();
+	}
+
+	float Audio_GetMasterVolume()
+	{
+		if (auto project = Project::GetActive())
+		{
+			return project->GetConfig().Audio.MasterVolume;
+		}
+		return 1.0f;
+	}
+
+	void Audio_SetMasterVolume(float volume)
+	{
+		if (auto project = Project::GetActive())
+		{
+			project->SetMasterVolume(volume);
+		}
+	}
+
+	float Audio_GetMusicVolume()
+	{
+		if (auto project = Project::GetActive())
+		{
+			return project->GetConfig().Audio.MusicVolume;
+		}
+		return 1.0f;
+	}
+
+	void Audio_SetMusicVolume(float volume)
+	{
+		if (auto project = Project::GetActive())
+		{
+			project->SetMusicVolume(volume);
+		}
+	}
+
+	float Audio_GetSFXVolume()
+	{
+		if (auto project = Project::GetActive())
+		{
+			return project->GetConfig().Audio.SFXVolume;
+		}
+		return 1.0f;
+	}
+
+	void Audio_SetSFXVolume(float volume)
+	{
+		if (auto project = Project::GetActive())
+		{
+			project->SetSFXVolume(volume);
+		}
+	}
+
 	const Coral::UCChar* Window_GetSupportedResolution()
 	{
 		// The returned pointer is handed to managed code, so it must outlive this

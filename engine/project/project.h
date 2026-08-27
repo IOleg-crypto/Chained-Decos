@@ -27,7 +27,7 @@ namespace Chained
 	{
 		int ShadowResolution = 2048;
 		bool EnableShadows = true;
-		int AntiAliasingSamples = 4; // 0, 2, 4, 8
+		int AntiAliasingSamples = 4; // 0, 2, 4, 8, 16
 	};
 
 	struct MeshSettings
@@ -167,7 +167,11 @@ namespace Chained
 		}
 		void SetAntiAliasingSamples(int samples)
 		{
-			m_Config.Render.AntiAliasingSamples = std::clamp(samples, 0, 8);
+			m_Config.Render.AntiAliasingSamples = std::clamp(samples, 0, 16);
+		}
+		int GetAntiAliasingSamples() const
+		{
+			return m_Config.Render.AntiAliasingSamples;
 		}
 		void SetTargetFPS(int fps)
 		{

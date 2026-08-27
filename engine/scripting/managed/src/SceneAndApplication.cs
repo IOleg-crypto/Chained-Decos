@@ -89,6 +89,12 @@ namespace Chained
         internal static unsafe delegate* unmanaged<char*, float, float, byte, void> Audio_Play_Ptr;
         internal static unsafe delegate* unmanaged<char*, void> Audio_Stop_Ptr;
         internal static unsafe delegate* unmanaged<void> Audio_StopAll_Ptr;
+        internal static unsafe delegate* unmanaged<float> Audio_GetMasterVolume_Ptr;
+        internal static unsafe delegate* unmanaged<float, void> Audio_SetMasterVolume_Ptr;
+        internal static unsafe delegate* unmanaged<float> Audio_GetMusicVolume_Ptr;
+        internal static unsafe delegate* unmanaged<float, void> Audio_SetMusicVolume_Ptr;
+        internal static unsafe delegate* unmanaged<float> Audio_GetSFXVolume_Ptr;
+        internal static unsafe delegate* unmanaged<float, void> Audio_SetSFXVolume_Ptr;
 #pragma warning restore 0649
 
         /// <summary>Plays an audio clip.</summary>
@@ -110,6 +116,48 @@ namespace Chained
         {
             if (Audio_StopAll_Ptr == null) return;
             Audio_StopAll_Ptr();
+        }
+
+        /// <summary>Returns master volume (0.0 – 1.0).</summary>
+        public static unsafe float GetMasterVolume()
+        {
+            if (Audio_GetMasterVolume_Ptr == null) return 1.0f;
+            return Audio_GetMasterVolume_Ptr();
+        }
+
+        /// <summary>Sets master volume (0.0 – 1.0).</summary>
+        public static unsafe void SetMasterVolume(float volume)
+        {
+            if (Audio_SetMasterVolume_Ptr == null) return;
+            Audio_SetMasterVolume_Ptr(volume);
+        }
+
+        /// <summary>Returns music volume (0.0 – 1.0).</summary>
+        public static unsafe float GetMusicVolume()
+        {
+            if (Audio_GetMusicVolume_Ptr == null) return 1.0f;
+            return Audio_GetMusicVolume_Ptr();
+        }
+
+        /// <summary>Sets music volume (0.0 – 1.0).</summary>
+        public static unsafe void SetMusicVolume(float volume)
+        {
+            if (Audio_SetMusicVolume_Ptr == null) return;
+            Audio_SetMusicVolume_Ptr(volume);
+        }
+
+        /// <summary>Returns SFX volume (0.0 – 1.0).</summary>
+        public static unsafe float GetSFXVolume()
+        {
+            if (Audio_GetSFXVolume_Ptr == null) return 1.0f;
+            return Audio_GetSFXVolume_Ptr();
+        }
+
+        /// <summary>Sets SFX volume (0.0 – 1.0).</summary>
+        public static unsafe void SetSFXVolume(float volume)
+        {
+            if (Audio_SetSFXVolume_Ptr == null) return;
+            Audio_SetSFXVolume_Ptr(volume);
         }
     }
 
@@ -158,6 +206,11 @@ namespace Chained
         internal static unsafe delegate* unmanaged<byte, void> Window_SetVSync_Ptr;
         internal static unsafe delegate* unmanaged<byte, void> Window_SetAntialiasing_Ptr;
         internal static unsafe delegate* unmanaged<int, void> Window_SetAntiAliasingSamples_Ptr;
+        internal static unsafe delegate* unmanaged<int> Window_GetAntiAliasingSamples_Ptr;
+        internal static unsafe delegate* unmanaged<byte> Window_GetVSync_Ptr;
+        internal static unsafe delegate* unmanaged<byte> Window_GetFullscreen_Ptr;
+        internal static unsafe delegate* unmanaged<int> Window_GetWidth_Ptr;
+        internal static unsafe delegate* unmanaged<int> Window_GetHeight_Ptr;
         internal static unsafe delegate* unmanaged<char*> Window_GetSupportedResolution_Ptr;
 #pragma warning restore 0649
 
@@ -189,11 +242,46 @@ namespace Chained
             Window_SetAntialiasing_Ptr((byte)(enabled ? 1 : 0));
         }
 
-        /// <summary>Sets the MSAA sample count (0, 2, 4, or 8). Recreates the HDR framebuffer with the new sample count.</summary>
+        /// <summary>Sets the MSAA sample count (0, 2, 4, 8, or 16). Recreates the HDR framebuffer with the new sample count.</summary>
         public static unsafe void SetAntiAliasingSamples(int samples)
         {
             if (Window_SetAntiAliasingSamples_Ptr == null) return;
             Window_SetAntiAliasingSamples_Ptr(samples);
+        }
+
+        /// <summary>Returns the current MSAA sample count (0, 2, 4, 8, or 16).</summary>
+        public static unsafe int GetAntiAliasingSamples()
+        {
+            if (Window_GetAntiAliasingSamples_Ptr == null) return 4;
+            return Window_GetAntiAliasingSamples_Ptr();
+        }
+
+        /// <summary>Returns whether vertical sync is enabled.</summary>
+        public static unsafe bool GetVSync()
+        {
+            if (Window_GetVSync_Ptr == null) return false;
+            return Window_GetVSync_Ptr() != 0;
+        }
+
+        /// <summary>Returns whether the window is in fullscreen mode.</summary>
+        public static unsafe bool GetFullscreen()
+        {
+            if (Window_GetFullscreen_Ptr == null) return false;
+            return Window_GetFullscreen_Ptr() != 0;
+        }
+
+        /// <summary>Returns the current window width in pixels.</summary>
+        public static unsafe int GetWidth()
+        {
+            if (Window_GetWidth_Ptr == null) return 1280;
+            return Window_GetWidth_Ptr();
+        }
+
+        /// <summary>Returns the current window height in pixels.</summary>
+        public static unsafe int GetHeight()
+        {
+            if (Window_GetHeight_Ptr == null) return 720;
+            return Window_GetHeight_Ptr();
         }
 
         /// <summary>Returns all supported resolutions as a semicolon-separated string (e.g. "1920x1080;1280x720").</summary>
