@@ -5,6 +5,7 @@
 #include "runtime_layer.h"
 #include "engine/app/application.h"
 #include "engine/assets/asset_manager.h"
+#include "engine/audio/audio.h"
 #include "engine/common/asset_path.h"
 #include "engine/core/events/window_events.h"
 #include "engine/core/platform.h"
@@ -614,6 +615,11 @@ namespace Chained
 
 	void RuntimeLayer::StopCurrentScene()
 	{
+		if (auto* audio = ServiceLocator::TryGet<Audio>())
+		{
+			audio->StopAll();
+		}
+
 		if (!m_Scene)
 		{
 			return;

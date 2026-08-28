@@ -70,6 +70,14 @@ if(TARGET pack-static)
     target_link_libraries(engine_assets PUBLIC pack-static)
 endif()
 
+if(TARGET engine_pack)
+    target_link_libraries(engine_assets PUBLIC engine_pack)
+endif()
+
+if(TARGET engine_external_basisu_transcoder)
+    target_link_libraries(engine_assets PUBLIC engine_external_basisu_transcoder)
+endif()
+
 if(TARGET engine_pch)
     target_link_libraries(engine_assets PRIVATE engine_pch)
 endif()

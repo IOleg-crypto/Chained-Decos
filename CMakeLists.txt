@@ -102,7 +102,8 @@ add_subdirectory(editor)
 # ── Engine Tools ─────────────────────────────────────────────────────────────
 if(TARGET pack-static)
     add_executable(chpacker tools/chpacker.cpp)
-    target_link_libraries(chpacker PRIVATE pack-static)
+    target_link_libraries(chpacker PRIVATE pack-static libzstd_static)
+    target_include_directories(chpacker PRIVATE "${ZSTD_INCLUDE_DIR}")
     set_target_properties(chpacker PROPERTIES FOLDER "Tools")
 endif()
 

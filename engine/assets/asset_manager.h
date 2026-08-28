@@ -22,6 +22,7 @@ namespace pack
 
 namespace Chained
 {
+	class DictionaryPackReader;
 
 	class AssetManager : public Service
 	{
@@ -56,7 +57,7 @@ namespace Chained
 		void CloseAllPacks();
 		size_t GetOpenPackCount() const
 		{
-			return m_PackReaders.size();
+			return m_PackReaders.size() + m_DictPackReaders.size();
 		}
 		bool IsPacked() const
 		{
@@ -168,6 +169,7 @@ namespace Chained
 		AssetPathResolver m_PathResolver;
 
 		std::vector<std::unique_ptr<pack::Reader>> m_PackReaders;
+		std::vector<std::unique_ptr<DictionaryPackReader>> m_DictPackReaders;
 		std::vector<std::filesystem::path> m_OpenedPackPaths;
 		bool m_PackOpen = false;
 

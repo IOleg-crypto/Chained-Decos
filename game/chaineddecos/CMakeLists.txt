@@ -1,8 +1,16 @@
 # Define the Game module as a Standalone Executable
 # Signature: TARGET_NAME PROJECT_GAME [CSHARP_PROJECT_PATH] [native_sources...]
+
+# Embed Windows application icon into the .exe binary
+set(GAME_RC_FILE "")
+if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/src/ChainedDecos.rc")
+    set(GAME_RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/src/ChainedDecos.rc")
+endif()
+
 chained_add_game(ChainedDecos
     PROJECT_GAME ChainedDecos
     CSHARP_PROJECT "assets/scripts/ChainedDecos.Scripts.csproj"
+    RC_SOURCES ${GAME_RC_FILE}
 )
 
 # Copy game assets (only if source files-- changed)
@@ -32,3 +40,12 @@ endif()
 target_compile_definitions(ChainedDecosExe PRIVATE
     CH_SOURCE_GAME_DIR="${CMAKE_CURRENT_SOURCE_DIR}"
 )
+
+# Pass the absolute icon path to the Windows resource compiler
+if(WIN32 AND GAME_RC_FILE)
+    set(ICON_ABS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/assets/icons/chaineddecos.ico")
+    # llvm-rc / rc.exe accept /D via CMAKE_RC_FLAGS or per-source compile flags
+    set_source_files_properties("${GAME_RC_FILE}" PROPERTIES
+        COMPILE_DEFINITIONS "CHAINED_ICON_PATH=\"${ICON_ABS_PATH}\""
+    )
+endif()

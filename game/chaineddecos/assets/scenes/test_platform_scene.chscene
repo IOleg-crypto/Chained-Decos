@@ -47,19 +47,164 @@ DebugSettings:
   CollisionWireframeMode: 0
 Entities:
   - Entity: 1388532700694720608
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.spawnzone
     TransformComponent:
-      Translation: [-326.500214, 311.823425, 1022.66998]
-      Rotation: [0, -0, 0]
+      Translation: [497.515198, 35.6768875, 208.375519]
+      Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: SpawnZone
+      Tag: SpawnZone_Start
     IDComponent:
       {}
+    ColliderComponent:
+      Type: 0
+      Size: [6, 6, 6]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
     SpawnComponent:
       IsActive: true
       IsCheckpoint: true
-      SpawnPoint: [0, 0, 0]
-      ZoneSize: [2.5999999, 4.4000001, 3.0999999]
+      SpawnPoint: [0, 0.5, 0]
+      ZoneSize: [6, 6, 6]
+      RenderSpawnZoneInScene: true
+  - Entity: 9182300000000000001
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.spawnzone
+    TransformComponent:
+      Translation: [411.734222, 22.0, 188.952682]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: SpawnZone_Stairs
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [6, 6, 6]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    SpawnComponent:
+      IsActive: true
+      IsCheckpoint: false
+      SpawnPoint: [0, 0.5, 0]
+      ZoneSize: [6, 6, 6]
+      RenderSpawnZoneInScene: true
+  - Entity: 9182300000000000002
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.spawnzone
+    TransformComponent:
+      Translation: [60.8389587, 89.0, 37.5509796]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: SpawnZone_GhostPlatform
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [8, 6, 8]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    SpawnComponent:
+      IsActive: true
+      IsCheckpoint: false
+      SpawnPoint: [0, 0.5, 0]
+      ZoneSize: [8, 6, 8]
+      RenderSpawnZoneInScene: true
+  - Entity: 9182300000000000003
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.spawnzone
+    TransformComponent:
+      Translation: [-216.192169, 5.0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: SpawnZone_Helipad
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [10, 6, 10]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    SpawnComponent:
+      IsActive: true
+      IsCheckpoint: false
+      SpawnPoint: [0, 0.5, 0]
+      ZoneSize: [10, 6, 10]
+      RenderSpawnZoneInScene: true
+  - Entity: 9182300000000000004
+    ManagedScriptComponent:
+      Scripts:
+        - ClassName: chaineddecos.scripts.spawnzone
+    TransformComponent:
+      Translation: [-949.601318, 55.0, 331.382965]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: SpawnZone_Ship
+    IDComponent:
+      {}
+    ColliderComponent:
+      Type: 0
+      Size: [12, 6, 12]
+      Offset: [0, 0, 0]
+      Radius: 0.5
+      Height: 1
+      Friction: 0.5
+      Restitution: 0
+      IsTrigger: true
+      Enabled: true
+      AutoCalculate: false
+      UseFastBuildQuality: true
+      ModelPath: ""
+      IsColliding: false
+    SpawnComponent:
+      IsActive: true
+      IsCheckpoint: false
+      SpawnPoint: [0, 0.5, 0]
+      ZoneSize: [12, 6, 12]
       RenderSpawnZoneInScene: true
   - Entity: 9960371382411008385
     ModelComponent:
@@ -265,6 +410,9 @@ Entities:
       {}
     ManagedScriptComponent:
       Scripts:
+        - ClassName: chaineddecos.scripts.gamehud
+        - ClassName: chaineddecos.scripts.debuginfoscript
+        - ClassName: chaineddecos.scripts.gamepausescript
         - ClassName: chaineddecos.scripts.playercontroller
           Fields:
             - Name: Gravity

@@ -4,12 +4,85 @@
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/texture_asset.h"
 
+#include <basisu_transcoder.h>
 #include "stb_image_impl.h"
+#include <fstream>
+#include <mutex>
 
 namespace Chained
 {
 	namespace
 	{
+		static void EnsureBasisuInit()
+		{
+			static std::once_flag s_BasisuInitOnce;
+			std::call_once(s_BasisuInitOnce, []() { basist::basisu_transcoder_init(); });
+		}
+
+		bool TryTranscodeKTX2(const void* data, size_t dataSize, std::shared_ptr<TextureAsset> texAsset)
+		{
+			if (!data || dataSize < 12)
+			{
+				return false;
+			}
+
+			// KTX2 magic identifier: "\xABKTX 20\xBB\r\n\x1A\n"
+			static const uint8_t ktx2Magic[12] = {0xAB, 0x4B, 0x54, 0x58, 0x20, 0x32,
+												  0x30, 0xBB, 0x0D, 0x0A, 0x1A, 0x0A};
+			if (std::memcmp(data, ktx2Magic, 12) != 0)
+			{
+				return false;
+			}
+
+			EnsureBasisuInit();
+
+			basist::ktx2_transcoder transcoder;
+			if (!transcoder.init(data, static_cast<uint32_t>(dataSize)))
+			{
+				return false;
+			}
+
+			uint32_t width = transcoder.get_width();
+			uint32_t height = transcoder.get_height();
+			uint32_t levels = transcoder.get_levels();
+
+			// Transcode directly to BC7 GPU format (highest quality for PC)
+			basist::transcoder_texture_format targetFormat = basist::transcoder_texture_format::cTFBC7_RGBA;
+			TextureFormat gpuFormat = TextureFormat::BC7;
+
+			uint32_t blocksX = (width + 3) / 4;
+			uint32_t blocksY = (height + 3) / 4;
+			uint32_t totalBytes = blocksX * blocksY * 16;
+
+			void* gpuBuffer = std::malloc(totalBytes);
+			if (!gpuBuffer)
+			{
+				return false;
+			}
+
+			if (!transcoder.transcode_image_level(0, 0, 0, gpuBuffer, blocksX * blocksY, targetFormat, 0))
+			{
+				std::free(gpuBuffer);
+				return false;
+			}
+
+			DecodedImage rawImage;
+			rawImage.data = gpuBuffer;
+			rawImage.width = static_cast<int>(width);
+			rawImage.height = static_cast<int>(height);
+			rawImage.channels = 4;
+			rawImage.isHDR = false;
+			rawImage.isCompressedGPU = true;
+			rawImage.compressedFormat = gpuFormat;
+			rawImage.compressedDataSize = totalBytes;
+			rawImage.format = 0;
+			rawImage.mipmaps = static_cast<int>(levels);
+
+			texAsset->SetIsHDR(false);
+			texAsset->SetPendingImage(rawImage);
+			return true;
+		}
+
 		void FlipImageVertically(void* pixels, int width, int height, int channels, size_t bytesPerChannel)
 		{
 			if (pixels == nullptr || width <= 0 || height <= 0 || channels <= 0)
@@ -94,9 +167,14 @@ namespace Chained
 			auto fileData = assetManager->ReadAssetData(resolvedPath);
 			if (!fileData.empty())
 			{
+				// Check for Khronos KTX2 container
+				if (TryTranscodeKTX2(fileData.data(), fileData.size(), texAsset))
+				{
+					return true;
+				}
+
 				if (isHDR)
 				{
-
 					data = stbi_loadf_from_memory(fileData.data(), (int)fileData.size(), &width, &height, &channels, 0);
 				}
 				else
@@ -108,6 +186,27 @@ namespace Chained
 		}
 		else
 		{
+			// Check if file on disk is KTX2
+			{
+				std::ifstream diskFile(resolvedPath, std::ios::binary | std::ios::ate);
+				if (diskFile.is_open())
+				{
+					std::streamsize sz = diskFile.tellg();
+					if (sz >= 12)
+					{
+						diskFile.seekg(0, std::ios::beg);
+						std::vector<uint8_t> fileBytes(static_cast<size_t>(sz));
+						if (diskFile.read(reinterpret_cast<char*>(fileBytes.data()), sz))
+						{
+							if (TryTranscodeKTX2(fileBytes.data(), fileBytes.size(), texAsset))
+							{
+								return true;
+							}
+						}
+					}
+				}
+			}
+
 			isHDR = stbi_is_hdr(resolvedPath.c_str());
 			const TextureUsage usage = isUiLikePath(resolvedPath) ? TextureUsage::UI : TextureUsage::Scene;
 			texAsset->SetUsage(usage);

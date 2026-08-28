@@ -3,14 +3,23 @@
 #include "engine/core/log.h"
 #include "engine/core/platform.h"
 #include "engine/project/project.h"
+#include "engine/pack/dictionary_packer.h"
+
+#include <basisu_comp.h>
+#include <basisu_enc.h>
+#include <stb_image.h>
 
 #include <algorithm>
 #include <atomic>
+#include <cstring>
+#include <fstream>
 #include <future>
 #include <filesystem>
+#include <mutex>
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <thread>
 #include <vector>
 #include <pack/reader.hpp>
 #include <pack/writer.hpp>
@@ -19,6 +28,100 @@ namespace fs = std::filesystem;
 
 namespace Chained
 {
+	namespace
+	{
+		static void EnsureBasisuEncoderInit()
+		{
+			static std::once_flag s_EncInitOnce;
+			std::call_once(s_EncInitOnce, []() { basisu::basisu_encoder_init(); });
+		}
+
+		bool ConvertTextureToKTX2(const fs::path& srcPath, const fs::path& dstPath, bool flipY)
+		{
+			try
+			{
+				int width = 0, height = 0, channels = 0;
+				stbi_uc* srcPixels = stbi_load(srcPath.string().c_str(), &width, &height, &channels, 4);
+				if (!srcPixels || width <= 0 || height <= 0)
+				{
+					if (srcPixels)
+					{
+						stbi_image_free(srcPixels);
+					}
+					return false;
+				}
+
+				if (flipY)
+				{
+					const size_t rowBytes = static_cast<size_t>(width) * 4;
+					std::vector<unsigned char> temp(rowBytes);
+					for (int row = 0; row < height / 2; ++row)
+					{
+						const size_t topOffset = static_cast<size_t>(row) * rowBytes;
+						const size_t bottomOffset = static_cast<size_t>(height - row - 1) * rowBytes;
+						std::memcpy(temp.data(), srcPixels + topOffset, rowBytes);
+						std::memcpy(srcPixels + topOffset, srcPixels + bottomOffset, rowBytes);
+						std::memcpy(srcPixels + bottomOffset, temp.data(), rowBytes);
+					}
+				}
+
+				EnsureBasisuEncoderInit();
+
+				basisu::basis_compressor_params params;
+				params.m_read_source_images = false;
+				params.m_create_ktx2_file = true;
+				params.m_uastc = true;			   // UASTC: independent 4x4 block encoding
+				params.m_rdo_uastc_ldr_4x4 = true; // RDO: enables massive ZSTD supercompression (70-80% reduction)
+				params.m_rdo_uastc_ldr_4x4_quality_scalar = 1.5f; // High visual quality + high compression
+				params.m_pack_uastc_ldr_4x4_flags = basisu::cPackUASTCLevelFastest; // Fast block encoding
+				params.m_perceptual = true;
+				params.m_mip_gen = false;
+
+				basisu::image img;
+				img.init(srcPixels, width, height, 4);
+				stbi_image_free(srcPixels);
+				srcPixels = nullptr;
+
+				params.m_source_images.push_back(img);
+
+				// basis_compressor requires a job_pool (1 worker per instance)
+				basisu::job_pool jpool(1);
+				params.m_pJob_pool = &jpool;
+
+				basisu::basis_compressor comp;
+				if (comp.init(params) != basisu::basis_compressor::cECSuccess)
+				{
+					return false;
+				}
+
+				if (comp.process() != basisu::basis_compressor::cECSuccess)
+				{
+					return false;
+				}
+
+				const auto& ktx2Data = comp.get_output_ktx2_file();
+				if (ktx2Data.empty())
+				{
+					return false;
+				}
+
+				std::error_code ec;
+				fs::create_directories(dstPath.parent_path(), ec);
+
+				std::ofstream out(dstPath, std::ios::binary);
+				if (!out.is_open())
+				{
+					return false;
+				}
+
+				out.write(reinterpret_cast<const char*>(ktx2Data.data()), ktx2Data.size());
+				return out.good();
+			} catch (...)
+			{
+				return false;
+			}
+		}
+	} // namespace
 
 	struct ExportCancelledException : public std::exception
 	{
@@ -78,6 +181,108 @@ namespace Chained
 				out.push_back(rel);
 			}
 		}
+	}
+
+	void ProjectExporter::CollectReferencedAssetFiles(const fs::path& assetDir, std::vector<fs::path>& outFiles)
+	{
+		std::vector<fs::path> allFiles;
+		CollectFiles(assetDir, allFiles);
+
+		std::unordered_set<std::string> allFilesLower;
+		allFilesLower.reserve(allFiles.size());
+		for (const auto& rel : allFiles)
+		{
+			std::string s = rel.generic_string();
+			std::transform(s.begin(), s.end(), s.begin(), ::tolower);
+			allFilesLower.insert(s);
+		}
+
+		std::unordered_set<std::string> referenced;
+		referenced.reserve(allFiles.size());
+
+		// 1. Always include core game folders
+		for (const auto& rel : allFiles)
+		{
+			std::string s = rel.generic_string();
+			std::string lower = s;
+			std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+			if (lower.rfind("scenes/", 0) == 0 || lower.rfind("scripts/", 0) == 0 || lower.rfind("bin/", 0) == 0 ||
+				lower.rfind("icons/", 0) == 0 || lower.rfind("font/", 0) == 0 || lower.rfind("shaders/", 0) == 0 ||
+				lower.rfind("environments/", 0) == 0 || lower.rfind("ui/", 0) == 0 || lower.rfind("audio/", 0) == 0 ||
+				lower.rfind("animations/", 0) == 0)
+			{
+				referenced.insert(lower);
+			}
+		}
+
+		// 2. Scan all text/manifest files (.chscene, .chproj, .chmat, .chenv, .chasset, .cs, .json, .yaml, .gltf)
+		for (const auto& rel : allFiles)
+		{
+			std::string ext = rel.extension().string();
+			std::transform(ext.begin(), ext.end(), ext.begin(), ::tolower);
+
+			if (ext == ".chscene" || ext == ".chproject" || ext == ".chmat" || ext == ".chenv" || ext == ".chasset" ||
+				ext == ".cs" || ext == ".json" || ext == ".yaml" || ext == ".gltf")
+			{
+				fs::path fullPath = assetDir / rel;
+				std::ifstream f(fullPath, std::ios::binary);
+				if (f.is_open())
+				{
+					std::string content((std::istreambuf_iterator<char>(f)), std::istreambuf_iterator<char>());
+					std::string lowerContent = content;
+					std::transform(lowerContent.begin(), lowerContent.end(), lowerContent.begin(), ::tolower);
+
+					for (const auto& targetRel : allFilesLower)
+					{
+						if (lowerContent.find(targetRel) != std::string::npos)
+						{
+							referenced.insert(targetRel);
+						}
+					}
+				}
+			}
+		}
+
+		// 3. For any referenced model in a subfolder, automatically include companion buffers (.bin) and textures
+		for (const auto& targetRel : allFilesLower)
+		{
+			if (referenced.find(targetRel) != referenced.end())
+			{
+				if (targetRel.ends_with(".gltf") || targetRel.ends_with(".chasset"))
+				{
+					fs::path p(targetRel);
+					std::string parentDir = p.parent_path().generic_string();
+					if (!parentDir.empty() && parentDir != "models" && parentDir != "assets")
+					{
+						for (const auto& other : allFilesLower)
+						{
+							if (other.rfind(parentDir + "/", 0) == 0)
+							{
+								referenced.insert(other);
+							}
+						}
+					}
+				}
+			}
+		}
+
+		// 4. Output only referenced files
+		outFiles.clear();
+		for (const auto& rel : allFiles)
+		{
+			std::string s = rel.generic_string();
+			std::string lower = s;
+			std::transform(lower.begin(), lower.end(), lower.begin(), ::tolower);
+
+			if (referenced.find(lower) != referenced.end())
+			{
+				outFiles.push_back(rel);
+			}
+		}
+
+		CH_CORE_INFO("ProjectExporter: Smart Pack collected {}/{} active files (stripped {} unused/orphan files)",
+					 outFiles.size(), allFiles.size(), allFiles.size() - outFiles.size());
 	}
 
 	bool ProjectExporter::CopyFile(const fs::path& src, const fs::path& dst, std::string& outError)
@@ -236,11 +441,11 @@ namespace Chained
 		fileItemPaths.push_back(chprojectFile.generic_string());
 		fileItemPaths.push_back("project.chproject");
 
-		// assets/ → "assets/..."
+		// assets/ → "assets/..." (Smart Pack: only collect assets referenced by scenes/game)
 		if (fs::exists(assetDir))
 		{
 			std::vector<fs::path> assetFiles;
-			CollectFiles(assetDir, assetFiles);
+			CollectReferencedAssetFiles(assetDir, assetFiles);
 			for (const auto& rel : assetFiles)
 			{
 				fileItemPaths.push_back((assetDir / rel).generic_string());
@@ -519,137 +724,208 @@ namespace Chained
 		}
 		else
 		{
+			bool useMultiThreadedZstd = (exp.SplitSizeMB == 0);
+			float threshold = (exp.Mode == PackMode::Max || exp.Mode == PackMode::Dictionary) ? 0.0f : exp.ZipThreshold;
 			bool preferSpeed = (exp.Mode == PackMode::Fast);
-			float threshold = (exp.Mode == PackMode::Max) ? 0.0f : exp.ZipThreshold;
 
-			// --- Build chunks -------------------------------------------------------
-			// Each entry in fileItemPaths is: [srcPath, packKey, srcPath, packKey, ...]
-			// We split by uncompressed (on-disk) file size per chunk.
-			// SplitSizeMB == 0 → one chunk containing all files.
-			struct Chunk
+			if (useMultiThreadedZstd)
 			{
-				std::vector<std::string> items; // flat [srcPath, packKey, ...]
-				uint64_t itemCount = 0;
-			};
-
-			std::vector<Chunk> chunks;
-			{
-				const uint64_t limitBytes =
-					exp.SplitSizeMB > 0 ? static_cast<uint64_t>(exp.SplitSizeMB) * 1024 * 1024 : UINT64_MAX;
-
-				chunks.emplace_back();
-				uint64_t chunkBytes = 0;
-
-				for (size_t i = 0; i < fileItemPaths.size(); i += 2)
+				int compLevel = 9;
+				if (exp.Mode == PackMode::Fast)
 				{
-					const std::string& srcPath = fileItemPaths[i];
-					std::error_code sizeEc;
-					uint64_t fileBytes = static_cast<uint64_t>(fs::file_size(srcPath, sizeEc));
-					if (sizeEc)
-					{
-						fileBytes = 0;
-					}
-
-					// Start a new chunk if this file would push the current chunk over the limit
-					// (always put at least one file per chunk to avoid infinite loops)
-					if (chunkBytes > 0 && chunkBytes + fileBytes > limitBytes)
-					{
-						chunks.emplace_back();
-						chunkBytes = 0;
-					}
-
-					chunks.back().items.push_back(fileItemPaths[i]);
-					chunks.back().items.push_back(fileItemPaths[i + 1]);
-					++chunks.back().itemCount;
-					chunkBytes += fileBytes;
+					compLevel = 3;
 				}
-			}
-
-			// Track the global item offset for progress reporting across all chunks
-			uint64_t globalItemOffset = 0;
-
-			struct PackCtx
-			{
-				const std::vector<std::string>& chunkItems; // items for this chunk
-				uint64_t chunkOffset;						// first item index in global list
-				uint64_t totalItems;						// total items across all chunks
-				ExportProgressCallback& cb;
-				const std::atomic<bool>* cancelFlag;
-			};
-
-			try
-			{
-				for (size_t chunkIdx = 0; chunkIdx < chunks.size(); ++chunkIdx)
+				else if (exp.Mode == PackMode::Balanced)
 				{
-					const Chunk& chunk = chunks[chunkIdx];
-					if (chunk.itemCount == 0)
+					compLevel = 9;
+				}
+				else if (exp.Mode == PackMode::Max)
+				{
+					compLevel = 15;
+				}
+				else if (exp.Mode == PackMode::Dictionary)
+				{
+					compLevel = 19;
+				}
+
+				CH_CORE_INFO("ProjectExporter: Multi-threaded ZSTD compression (level {}) — packing {} files",
+							 compLevel, fileCount);
+
+				try
+				{
+					std::vector<DictionaryPackItem> dictItems;
+					dictItems.reserve(fileItemPaths.size() / 2);
+					for (size_t i = 0; i < fileItemPaths.size(); i += 2)
 					{
-						continue;
+						DictionaryPackItem item;
+						item.FilePath = fs::path(fileItemPaths[i]);
+						item.ItemPath = fileItemPaths[i + 1];
+						dictItems.push_back(std::move(item));
 					}
 
-					// Build pack path: {name}.pack, {name}_1.pack, {name}_2.pack ...
-					fs::path chunkPackPath;
-					if (chunkIdx == 0)
-					{
-						chunkPackPath = packPath; // == outputDir / "{packBaseName}.pack"
-					}
-					else
-					{
-						chunkPackPath = outputDir / (packBaseName + "_" + std::to_string(chunkIdx) + ".pack");
-					}
-
-					std::vector<const char*> rawPaths;
-					rawPaths.reserve(chunk.items.size());
-					for (const auto& s : chunk.items)
-					{
-						rawPaths.push_back(s.c_str());
-					}
-
-					PackCtx ctx{chunk.items, globalItemOffset, fileCount, onProgress, cancelFlag};
-
-					OnPackFile cCallback = [](uint64_t itemIndex, void* arg) {
-						auto* ctx = static_cast<PackCtx*>(arg);
-
-						if (ctx->cancelFlag && ctx->cancelFlag->load(std::memory_order_relaxed))
+					DictionaryPackProgressCallback progressCallback = [&](uint64_t current, uint64_t total,
+																		  const std::string& itemPath) {
+						if (onProgress)
 						{
-							throw ExportCancelledException();
-						}
-
-						if (ctx->cb)
-						{
-							uint64_t globalPacked = ctx->chunkOffset + itemIndex + 1;
-							const std::string& itemPath = ctx->chunkItems[itemIndex * 2 + 1];
-							ctx->cb(globalPacked, ctx->totalItems, itemPath);
+							onProgress(current, total, itemPath);
 						}
 					};
 
-					CH_CORE_INFO("ProjectExporter: Packing chunk {}/{} → '{}' ({} items)", chunkIdx + 1, chunks.size(),
-								 chunkPackPath.filename().string(), chunk.itemCount);
+					bool dictSuccess = DictionaryPacker::Pack(packPath, dictItems, exp.DataVersion, threshold, false,
+															  progressCallback, compLevel);
 
-					pack::Writer::pack(chunkPackPath, chunk.itemCount, rawPaths.data(), exp.DataVersion, threshold,
-									   preferSpeed, false, cCallback, &ctx);
+					if (!dictSuccess)
+					{
+						copyBinariesTask.wait();
+						CleanupAndCancel("due to pack error");
+						result.Error = "Pack failed";
+						CH_CORE_ERROR("ProjectExporter: {}", result.Error);
+						return result;
+					}
 
-					globalItemOffset += chunk.itemCount;
-				}
-
-				packSuccess = true;
-
-				if (chunks.size() > 1)
+					packSuccess = true;
+				} catch (const std::exception& err)
 				{
-					CH_CORE_INFO("ProjectExporter: Created {} pack chunks.", chunks.size());
+					copyBinariesTask.wait();
+					CleanupAndCancel("during packing");
+					result.Error = "Pack failed: " + std::string(err.what());
+					CH_CORE_ERROR("ProjectExporter: {}", result.Error);
+					return result;
 				}
-			} catch (const ExportCancelledException&)
-			{
-				copyBinariesTask.wait();
-				return CleanupAndCancel("during packing process");
-			} catch (const pack::Error& err)
-			{
-				copyBinariesTask.wait();
-				CleanupAndCancel("due to pack error");
-				result.Error = "Pack failed: " + std::string(err.what());
-				CH_CORE_ERROR("ProjectExporter: {}", result.Error);
-				return result;
 			}
+			else
+			{
+				// Standard modes: use pack::Writer
+
+				// --- Build chunks -------------------------------------------------------
+				// Each entry in fileItemPaths is: [srcPath, packKey, srcPath, packKey, ...]
+				// We split by uncompressed (on-disk) file size per chunk.
+				// SplitSizeMB == 0 → one chunk containing all files.
+				struct Chunk
+				{
+					std::vector<std::string> items; // flat [srcPath, packKey, ...]
+					uint64_t itemCount = 0;
+				};
+
+				std::vector<Chunk> chunks;
+				{
+					const uint64_t limitBytes =
+						exp.SplitSizeMB > 0 ? static_cast<uint64_t>(exp.SplitSizeMB) * 1024 * 1024 : UINT64_MAX;
+
+					chunks.emplace_back();
+					uint64_t chunkBytes = 0;
+
+					for (size_t i = 0; i < fileItemPaths.size(); i += 2)
+					{
+						const std::string& srcPath = fileItemPaths[i];
+						std::error_code sizeEc;
+						uint64_t fileBytes = static_cast<uint64_t>(fs::file_size(srcPath, sizeEc));
+						if (sizeEc)
+						{
+							fileBytes = 0;
+						}
+
+						// Start a new chunk if this file would push the current chunk over the limit
+						// (always put at least one file per chunk to avoid infinite loops)
+						if (chunkBytes > 0 && chunkBytes + fileBytes > limitBytes)
+						{
+							chunks.emplace_back();
+							chunkBytes = 0;
+						}
+
+						chunks.back().items.push_back(fileItemPaths[i]);
+						chunks.back().items.push_back(fileItemPaths[i + 1]);
+						++chunks.back().itemCount;
+						chunkBytes += fileBytes;
+					}
+				}
+
+				// Track the global item offset for progress reporting across all chunks
+				uint64_t globalItemOffset = 0;
+
+				struct PackCtx
+				{
+					const std::vector<std::string>& chunkItems; // items for this chunk
+					uint64_t chunkOffset;						// first item index in global list
+					uint64_t totalItems;						// total items across all chunks
+					ExportProgressCallback& cb;
+					const std::atomic<bool>* cancelFlag;
+				};
+
+				try
+				{
+					for (size_t chunkIdx = 0; chunkIdx < chunks.size(); ++chunkIdx)
+					{
+						const Chunk& chunk = chunks[chunkIdx];
+						if (chunk.itemCount == 0)
+						{
+							continue;
+						}
+
+						// Build pack path: {name}.pack, {name}_1.pack, {name}_2.pack ...
+						fs::path chunkPackPath;
+						if (chunkIdx == 0)
+						{
+							chunkPackPath = packPath; // == outputDir / "{packBaseName}.pack"
+						}
+						else
+						{
+							chunkPackPath = outputDir / (packBaseName + "_" + std::to_string(chunkIdx) + ".pack");
+						}
+
+						std::vector<const char*> rawPaths;
+						rawPaths.reserve(chunk.items.size());
+						for (const auto& s : chunk.items)
+						{
+							rawPaths.push_back(s.c_str());
+						}
+
+						PackCtx ctx{chunk.items, globalItemOffset, fileCount, onProgress, cancelFlag};
+
+						OnPackFile cCallback = [](uint64_t itemIndex, void* arg) {
+							auto* ctx = static_cast<PackCtx*>(arg);
+
+							if (ctx->cancelFlag && ctx->cancelFlag->load(std::memory_order_relaxed))
+							{
+								throw ExportCancelledException();
+							}
+
+							if (ctx->cb)
+							{
+								uint64_t globalPacked = ctx->chunkOffset + itemIndex + 1;
+								const std::string& itemPath = ctx->chunkItems[itemIndex * 2 + 1];
+								ctx->cb(globalPacked, ctx->totalItems, itemPath);
+							}
+						};
+
+						CH_CORE_INFO("ProjectExporter: Packing chunk {}/{} → '{}' ({} items)", chunkIdx + 1,
+									 chunks.size(), chunkPackPath.filename().string(), chunk.itemCount);
+
+						pack::Writer::pack(chunkPackPath, chunk.itemCount, rawPaths.data(), exp.DataVersion, threshold,
+										   preferSpeed, false, cCallback, &ctx);
+
+						globalItemOffset += chunk.itemCount;
+					}
+
+					packSuccess = true;
+
+					if (chunks.size() > 1)
+					{
+						CH_CORE_INFO("ProjectExporter: Created {} pack chunks.", chunks.size());
+					}
+				} catch (const ExportCancelledException&)
+				{
+					copyBinariesTask.wait();
+					return CleanupAndCancel("during packing process");
+				} catch (const pack::Error& err)
+				{
+					copyBinariesTask.wait();
+					CleanupAndCancel("due to pack error");
+					result.Error = "Pack failed: " + std::string(err.what());
+					CH_CORE_ERROR("ProjectExporter: {}", result.Error);
+					return result;
+				}
+			} // end else (standard modes)
 		}
 
 		// Чекаємо завершення копіювання файлів

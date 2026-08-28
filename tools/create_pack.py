@@ -79,6 +79,7 @@ def run_packer(
     zip_threshold: int,
     data_version: int,
     prefer_speed: bool,
+    use_dictionary: bool = False,
 ) -> None:
     """Invoke the packer utility with file/item path pairs using manifest file."""
     print(f"  Packer: {output_path.name} ({len(file_items)} files)")
@@ -96,6 +97,8 @@ def run_packer(
         cmd += ["-v", str(data_version)]
         if prefer_speed:
             cmd += ["-s"]
+        if use_dictionary:
+            cmd += ["--dict"]
         cmd += ["-m", manifest_path]
         cmd.append(str(output_path))
 
@@ -140,6 +143,7 @@ def main() -> None:
     parser.add_argument("--zip-threshold", type=int, default=5, help="Compression threshold percent (0-100)")
     parser.add_argument("--data-version", type=int, default=0, help="Data version for pack header")
     parser.add_argument("--prefer-speed", action="store_true", help="Use LZ4 instead of ZSTD")
+    parser.add_argument("--dict", action="store_true", help="Use ZSTD dictionary compression (best for mixed assets)")
     parser.add_argument("--pack-name", default="resources", help="Base name for pack files (default: resources)")
     args = parser.parse_args()
 
@@ -196,6 +200,7 @@ def main() -> None:
             zip_threshold=args.zip_threshold,
             data_version=args.data_version,
             prefer_speed=args.prefer_speed,
+            use_dictionary=args.dict,
         )
         pack_files.append(pack_path)
 

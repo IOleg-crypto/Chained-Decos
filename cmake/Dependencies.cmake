@@ -36,13 +36,14 @@ include(portable-file-dialogs)
 # enet + sodium are the networking transport (added via engine/CMakeLists.txt)
 include(reflect-cpp)
 include(miniupnpc)
+include(basis_universal)
 
 # Disable unity builds for third-party libraries to avoid symbol redefinitions
 # (e.g., zstd cover.h has no include guard, causing redefinition under unity build)
 # Coral.Native is specifically excluded because MSVC's unity PCH in C++20 mode
 # deletes operator<<(wchar_t*) which is used internally by Coral's cerr logging.
 foreach(_ext_target
-    libzstd_static yaml-cpp
+    libzstd_static yaml-cpp engine_external_basisu_transcoder engine_external_basisu_encoder
     glm entt cereal stb spdlog miniaudio
     imgui imguizmo
     glfw glad

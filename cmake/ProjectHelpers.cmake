@@ -59,7 +59,7 @@ endmacro()
 function(chained_add_game TARGET_NAME)
     set(options)
     set(oneValueArgs PROJECT_GAME CSHARP_PROJECT)
-    set(multiValueArgs SOURCES)
+    set(multiValueArgs SOURCES RC_SOURCES)
     cmake_parse_arguments(GAME "${options}" "${oneValueArgs}" "${multiValueArgs}" ${ARGN})
 
     # 1. Locate the entry point (main.cpp) (OPTIONAL)
@@ -81,7 +81,8 @@ function(chained_add_game TARGET_NAME)
 
     # 3. Create the EXECUTABLE target
     if(HAS_ENTRY_POINT)
-        add_executable(${TARGET_NAME}Exe ${ENTRY_SOURCE})
+        # RC_SOURCES (e.g. app icon .rc) go directly into the exe, not the static lib
+        add_executable(${TARGET_NAME}Exe ${ENTRY_SOURCE} ${GAME_RC_SOURCES})
         target_link_libraries(${TARGET_NAME}Exe PRIVATE engine_runtime_core)
 
         if(GAME_SOURCES)

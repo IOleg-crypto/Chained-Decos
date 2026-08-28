@@ -1,19 +1,26 @@
 // ui_render_input.cpp
 // Renders: Slider, ComboBox, InputText, DragFloat, DragInt, ColorPicker
 #include "ui_render_helpers.h"
+#include "ui_render_widgets.h"
 
 namespace Chained
 {
 
-	bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+	bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+					  const TextStyle& textStyle)
 	{
 		ImGui::SetCursorScreenPos(pos);
 		ImGui::SetNextItemWidth(size.x);
+
+		float fontSize = (textStyle.FontSize > 0.0f) ? textStyle.FontSize : 18.0f;
+		ImFont* activeFont = font ? font : ImGui::GetFont();
+		ImGui::PushFont(activeFont, fontSize);
 
 		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
 		bool changed = ImGui::SliderFloat("##slider", &slider.Value, slider.Min, slider.Max, "%.2f");
 		ImGui::PopStyleVar();
 
+		ImGui::PopFont();
 		return changed;
 	}
 
@@ -27,6 +34,11 @@ namespace Chained
 								  ? combo.Items[combo.SelectedIndex].c_str()
 								  : "Select...";
 
+		float fontSize = (textStyle.FontSize > 0.0f) ? textStyle.FontSize : 18.0f;
+		ImFont* activeFont = font ? font : ImGui::GetFont();
+		ImGui::PushFont(activeFont, fontSize);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
 		bool changed = false;
 		if (ImGui::BeginCombo("##combo", preview))
 		{
@@ -45,10 +57,13 @@ namespace Chained
 			}
 			ImGui::EndCombo();
 		}
+		ImGui::PopStyleVar();
+		ImGui::PopFont();
 		return changed;
 	}
 
-	bool RenderInputText(InputTextData& input, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+	bool RenderInputText(InputTextData& input, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						 ImFont* font, const TextStyle& textStyle)
 	{
 		if (input.InputBuffer.empty())
 		{
@@ -61,6 +76,10 @@ namespace Chained
 		ImGui::SetCursorScreenPos(pos);
 		ImGui::SetNextItemWidth(size.x);
 
+		float fontSize = (textStyle.FontSize > 0.0f) ? textStyle.FontSize : 18.0f;
+		ImFont* activeFont = font ? font : ImGui::GetFont();
+		ImGui::PushFont(activeFont, fontSize);
+
 		ImGuiInputTextFlags flags = 0;
 		if (input.ReadOnly)
 		{
@@ -71,6 +90,7 @@ namespace Chained
 			flags |= ImGuiInputTextFlags_Password;
 		}
 
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
 		bool changed = false;
 		if (input.Multiline)
 		{
@@ -81,30 +101,56 @@ namespace Chained
 		{
 			changed = ImGui::InputText("##inputtext", input.InputBuffer.data(), input.InputBuffer.size(), flags);
 		}
+		ImGui::PopStyleVar();
 
 		if (changed)
 		{
 			input.Text = input.InputBuffer.data();
 		}
 
+		ImGui::PopFont();
 		return changed;
 	}
 
-	bool RenderDragFloat(DragFloatData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+	bool RenderDragFloat(DragFloatData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						 ImFont* font, const TextStyle& textStyle)
 	{
 		ImGui::SetCursorScreenPos(pos);
 		ImGui::SetNextItemWidth(size.x);
-		return ImGui::DragFloat("##dragfloat", &drag.Value, drag.Speed, drag.Min, drag.Max, drag.Format.c_str());
+
+		float fontSize = (textStyle.FontSize > 0.0f) ? textStyle.FontSize : 18.0f;
+		ImFont* activeFont = font ? font : ImGui::GetFont();
+		ImGui::PushFont(activeFont, fontSize);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
+		bool changed =
+			ImGui::DragFloat("##dragfloat", &drag.Value, drag.Speed, drag.Min, drag.Max, drag.Format.c_str());
+		ImGui::PopStyleVar();
+
+		ImGui::PopFont();
+		return changed;
 	}
 
-	bool RenderDragInt(DragIntData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+	bool RenderDragInt(DragIntData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+					   const TextStyle& textStyle)
 	{
 		ImGui::SetCursorScreenPos(pos);
 		ImGui::SetNextItemWidth(size.x);
-		return ImGui::DragInt("##dragint", &drag.Value, drag.Speed, drag.Min, drag.Max, drag.Format.c_str());
+
+		float fontSize = (textStyle.FontSize > 0.0f) ? textStyle.FontSize : 18.0f;
+		ImFont* activeFont = font ? font : ImGui::GetFont();
+		ImGui::PushFont(activeFont, fontSize);
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, wc.BoxStyle.Rounding);
+		bool changed = ImGui::DragInt("##dragint", &drag.Value, drag.Speed, drag.Min, drag.Max, drag.Format.c_str());
+		ImGui::PopStyleVar();
+
+		ImGui::PopFont();
+		return changed;
 	}
 
-	bool RenderColorPicker(ColorPickerData& picker, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+	bool RenderColorPicker(ColorPickerData& picker, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						   ImFont* font, const TextStyle& textStyle)
 	{
 		ImGui::SetCursorScreenPos(pos);
 		float col[4] = {
@@ -113,6 +159,10 @@ namespace Chained
 			picker.SelectedColor.b / 255.0f,
 			picker.SelectedColor.a / 255.0f,
 		};
+
+		float fontSize = (textStyle.FontSize > 0.0f) ? textStyle.FontSize : 18.0f;
+		ImFont* activeFont = font ? font : ImGui::GetFont();
+		ImGui::PushFont(activeFont, fontSize);
 
 		ImGuiColorEditFlags flags = ImGuiColorEditFlags_NoLabel;
 		if (!picker.ShowAlpha)
@@ -143,6 +193,8 @@ namespace Chained
 				static_cast<uint8_t>(col[3] * 255.0f),
 			};
 		}
+
+		ImGui::PopFont();
 		return changed;
 	}
 

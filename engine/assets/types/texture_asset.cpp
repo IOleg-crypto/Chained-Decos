@@ -35,33 +35,47 @@ namespace Chained
 
 		if (m_HasPendingImage && m_PendingImage.data != nullptr)
 		{
-			TextureFormat format = TextureFormat::RGBA8;
-			if (m_IsHDR)
+			if (m_PendingImage.isCompressedGPU)
 			{
-				format = (m_PendingImage.channels == 3) ? TextureFormat::RGB16F : TextureFormat::RGBA16F;
-			}
-			else
-			{
-				format = (m_PendingImage.channels == 3) ? TextureFormat::RGB8 : TextureFormat::RGBA8;
-			}
-
-			if (m_IsCubemap)
-			{
-				m_Texture = Texture::CreateCubemap(m_PendingImage.width, format);
-			}
-			else
-			{
-				m_Texture = Texture::Create(m_PendingImage.width, m_PendingImage.height, format);
+				m_Texture =
+					Texture::Create(m_PendingImage.width, m_PendingImage.height, m_PendingImage.compressedFormat);
 				if (m_Texture)
 				{
-					m_Texture->SetData(m_PendingImage.data, 0);
+					m_Texture->SetCompressedData(m_PendingImage.data, m_PendingImage.compressedDataSize);
 				}
-			}
-
-			if (m_PendingImage.data != nullptr)
-			{
-				stbi_image_free(m_PendingImage.data);
+				std::free(m_PendingImage.data);
 				m_PendingImage.data = nullptr;
+			}
+			else
+			{
+				TextureFormat format = TextureFormat::RGBA8;
+				if (m_IsHDR)
+				{
+					format = (m_PendingImage.channels == 3) ? TextureFormat::RGB16F : TextureFormat::RGBA16F;
+				}
+				else
+				{
+					format = (m_PendingImage.channels == 3) ? TextureFormat::RGB8 : TextureFormat::RGBA8;
+				}
+
+				if (m_IsCubemap)
+				{
+					m_Texture = Texture::CreateCubemap(m_PendingImage.width, format);
+				}
+				else
+				{
+					m_Texture = Texture::Create(m_PendingImage.width, m_PendingImage.height, format);
+					if (m_Texture)
+					{
+						m_Texture->SetData(m_PendingImage.data, 0);
+					}
+				}
+
+				if (m_PendingImage.data != nullptr)
+				{
+					stbi_image_free(m_PendingImage.data);
+					m_PendingImage.data = nullptr;
+				}
 			}
 			m_HasPendingImage = false;
 

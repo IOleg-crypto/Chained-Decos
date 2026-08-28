@@ -90,7 +90,8 @@ namespace Chained
 		return false;
 	}
 
-	bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size)
+	bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						   ImFont* font, const TextStyle& textStyle)
 	{
 		ImDrawList* dl = ImGui::GetWindowDrawList();
 		ImVec2 pMax = {pos.x + size.x, pos.y + size.y};

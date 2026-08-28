@@ -14,6 +14,7 @@
 #include "engine/assets/loaders/shader_loader.h"
 #include "engine/assets/loaders/anim_graph_loader.h"
 
+#include "engine/pack/dictionary_pack_reader.h"
 #include "pack/reader.hpp"
 
 namespace Chained
@@ -71,7 +72,7 @@ namespace Chained
 
 	std::vector<uint8_t> AssetManager::TryPackFallback(const std::string& packKey) const
 	{
-		if (!m_PackOpen || m_PackReaders.empty())
+		if (!m_PackOpen || (m_PackReaders.empty() && m_DictPackReaders.empty()))
 		{
 			return {};
 		}
@@ -81,6 +82,7 @@ namespace Chained
 			std::string altAssets = "assets/" + packKey;
 			std::string altResources = "resources/" + packKey;
 
+			// Check standard pack readers
 			for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 			{
 				auto& reader = *it;
@@ -98,13 +100,32 @@ namespace Chained
 					return data;
 				}
 			}
+
+			// Check dictionary pack readers
+			for (auto it = m_DictPackReaders.rbegin(); it != m_DictPackReaders.rend(); ++it)
+			{
+				auto& reader = *it;
+				uint64_t idx = 0;
+				if (reader->GetItemIndex(altAssets.c_str(), idx))
+				{
+					std::vector<uint8_t> data;
+					reader->ReadItemData(idx, data);
+					return data;
+				}
+				if (reader->GetItemIndex(altResources.c_str(), idx))
+				{
+					std::vector<uint8_t> data;
+					reader->ReadItemData(idx, data);
+					return data;
+				}
+			}
 		}
 		return {};
 	}
 
 	bool AssetManager::TryPackFallbackExists(const std::string& packKey) const
 	{
-		if (!m_PackOpen || m_PackReaders.empty())
+		if (!m_PackOpen || (m_PackReaders.empty() && m_DictPackReaders.empty()))
 		{
 			return false;
 		}
@@ -114,11 +135,23 @@ namespace Chained
 			std::string altAssets = "assets/" + packKey;
 			std::string altResources = "resources/" + packKey;
 
+			// Check standard pack readers
 			for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 			{
 				auto& reader = *it;
 				uint64_t idx = 0;
 				if (reader->getItemIndex(altAssets.c_str(), idx) || reader->getItemIndex(altResources.c_str(), idx))
+				{
+					return true;
+				}
+			}
+
+			// Check dictionary pack readers
+			for (auto it = m_DictPackReaders.rbegin(); it != m_DictPackReaders.rend(); ++it)
+			{
+				auto& reader = *it;
+				uint64_t idx = 0;
+				if (reader->GetItemIndex(altAssets.c_str(), idx) || reader->GetItemIndex(altResources.c_str(), idx))
 				{
 					return true;
 				}
@@ -659,8 +692,39 @@ namespace Chained
 			return false;
 		}
 
+		// Read header to detect dictionary packs
+		FILE* headerFile = fopen(packPath.string().c_str(), "rb");
+		if (!headerFile)
+		{
+			CH_CORE_ERROR("AssetManager: Failed to open pack '{}' for header check", packPath.string());
+			return false;
+		}
+
+		PackHeader packHeader;
+		bool hasDict = false;
+		if (fread(&packHeader, sizeof(PackHeader), 1, headerFile) == 1)
+		{
+			hasDict = packHeader._reserved != 0;
+		}
+		fclose(headerFile);
+
 		try
 		{
+			if (hasDict)
+			{
+				auto dictReader = std::make_unique<DictionaryPackReader>();
+				if (dictReader->Open(packPath))
+				{
+					CH_CORE_INFO("AssetManager: Opened dictionary pack '{}' ({} items)", packPath.string(),
+								 dictReader->GetItemCount());
+					m_OpenedPackPaths.push_back(packPath);
+					m_DictPackReaders.push_back(std::move(dictReader));
+					m_PackOpen = true;
+					return true;
+				}
+				CH_CORE_WARN("AssetManager: Failed to open as dictionary pack, trying standard pack");
+			}
+
 			auto reader = std::make_unique<pack::Reader>(packPath);
 			CH_CORE_INFO("AssetManager: Opened pack '{}' ({} items)", packPath.string(), reader->getItemCount());
 			m_OpenedPackPaths.push_back(packPath);
@@ -710,6 +774,7 @@ namespace Chained
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 		m_PackReaders.clear();
+		m_DictPackReaders.clear();
 		m_OpenedPackPaths.clear();
 		m_PackOpen = false;
 	}
@@ -718,10 +783,11 @@ namespace Chained
 	{
 		{
 			std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-			if (m_PackOpen && !m_PackReaders.empty())
+			if (m_PackOpen && (!m_PackReaders.empty() || !m_DictPackReaders.empty()))
 			{
 				std::string packKey = m_PathResolver.ResolvePackKey(assetPath);
 
+				// Check standard pack readers
 				for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 				{
 					auto& reader = *it;
@@ -730,6 +796,19 @@ namespace Chained
 					{
 						std::vector<uint8_t> data;
 						reader->readItemData(idx, data);
+						return data;
+					}
+				}
+
+				// Check dictionary pack readers
+				for (auto it = m_DictPackReaders.rbegin(); it != m_DictPackReaders.rend(); ++it)
+				{
+					auto& reader = *it;
+					uint64_t idx = 0;
+					if (reader->GetItemIndex(packKey.c_str(), idx))
+					{
+						std::vector<uint8_t> data;
+						reader->ReadItemData(idx, data);
 						return data;
 					}
 				}
@@ -768,15 +847,27 @@ namespace Chained
 	bool AssetManager::FileExists(const std::string& path) const
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-		if (m_PackOpen && !m_PackReaders.empty())
+		if (m_PackOpen && (!m_PackReaders.empty() || !m_DictPackReaders.empty()))
 		{
 			std::string packKey = m_PathResolver.ResolvePackKey(path);
 
+			// Check standard pack readers
 			for (auto it = m_PackReaders.rbegin(); it != m_PackReaders.rend(); ++it)
 			{
 				auto& reader = *it;
 				uint64_t idx = 0;
 				if (reader->getItemIndex(packKey.c_str(), idx))
+				{
+					return true;
+				}
+			}
+
+			// Check dictionary pack readers
+			for (auto it = m_DictPackReaders.rbegin(); it != m_DictPackReaders.rend(); ++it)
+			{
+				auto& reader = *it;
+				uint64_t idx = 0;
+				if (reader->GetItemIndex(packKey.c_str(), idx))
 				{
 					return true;
 				}
@@ -804,11 +895,13 @@ namespace Chained
 
 	void AssetManager::EnumeratePackedPaths(const std::function<void(std::string_view)>& callback) const
 	{
-		if (!m_PackOpen || m_PackReaders.empty())
+		if (!m_PackOpen || (m_PackReaders.empty() && m_DictPackReaders.empty()))
 		{
 			return;
 		}
 		std::unordered_set<std::string_view> seen;
+
+		// Enumerate standard pack readers
 		for (const auto& reader : m_PackReaders)
 		{
 			const uint64_t count = reader->getItemCount();
@@ -821,11 +914,31 @@ namespace Chained
 				}
 			}
 		}
+
+		// Enumerate dictionary pack readers
+		for (const auto& reader : m_DictPackReaders)
+		{
+			const uint64_t count = reader->GetItemCount();
+			for (uint64_t i = 0; i < count; ++i)
+			{
+				std::string itemPath = reader->GetItemPath(i);
+				// Skip dictionary item
+				if (itemPath == "__zstd_dictionary__")
+				{
+					continue;
+				}
+				if (seen.insert(itemPath).second)
+				{
+					callback(itemPath);
+				}
+			}
+		}
 	}
 
 	std::vector<uint8_t> AssetManager::ReadProjectAsset(const std::filesystem::path& absolutePath)
 	{
-		if (!m_PackOpen || m_PackReaders.empty() || m_PathResolver.GetProjectDirectory().empty())
+		if (!m_PackOpen || (m_PackReaders.empty() && m_DictPackReaders.empty()) ||
+			m_PathResolver.GetProjectDirectory().empty())
 		{
 			return {};
 		}
