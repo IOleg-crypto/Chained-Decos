@@ -104,16 +104,14 @@ def run_packer(
 
         result = subprocess.run(cmd, capture_output=True, text=True)
 
-        # If -m flag is unrecognized (legacy packer.exe), fallback to direct CLI args
+        # If -m flag is unrecognized, the legacy packer.exe doesn't support manifests.
+        # chpacker (built from tools/chpacker.cpp) DOES support -m and must be used.
         if result.returncode != 0 and ("unknown option: -m" in result.stderr or "unknown option: -m" in result.stdout):
-            cmd_fallback = [packer, "-z", str(zip_threshold), "-v", str(data_version)]
-            if prefer_speed:
-                cmd_fallback += ["-s"]
-            cmd_fallback.append(str(output_path))
-            for fpath, item in file_items:
-                cmd_fallback.append(str(fpath))
-                cmd_fallback.append(item)
-            result = subprocess.run(cmd_fallback, capture_output=True, text=True)
+            print("ERROR: Packer does not support -m (manifest) mode.", file=sys.stderr)
+            print("  The legacy packer.exe cannot handle large file lists on Windows.", file=sys.stderr)
+            print("  Ensure chpacker.exe is built and used instead:", file=sys.stderr)
+            print("  cmake --build <build-dir> --target chpacker", file=sys.stderr)
+            sys.exit(1)
 
         if result.returncode != 0:
             print(f"  ERROR packer failed (rc={result.returncode}):", file=sys.stderr)

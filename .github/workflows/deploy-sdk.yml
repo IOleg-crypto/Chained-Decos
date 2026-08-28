@@ -215,18 +215,14 @@ jobs:
             BIN_DIR="$WS/build/${{ matrix.preset }}/bin"
           fi
 
-          # Find packer executable (chpacker or packer)
+          # Find chpacker executable (required — legacy packer.exe doesn't support -m manifest)
           PACKER="$BIN_DIR/chpacker"
           [[ -f "$PACKER.exe" ]] && PACKER="$PACKER.exe"
           if [[ ! -f "$PACKER" ]]; then
-            PACKER="$BIN_DIR/packer"
-            [[ -f "$PACKER.exe" ]] && PACKER="$PACKER.exe"
+            PACKER=$(find "$WS/build/${{ matrix.preset }}" -name "chpacker" -o -name "chpacker.exe" 2>/dev/null | head -1)
           fi
           if [[ ! -f "$PACKER" ]]; then
-            PACKER=$(find "$WS/build/${{ matrix.preset }}" -name "chpacker" -o -name "chpacker.exe" -o -name "packer" -o -name "packer.exe" 2>/dev/null | head -1)
-          fi
-          if [[ ! -f "$PACKER" ]]; then
-            echo "ERROR: packer/chpacker executable not found" >&2
+            echo "ERROR: chpacker executable not found. Build it with: cmake --build <build-dir> --target chpacker" >&2
             exit 1
           fi
           echo "Using packer: $PACKER"
