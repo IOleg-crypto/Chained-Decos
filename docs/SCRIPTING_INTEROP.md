@@ -79,6 +79,7 @@ The C++ glue functions and C# generator follow strict ABI type mapping rules:
 | Float | `float` | `"float"` | `float` |
 | Double | `double` | `"double"` | `double` |
 | UTF-16 String | `Coral::UCChar*` / `char16_t*` | `"char*"` | `char*` |
+| UTF-16 String (property) | `const Coral::UCChar*` / `std::string` | `"string"` | `Marshal.PtrToStringUni(new IntPtr(...))` |
 | Vector2 Struct | `glm::vec2*` | `"Vector2"` / `"Vector2*"` | `Chained.Vector2*` (out-pointer) |
 | Vector3 Struct | `glm::vec3*` | `"Vector3"` / `"Vector3*"` | `Chained.Vector3*` (out-pointer) |
 | Vector4 Struct | `glm::vec4*` | `"Vector4"` / `"Vector4*"` | `Chained.Vector4*` (out-pointer) |
@@ -123,12 +124,15 @@ Then build normally — the generator runs as part of the build.
 
 ### Limitations
 
-The generator handles **simple field access only**: reading/writing a single field on a component. It does NOT handle:
+The generator handles **simple field access** and **string properties** automatically. It does NOT handle:
 - Physics synchronization (e.g. updating Jolt body when translation changes)
-- String conversion (e.g. `Coral::UCChar*` ↔ `std::string`)
 - Complex logic (e.g. finding entities by tag, conditional behavior)
 
 For these cases, use `[NativeCall]` and write hand-written glue in `script_glue_*.cpp` — see the manual tutorial below.
+
+**String support**: `[NativeProperty]` with `"string"` type auto-generates `Coral::UCChar*` getters (via `GlueStringPool::ReturnString`) and setters (via `ch_u16_to_string`).
+
+**`[NativeCall]` stubs**: The generator also emits C++ stub functions for `[NativeCall]` attributes. These are placeholders — the actual implementations should be hand-written in `script_glue_*.cpp` files which override the stubs at link time.
 
 ---
 
@@ -213,6 +217,43 @@ CH_SCRIPT_FUNC void PlayerComponent_SetStamina(uint64_t entityID, float stamina)
 **Step 4: Add `[NativeProperty]` to C# Component**
 
 Same as the automatic path — the C# Roslyn generator needs the attribute to create the `_Ptr` fields and property body.
+
+### NativeCall methods (functions, not properties)
+
+For methods that take parameters beyond simple field access (e.g. `Play()`, `Stop()`, `CrossFade(int, float)`), use `[NativeCall]`:
+
+**Step 1: Add `[NativeCall]` to C# Component**
+
+```csharp
+[NativeCall("Chained.AudioComponent", "AudioComponent_Play", "void", "ulong")]
+[NativeCall("Chained.AudioComponent", "AudioComponent_Stop", "void", "ulong")]
+[NativeCall("Chained.AnimationComponent", "AnimationComponent_CrossFade", "void", "ulong", "int", "float")]
+public partial class AudioComponent : Component
+{
+    public void Play()
+    {
+        unsafe { if (AudioComponent_Play_Ptr != null) AudioComponent_Play_Ptr(Entity.ID); }
+    }
+}
+```
+
+- **Format**: `[NativeCall("Namespace.Class", "FunctionName", "ReturnType", "param1Type", "param2Type", ...)]`
+- First parameter is always `ulong` (entity ID)
+- The generator creates `_Ptr` fields and emits C++ stub functions
+- You still write the C# wrapper method and the C++ implementation manually
+
+**Step 2: Implement C++ glue** in `script_glue_*.cpp`:
+
+```cpp
+CH_SCRIPT_FUNC void AudioComponent_Play(uint64_t entityID)
+{
+    Entity entity = GetEntity(entityID);
+    if (entity && entity.HasComponent<AudioComponent>())
+        entity.GetComponent<AudioComponent>().Play();
+}
+```
+
+Registration is handled automatically by `generate_glue.py`.
 
 ---
 
