@@ -30,6 +30,7 @@ namespace Chained
 		}
 
 		virtual void SetData(void* data, uint32_t size) override;
+		virtual void SetCompressedData(const void* data, uint32_t dataSize) override;
 		virtual void Bind(uint32_t slot = 0) const override;
 
 		virtual bool IsReady() const override

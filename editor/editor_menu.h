@@ -56,6 +56,7 @@ namespace Chained
 			uint64_t PackedFiles = 0;
 			uint64_t TotalFiles = 0;
 			std::string CurrentFile;
+			std::chrono::steady_clock::time_point StartTime;
 
 			// Cancel flag (written by GUI, read by worker thread)
 			std::atomic<bool> CancelRequested{false};

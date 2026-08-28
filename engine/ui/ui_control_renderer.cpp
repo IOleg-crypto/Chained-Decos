@@ -16,13 +16,7 @@ namespace Chained
 
 		const std::string* fontName = &control.TextStyle.FontName;
 
-		ImFont* activeFont = nullptr;
-		if (!fontName->empty() && *fontName != "Default")
-		{
-			activeFont = fontRegistry.GetFont(*fontName, control.TextStyle.FontSize);
-		}
-
-		// Fall back to the project's default font, not the editor's ImGui font.
+		ImFont* activeFont = fontRegistry.GetFont(*fontName, control.TextStyle.FontSize);
 		if (!activeFont)
 		{
 			activeFont = fontRegistry.GetDefaultFont();
@@ -51,11 +45,11 @@ namespace Chained
 				}
 				else if constexpr (std::is_same_v<T, SliderData>)
 				{
-					changed = RenderSlider(arg, control, screenPos, size);
+					changed = RenderSlider(arg, control, screenPos, size, activeFont, control.TextStyle);
 				}
 				else if constexpr (std::is_same_v<T, ProgressBarData>)
 				{
-					changed = RenderProgressBar(arg, control, screenPos, size);
+					changed = RenderProgressBar(arg, control, screenPos, size, activeFont, control.TextStyle);
 				}
 				else if constexpr (std::is_same_v<T, ImageData>)
 				{
@@ -71,7 +65,7 @@ namespace Chained
 				}
 				else if constexpr (std::is_same_v<T, InputTextData>)
 				{
-					changed = RenderInputText(arg, control, screenPos, size);
+					changed = RenderInputText(arg, control, screenPos, size, activeFont, control.TextStyle);
 				}
 				else if constexpr (std::is_same_v<T, SeparatorData>)
 				{
@@ -83,15 +77,15 @@ namespace Chained
 				}
 				else if constexpr (std::is_same_v<T, ColorPickerData>)
 				{
-					changed = RenderColorPicker(arg, control, screenPos, size);
+					changed = RenderColorPicker(arg, control, screenPos, size, activeFont, control.TextStyle);
 				}
 				else if constexpr (std::is_same_v<T, DragFloatData>)
 				{
-					changed = RenderDragFloat(arg, control, screenPos, size);
+					changed = RenderDragFloat(arg, control, screenPos, size, activeFont, control.TextStyle);
 				}
 				else if constexpr (std::is_same_v<T, DragIntData>)
 				{
-					changed = RenderDragInt(arg, control, screenPos, size);
+					changed = RenderDragInt(arg, control, screenPos, size, activeFont, control.TextStyle);
 				}
 				else if constexpr (std::is_same_v<T, TreeNodeData>)
 				{

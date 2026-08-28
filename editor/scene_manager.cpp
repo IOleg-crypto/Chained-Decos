@@ -1,4 +1,5 @@
 #include "scene_manager.h"
+#include "engine/audio/audio.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/common/thread_pool.h"
 #include "engine/core/service_locator.h"
@@ -121,6 +122,11 @@ namespace Chained
 	{
 		CancelTransition();
 
+		if (auto* audio = ServiceLocator::TryGet<Audio>())
+		{
+			audio->StopAll();
+		}
+
 		EditorLayer::Get().GetEditorState().SelectedEntity = {};
 
 		m_EditorScene = scene;
@@ -229,6 +235,11 @@ namespace Chained
 			}
 
 			CH_CORE_INFO("Editor: Play Mode Stopped");
+			if (auto* audio = ServiceLocator::TryGet<Audio>())
+			{
+				audio->StopAll();
+			}
+
 			if (m_RuntimeScene)
 			{
 				CH_CORE_INFO("Editor: Cleaning up runtime scene...");
@@ -279,6 +290,11 @@ namespace Chained
 		if (path.empty() || m_Transition.state != TransitionState::None)
 		{
 			return;
+		}
+
+		if (auto* audio = ServiceLocator::TryGet<Audio>())
+		{
+			audio->StopAll();
 		}
 
 		if (forPlayMode)

@@ -32,6 +32,15 @@ if(TARGET pack-static)
     target_link_libraries(editor_core PUBLIC pack-static)
 endif()
 
+# Dictionary pack support — ZSTD dictionary compression for asset packs
+if(TARGET engine_pack)
+    target_link_libraries(editor_core PUBLIC engine_pack)
+endif()
+
+if(TARGET engine_external_basisu_encoder)
+    target_link_libraries(editor_core PUBLIC engine_external_basisu_encoder)
+endif()
+
 # WinHTTP — used by NetworkPanel to fetch the public IP from api.ipify.org.
 # Only needed when the networking module is enabled.
 if(WIN32 AND CH_NETWORKING)

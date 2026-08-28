@@ -368,13 +368,15 @@ namespace Chained
 				{PackMode::Fast, "Fast", "LZ4 HC compression.\nFast export, larger pack.", ICON_FA_BOLT},
 				{PackMode::Balanced, "Balanced", "ZSTD compression.\nBalanced speed and size.", ICON_FA_CUBES},
 				{PackMode::Max, "Max", "ZSTD ultra compression.\nSmallest pack, slowest export.", ICON_FA_GEARS},
+				{PackMode::Dictionary, "Dict", "ZSTD + trained dictionary.\nBest compression for mixed assets.",
+				 ICON_FA_FILE_CODE},
 				{PackMode::Raw, "Raw", "No compression.\nStored as-is, fastest.", ICON_FA_FOLDER_OPEN},
 			};
-			constexpr size_t modeCount = 4;
+			constexpr size_t modeCount = 5;
 
 			const float avail = ImGui::GetContentRegionAvail().x;
 			const float spacing = ImGui::GetStyle().ItemSpacing.x;
-			const float modeWidth = (avail - spacing * 3.0f) / 4.0f;
+			const float modeWidth = (avail - spacing * 4.0f) / 5.0f;
 
 			for (size_t i = 0; i < modeCount; ++i)
 			{
@@ -394,6 +396,22 @@ namespace Chained
 				if (ImGui::Button(btnLabel.c_str(), ImVec2(modeWidth, 0)))
 				{
 					m_ExportDialog.SelectedMode = m.mode;
+					if (m.mode == PackMode::Fast)
+					{
+						m_ExportDialog.ZipThreshold = 0.10f;
+					}
+					else if (m.mode == PackMode::Balanced)
+					{
+						m_ExportDialog.ZipThreshold = 0.05f;
+					}
+					else if (m.mode == PackMode::Max)
+					{
+						m_ExportDialog.ZipThreshold = 0.00f;
+					}
+					else if (m.mode == PackMode::Dictionary)
+					{
+						m_ExportDialog.ZipThreshold = 0.00f;
+					}
 				}
 
 				ImGui::PopStyleVar();
@@ -424,11 +442,18 @@ namespace Chained
 			ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(8.0f, 6.0f));
 			if (m_ExportDialog.SelectedMode != PackMode::Raw)
 			{
-				ImGui::SliderFloat("Compression Threshold", &m_ExportDialog.ZipThreshold, 0.0f, 1.0f, "%.2f");
+				int displayPercent =
+					std::clamp(100 - static_cast<int>(std::round(m_ExportDialog.ZipThreshold * 100.0f)), 0, 100);
+				if (ImGui::SliderInt("Compression Level", &displayPercent, 0, 100, "%d%%"))
+				{
+					m_ExportDialog.ZipThreshold = static_cast<float>(100 - displayPercent) * 0.01f;
+				}
 				if (ImGui::IsItemHovered())
 				{
-					ImGui::SetTooltip("Files with compression ratio above this threshold stay uncompressed.\n0.0 = "
-									  "compress everything, 1.0 = compress nothing.");
+					ImGui::SetTooltip("Compression level / aggressiveness.\n"
+									  "100%% = compress all files (smallest pack size).\n"
+									  "Lower values skip compression for already-compressed assets (e.g. PNG, OGG).\n"
+									  "0%% = store uncompressed.");
 				}
 			}
 
@@ -600,6 +625,7 @@ namespace Chained
 						m_ExportState.PackedFiles = 0;
 						m_ExportState.TotalFiles = 0;
 						m_ExportState.CurrentFile.clear();
+						m_ExportState.StartTime = std::chrono::steady_clock::now();
 					}
 					m_ExportState.CancelRequested.store(false, std::memory_order_relaxed);
 
@@ -648,12 +674,14 @@ namespace Chained
 		bool showProgress = false;
 		uint64_t packed = 0, total = 0;
 		std::string currentFile;
+		std::chrono::steady_clock::time_point startTime;
 		{
 			std::lock_guard<std::mutex> lock(m_ExportState.Mutex);
 			showProgress = m_ExportState.IsExporting;
 			packed = m_ExportState.PackedFiles;
 			total = m_ExportState.TotalFiles;
 			currentFile = m_ExportState.CurrentFile;
+			startTime = m_ExportState.StartTime;
 		}
 
 		if (!showProgress)
@@ -664,7 +692,7 @@ namespace Chained
 		// Position: bottom-right corner with a small margin.
 		ImGuiViewport* vp = ImGui::GetMainViewport();
 		const float margin = 16.0f;
-		const float windowW = 400.0f;
+		const float windowW = 420.0f;
 		ImVec2 winPos =
 			ImVec2(vp->WorkPos.x + vp->WorkSize.x - windowW - margin, vp->WorkPos.y + vp->WorkSize.y - margin);
 		ImGui::SetNextWindowPos(winPos, ImGuiCond_Always, ImVec2(0.0f, 1.0f));
@@ -681,14 +709,39 @@ namespace Chained
 			ImGui::TextColored(ImVec4(0.55f, 0.85f, 1.0f, 1.0f), ICON_FA_FILE_EXPORT "  Exporting Project");
 			ImGui::Spacing();
 
-			// ── File counter
+			// ── File counter & ETA
 			if (total > 0)
 			{
-				ImGui::Text("Packed %llu of %llu files", (unsigned long long)packed, (unsigned long long)total);
+				float pct = (static_cast<float>(packed) / static_cast<float>(total)) * 100.0f;
+				ImGui::Text("Packed %llu of %llu files (%.0f%%)", (unsigned long long)packed, (unsigned long long)total,
+							pct);
+
+				auto now = std::chrono::steady_clock::now();
+				float elapsedSec = std::chrono::duration<float>(now - startTime).count();
+				if (elapsedSec > 1.0f && packed > 3 && packed < total)
+				{
+					float filesPerSec = static_cast<float>(packed) / elapsedSec;
+					if (filesPerSec > 0.01f)
+					{
+						float remainingSec = static_cast<float>(total - packed) / filesPerSec;
+						int mins = static_cast<int>(remainingSec) / 60;
+						int secs = static_cast<int>(remainingSec) % 60;
+
+						ImGui::SameLine();
+						if (mins > 0)
+						{
+							ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 0.85f), "|  ETA: ~%dm %02ds", mins, secs);
+						}
+						else
+						{
+							ImGui::TextColored(ImVec4(0.7f, 0.85f, 1.0f, 0.85f), "|  ETA: ~%ds", std::max(1, secs));
+						}
+					}
+				}
 			}
 			else
 			{
-				ImGui::TextDisabled("Preparing...");
+				ImGui::TextDisabled("Preparing export...");
 			}
 
 			ImGui::Spacing();

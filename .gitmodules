@@ -100,3 +100,6 @@
 [submodule "thirdparty/freetype-gl"]
 	path = thirdparty/freetype-gl
 	url = https://github.com/rougier/freetype-gl.git
+[submodule "thirdparty/basis_universal"]
+	path = thirdparty/basis_universal
+	url = https://github.com/BinomialLLC/basis_universal.git

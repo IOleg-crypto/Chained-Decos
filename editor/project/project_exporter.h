@@ -46,6 +46,10 @@ namespace Chained
 		/// @brief Recursively collect files in @p dir, appending relative paths to @p out.
 		static void CollectFiles(const std::filesystem::path& dir, std::vector<std::filesystem::path>& out);
 
+		/// @brief Collect only assets referenced by game scenes, materials, scripts and projects.
+		static void CollectReferencedAssetFiles(const std::filesystem::path& assetDir,
+												std::vector<std::filesystem::path>& outFiles);
+
 		/// @brief True when @p packPath predates any source file, or covers a different file count.
 		static bool IsPackStale(const std::filesystem::path& packPath, const std::vector<std::string>& fileItemPaths,
 								uint64_t expectedItemCount);

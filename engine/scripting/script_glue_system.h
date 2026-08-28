@@ -32,7 +32,30 @@ namespace Chained
 
 	CH_SCRIPT_FUNC void Window_SetAntiAliasingSamples(int samples);
 
+	CH_SCRIPT_FUNC int Window_GetAntiAliasingSamples();
+
+	CH_SCRIPT_FUNC uint8_t Window_GetVSync();
+
+	CH_SCRIPT_FUNC uint8_t Window_GetFullscreen();
+
+	CH_SCRIPT_FUNC int Window_GetWidth();
+
+	CH_SCRIPT_FUNC int Window_GetHeight();
+
 	CH_SCRIPT_FUNC const Coral::UCChar* Window_GetSupportedResolution();
+
+	// ── Audio (global volume) ─────────────────────────────────────────
+	CH_SCRIPT_FUNC float Audio_GetMasterVolume();
+
+	CH_SCRIPT_FUNC void Audio_SetMasterVolume(float volume);
+
+	CH_SCRIPT_FUNC float Audio_GetMusicVolume();
+
+	CH_SCRIPT_FUNC void Audio_SetMusicVolume(float volume);
+
+	CH_SCRIPT_FUNC float Audio_GetSFXVolume();
+
+	CH_SCRIPT_FUNC void Audio_SetSFXVolume(float volume);
 
 	// ── Physics ────────────────────────────────────────────────────────
 	CH_SCRIPT_FUNC float Physics_GetGravity();

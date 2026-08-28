@@ -69,6 +69,9 @@ def split_chunks(
     return chunks
 
 
+import tempfile
+
+
 def run_packer(
     packer: str,
     output_path: Path,
@@ -76,29 +79,55 @@ def run_packer(
     zip_threshold: int,
     data_version: int,
     prefer_speed: bool,
+    use_dictionary: bool = False,
 ) -> None:
-    """Invoke the packer utility with file/item path pairs."""
-    cmd = [packer]
-    cmd += ["-z", str(zip_threshold)]
-    cmd += ["-v", str(data_version)]
-    if prefer_speed:
-        cmd += ["-s"]
-    cmd.append(str(output_path))
-    for fpath, item in file_items:
-        cmd.append(str(fpath))
-        cmd.append(item)
-
+    """Invoke the packer utility with file/item path pairs using manifest file."""
     print(f"  Packer: {output_path.name} ({len(file_items)} files)")
-    result = subprocess.run(cmd, capture_output=True, text=True)
-    if result.returncode != 0:
-        print(f"  ERROR packer failed (rc={result.returncode}):", file=sys.stderr)
+
+    # Write manifest file (tab-separated)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False, encoding="utf-8") as mf:
+        manifest_path = mf.name
+        for fpath, item in file_items:
+            mf.write(f"{fpath}\t{item}\n")
+
+    try:
+        # Try manifest mode (-m flag) first
+        cmd = [packer]
+        cmd += ["-z", str(zip_threshold)]
+        cmd += ["-v", str(data_version)]
+        if prefer_speed:
+            cmd += ["-s"]
+        if use_dictionary:
+            cmd += ["--dict"]
+        cmd += ["-m", manifest_path]
+        cmd.append(str(output_path))
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+
+        # If -m flag is unrecognized, the legacy packer.exe doesn't support manifests.
+        # chpacker (built from tools/chpacker.cpp) DOES support -m and must be used.
+        if result.returncode != 0 and ("unknown option: -m" in result.stderr or "unknown option: -m" in result.stdout):
+            print("ERROR: Packer does not support -m (manifest) mode.", file=sys.stderr)
+            print("  The legacy packer.exe cannot handle large file lists on Windows.", file=sys.stderr)
+            print("  Ensure chpacker.exe is built and used instead:", file=sys.stderr)
+            print("  cmake --build <build-dir> --target chpacker", file=sys.stderr)
+            sys.exit(1)
+
+        if result.returncode != 0:
+            print(f"  ERROR packer failed (rc={result.returncode}):", file=sys.stderr)
+            if result.stdout:
+                print(result.stdout, file=sys.stderr)
+            if result.stderr:
+                print(result.stderr, file=sys.stderr)
+            sys.exit(1)
         if result.stdout:
-            print(result.stdout, file=sys.stderr)
-        if result.stderr:
-            print(result.stderr, file=sys.stderr)
-        sys.exit(1)
-    if result.stdout:
-        print(f"  {result.stdout.strip()}")
+            print(f"  {result.stdout.strip()}")
+    finally:
+        if os.path.exists(manifest_path):
+            try:
+                os.remove(manifest_path)
+            except OSError:
+                pass
 
 
 def main() -> None:
@@ -112,6 +141,7 @@ def main() -> None:
     parser.add_argument("--zip-threshold", type=int, default=5, help="Compression threshold percent (0-100)")
     parser.add_argument("--data-version", type=int, default=0, help="Data version for pack header")
     parser.add_argument("--prefer-speed", action="store_true", help="Use LZ4 instead of ZSTD")
+    parser.add_argument("--dict", action="store_true", help="Use ZSTD dictionary compression (best for mixed assets)")
     parser.add_argument("--pack-name", default="resources", help="Base name for pack files (default: resources)")
     args = parser.parse_args()
 
@@ -168,6 +198,7 @@ def main() -> None:
             zip_threshold=args.zip_threshold,
             data_version=args.data_version,
             prefer_speed=args.prefer_speed,
+            use_dictionary=args.dict,
         )
         pack_files.append(pack_path)
 

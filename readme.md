@@ -20,6 +20,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 ## Table of Contents
 
 - [Overview](#overview)
+- [Download](#download)
 - [Quick Start](#quick-start)
 - [Build](#build)
 - [Run](#run)
@@ -52,6 +53,14 @@ Chained Decos and Chained Engine target Windows and Linux.
 
 ![Editor Screenshot 1](https://i.imgur.com/jey25o0.png)
 ![Editor Screenshot 2](https://i.imgur.com/VMhs9Zm.jpeg)
+
+## Download
+
+### Chained Decos (Game)
+- [Windows / Linux](https://app.mediafire.com/folder/upu4y995ivl26) — pre-built binaries
+
+### ChainedEngine (Editor)
+- [GitHub Releases](https://github.com/IOleg-crypto/Chained-Engine/releases) — Windows + Linux builds
 
 ## Quick Start
 

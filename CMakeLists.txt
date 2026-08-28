@@ -99,7 +99,8 @@ foreach(GAME_PROJECT_DIR ${GAME_PROJECT_LIST})
 endforeach()
 
 add_subdirectory(editor)
-# Google Tests for engine
+# ── Engine Tools ─────────────────────────────────────────────────────────────
+# ── Google Tests for engine
 enable_testing()
 add_subdirectory(tests)
 

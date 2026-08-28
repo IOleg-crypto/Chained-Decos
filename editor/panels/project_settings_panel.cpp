@@ -202,9 +202,9 @@ namespace Chained
 					config.Render.ShadowResolution = kShadowResValues[currentShadowResIdx];
 				}
 
-				static constexpr int kAAValues[] = {0, 2, 4, 8};
+				static constexpr int kAAValues[] = {0, 2, 4, 8, 16};
 				static constexpr int kAACount = sizeof(kAAValues) / sizeof(kAAValues[0]);
-				const char* aaNames[kAACount] = {"None", "2x MSAA", "4x MSAA", "8x MSAA"};
+				const char* aaNames[kAACount] = {"None", "2x MSAA", "4x MSAA", "8x MSAA", "16x MSAA"};
 				int currentAAIdx = 0;
 				for (int i = 0; i < kAACount; i++)
 				{

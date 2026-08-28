@@ -50,7 +50,15 @@ namespace Chained
 		virtual void SetFullscreen(bool enabled) override;
 
 		virtual void SetVSync(bool enabled) override;
+		virtual bool GetVSync() const override
+		{
+			return m_VSync;
+		}
 		virtual void SetAntialiasing(bool enabled) override;
+		virtual bool IsFullscreen() const override
+		{
+			return m_IsFullscreen;
+		}
 		virtual void SetTargetFramesPerSecond(int framesPerSecond) override;
 		virtual int GetTargetFramesPerSecond() const override
 		{

@@ -93,6 +93,7 @@ namespace Chained.Managed.Generator
 
         public bool IsStructType => PropertyType is "Vector2" or "Vector3" or "Vector4" or "Chained.Vector2" or "Chained.Vector3" or "Chained.Vector4";
         public bool IsBoolType => PropertyType is "bool";
+        public bool IsStringType => PropertyType is "string";
 
         public NativeCallInfo? MakeGetterCallInfo(string className)
         {
@@ -108,6 +109,17 @@ namespace Chained.Managed.Generator
                     MethodName = GetterMethod!,
                     ReturnType = "void",
                     Params = new List<string> { "ulong", structPtr }
+                };
+            }
+            else if (IsStringType)
+            {
+                // String return pattern: char* Get(ulong entityID)
+                return new NativeCallInfo
+                {
+                    ClassName = className,
+                    MethodName = GetterMethod!,
+                    ReturnType = "char*",
+                    Params = new List<string> { "ulong" }
                 };
             }
             else
@@ -138,6 +150,17 @@ namespace Chained.Managed.Generator
                     MethodName = SetterMethod!,
                     ReturnType = "void",
                     Params = new List<string> { "ulong", structPtr }
+                };
+            }
+            else if (IsStringType)
+            {
+                // String set pattern: void Set(ulong entityID, char* value)
+                return new NativeCallInfo
+                {
+                    ClassName = className,
+                    MethodName = SetterMethod!,
+                    ReturnType = "void",
+                    Params = new List<string> { "ulong", "char*" }
                 };
             }
             else
@@ -374,6 +397,8 @@ namespace Chained.Managed.Generator
             sb.AppendLine("// Source: NativeCallGenerator.cs");
             sb.AppendLine("#nullable enable");
             sb.AppendLine("#pragma warning disable 0649, 0169  // field never assigned / never used");
+            sb.AppendLine("using System;");
+            sb.AppendLine("using System.Runtime.InteropServices;");
             sb.AppendLine();
 
             bool hasNs = !string.IsNullOrEmpty(ns);
@@ -418,6 +443,10 @@ namespace Chained.Managed.Generator
                     {
                         sb.AppendLine($"{indent}        get {{ unsafe {{ return {getterPtr} != null && {getterPtr}(Entity.ID) != 0; }} }}");
                     }
+                    else if (prop.IsStringType)
+                    {
+                        sb.AppendLine($"{indent}        get {{ unsafe {{ return {getterPtr} != null ? Marshal.PtrToStringUni(new IntPtr({getterPtr}(Entity.ID))) ?? string.Empty : string.Empty; }} }}");
+                    }
                     else
                     {
                         sb.AppendLine($"{indent}        get {{ unsafe {{ return {getterPtr} != null ? {getterPtr}(Entity.ID) : default; }} }}");
@@ -435,6 +464,10 @@ namespace Chained.Managed.Generator
                     else if (prop.IsBoolType)
                     {
                         sb.AppendLine($"{indent}        set {{ unsafe {{ if ({setterPtr} != null) {setterPtr}(Entity.ID, (byte)(value ? 1 : 0)); }} }}");
+                    }
+                    else if (prop.IsStringType)
+                    {
+                        sb.AppendLine($"{indent}        set {{ unsafe {{ if ({setterPtr} != null) fixed (char* ptr = value) {setterPtr}(Entity.ID, ptr); }} }}");
                     }
                     else
                     {

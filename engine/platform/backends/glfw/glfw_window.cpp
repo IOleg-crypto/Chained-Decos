@@ -44,7 +44,7 @@ namespace Chained
 		m_Title = properties.Title;
 		m_VSync = properties.VSync;
 		m_TargetFPS = properties.TargetFramesPerSecond;
-		m_ForwardToImGui = (properties.SharedContext == nullptr);
+		m_ForwardToImGui = true;
 
 		if (!s_GLFWInitialized)
 		{
@@ -95,8 +95,7 @@ namespace Chained
 		glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 #endif
 
-		GLFWwindow* share = static_cast<GLFWwindow*>(properties.SharedContext);
-		m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, share);
+		m_WindowHandle = glfwCreateWindow((int)m_Width, (int)m_Height, m_Title.c_str(), nullptr, nullptr);
 		CH_CORE_ASSERT(m_WindowHandle, "Failed to create GLFW window!");
 		glfwSetWindowSizeLimits(m_WindowHandle, minimumWidth, minimumHeight, GLFW_DONT_CARE, GLFW_DONT_CARE);
 

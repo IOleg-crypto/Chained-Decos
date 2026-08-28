@@ -25,7 +25,6 @@ namespace Chained
 		int TargetFramesPerSecond = 60;
 		std::string IconPath;
 		int Samples = 0;
-		void* SharedContext = nullptr;
 	};
 
 	// Abstract native window interface used by the application and renderer.
@@ -50,10 +49,12 @@ namespace Chained
 		virtual void SetFullscreen(bool enabled) = 0;
 
 		virtual void SetVSync(bool enabled) = 0;
+		virtual bool GetVSync() const = 0;
 		// Toggles GL_MULTISAMPLE for the default framebuffer. Only has a visible effect if the window
 		// was created with WindowProperties::Samples > 0 - the sample count itself is fixed at creation
 		// time and cannot be changed at runtime without recreating the window.
 		virtual void SetAntialiasing(bool enabled) = 0;
+		virtual bool IsFullscreen() const = 0;
 		virtual void SetTargetFramesPerSecond(int framesPerSecond) = 0;
 		virtual int GetTargetFramesPerSecond() const = 0;
 		virtual void SetWindowIcon(const std::string& path) = 0;

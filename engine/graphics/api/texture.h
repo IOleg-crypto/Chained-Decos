@@ -14,7 +14,9 @@ namespace Chained
 		RGBA8,
 		RGB16F,
 		RGBA16F,
-		Depth24Stencil8
+		Depth24Stencil8,
+		BC3, // DXT5 — GPU-compressed RGBA, 1 byte/pixel.
+		BC7, // BPTC — Modern GPU-compressed RGBA, 1 byte/pixel (highest quality).
 	};
 
 	enum class TextureType
@@ -33,6 +35,9 @@ namespace Chained
 		virtual uint32_t GetNativeHandle() const = 0;
 
 		virtual void SetData(void* data, uint32_t size) = 0;
+		virtual void SetCompressedData(const void* data, uint32_t size)
+		{
+		}
 		virtual void Bind(uint32_t slot = 0) const = 0;
 
 		virtual bool IsReady() const = 0;

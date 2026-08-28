@@ -26,6 +26,9 @@ namespace Chained
 		int format = 0;
 		int channels = 0;
 		bool isHDR = false;
+		bool isCompressedGPU = false;
+		TextureFormat compressedFormat = TextureFormat::None;
+		uint32_t compressedDataSize = 0;
 	};
 
 	class TextureAsset : public Asset

@@ -314,6 +314,12 @@ namespace Chained
 		assembly.AddInternalCall("Chained.Audio", "Audio_Play_Ptr", (void*)&Audio_Play);
 		assembly.AddInternalCall("Chained.Audio", "Audio_Stop_Ptr", (void*)&Audio_Stop);
 		assembly.AddInternalCall("Chained.Audio", "Audio_StopAll_Ptr", (void*)&Audio_StopAll);
+		assembly.AddInternalCall("Chained.Audio", "Audio_GetMasterVolume_Ptr", (void*)&Audio_GetMasterVolume);
+		assembly.AddInternalCall("Chained.Audio", "Audio_SetMasterVolume_Ptr", (void*)&Audio_SetMasterVolume);
+		assembly.AddInternalCall("Chained.Audio", "Audio_GetMusicVolume_Ptr", (void*)&Audio_GetMusicVolume);
+		assembly.AddInternalCall("Chained.Audio", "Audio_SetMusicVolume_Ptr", (void*)&Audio_SetMusicVolume);
+		assembly.AddInternalCall("Chained.Audio", "Audio_GetSFXVolume_Ptr", (void*)&Audio_GetSFXVolume);
+		assembly.AddInternalCall("Chained.Audio", "Audio_SetSFXVolume_Ptr", (void*)&Audio_SetSFXVolume);
 
 		// ── Application ───────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.Application", "Application_Close_Ptr", (void*)&Application_Close);
@@ -328,6 +334,12 @@ namespace Chained
 		assembly.AddInternalCall("Chained.AppWindow", "Window_SetAntialiasing_Ptr", (void*)&Window_SetAntialiasing);
 		assembly.AddInternalCall("Chained.AppWindow", "Window_SetAntiAliasingSamples_Ptr",
 								 (void*)&Window_SetAntiAliasingSamples);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetAntiAliasingSamples_Ptr",
+								 (void*)&Window_GetAntiAliasingSamples);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetVSync_Ptr", (void*)&Window_GetVSync);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetFullscreen_Ptr", (void*)&Window_GetFullscreen);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetWidth_Ptr", (void*)&Window_GetWidth);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetHeight_Ptr", (void*)&Window_GetHeight);
 		assembly.AddInternalCall("Chained.AppWindow", "Window_GetSupportedResolution_Ptr",
 								 (void*)&Window_GetSupportedResolution);
 

@@ -16,19 +16,25 @@ namespace Chained
 					 ImFont* font, const TextStyle& textStyle);
 	bool RenderCheckbox(CheckboxData& checkbox, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
 						ImFont* font, const TextStyle& textStyle);
-	bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
+	bool RenderProgressBar(const ProgressBarData& pb, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						   ImFont* font, const TextStyle& textStyle);
 	bool RenderSeparator(const SeparatorData& sep, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
 	bool RenderRadioButton(RadioButtonData& radio, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
 						   ImFont* font, const TextStyle& textStyle);
 
 	// Input
-	bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
+	bool RenderSlider(SliderData& slider, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+					  const TextStyle& textStyle);
 	bool RenderComboBox(ComboBoxData& combo, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
 						ImFont* font, const TextStyle& textStyle);
-	bool RenderInputText(InputTextData& input, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
-	bool RenderDragFloat(DragFloatData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
-	bool RenderDragInt(DragIntData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
-	bool RenderColorPicker(ColorPickerData& picker, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
+	bool RenderInputText(InputTextData& input, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						 ImFont* font, const TextStyle& textStyle);
+	bool RenderDragFloat(DragFloatData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						 ImFont* font, const TextStyle& textStyle);
+	bool RenderDragInt(DragIntData& drag, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size, ImFont* font,
+					   const TextStyle& textStyle);
+	bool RenderColorPicker(ColorPickerData& picker, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size,
+						   ImFont* font, const TextStyle& textStyle);
 
 	// Image
 	bool RenderImage(ImageData& img, UIControlComponent& wc, const ImVec2& pos, const ImVec2& size);
