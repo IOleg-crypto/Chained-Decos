@@ -399,11 +399,11 @@ jobs:
           echo "raw_tag=${RAW_TAG}" >> $GITHUB_OUTPUT
           echo "version=${TAG_VERSION}" >> $GITHUB_OUTPUT
 
-      - name: Download all artifacts
+      - name: Download Editor artifacts only
         uses: actions/download-artifact@v4
         with:
           path: release-assets
-          pattern: "{Game,Editor}-*"
+          pattern: "Editor-*"
           merge-multiple: true
 
       - name: Create Release
@@ -423,17 +423,17 @@ jobs:
 
             | File | Platform | Contents |
             |------|----------|----------|
-            | `ChainedDecos-Game-*-windows.zip` | Windows | Game executable + .chproject + resources.pack + scripts + nethost/ + DLLs |
-            | `ChainedDecos-Game-*-linux.tar.gz` | Linux | Game executable + .chproject + resources.pack + scripts + nethost/ |
             | `ChainedEditor-*-windows.zip` | Windows | Editor executable + engine resources + nethost/ + DLLs |
             | `ChainedEditor-*-linux.tar.gz` | Linux | Editor executable + engine resources + nethost/ |
 
-            > **Game** — packaged with `resources.pack` (assets + engine resources compressed), `.chproject` project config, `scripts/` (C# assemblies), and `nethost/` (.NET hosting). On Linux, requires .NET 9+ runtime.
             > **Editor** — includes the editor binary, engine resources (shaders, fonts, icons), and `nethost/` (.NET hosting). On Linux, requires .NET 9+ runtime.
 
             #### Requirements
             - Windows: no extra dependencies (all DLLs included)
             - Linux: requires .NET 9+ runtime for C# scripting
+
+            ---
+            > 🎮 **Chained Decos** game is distributed separately.
           draft: ${{ inputs.is_draft || false }}
           prerelease: ${{ inputs.is_prerelease || false }}
         env:
