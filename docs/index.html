@@ -3,241 +3,144 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Chained Engine</title>
-  <style>
-    :root {
-      --bg: #0d1117;
-      --surface: #161b22;
-      --border: #30363d;
-      --text: #e6edf3;
-      --text-muted: #8b949e;
-      --accent: #58a6ff;
-      --accent-hover: #79c0ff;
-      --green: #3fb950;
-    }
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
-      background: var(--bg);
-      color: var(--text);
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-    }
-    .hero {
-      text-align: center;
-      padding: 5rem 1.5rem 3rem;
-      max-width: 800px;
-    }
-    .hero h1 {
-      font-size: 3rem;
-      font-weight: 700;
-      margin-bottom: 0.5rem;
-      background: linear-gradient(135deg, #58a6ff, #a371f7);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      background-clip: text;
-    }
-    .hero .subtitle {
-      font-size: 1.25rem;
-      color: var(--text-muted);
-      margin-bottom: 2rem;
-    }
-    .badges {
-      display: flex;
-      gap: 0.5rem;
-      justify-content: center;
-      flex-wrap: wrap;
-      margin-bottom: 2rem;
-    }
-    .badges img { height: 20px; }
-    .cards {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-      gap: 1.5rem;
-      max-width: 800px;
-      width: 100%;
-      padding: 0 1.5rem;
-      margin-bottom: 3rem;
-    }
-    .card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 1.5rem;
-      transition: border-color 0.2s;
-    }
-    .card:hover { border-color: var(--accent); }
-    .card h2 {
-      font-size: 1.25rem;
-      margin-bottom: 0.5rem;
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-    }
-    .card p {
-      color: var(--text-muted);
-      font-size: 0.9rem;
-      line-height: 1.5;
-      margin-bottom: 1rem;
-    }
-    .btn {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      padding: 0.6rem 1.2rem;
-      border-radius: 8px;
-      text-decoration: none;
-      font-weight: 600;
-      font-size: 0.9rem;
-      transition: background 0.2s, transform 0.1s;
-    }
-    .btn:active { transform: scale(0.97); }
-    .btn-primary {
-      background: var(--accent);
-      color: #000;
-    }
-    .btn-primary:hover { background: var(--accent-hover); }
-    .btn-outline {
-      border: 1px solid var(--border);
-      color: var(--text);
-      background: transparent;
-    }
-    .btn-outline:hover { border-color: var(--text-muted); background: var(--surface); }
-    .features {
-      max-width: 800px;
-      width: 100%;
-      padding: 0 1.5rem;
-      margin-bottom: 3rem;
-    }
-    .features h2 {
-      font-size: 1.5rem;
-      margin-bottom: 1rem;
-      text-align: center;
-    }
-    .feature-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 1rem;
-    }
-    .feature {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 1rem;
-    }
-    .feature h3 {
-      font-size: 0.95rem;
-      margin-bottom: 0.3rem;
-    }
-    .feature p {
-      font-size: 0.8rem;
-      color: var(--text-muted);
-      line-height: 1.4;
-    }
-    footer {
-      padding: 2rem 1.5rem;
-      text-align: center;
-      color: var(--text-muted);
-      font-size: 0.85rem;
-      border-top: 1px solid var(--border);
-      width: 100%;
-      margin-top: auto;
-    }
-    footer a { color: var(--accent); text-decoration: none; }
-    footer a:hover { text-decoration: underline; }
-    .screenshot {
-      max-width: 800px;
-      width: 100%;
-      padding: 0 1.5rem;
-      margin-bottom: 3rem;
-      text-align: center;
-    }
-    .screenshot img {
-      width: 100%;
-      border-radius: 12px;
-      border: 1px solid var(--border);
-    }
-  </style>
+  <title>Chained Decos — Parkour Game on ChainedEngine</title>
+  <meta name="description" content="Chained Decos is a parkour game built on ChainedEngine — a custom C++23 game engine with OpenGL rendering, ECS architecture, and C# scripting.">
+  <link rel="stylesheet" href="style.css">
+  <link rel="icon" href="https://i.imgur.com/MLIxRhB.png" type="image/png">
 </head>
 <body>
-  <section class="hero">
-    <h1>Chained Engine</h1>
-    <p class="subtitle">Custom C++23 game engine with editor, OpenGL renderer, and managed C# scripting.</p>
-    <div class="badges">
-      <img src="https://img.shields.io/badge/language-C%2B%2B23-blue?logo=c%2B%2B&logoColor=white" alt="C++23">
-      <img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT">
-      <img src="https://img.shields.io/badge/graphics-OpenGL%204.3%2B-red?logo=opengl" alt="OpenGL">
+
+  <!-- Hero -->
+  <header class="hero">
+    <div class="hero-overlay"></div>
+    <div class="hero-content">
+      <h1>Chained Decos</h1>
+      <p class="tagline">Parkour game built on ChainedEngine</p>
+      <div class="hero-buttons">
+        <a href="#download" class="btn btn-primary">Download</a>
+        <a href="https://github.com/IOleg-crypto/Chained-Engine" class="btn btn-secondary">Source Code</a>
+      </div>
     </div>
-    <div style="display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
-      <a href="https://github.com/IOleg-crypto/Chained-Engine/releases/latest" class="btn btn-primary">
-        &#11015; Latest Release
-      </a>
-      <a href="https://github.com/IOleg-crypto/Chained-Engine" class="btn btn-outline">
-        &#128187; Source Code
-      </a>
+  </header>
+
+  <!-- Screenshots -->
+  <section class="screenshots">
+    <h2>Screenshots</h2>
+    <div class="screenshot-grid">
+      <img src="https://i.imgur.com/MLIxRhB.png" alt="Chained Decos gameplay" loading="lazy">
+      <img src="https://i.imgur.com/jey25o0.png" alt="ChainedEngine editor" loading="lazy">
+      <img src="https://i.imgur.com/VMhs9Zm.jpeg" alt="ChainedEngine editor scene" loading="lazy">
     </div>
   </section>
 
-  <section class="screenshot">
-    <img src="https://i.imgur.com/MLIxRhB.png" alt="Chained Decos screenshot">
+  <!-- Download -->
+  <section id="download" class="download">
+    <h2>Download</h2>
+
+    <div class="download-cards">
+
+      <!-- Game -->
+      <div class="card">
+        <h3>Chained Decos — Game</h3>
+        <p>The parkour game. Extract and run the executable.</p>
+        <div class="platform-downloads">
+          <div class="platform">
+            <span class="platform-label">Windows</span>
+            <!-- UPDATE: replace # with your Mediafire / MEGA / Google Drive link -->
+            <a href="#" class="btn btn-download">Download (.zip)</a>
+          </div>
+          <div class="platform">
+            <span class="platform-label">Linux</span>
+            <!-- UPDATE: replace # with your link -->
+            <a href="#" class="btn btn-download">Download (.tar.gz)</a>
+          </div>
+        </div>
+        <p class="alt-links">
+          Also available on:
+          <!-- UPDATE: replace # with actual links -->
+          <a href="#">GitHub Releases</a> &middot;
+          <a href="#">Mediafire</a> &middot;
+          <a href="#">MEGA</a>
+        </p>
+      </div>
+
+      <!-- Editor -->
+      <div class="card">
+        <h3>ChainedEngine — Editor</h3>
+        <p>The game engine editor. Create scenes, script gameplay, export projects.</p>
+        <div class="platform-downloads">
+          <div class="platform">
+            <span class="platform-label">Windows</span>
+            <a href="#" class="btn btn-download">Download (.zip)</a>
+          </div>
+          <div class="platform">
+            <span class="platform-label">Linux</span>
+            <a href="#" class="btn btn-download">Download (.tar.gz)</a>
+          </div>
+        </div>
+        <p class="alt-links">
+          Also available on:
+          <a href="https://github.com/IOleg-crypto/Chained-Engine/releases">GitHub Releases</a>
+        </p>
+      </div>
+
+    </div>
   </section>
 
-  <section class="cards">
-    <div class="card">
-      <h2>&#127918; Chained Decos (Game)</h2>
-      <p>Parkour game built with the engine. Download and play, or explore the full project.</p>
-      <a href="https://github.com/IOleg-crypto/Chained-Engine/releases/latest" class="btn btn-primary">
-        &#11015; Download Game
-      </a>
-    </div>
-    <div class="card">
-      <h2>&#9999;&#65039; ChainedEditor</h2>
-      <p>Full-featured editor for creating scenes, scripting gameplay in C#, and building your own projects.</p>
-      <a href="https://github.com/IOleg-crypto/Chained-Engine/releases/latest" class="btn btn-primary">
-        &#11015; Download Editor
-      </a>
-    </div>
-  </section>
-
+  <!-- Features -->
   <section class="features">
-    <h2>Features</h2>
+    <h2>Engine Features</h2>
     <div class="feature-grid">
       <div class="feature">
         <h3>OpenGL 4.3+</h3>
-        <p>PBR rendering, fog, shadow mapping, animation graphs.</p>
+        <p>PBR rendering, shadow mapping, fog, and post-processing pipeline.</p>
       </div>
       <div class="feature">
         <h3>ECS Architecture</h3>
-        <p>EnTT-based entity component system for flexible scene management.</p>
+        <p>Entity Component System powered by EnTT for high-performance game logic.</p>
       </div>
       <div class="feature">
         <h3>C# Scripting</h3>
-        <p>Managed gameplay scripting via Coral (.NET/CoreCLR).</p>
+        <p>Managed gameplay scripting via Coral (.NET/CoreCLR interop).</p>
       </div>
       <div class="feature">
         <h3>Physics</h3>
-        <p>JoltPhysics integration for realistic simulations.</p>
+        <p>Jolt Physics integration for realistic simulation.</p>
       </div>
       <div class="feature">
         <h3>Networking</h3>
-        <p>UDP client/server with UPnP port forwarding and encryption.</p>
+        <p>UDP client/server with encryption and UPnP port forwarding.</p>
       </div>
       <div class="feature">
-        <h3>Project Export</h3>
-        <p>Compressed asset packs (ZSTD) for easy distribution.</p>
+        <h3>Animation Graphs</h3>
+        <p>Visual animation system with blend trees and state machines.</p>
       </div>
     </div>
   </section>
 
+  <!-- Links -->
+  <section class="links">
+    <h2>Links</h2>
+    <div class="link-grid">
+      <a href="https://github.com/IOleg-crypto/Chained-Engine" class="link-card">
+        <strong>GitHub</strong>
+        <span>Source code &amp; releases</span>
+      </a>
+      <a href="https://github.com/IOleg-crypto/Chained-Engine/issues" class="link-card">
+        <strong>Issues</strong>
+        <span>Report bugs</span>
+      </a>
+      <a href="https://github.com/IOleg-crypto/Chained-Engine/blob/opengl/docs/USER_GUIDE.md" class="link-card">
+        <strong>Documentation</strong>
+        <span>User guide &amp; API reference</span>
+      </a>
+    </div>
+  </section>
+
+  <!-- Footer -->
   <footer>
-    <p>Chained Engine is open source under the <a href="https://opensource.org/licenses/MIT">MIT License</a>.</p>
-    <p style="margin-top:0.5rem;">
-      <a href="https://github.com/IOleg-crypto/Chained-Engine">GitHub</a> &middot;
-      <a href="https://github.com/IOleg-crypto/Chained-Engine/blob/opengl/docs/USER_GUIDE.md">Documentation</a> &middot;
-      <a href="https://github.com/IOleg-crypto/Chained-Engine/issues">Issues</a>
-    </p>
+    <p>Chained Decos &amp; ChainedEngine &mdash; MIT License</p>
   </footer>
+
 </body>
 </html>
