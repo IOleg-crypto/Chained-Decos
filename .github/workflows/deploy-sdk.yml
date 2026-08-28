@@ -206,45 +206,7 @@ jobs:
           set -euo pipefail
           python tools/sync_resources.py --root . --bin "build/${{ matrix.preset }}/bin" --config ${{ matrix.config }}
 
-      - name: Pack game resources into .pack
-        run: |
-          set -euo pipefail
-          WS="${{ github.workspace }}"
-          BIN_DIR="$WS/build/${{ matrix.preset }}/bin/${{ matrix.config }}"
-          if [[ ! -d "$BIN_DIR" ]]; then
-            BIN_DIR="$WS/build/${{ matrix.preset }}/bin"
-          fi
-
-          # Find chpacker executable (required — legacy packer.exe doesn't support -m manifest)
-          PACKER="$BIN_DIR/chpacker"
-          [[ -f "$PACKER.exe" ]] && PACKER="$PACKER.exe"
-          if [[ ! -f "$PACKER" ]]; then
-            PACKER=$(find "$WS/build/${{ matrix.preset }}" -name "chpacker" -o -name "chpacker.exe" 2>/dev/null | head -1)
-          fi
-          if [[ ! -f "$PACKER" ]]; then
-            echo "ERROR: chpacker executable not found. Build it with: cmake --build <build-dir> --target chpacker" >&2
-            exit 1
-          fi
-          echo "Using packer: $PACKER"
-
-          # Find .chproject file for the active game
-          CHPROJECT=""
-          for f in "$WS/game/chaineddecos"/*.chproject; do
-            [[ -f "$f" ]] && CHPROJECT="$f" && break
-          done
-
-          # Create resources.pack from assets/ + resources/
-          python "$WS/tools/create_pack.py" \
-            --packer "$PACKER" \
-            --output "$BIN_DIR" \
-            ${CHPROJECT:+--chproject "$CHPROJECT"} \
-            --assets "$WS/game/chaineddecos/assets" \
-            --resources "$WS/resources" \
-            --split-mb 0 \
-            --zip-threshold 5 \
-            --data-version 0
-
-      - name: Package Game and Editor bundles
+      - name: Package Editor bundle
         id: package
         shell: bash
         run: |
@@ -302,31 +264,6 @@ jobs:
             fi
           }
 
-          # ── Game bundle: executable + .pack + scripts/ ─────────────────────
-          GAME_EXE=""
-          [[ -f "$BIN_DIR/ChainedDecos.exe" ]] && GAME_EXE="$BIN_DIR/ChainedDecos.exe"
-          [[ -f "$BIN_DIR/ChainedDecos"     ]] && GAME_EXE="$BIN_DIR/ChainedDecos"
-
-          # Collect .pack files created by create_pack.py
-          GAME_PACKS=()
-          for f in "$BIN_DIR"/resources*.pack; do
-            [[ -f "$f" ]] && GAME_PACKS+=("$f")
-          done
-
-          # Locate .chproject for the game
-          CHPROJECT=""
-          for f in "$WS/game/chaineddecos"/*.chproject; do
-            [[ -f "$f" ]] && CHPROJECT="$f" && break
-          done
-
-          GAME_ARCHIVE=$(make_bundle "ChainedDecos-Game" \
-            "$GAME_EXE" \
-            "${GAME_PACKS[@]}" \
-            ${CHPROJECT:+"$CHPROJECT"} \
-            "$BIN_DIR/scripts" \
-            "$BIN_DIR/nethost")
-          echo "game_archive=$GAME_ARCHIVE" >> $GITHUB_OUTPUT
-
           # ── Editor bundle: executable + engine resources only (no game assets) ──
           EDITOR_EXE=""
           [[ -f "$BIN_DIR/ChainedEditor.exe" ]] && EDITOR_EXE="$BIN_DIR/ChainedEditor.exe"
@@ -338,14 +275,6 @@ jobs:
             "$BIN_DIR/editor_settings.yaml" \
             "$BIN_DIR/nethost")
           echo "editor_archive=$EDITOR_ARCHIVE" >> $GITHUB_OUTPUT
-
-      - name: Upload Game artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: Game-${{ matrix.platform }}
-          path: ${{ github.workspace }}/${{ steps.package.outputs.game_archive }}
-          compression-level: 1
-          retention-days: 30
 
       - name: Upload Editor artifact
         uses: actions/upload-artifact@v4
