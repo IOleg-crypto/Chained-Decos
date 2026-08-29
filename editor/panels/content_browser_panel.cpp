@@ -80,6 +80,10 @@ namespace Chained
 			{
 				GoUp();
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Go to parent directory");
+			}
 		}
 		else
 		{
@@ -95,6 +99,10 @@ namespace Chained
 									 sizeof(m_FilterBuffer)))
 		{
 			SetFilter(m_FilterBuffer, m_FilterType);
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Filter assets by name");
 		}
 
 		ImGui::SameLine();
@@ -112,11 +120,19 @@ namespace Chained
 			}
 			ImGui::EndCombo();
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Filter assets by type");
+		}
 
 		ImGui::SameLine();
 		if (ImGui::Button("Assets"))
 		{
 			GoToRoot();
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Navigate to project assets root");
 		}
 
 		// Breadcrumbs
@@ -136,12 +152,20 @@ namespace Chained
 					Navigate(accumulated);
 					break;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Open folder: %s", accumulated.string().c_str());
+				}
 			}
 		}
 
 		ImGui::SameLine(ImGui::GetWindowWidth() - 160.0f);
 		ImGui::SetNextItemWidth(150.0f);
 		ImGui::SliderFloat("##IconScale", &m_IconScale, 0.5f, 2.0f, ICON_FA_IMAGE);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Adjust thumbnail icon size");
+		}
 
 		ImGui::PopStyleVar(2);
 	}
@@ -219,9 +243,13 @@ namespace Chained
 					ImGui::EndPopup();
 				}
 
-				if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+				if (ImGui::IsItemHovered())
 				{
-					OnAssetDoubleClicked(asset);
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left))
+					{
+						OnAssetDoubleClicked(asset);
+					}
+					ImGui::SetTooltip("%s%s", asset.isDirectory ? "Folder: " : "File: ", asset.name.c_str());
 				}
 
 				if (ImGui::BeginDragDropSource())
@@ -261,16 +289,28 @@ namespace Chained
 		{
 			ImGui::Text("Enter new name:");
 			ImGui::InputText("##NewName", m_RenameBuffer, sizeof(m_RenameBuffer));
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Enter the new asset name");
+			}
 			if (ImGui::Button("OK", {120, 0}))
 			{
 				EditorActionCommands::RenameAsset(m_RenamingPath, m_RenameBuffer);
 				m_PendingRefresh = true;
 				ImGui::CloseCurrentPopup();
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Confirm rename");
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel", {120, 0}))
 			{
 				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Cancel rename");
 			}
 			ImGui::EndPopup();
 		}
@@ -284,10 +324,18 @@ namespace Chained
 				m_PendingRefresh = true;
 				ImGui::CloseCurrentPopup();
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Permanently delete this asset");
+			}
 			ImGui::SameLine();
 			if (ImGui::Button("Cancel", {120, 0}))
 			{
 				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Cancel deletion");
 			}
 			ImGui::EndPopup();
 		}
@@ -300,6 +348,10 @@ namespace Chained
 				{
 					EditorActionCommands::CreateFolder(GetCurrentDirectory());
 					m_PendingRefresh = true;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Create a new folder in the current directory");
 				}
 				ImGui::EndMenu();
 			}

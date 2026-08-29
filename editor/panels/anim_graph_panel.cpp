@@ -343,6 +343,10 @@ namespace Chained
 					assets->Invalidate(animComp.GraphPath);
 				}
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Create a new animation graph asset for this entity");
+			}
 			ImGui::End();
 			return;
 		}
@@ -355,6 +359,10 @@ namespace Chained
 			{
 				SaveGraph(graph, animComp.GraphPath);
 				m_ChangedGraph = false;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Save the animation graph to disk");
 			}
 			ImGui::PopStyleColor();
 
@@ -380,6 +388,10 @@ namespace Chained
 					m_ChangedGraph = false;
 				}
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Duplicate the current graph as a new file");
+			}
 
 			ImGui::SameLine();
 			if (ImGui::Button("Add State"))
@@ -393,17 +405,29 @@ namespace Chained
 				m_Delegate.nodeSelected.push_back(false);
 				m_ChangedGraph = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Add a new animation state node to the graph");
+			}
 
 			ImGui::SameLine();
 			if (ImGui::Button("Fit All"))
 			{
 				m_Fit = GraphEditor::Fit_AllNodes;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Zoom and pan to fit all nodes in view");
+			}
 
 			ImGui::SameLine();
 			if (ImGui::Button("Fit Selected"))
 			{
 				m_Fit = GraphEditor::Fit_SelectedNodes;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Zoom and pan to fit the selected node in view");
 			}
 
 			ImGui::SameLine();
@@ -496,6 +520,10 @@ namespace Chained
 		ImGui::Text("Is Playing");
 		ImGui::SameLine(120);
 		ImGui::Checkbox("##isPlaying", &animComp.IsPlaying);
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Toggle animation playback on/off");
+		}
 
 		ImGui::Separator();
 
@@ -537,6 +565,10 @@ namespace Chained
 				node.Name = buffer;
 				m_ChangedGraph = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Set the display name for this state node");
+			}
 
 			if (node.ID == graph->EntryNodeID)
 			{
@@ -548,6 +580,10 @@ namespace Chained
 				{
 					graph->EntryNodeID = node.ID;
 					m_ChangedGraph = true;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Mark this node as the entry point of the graph");
 				}
 			}
 
@@ -607,6 +643,10 @@ namespace Chained
 								}
 								ImGui::EndCombo();
 							}
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::SetTooltip("Select an animation clip from the model");
+							}
 
 							// Show frame range info
 							const auto& rawAnims = modelAsset->GetAnimations();
@@ -628,6 +668,10 @@ namespace Chained
 									}
 									m_ChangedGraph = true;
 								}
+								if (ImGui::IsItemHovered())
+								{
+									ImGui::SetTooltip("First frame of the animation clip to play");
+								}
 
 								// End Frame
 								int ef = node.EndFrame;
@@ -640,6 +684,10 @@ namespace Chained
 										node.EndFrame = node.StartFrame;
 									}
 									m_ChangedGraph = true;
+								}
+								if (ImGui::IsItemHovered())
+								{
+									ImGui::SetTooltip("Last frame (-1 = play to end)");
 								}
 
 								// Duration preview
@@ -662,13 +710,25 @@ namespace Chained
 					{
 						m_ChangedGraph = true;
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Index of the animation clip in the model");
+					}
 					if (ImGui::InputInt("Start Frame", &node.StartFrame))
 					{
 						m_ChangedGraph = true;
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("First frame of the animation clip");
+					}
 					if (ImGui::InputInt("End Frame", &node.EndFrame))
 					{
 						m_ChangedGraph = true;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Last frame (-1 = play to end)");
 					}
 				}
 			}
@@ -677,10 +737,18 @@ namespace Chained
 			{
 				m_ChangedGraph = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Loop the animation when it reaches the end");
+			}
 
 			if (ImGui::DragFloat("Speed", &node.Speed, 0.05f, 0.01f, 10.0f, "%.2f"))
 			{
 				m_ChangedGraph = true;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Playback speed multiplier (1.0 = normal)");
 			}
 
 			if (m_ChangedGraph)
@@ -717,6 +785,10 @@ namespace Chained
 				m_Delegate.SyncSelection();
 				m_ChangedGraph = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Remove this node and all its transitions");
+			}
 		}
 		else
 		{
@@ -736,6 +808,10 @@ namespace Chained
 			tr.BlendDuration = 0.2f;
 			graph->Transitions.push_back(tr);
 			m_ChangedGraph = true;
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Add a new transition between nodes");
 		}
 
 		for (size_t i = 0; i < graph->Transitions.size(); i++)
@@ -792,6 +868,10 @@ namespace Chained
 						}
 						ImGui::EndCombo();
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Source node for this transition");
+					}
 				}
 
 				// Target node picker
@@ -822,16 +902,28 @@ namespace Chained
 						}
 						ImGui::EndCombo();
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Target node for this transition");
+					}
 				}
 
 				if (ImGui::DragFloat("Blend Duration", &tr.BlendDuration, 0.01f, 0.0f, 5.0f, "%.2f s"))
 				{
 					m_ChangedGraph = true;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Time in seconds to blend between states");
+				}
 
 				if (ImGui::Checkbox("Has Exit Time", &tr.HasExitTime))
 				{
 					m_ChangedGraph = true;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Require a specific time before transitioning");
 				}
 
 				if (tr.HasExitTime)
@@ -839,6 +931,10 @@ namespace Chained
 					if (ImGui::DragFloat("Exit Time", &tr.ExitTime, 0.01f, 0.0f, 1.0f, "%.2f"))
 					{
 						m_ChangedGraph = true;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Normalized time (0-1) at which exit is allowed");
 					}
 				}
 
@@ -850,6 +946,10 @@ namespace Chained
 					cond.Op = AnimConditionOp::Greater;
 					tr.Conditions.push_back(cond);
 					m_ChangedGraph = true;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Add a new condition to this transition");
 				}
 
 				for (size_t c = 0; c < tr.Conditions.size(); c++)
@@ -865,6 +965,10 @@ namespace Chained
 						cond.VariableName = varBuf;
 						m_ChangedGraph = true;
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Variable name to evaluate");
+					}
 
 					const char* ops[] = {"==", "!=", ">", "<", ">=", "<="};
 					int opIdx = (int)cond.Op;
@@ -873,10 +977,18 @@ namespace Chained
 						cond.Op = (AnimConditionOp)opIdx;
 						m_ChangedGraph = true;
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Comparison operator for this condition");
+					}
 
 					if (ImGui::DragFloat("Value", &cond.Value, 0.01f))
 					{
 						m_ChangedGraph = true;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Value to compare against");
 					}
 
 					ImGui::SameLine();
@@ -886,6 +998,10 @@ namespace Chained
 						m_ChangedGraph = true;
 						ImGui::PopID();
 						break;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Remove this condition");
 					}
 
 					ImGui::PopID();
@@ -898,6 +1014,10 @@ namespace Chained
 					ImGui::TreePop();
 					ImGui::PopID();
 					break;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Remove this transition");
 				}
 
 				ImGui::TreePop();
@@ -926,6 +1046,10 @@ namespace Chained
 			m_VariableTypes[key] = VarType::Float;
 			m_ChangedGraph = true;
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Add a new float variable");
+		}
 		ImGui::SameLine();
 		if (ImGui::Button("+ Bool"))
 		{
@@ -939,6 +1063,10 @@ namespace Chained
 			graph->DefaultVariables[key] = 0.0f; // sync to graph schema
 			m_VariableTypes[key] = VarType::Bool;
 			m_ChangedGraph = true;
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Add a new bool variable");
 		}
 
 		auto it = animComp.Variables.begin();
@@ -1015,6 +1143,10 @@ namespace Chained
 				ImGui::PopID();
 				break;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Variable name (press Enter to rename)");
+			}
 			ImGui::SameLine();
 
 			// Value widget: checkbox for bool, drag for float
@@ -1025,6 +1157,10 @@ namespace Chained
 				{
 					it->second = bval ? 1.0f : 0.0f;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Toggle this bool variable's value");
+				}
 			}
 			else
 			{
@@ -1033,6 +1169,10 @@ namespace Chained
 				if (ImGui::DragFloat("##val", &val, 0.01f))
 				{
 					it->second = val;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Drag to change this float variable's value");
 				}
 			}
 
@@ -1049,6 +1189,10 @@ namespace Chained
 			{
 				++it;
 				ImGui::PopID();
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Delete this variable");
 			}
 		}
 	}

@@ -12,6 +12,7 @@
 #include "viewport/viewport_toolbar.h"
 
 #include <memory>
+#include <utility>
 #include <glm/glm.hpp>
 
 struct GLFWwindow;
@@ -70,7 +71,7 @@ namespace Chained
 		std::unique_ptr<ViewportToolbar> m_Toolbar;
 		EditorUIManipulator m_UIManipulator;
 
-		SceneType m_LastSceneType = SceneType::Default;
+		std::pair<SceneType, BackgroundMode> m_LastSceneState = {SceneType::Default, BackgroundMode::Environment3D};
 
 		ImVec2& m_EditorViewportSize;
 

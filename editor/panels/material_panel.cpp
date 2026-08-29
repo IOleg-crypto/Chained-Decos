@@ -230,6 +230,10 @@ namespace Chained
 				ImGui::SetNextItemWidth(-1.0f);
 				ImGui::InputTextWithHint("##MatFilter", ICON_FA_MAGNIFYING_GLASS " Search...", m_FilterBuffer,
 										 sizeof(m_FilterBuffer));
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Filter materials by name");
+				}
 				ImGui::Separator();
 
 				std::string filterStr = m_FilterBuffer;
@@ -272,6 +276,10 @@ namespace Chained
 					if (ImGui::Selectable(label.c_str(), m_SelectedMaterialIndex == i))
 					{
 						m_SelectedMaterialIndex = i;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Select material: %s", label.c_str());
 					}
 					ImGui::PopID();
 				}
@@ -330,6 +338,10 @@ namespace Chained
 					SaveMaterials();
 					ImGui::OpenPopup("Materials Saved");
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Save all material changes to disk");
+				}
 
 				if (ImGui::BeginPopup("Materials Saved"))
 				{
@@ -345,6 +357,10 @@ namespace Chained
 				{
 					DeleteMaterials();
 					ImGui::OpenPopup("Materials Deleted");
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Delete .chmat files and restore model defaults");
 				}
 				ImGui::PopStyleColor(3);
 

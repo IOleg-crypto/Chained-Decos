@@ -34,10 +34,13 @@ namespace Chained
 		struct UI
 		{
 			UIMeta TargetEntityTag = {.Tooltip = "Tag of the entity to follow (Orbit Camera)"};
-			UIMeta OrbitDistance = {.Min = 1.0f, .Max = 500.0f, .Speed = 0.5f};
-			UIMeta OrbitYaw = {.Speed = 1.0f};
-			UIMeta OrbitPitch = {.Min = -89.0f, .Max = 89.0f, .Speed = 1.0f};
-			UIMeta LookSensitivity = {.Min = 0.1f, .Max = 10.0f, .Speed = 0.05f};
+			UIMeta OrbitDistance = {
+				.Min = 1.0f, .Max = 500.0f, .Speed = 0.5f, .Tooltip = "Distance from the target when orbiting"};
+			UIMeta OrbitYaw = {.Speed = 1.0f, .Tooltip = "Horizontal orbit angle (degrees)"};
+			UIMeta OrbitPitch = {
+				.Min = -89.0f, .Max = 89.0f, .Speed = 1.0f, .Tooltip = "Vertical orbit angle (degrees)"};
+			UIMeta LookSensitivity = {
+				.Min = 0.1f, .Max = 10.0f, .Speed = 0.05f, .Tooltip = "Mouse look sensitivity multiplier"};
 			UIMeta SmoothedPivot = {.Transient = true};
 			UIMeta PivotInitialized = {.Transient = true};
 		};

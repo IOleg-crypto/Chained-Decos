@@ -32,12 +32,20 @@ namespace Chained
 
 		if (ImGui::CollapsingHeader("Hardware & System", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("GPU and driver information");
+			}
 			ImGui::Text("GPU: %s", glGetString(GL_RENDERER));
 			ImGui::Text("Driver: %s", glGetString(GL_VERSION));
 		}
 
 		if (ImGui::CollapsingHeader("Scene Statistics", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Current scene entity and draw call counts");
+			}
 			ImGui::Columns(2);
 			ImGui::Text("Entities:");
 			ImGui::NextColumn();
@@ -62,6 +70,10 @@ namespace Chained
 		const auto& results = Instrumentor::Get().GetLastFrameResults();
 		if (ImGui::CollapsingHeader("Execution Timeline", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Frame time history and per-system timings");
+			}
 			if (!m_FrameTimeHistory.empty())
 			{
 				float maxTime = 0.0f;
@@ -77,6 +89,10 @@ namespace Chained
 				ImGui::PlotLines("##FrameTime", m_FrameTimeHistory.data(), (int)m_FrameTimeHistory.size(), 0,
 								 std::format("Max: {:.2f}ms", maxTime).c_str(), 0.0f, 33.3f, ImVec2(0, 80));
 				ImGui::PopStyleColor();
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Frame time history (lower is better, 33ms = 30fps target)");
+				}
 			}
 
 			for (const auto& result : results)

@@ -44,12 +44,12 @@ namespace Chained
 		struct UI
 		{
 			UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum, .Tooltip = "Geometric shape of the primitive"};
-			UIMeta Radius;
-			UIMeta InnerRadius;
-			UIMeta Height;
-			UIMeta Slices;
-			UIMeta Stacks;
-			UIMeta Dimensions;
+			UIMeta Radius = {.Tooltip = "Radius of the primitive (Sphere, Torus, Cylinder)"};
+			UIMeta InnerRadius = {.Tooltip = "Inner radius for Torus"};
+			UIMeta Height = {.Tooltip = "Height of the primitive (Cylinder, Cone)"};
+			UIMeta Slices = {.Tooltip = "Horizontal subdivision count"};
+			UIMeta Stacks = {.Tooltip = "Vertical subdivision count"};
+			UIMeta Dimensions = {.Tooltip = "Width, Height, Depth dimensions (Cube, Plane)"};
 			// MeshPath is managed by PrimitiveSystem — not shown in inspector.
 			UIMeta MeshPath = {.Hidden = true};
 		};

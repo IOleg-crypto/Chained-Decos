@@ -79,6 +79,10 @@ namespace Chained
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2{4, 4});
 		ImGui::InputTextWithHint("##Search", ICON_FA_MAGNIFYING_GLASS " Search...", m_SearchBuffer,
 								 sizeof(m_SearchBuffer));
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Filter entities by name");
+		}
 		ImGui::PopStyleVar();
 		ImGui::Separator();
 
@@ -389,6 +393,10 @@ namespace Chained
 		{
 			m_Context->CreateEntity("Empty Entity");
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Create a new empty entity");
+		}
 
 		if (ImGui::MenuItem(ICON_FA_FILE_IMPORT " Load Prefab..."))
 		{
@@ -399,11 +407,16 @@ namespace Chained
 				PrefabSerializer::Deserialize(m_Context.get(), path->string());
 			}
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Import a prefab file into the scene");
+		}
 
 		ImGui::Separator();
 
 		// --- Quick Create: Lights & Camera ---
-		if (m_Context->GetSettings().Type != SceneType::UI)
+		if (m_Context->GetSettings().Type != SceneType::UI ||
+			m_Context->GetSettings().Mode == BackgroundMode::Environment3D)
 		{
 			struct QuickCreateEntry
 			{
@@ -440,6 +453,10 @@ namespace Chained
 				{
 					entry.action();
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Create a new %s entity", entry.label);
+				}
 			}
 
 			ImGui::Separator();
@@ -462,6 +479,10 @@ namespace Chained
 					{
 						EditorLayer::Get().GetCommandHistory().PushCommand(
 							std::make_unique<CreateEntityCommand>(m_Context.get(), p.label, p.mesh));
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Create a %s primitive", p.label);
 					}
 				}
 				ImGui::EndMenu();
@@ -531,6 +552,10 @@ namespace Chained
 							if (ImGui::MenuItem(cat.entries[i].label))
 							{
 								m_Context->CreateUIEntity(cat.entries[i].type);
+							}
+							if (ImGui::IsItemHovered())
+							{
+								ImGui::SetTooltip("Create a %s UI widget", cat.entries[i].label);
 							}
 						}
 						ImGui::EndMenu();

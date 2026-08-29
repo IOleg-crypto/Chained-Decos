@@ -414,6 +414,11 @@ namespace Chained
 					}
 				}
 
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("%s", m.desc);
+				}
+
 				ImGui::PopStyleVar();
 				ImGui::PopStyleColor(3);
 				ImGui::PopID();
@@ -664,6 +669,11 @@ namespace Chained
 					}
 				}
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(
+					"Choose a folder and start exporting.\nExisting settings are saved to the project config.");
+			}
 
 			ImGui::End();
 		}
@@ -780,6 +790,11 @@ namespace Chained
 			{
 				ImGui::EndDisabled();
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Request cancellation of the current export.\nThe export will stop after the current "
+								  "file finishes.");
+			}
 		}
 		ImGui::End();
 		ImGui::PopStyleVar(2);
@@ -856,8 +871,16 @@ namespace Chained
 					}
 					ImGui::EndCombo();
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Choose the font used throughout the editor UI.");
+				}
 
 				ImGui::DragFloat("Font Size", &config.FontSize, 0.25f, 8.0f, 48.0f, "%.0f px");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Base font size in pixels. Requires restart to take full effect.");
+				}
 
 				ImGui::Spacing();
 				ImGui::Spacing();
@@ -871,7 +894,15 @@ namespace Chained
 					ImGui::SetTooltip("How fast gizmo icons grow with camera distance.");
 				}
 				ImGui::DragFloat("Icon Min Size", &config.IconSizeMin, 0.05f, 0.1f, config.IconSizeMax, "%.2f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Minimum on-screen size for viewport icons (in world units).");
+				}
 				ImGui::DragFloat("Icon Max Size", &config.IconSizeMax, 0.05f, config.IconSizeMin, 40.0f, "%.2f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Maximum on-screen size for viewport icons (in world units).");
+				}
 			}
 			else if (selectedCategory == 1) // Camera
 			{
@@ -880,7 +911,15 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::SliderFloat("Move Speed", &config.CameraMoveSpeed, 0.1f, 100.0f, "%.1f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Base camera movement speed in units per second.");
+				}
 				ImGui::SliderFloat("Boost Multiplier", &config.CameraBoostMultiplier, 1.0f, 10.0f, "%.1f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Speed multiplier when holding Shift.");
+				}
 				ImGui::SliderFloat("Rotation Speed", &config.CameraRotationSpeed, 0.1f, 5.0f, "%.1f");
 				if (ImGui::IsItemHovered())
 				{
@@ -892,8 +931,20 @@ namespace Chained
 					ImGui::SetTooltip("Multiplier for mouse wheel zoom speed.");
 				}
 				ImGui::DragFloat("FOV", &config.CameraFovDegrees, 0.5f, 20.0f, 120.0f, "%.1f deg");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Vertical field of view for the editor camera.");
+				}
 				ImGui::DragFloat("Near Clip", &config.CameraNearClip, 0.01f, 0.001f, 10.0f, "%.3f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Distance to the near clipping plane.");
+				}
 				ImGui::DragFloat("Far Clip", &config.CameraFarClip, 100.0f, 100.0f, 100000.0f, "%.0f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Distance to the far clipping plane.");
+				}
 				ImGui::Checkbox("Disable Camera Zoom", &config.DisableCameraZoom);
 				if (ImGui::IsItemHovered())
 				{
@@ -924,9 +975,21 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::DragFloat("Thumbnail Size", &config.DefaultThumbnailSize, 4.0f, 32.0f, 256.0f, "%.0f px");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Size of asset thumbnails in the Content Browser.");
+				}
 				const char* sortNames[] = {"Name", "Date", "Size"};
 				ImGui::Combo("Sort Order", &config.DefaultSortOrder, sortNames, 3);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("How assets are sorted in the Content Browser.");
+				}
 				ImGui::Checkbox("Show File Extensions", &config.ShowFileExtensions);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Display file extensions (e.g. .png, .ogg) in the Content Browser.");
+				}
 			}
 			else if (selectedCategory == 4) // Auto-Save
 			{
@@ -935,7 +998,15 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::Checkbox("Enable Auto-Save", &config.AutoSaveEnabled);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Automatically save the current scene at regular intervals.");
+				}
 				ImGui::DragFloat("Interval (s)", &config.AutoSaveInterval, 1.0f, 10.0f, 3600.0f, "%.0f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Time in seconds between auto-saves.");
+				}
 			}
 			else if (selectedCategory == 5) // Startup
 			{
@@ -944,6 +1015,10 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::Checkbox("Load Last Project on Startup", &config.LoadLastProjectOnStartup);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Automatically open the most recent project when the editor starts.");
+				}
 				ImGui::Spacing();
 				ImGui::TextDisabled("Last project:");
 				ImGui::SameLine();
@@ -961,6 +1036,10 @@ namespace Chained
 					ImGui::SetTooltip("Show a warning when closing/switching a scene with unsaved changes.");
 				}
 				ImGui::DragInt("Max Recent Projects", &config.MaxRecentProjects, 1, 1, 50);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Maximum number of projects shown in the Recent Projects list.");
+				}
 			}
 
 			ImGui::PopStyleVar();
