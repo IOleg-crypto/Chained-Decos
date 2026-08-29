@@ -36,8 +36,8 @@ namespace Chained
 		{
 			UIMeta SoundHandle = {.ReadOnly = true, .Transient = true};
 			UIMeta SoundPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
-								.Extensions = ".wav,.mp3,.ogg",
-								.Tooltip = "Path to the audio file"};
+								.Tooltip = "Path to the audio file",
+								.Extensions = ".wav,.mp3,.ogg"};
 			UIMeta SoundUUID = {.ReadOnly = true};
 			UIMeta Volume = {.Min = 0.0f, .Max = 2.0f, .Speed = 0.01f, .Tooltip = "Volume of the audio source"};
 			UIMeta Pitch = {

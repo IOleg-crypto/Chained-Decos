@@ -21,8 +21,8 @@ namespace Chained
 		struct UI
 		{
 			UIMeta TargetScenePath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
-									  .Extensions = ".chscene",
-									  .Tooltip = "Path to the destination scene file (.chscene)"};
+									  .Tooltip = "Path to the destination scene file (.chscene)",
+									  .Extensions = ".chscene"};
 			UIMeta Triggered = {.Hint = PropertyMeta::WidgetHint::Checkbox,
 								.Tooltip = "Whether the scene transition has been triggered"};
 		};

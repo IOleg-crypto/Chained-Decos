@@ -25,8 +25,8 @@ namespace Chained
 		{
 			UIMeta ModelHandle = {.ReadOnly = true, .Transient = true};
 			UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
-								.Extensions = ".glb,.gltf,.obj",
-								.Tooltip = "Path to the 3D model file"};
+								.Tooltip = "Path to the 3D model file",
+								.Extensions = ".glb,.gltf,.obj"};
 			UIMeta ModelUUID = {.ReadOnly = true};
 		};
 	};
