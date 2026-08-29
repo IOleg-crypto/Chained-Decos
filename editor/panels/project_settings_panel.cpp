@@ -86,12 +86,20 @@ namespace Chained
 				{
 					config.Name = nameBuf;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Display name of the project");
+				}
 
 				char iconBuf[512];
 				snprintf(iconBuf, sizeof(iconBuf), "%s", config.IconPath.c_str());
 				if (ImGui::InputText("Icon Path", iconBuf, sizeof(iconBuf)))
 				{
 					config.IconPath = iconBuf;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Path to the project icon image");
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("...###IconBrowse"))
@@ -102,6 +110,10 @@ namespace Chained
 					{
 						config.IconPath = project->GetRelativePath(result->string());
 					}
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Browse for an icon image file");
 				}
 
 				auto availableScenes = project->GetAvailableScenes();
@@ -123,6 +135,10 @@ namespace Chained
 					}
 					ImGui::EndCombo();
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Scene that loads when the game starts");
+				}
 				break;
 			}
 			case 1: // Scripting
@@ -137,12 +153,20 @@ namespace Chained
 				{
 					config.Scripting.ModuleName = moduleNameBuf;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Name of the compiled script module DLL");
+				}
 
 				char moduleDirBuf[512];
 				snprintf(moduleDirBuf, sizeof(moduleDirBuf), "%s", config.Scripting.ModuleDirectory.string().c_str());
 				if (ImGui::InputText("Module Directory", moduleDirBuf, sizeof(moduleDirBuf)))
 				{
 					config.Scripting.ModuleDirectory = moduleDirBuf;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Directory containing the script module source");
 				}
 				ImGui::SameLine();
 				if (ImGui::Button("...###ModuleDirBrowse"))
@@ -153,8 +177,16 @@ namespace Chained
 						config.Scripting.ModuleDirectory = project->GetRelativePath(result->string());
 					}
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Browse for the module directory");
+				}
 
 				ImGui::Checkbox("Auto Load Module", &config.Scripting.AutoLoad);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Automatically load the script module on startup");
+				}
 				break;
 			}
 			case 2: // Physics
@@ -164,7 +196,15 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::DragFloat("World Gravity", &config.Physics.Gravity, 0.1f);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Gravitational acceleration (m/s^2, negative = downward)");
+				}
 				ImGui::DragFloat("Fixed Timestep", &config.Physics.FixedTimestep, 0.001f, 0.001f, 0.1f, "%.4f");
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Physics simulation step in seconds (lower = more precise)");
+				}
 				break;
 			}
 			case 3: // Window
@@ -174,8 +214,20 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::DragInt("Width", &config.Window.Width, 1, 800, 3840);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Window width in pixels");
+				}
 				ImGui::DragInt("Height", &config.Window.Height, 1, 600, 2160);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Window height in pixels");
+				}
 				ImGui::Checkbox("VSync", &config.Window.VSync);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Synchronize frame rate to display refresh rate");
+				}
 				break;
 			}
 			case 4: // Rendering
@@ -201,6 +253,10 @@ namespace Chained
 				{
 					config.Render.ShadowResolution = kShadowResValues[currentShadowResIdx];
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Shadow map resolution in pixels (higher = better quality)");
+				}
 
 				static constexpr int kAAValues[] = {0, 2, 4, 8, 16};
 				static constexpr int kAACount = sizeof(kAAValues) / sizeof(kAAValues[0]);
@@ -219,8 +275,16 @@ namespace Chained
 				{
 					config.Render.AntiAliasingSamples = kAAValues[currentAAIdx];
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Multisample anti-aliasing level (higher = smoother edges)");
+				}
 
 				ImGui::Checkbox("Enable Shadows", &config.Render.EnableShadows);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Enable or disable shadow rendering");
+				}
 				break;
 			}
 			case 5: // Audio
@@ -230,8 +294,20 @@ namespace Chained
 				ImGui::Spacing();
 
 				ImGui::SliderFloat("Master Volume", &config.Audio.MasterVolume, 0.0f, 1.0f);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Overall volume control for all audio");
+				}
 				ImGui::SliderFloat("Music Volume", &config.Audio.MusicVolume, 0.0f, 1.0f);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Volume level for background music");
+				}
 				ImGui::SliderFloat("SFX Volume", &config.Audio.SFXVolume, 0.0f, 1.0f);
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Volume level for sound effects");
+				}
 				break;
 			}
 			case 6: // Mesh
@@ -307,6 +383,10 @@ namespace Chained
 				std::filesystem::path path =
 					project->GetConfig().ProjectDirectory / (project->GetName() + ".chproject");
 				EditorProjectSerializer::Serialize(project, path);
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Save all project settings to disk");
 			}
 		}
 		ImGui::End();

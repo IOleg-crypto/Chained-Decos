@@ -24,7 +24,9 @@ namespace Chained
 		struct UI
 		{
 			UIMeta ModelHandle = {.ReadOnly = true, .Transient = true};
-			UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".glb,.gltf,.obj"};
+			UIMeta ModelPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
+								.Extensions = ".glb,.gltf,.obj",
+								.Tooltip = "Path to the 3D model file"};
 			UIMeta ModelUUID = {.ReadOnly = true};
 		};
 	};

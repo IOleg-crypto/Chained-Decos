@@ -79,7 +79,9 @@ namespace Chained
 
 		struct UI
 		{
-			UIMeta GraphPath = {.Hint = PropertyMeta::WidgetHint::FilePicker, .Extensions = ".chag"};
+			UIMeta GraphPath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
+								.Extensions = ".chag",
+								.Tooltip = "Path to the animation graph file (.chag)"};
 			UIMeta GraphUUID = {.ReadOnly = true};
 			UIMeta BlendDuration = {
 				.Min = 0.0f, .Max = 2.0f, .Speed = 0.05f, .Tooltip = "Time to blend between animations (in seconds)"};

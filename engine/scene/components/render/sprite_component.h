@@ -26,9 +26,11 @@ namespace Chained
 		{
 			UIMeta TextureHandle = {.ReadOnly = true, .Transient = true};
 			UIMeta TexturePath = {.Hint = PropertyMeta::WidgetHint::FilePicker,
-								  .Extensions = ".png,.jpg,.jpeg,.tga,.bmp"};
+								  .Extensions = ".png,.jpg,.jpeg,.tga,.bmp",
+								  .Tooltip = "Path to the sprite texture image"};
 			UIMeta TextureUUID = {.ReadOnly = true};
-			UIMeta Tint = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
+			UIMeta Tint = {.Hint = PropertyMeta::WidgetHint::ColorPicker,
+						   .Tooltip = "Color multiplier applied to the sprite"};
 			UIMeta ZOrder = {.Speed = 1.0f};
 		};
 	};

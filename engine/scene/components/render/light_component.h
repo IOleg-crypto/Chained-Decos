@@ -29,12 +29,17 @@ namespace Chained
 
 		struct UI
 		{
-			UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Checkbox};
-			UIMeta LightColor = {.Hint = PropertyMeta::WidgetHint::ColorPicker};
-			UIMeta Intensity = {.Min = 0.0f, .Max = 10000.0f, .Speed = 5.0f};
-			UIMeta Radius = {.Min = 0.0f, .Max = 1000.0f, .Speed = 1.0f};
-			UIMeta InnerCutoff = {.Min = 0.0f, .Max = 90.0f, .Speed = 0.5f};
-			UIMeta OuterCutoff = {.Min = 0.0f, .Max = 90.0f, .Speed = 0.5f};
+			UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Checkbox,
+						   .Tooltip = "Type of light source: Directional, Point, or Spot"};
+			UIMeta LightColor = {.Hint = PropertyMeta::WidgetHint::ColorPicker, .Tooltip = "Color of the light"};
+			UIMeta Intensity = {
+				.Min = 0.0f, .Max = 10000.0f, .Speed = 5.0f, .Tooltip = "Light brightness intensity multiplier"};
+			UIMeta Radius = {
+				.Min = 0.0f, .Max = 1000.0f, .Speed = 1.0f, .Tooltip = "Maximum range of the light (Point and Spot)"};
+			UIMeta InnerCutoff = {
+				.Min = 0.0f, .Max = 90.0f, .Speed = 0.5f, .Tooltip = "Inner cone angle for Spot light (degrees)"};
+			UIMeta OuterCutoff = {
+				.Min = 0.0f, .Max = 90.0f, .Speed = 0.5f, .Tooltip = "Outer cone angle for Spot light (degrees)"};
 		};
 	};
 

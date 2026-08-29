@@ -91,6 +91,10 @@ namespace Chained
 		{
 			return;
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("General scene configuration settings");
+		}
 
 		ImGui::Indent(10.0f);
 		if (readOnly)
@@ -110,6 +114,11 @@ namespace Chained
 		{
 			settings.Type = (SceneType)currentType;
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip(
+				"Default (3D): full 3D scene with physics, lights, and cameras. UI: 2D widget layout for HUD/menus");
+		}
 
 		if (readOnly)
 		{
@@ -123,6 +132,10 @@ namespace Chained
 		if (!ImGui::CollapsingHeader(ICON_FA_GLOBE "  Scene Background", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			return;
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Configure the scene background");
 		}
 
 		ImGui::Indent(10.0f);
@@ -143,6 +156,11 @@ namespace Chained
 		{
 			settings.Mode = (BackgroundMode)currentMode;
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Solid Color: flat background. Texture: image background. 3D Environment: skybox with "
+							  "lighting and fog");
+		}
 
 		if (settings.Mode == BackgroundMode::Color)
 		{
@@ -155,6 +173,10 @@ namespace Chained
 			if (ImGui::ColorEdit4("##BGColor", c))
 			{
 				settings.BackgroundColor = Float4ToColor(c);
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Solid background color (RGBA)");
 			}
 		}
 		else if (settings.Mode == BackgroundMode::Texture)
@@ -169,6 +191,10 @@ namespace Chained
 			if (ImGui::InputText("##BGPath", buffer, sizeof(buffer)))
 			{
 				settings.BackgroundTexturePath = buffer;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Path to the background texture");
 			}
 
 			ImGui::SameLine();
@@ -190,6 +216,10 @@ namespace Chained
 					}
 				}
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Browse for a background texture");
+			}
 		}
 
 		if (readOnly)
@@ -204,6 +234,10 @@ namespace Chained
 		if (!ImGui::CollapsingHeader(ICON_FA_MICROCHIP "  Physics", ImGuiTreeNodeFlags_DefaultOpen))
 		{
 			return;
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Physics simulation settings for the active project");
 		}
 
 		ImGui::Indent(10.0f);
@@ -221,6 +255,10 @@ namespace Chained
 			ImGui::SameLine(100);
 			ImGui::SetNextItemWidth(-1);
 			ImGui::DragFloat("##Gravity", &physicsSettings.Gravity, 0.1f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Gravitational acceleration (m/s²). Applies during Play and Simulate modes");
+			}
 
 			if (ImGui::IsItemDeactivatedAfterEdit())
 			{
@@ -246,6 +284,11 @@ namespace Chained
 			if (ImGui::DragFloat("##FixedFPS", &fps, 1.0f, 10.0f, 240.0f))
 			{
 				physicsSettings.FixedTimestep = 1.0f / fps;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip(
+					"Physics steps per second. Higher values give more accurate simulation but cost more CPU");
 			}
 
 			if (ImGui::IsItemDeactivatedAfterEdit())
@@ -291,6 +334,10 @@ namespace Chained
 					}
 				}
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Load an existing .chenv environment file into this scene");
+			}
 
 			ImGui::SameLine();
 			if (ImGui::Button(ICON_FA_FILE_CIRCLE_PLUS " New"))
@@ -308,6 +355,10 @@ namespace Chained
 					newEnv->SetPath(result->string());
 					m_Context->GetSettings().Environment = newEnv;
 				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Create a new empty .chenv environment file");
 			}
 		}
 
@@ -383,6 +434,10 @@ namespace Chained
 						fout << out.c_str();
 					}
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Save all current environment settings to the .chenv file");
+				}
 			}
 
 			DrawEnvironmentSettings(env, readOnly);
@@ -395,6 +450,11 @@ namespace Chained
 
 		if (ImGui::CollapsingHeader(ICON_FA_SUN "  Global Lighting", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Directional light, ambient, exposure, and gamma settings for the environment");
+			}
+
 			ImGui::PushID("GlobalLighting");
 			ImGui::Indent(10.0f);
 			if (readOnly)
@@ -407,6 +467,10 @@ namespace Chained
 			ImGui::SameLine(100);
 			ImGui::SetNextItemWidth(-1);
 			ImGui::DragFloat3("##Direction", &settings.Lighting.Direction.x, 0.01f, -1.0f, 1.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Direction of the main directional light (normalized XYZ vector)");
+			}
 
 			float color[4];
 			ColorToFloat4(settings.Lighting.LightColor, color);
@@ -418,10 +482,26 @@ namespace Chained
 			{
 				settings.Lighting.LightColor = Float4ToColor(color);
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Color and intensity of the main directional light");
+			}
 
 			DrawDragFloat("Ambient", &settings.Lighting.Ambient, 0.005f, 0.0f, 2.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Ambient light multiplier. Adds a base light level to all surfaces");
+			}
 			DrawDragFloat("Exposure", &settings.Lighting.Exposure, 0.01f, 0.0f, 10.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Exposure value for tone mapping. Higher values brighten the scene");
+			}
 			DrawDragFloat("Gamma", &settings.Lighting.Gamma, 0.01f, 1.0f, 4.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Gamma correction. Controls the brightness curve of mid-tones");
+			}
 
 			if (readOnly)
 			{
@@ -433,6 +513,11 @@ namespace Chained
 
 		if (ImGui::CollapsingHeader(ICON_FA_CLOUD "  Skybox", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Skybox texture mapping, cube faces, exposure, brightness, and contrast");
+			}
+
 			ImGui::PushID("Skybox");
 			ImGui::Indent(10.0f);
 			if (readOnly)
@@ -456,6 +541,9 @@ namespace Chained
 			{
 				const char* faceLabels[] = {"Right (+X)", "Left (-X)",	"Up (+Y)",
 											"Down (-Y)",  "Front (+Z)", "Back (-Z)"};
+				const char* faceTooltips[] = {"Right face (+X direction)", "Left face (-X direction)",
+											  "Top face (+Y direction)",   "Bottom face (-Y direction)",
+											  "Front face (+Z direction)", "Back face (-Z direction)"};
 				for (int i = 0; i < 6; ++i)
 				{
 					char buffer[256];
@@ -469,6 +557,10 @@ namespace Chained
 					if (ImGui::InputText(inputId.c_str(), buffer, sizeof(buffer)))
 					{
 						settings.Skybox.CubeFaces[i] = buffer;
+					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Path to texture for the %s", faceLabels[i]);
 					}
 
 					ImGui::SameLine();
@@ -491,6 +583,10 @@ namespace Chained
 							}
 						}
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Browse for %s texture", faceLabels[i]);
+					}
 				}
 			}
 			else
@@ -505,6 +601,10 @@ namespace Chained
 				if (ImGui::InputText("##SkyPath", buffer, sizeof(buffer)))
 				{
 					settings.Skybox.TexturePath = buffer;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Path to the skybox texture (equirectangular HDR or standard image)");
 				}
 
 				ImGui::SameLine();
@@ -526,11 +626,27 @@ namespace Chained
 						}
 					}
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Browse for a skybox texture (HDR recommended)");
+				}
 			}
 
 			DrawDragFloat("Exposure", &settings.Skybox.Exposure, 0.01f, 0.0f, 10.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Skybox exposure. Controls overall brightness of the sky");
+			}
 			DrawDragFloat("Brightness", &settings.Skybox.Brightness, 0.01f, -2.0f, 2.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Skybox brightness offset. Shifts all sky colors darker or brighter");
+			}
 			DrawDragFloat("Contrast", &settings.Skybox.Contrast, 0.01f, 0.0f, 5.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Skybox contrast. Higher values make brights brighter and darks darker");
+			}
 
 			if (readOnly)
 			{
@@ -542,6 +658,11 @@ namespace Chained
 
 		if (ImGui::CollapsingHeader(ICON_FA_SMOG "  Fog Visibility", ImGuiTreeNodeFlags_DefaultOpen))
 		{
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Volumetric fog color, mode, density, range, and height falloff");
+			}
+
 			ImGui::PushID("FogVisibility");
 			ImGui::Indent(10.0f);
 			if (readOnly)
@@ -554,6 +675,10 @@ namespace Chained
 			ImGui::Text("Enabled");
 			ImGui::SameLine(100);
 			ImGui::Checkbox("##FogEnabled", &fog.Enabled);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Enable or disable volumetric fog in the scene");
+			}
 
 			float fogColor[4];
 			ColorToFloat4(fog.FogColor, fogColor);
@@ -565,6 +690,10 @@ namespace Chained
 			{
 				fog.FogColor = Float4ToColor(fogColor);
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Fog color (RGBA). Blends scene objects into this color with distance");
+			}
 
 			const char* fogModes[] = {"Linear", "Exponential", "Exponential Squared"};
 			ImGui::AlignTextToFramePadding();
@@ -572,11 +701,32 @@ namespace Chained
 			ImGui::SameLine(100);
 			ImGui::SetNextItemWidth(-1);
 			ImGui::Combo("##FogMode", &fog.Mode, fogModes, 3);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Linear: distance-based start/end\nExponential: gradual density falloff\nExponential "
+								  "Squared: denser center, faster falloff");
+			}
 
 			DrawDragFloat("Density", &fog.Density, 0.0001f, 0.0f, 10.f, "%.4f");
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Fog density. Controls how quickly objects fade into the fog color");
+			}
 			DrawDragFloat("Start", &fog.Start, 1.0f, 0.0f, 10000.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Fog start distance (Linear mode). Distance from camera where fog begins");
+			}
 			DrawDragFloat("End", &fog.End, 1.0f, 0.0f, 10000.0f);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Fog end distance (Linear mode). Distance from camera where fog is fully opaque");
+			}
 			DrawDragFloat("Height Falloff", &fog.HeightFalloff, 0.01f, 0.0f, 1.0f, "%.2f");
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Height-based fog falloff. Controls how fog density decreases with altitude");
+			}
 
 			if (readOnly)
 			{

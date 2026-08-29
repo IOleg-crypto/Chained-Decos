@@ -164,6 +164,10 @@ namespace Chained
 			}
 			ImGui::EndCombo();
 		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Select the active game camera");
+		}
 
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor();

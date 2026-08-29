@@ -224,6 +224,10 @@ namespace Chained
 					m_FetchingIP = true;
 					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Fetch your public IPv4 address");
+				}
 			}
 			else
 			{
@@ -236,12 +240,20 @@ namespace Chained
 					m_StatusMessage = "Copied: " + full;
 					m_StatusIsError = false;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Copy IPv4 address to clipboard");
+				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton("Refresh##ipv4"))
 				{
 					m_PublicIP.clear();
 					m_FetchingIP = true;
 					m_IpFuture = std::async(std::launch::async, []() { return FetchPublicIPBlocking(false); });
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Re-fetch your public IPv4 address");
 				}
 			}
 			ImGui::TextDisabled("Forward UDP port %u on your router to play over the internet.", net->GetPort());
@@ -264,6 +276,10 @@ namespace Chained
 					m_FetchingIPv6 = true;
 					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Fetch your public IPv6 address");
+				}
 			}
 			else if (m_PublicIPv6.find("error") != std::string::npos || m_PublicIPv6.find("empty") != std::string::npos)
 			{
@@ -281,12 +297,20 @@ namespace Chained
 					m_StatusMessage = "Copied IPv6: " + full;
 					m_StatusIsError = false;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Copy IPv6 address to clipboard");
+				}
 				ImGui::SameLine();
 				if (ImGui::SmallButton("Refresh##ipv6"))
 				{
 					m_PublicIPv6.clear();
 					m_FetchingIPv6 = true;
 					m_IpFutureIPv6 = std::async(std::launch::async, []() { return FetchPublicIPBlocking(true); });
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Re-fetch your public IPv6 address");
 				}
 				ImGui::TextDisabled("IPv6 bypasses CGNAT — share this address with friends!");
 			}
@@ -332,6 +356,10 @@ namespace Chained
 				m_FetchingIP = false;
 				m_FetchingIPv6 = false;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Stop the running server");
+			}
 		}
 		else
 		{
@@ -340,9 +368,17 @@ namespace Chained
 
 			ImGui::SetNextItemWidth(120);
 			ImGui::InputText("Port", m_HostPort, sizeof(m_HostPort), ImGuiInputTextFlags_CharsDecimal);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("UDP port to listen on (default: 7777)");
+			}
 
 			ImGui::SetNextItemWidth(120);
 			ImGui::InputInt("Max Clients", &m_MaxClients, 1, 10);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Maximum number of connected clients");
+			}
 			if (m_MaxClients < 1)
 			{
 				m_MaxClients = 1;
@@ -388,6 +424,10 @@ namespace Chained
 					m_StatusIsError = true;
 				}
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Start hosting a game server");
+			}
 		}
 	}
 
@@ -410,6 +450,10 @@ namespace Chained
 				m_StatusMessage = "Disconnected.";
 				m_StatusIsError = false;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Disconnect from the server");
+			}
 		}
 		else
 		{
@@ -418,9 +462,17 @@ namespace Chained
 
 			ImGui::SetNextItemWidth(200);
 			ImGui::InputText("IP", m_ConnectIP, sizeof(m_ConnectIP));
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Server IP address to connect to");
+			}
 
 			ImGui::SetNextItemWidth(120);
 			ImGui::InputText("Port", m_ConnectPort, sizeof(m_ConnectPort), ImGuiInputTextFlags_CharsDecimal);
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Server port to connect to (default: 7777)");
+			}
 
 			ImGui::Separator();
 
@@ -445,6 +497,10 @@ namespace Chained
 					m_StatusMessage = "Network service not available!";
 					m_StatusIsError = true;
 				}
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Connect to the specified server");
 			}
 		}
 	}

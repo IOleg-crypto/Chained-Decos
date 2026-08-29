@@ -185,6 +185,10 @@ namespace Chained
 				removeIdx = i;
 				changed = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Remove this item");
+			}
 			ImGui::PopID();
 		}
 		if (removeIdx >= 0)
@@ -195,6 +199,10 @@ namespace Chained
 		{
 			data.Items.push_back("");
 			changed = true;
+		}
+		if (ImGui::IsItemHovered())
+		{
+			ImGui::SetTooltip("Add a new item to the combo box");
 		}
 		return changed;
 	}
@@ -831,6 +839,10 @@ namespace Chained
 						ImGui::PopID();
 						break;
 					}
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("Remove this script");
+					}
 
 					if (open)
 					{
@@ -947,6 +959,10 @@ namespace Chained
 									CH_CORE_INFO("ModelComponent: Invalidated '{}', will reload next frame",
 												 comp.ModelPath);
 								}
+								if (ImGui::IsItemHovered())
+								{
+									ImGui::SetTooltip("Force reload this model asset");
+								}
 								ImGui::SameLine();
 								if (ImGui::SmallButton("Delete .chasset"))
 								{
@@ -956,6 +972,10 @@ namespace Chained
 									comp.MaterialPaths.clear();
 									CH_CORE_INFO("ModelComponent: Deleted .chasset for '{}', will re-import next frame",
 												 comp.ModelPath);
+								}
+								if (ImGui::IsItemHovered())
+								{
+									ImGui::SetTooltip("Delete cached .chasset file and re-import");
 								}
 								ImGui::SameLine();
 								if (ImGui::SmallButton("Delete .chmat"))
@@ -994,6 +1014,10 @@ namespace Chained
 									CH_CORE_INFO(
 										"ModelComponent: Deleted .chmat files for '{}', restored default materials",
 										comp.ModelPath);
+								}
+								if (ImGui::IsItemHovered())
+								{
+									ImGui::SetTooltip("Delete all .chmat files and restore defaults");
 								}
 							}
 						}
@@ -1065,6 +1089,10 @@ namespace Chained
 					}
 					changed = true;
 				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Create a new animation graph file");
+				}
 
 				ImGui::SameLine();
 				if (ImGui::Button("Duplicate Graph") && !comp.GraphPath.empty() && am)
@@ -1088,6 +1116,10 @@ namespace Chained
 						am->Invalidate(newPath);
 						changed = true;
 					}
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Duplicate the current animation graph");
 				}
 
 				if (ui.Property("Blend Duration", comp.BlendDuration, PropertyMeta(0.0f, 10.0f, 0.01f)))
@@ -1425,12 +1457,20 @@ namespace Chained
 			{
 				tag = std::string(buffer);
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Entity name / tag");
+			}
 			ImGui::PopItemWidth();
 
 			ImGui::SameLine();
 			if (ImGui::Button(ICON_FA_PLUS " Add Component", ImVec2(110, 0)))
 			{
 				ImGui::OpenPopup("AddComponent");
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Add a new component to this entity");
 			}
 
 			DrawAddComponentPopup(entity);

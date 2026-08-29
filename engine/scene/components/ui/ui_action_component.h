@@ -27,7 +27,8 @@ namespace Chained
 
 		struct UI
 		{
-			UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum};
+			UIMeta Type = {.Hint = PropertyMeta::WidgetHint::Enum,
+						   .Tooltip = "Action type to perform on the target entity"};
 			UIMeta TargetEntityID = {.Tooltip = "ID of the target entity"};
 			UIMeta ParameterName = {.Tooltip = "Name of the parameter to set"};
 			UIMeta Value = {.Speed = 0.1f, .Tooltip = "Value of the parameter"};

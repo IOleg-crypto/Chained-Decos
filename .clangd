@@ -2,12 +2,12 @@ CompileFlags:
   CompilationDatabase: build/windows-clang
   Add:
     - -Wall
-    - -Wextras
+    - -Wextra
   Remove:
     - -fmodules-ts
     - -fmodule-mapper=*
     - -fdeps-format=*
-    - -Winvalid-pch
+    - -Winvalid-header-pch
     - -Winvalid-offsetof
 
 Diagnostics:
@@ -15,4 +15,3 @@ Diagnostics:
 
 Index:
   Background: Skip
-

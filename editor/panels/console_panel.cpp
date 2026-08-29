@@ -44,6 +44,10 @@ namespace Chained
 				Clear();
 				filtersChanged = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Clear all log messages");
+			}
 			ImGui::SameLine();
 
 			ImGui::SetNextItemWidth(150);
@@ -52,6 +56,10 @@ namespace Chained
 			{
 				filtersChanged = true;
 			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Filter log messages by text");
+			}
 			ImGui::SameLine();
 
 			const char* levels[] = {"TRACE", "INFO", "WARNING", "ERROR", "FATAL", "NONE"};
@@ -59,6 +67,10 @@ namespace Chained
 			if (ImGui::Combo("Level", &m_LogLevel, levels, IM_ARRAYSIZE(levels)))
 			{
 				filtersChanged = true;
+			}
+			if (ImGui::IsItemHovered())
+			{
+				ImGui::SetTooltip("Filter logs by minimum severity level");
 			}
 
 			ImGui::EndDisabled();

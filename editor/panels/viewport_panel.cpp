@@ -299,20 +299,22 @@ namespace Chained
 			m_LockedWindow = nullptr;
 		}
 
-		// Auto-switch camera 2D mode based on scene type
+		// Auto-switch camera 2D mode based on scene type and background mode
 		auto activeScene = EditorLayer::Get().GetSceneManager().GetActiveScene();
 		if (activeScene)
 		{
 			SceneType sceneType = activeScene->GetSettings().Type;
-			if (sceneType != m_LastSceneType)
+			BackgroundMode bgMode = activeScene->GetSettings().Mode;
+			auto currentState = std::make_pair(sceneType, bgMode);
+			if (currentState != m_LastSceneState)
 			{
-				bool want2D = (sceneType == SceneType::UI);
+				bool want2D = (sceneType == SceneType::UI) && (bgMode != BackgroundMode::Environment3D);
 				if (m_CameraController->Is2DMode() != want2D)
 				{
 					m_CameraController->Set2DMode(want2D);
 					m_Gizmo.Set2DMode(want2D);
 				}
-				m_LastSceneType = sceneType;
+				m_LastSceneState = currentState;
 			}
 		}
 
