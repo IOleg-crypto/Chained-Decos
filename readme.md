@@ -22,6 +22,7 @@ ChainedEngine is a modular C++23 game engine with editor tooling, runtime packag
 - [Overview](#overview)
 - [Download](#download)
 - [Quick Start](#quick-start)
+- [Git LFS](#git-lfs)
 - [Build](#build)
 - [Run](#run)
 - [Working with Projects](#working-with-projects)
@@ -64,10 +65,18 @@ Chained Decos and Chained Engine target Windows and Linux.
 
 ## Quick Start
 
-**Clone:**
+**Clone (fast — code only, no assets):**
 ```bash
-git clone --recurse-submodules https://github.com/IOleg-crypto/ChainedEngine.git
-cd ChainedEngine
+GIT_LFS_SKIP_SMUDGE=1 git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Engine.git
+cd Chained-Engine
+git submodule update --init --recursive
+git lfs pull  # optional: download all assets
+```
+
+**Clone (full — with all assets):**
+```bash
+git clone --recurse-submodules https://github.com/IOleg-crypto/Chained-Engine.git
+cd Chained-Engine
 git submodule update --init --recursive
 ```
 
@@ -92,6 +101,37 @@ cmake --preset windows-vs2026
 ```
 
 > **Editor play mode:** Press PLAY to enter simulation and capture cursor. Press Escape to return to editor interaction.
+
+## Git LFS
+
+The repository uses **Git LFS** for large binary assets (models, textures, skyboxes, audio).
+
+### Selective Asset Download
+
+After cloning, download only what you need:
+
+```bash
+# All LFS files
+git lfs pull
+
+# Only game models
+git lfs pull --include="game/chaineddecos/assets/models/**"
+
+# Only textures
+git lfs pull --include="game/chaineddecos/assets/models/textures/**"
+
+# Only skyboxes
+git lfs pull --include="game/chaineddecos/assets/skyboxes/**"
+
+# Specific file type
+git lfs pull --include="*.glb"
+```
+
+### Speed Up Transfers
+
+```bash
+git config lfs.concurrenttransfers 16
+```
 
 ## Build
 
@@ -269,6 +309,8 @@ Deploy workflow (`.github/workflows/deploy-sdk.yml`): triggered by `v*` tags, pa
 - **No managed build:** Ensure `dotnet` SDK 10.0.x is on PATH
 - **Linux headless:** Install packages from Prerequisites, use `xvfb` + Mesa
 - **Stale files after `CH_ACTIVE_GAME` change:** Reconfigure the build directory, don't just rebuild
+- **LFS files not downloading:** Run `git lfs pull` after cloning
+- **Slow LFS downloads:** Increase concurrent transfers: `git config lfs.concurrenttransfers 16`
 
 ## Known Issues
 
