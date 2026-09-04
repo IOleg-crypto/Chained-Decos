@@ -3,6 +3,7 @@ CompileFlags:
   Add:
     - -Wall
     - -Wextra
+    - -Wreorder-init-list
   Remove:
     - -fmodules-ts
     - -fmodule-mapper=*
