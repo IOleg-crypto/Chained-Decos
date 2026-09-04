@@ -99,8 +99,8 @@ namespace Chained
 		ConnectionCallback m_ConnectionCallback;
 		DisconnectionCallback m_DisconnectionCallback;
 
-		std::vector<NetworkDriverEvent> m_PolledEvents;
 		std::unordered_map<int, float> m_PeerLastActivityTime;
+		bool m_IsUpdating = false;
 	};
 
 } // namespace Chained

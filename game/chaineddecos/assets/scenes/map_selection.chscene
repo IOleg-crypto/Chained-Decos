@@ -46,7 +46,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 8171803545630934409
+  - Entity: 17351038530830413184
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -99,7 +99,7 @@ Entities:
       Label: Back
       Interactable: true
       Auto Size: false
-  - Entity: 992928550779412113
+  - Entity: 8923741572946021871
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -152,7 +152,7 @@ Entities:
       Label: Laboratory Alpha
       Interactable: true
       Auto Size: false
-  - Entity: 13418661786523750520
+  - Entity: 1558335130132476056
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -202,7 +202,7 @@ Entities:
       Texture Path: map_previews/placeholder.jpg
       Tint Color: [255, 255, 255, 255]
       Border Color: [0, 0, 0, 0]
-  - Entity: 17426020875347348700
+  - Entity: 11027439178165653432
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -255,7 +255,7 @@ Entities:
       Label: Training Grounds
       Interactable: true
       Auto Size: false
-  - Entity: 13928478286002112500
+  - Entity: 2126387937254929582
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
@@ -305,7 +305,7 @@ Entities:
       Texture Path: map_previews/placeholder.jpg
       Tint Color: [255, 255, 255, 255]
       Border Color: [0, 0, 0, 0]
-  - Entity: 2014991916452332653
+  - Entity: 11443684633403664878
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]

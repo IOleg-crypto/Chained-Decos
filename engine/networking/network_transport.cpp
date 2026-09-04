@@ -202,7 +202,7 @@ namespace Chained
 			pkt.SenderNetworkID = localNetworkID;
 			pkt.SenderName = localPlayerName;
 			pkt.Message = message;
-			m_PendingChatMessages.push_back(pkt);
+			StorePendingChatMessage(pkt);
 		}
 		else if (m_Session->IsClient())
 		{

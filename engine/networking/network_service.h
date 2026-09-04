@@ -105,7 +105,7 @@ namespace Chained
 		{
 			return m_Transport.HasPendingChatMessages();
 		}
-		const std::vector<ChatMessagePacket>& GetPendingChatMessages() const
+		std::vector<ChatMessagePacket> GetPendingChatMessages() const
 		{
 			return m_Transport.GetPendingChatMessages();
 		}
@@ -246,8 +246,8 @@ namespace Chained
 
 		// Heartbeat / timeout (host side)
 		float m_HeartbeatTimer = 0.0f;
-		static constexpr float kHeartbeatInterval = 2.0f;	 // Send heartbeat every 2s
-		static constexpr float kClientTimeoutSeconds = 5.0f; // Disconnect after 5s silence
+		static constexpr float kHeartbeatInterval = 2.0f;	  // Send heartbeat every 2s
+		static constexpr float kClientTimeoutSeconds = 30.0f; // Disconnect after 30s silence
 	};
 
 } // namespace Chained

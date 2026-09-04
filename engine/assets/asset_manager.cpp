@@ -20,11 +20,17 @@ namespace Chained
 	constexpr size_t kMaxAssetFinalizationsPerFrame = 128;
 	constexpr auto kMaxAssetFinalizeBudget = std::chrono::milliseconds(12);
 
-	AssetManager::AssetManager() = default;
+	AssetManager::AssetManager()
+		: m_PackStore(std::make_unique<AssetPackStore>(m_PathResolver))
+	{
+	}
 
 	void AssetManager::Initialize()
 	{
-		m_PackStore = std::make_unique<AssetPackStore>(m_PathResolver);
+		if (!m_PackStore)
+		{
+			m_PackStore = std::make_unique<AssetPackStore>(m_PathResolver);
+		}
 
 		RegisterLoader(AssetType::Model, std::make_unique<ModelLoader>());
 		RegisterLoader(AssetType::Texture, std::make_unique<TextureLoader>());
@@ -53,6 +59,7 @@ namespace Chained
 		{
 			tp->WaitIdle();
 		}
+		FinalizePendingLoads();
 		if (m_PackStore)
 		{
 			m_PackStore->CloseAllPacks();
@@ -147,6 +154,7 @@ namespace Chained
 
 	AssetManager::~AssetManager()
 	{
+		Shutdown();
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
 		m_AssetCache.clear();
 		m_PathResolver.ClearCache();
@@ -625,29 +633,32 @@ namespace Chained
 	bool AssetManager::OpenPack(const std::filesystem::path& packPath)
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-		return m_PackStore->OpenPack(packPath);
+		return m_PackStore ? m_PackStore->OpenPack(packPath) : false;
 	}
 
 	size_t AssetManager::OpenAllPacksInDirectory(const std::filesystem::path& dir)
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-		return m_PackStore->OpenAllPacksInDirectory(dir);
+		return m_PackStore ? m_PackStore->OpenAllPacksInDirectory(dir) : 0;
 	}
 
 	void AssetManager::CloseAllPacks()
 	{
 		std::lock_guard<std::recursive_mutex> lock(m_AssetLock);
-		m_PackStore->CloseAllPacks();
+		if (m_PackStore)
+		{
+			m_PackStore->CloseAllPacks();
+		}
 	}
 
 	size_t AssetManager::GetOpenPackCount() const
 	{
-		return m_PackStore->GetOpenPackCount();
+		return m_PackStore ? m_PackStore->GetOpenPackCount() : 0;
 	}
 
 	bool AssetManager::IsPacked() const
 	{
-		return m_PackStore->IsPacked();
+		return m_PackStore ? m_PackStore->IsPacked() : false;
 	}
 
 	std::vector<uint8_t> AssetManager::ReadAssetData(const std::string& assetPath)

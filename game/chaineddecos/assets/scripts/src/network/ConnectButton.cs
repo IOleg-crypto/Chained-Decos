@@ -23,6 +23,13 @@ namespace ChainedDecos.Scripts
         private string m_PendingIp    = "";
         private ushort m_PendingPort  = 0;
 
+        public override void OnCreate()
+        {
+            Network.Disconnect();
+            m_IsConnecting = false;
+            m_ConnectTimer = 0f;
+        }
+
         public override void OnUpdate(float deltaTime)
         {
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
@@ -67,15 +74,30 @@ namespace ChainedDecos.Scripts
                 return;
 
             // ── Read inputs ───────────────────────────────────────────────
-            string ip   = ReadText(IpInputTag,   DefaultIp);
+            string ip   = ReadText(IpInputTag, DefaultIp);
             ushort port = DefaultPort;
 
             string portText = ReadText(PortInputTag, "");
-            if (ushort.TryParse(portText, out ushort parsedPort) && parsedPort > 0)
-                port = parsedPort;
+            bool explicitPortGiven = false;
+            if (!string.IsNullOrWhiteSpace(portText))
+            {
+                if (ushort.TryParse(portText, out ushort parsedPort) && parsedPort > 0)
+                {
+                    port = parsedPort;
+                    explicitPortGiven = true;
+                }
+                else
+                {
+                    ShowError($"Invalid port: '{portText}'");
+                    return;
+                }
+            }
 
-            // Smart parse: user pasted "IP:PORT" into IP field
-            (ip, port) = ParseAddressField(ip, port);
+            // Only parse "IP:PORT" from IP field if port field wasn't explicitly given
+            if (!explicitPortGiven && ip.Contains(":"))
+            {
+                (ip, port) = ParseAddressField(ip, port);
+            }
 
             // Read nickname
             string nick = ReadText(NickInputTag, "");
@@ -99,6 +121,7 @@ namespace ChainedDecos.Scripts
                 Network.StartHolePunch(ip, port);
             }
 
+            LobbyManager.SelectedPort = port;
             Network.ConnectTo(ip, port);
             m_PendingIp   = ip;
             m_PendingPort = port;

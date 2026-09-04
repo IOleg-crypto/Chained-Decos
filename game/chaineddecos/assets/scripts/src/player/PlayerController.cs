@@ -16,6 +16,8 @@ namespace ChainedDecos.Scripts
         public float CrossFadeTime = 8.5f;
 
         private bool m_WasConnected = false;
+        private int m_DisconnectGraceFrames = 0;
+        private const int DisconnectGraceLimit = 15;
         private int m_NetIdWaitFrames = 0;
         private const int NetIdGraceFrames = 60;
 
@@ -30,6 +32,7 @@ namespace ChainedDecos.Scripts
             _transform = Entity.GetComponent<TransformComponent>();
             _anim      = Entity.GetComponent<AnimationComponent>();
             m_WasConnected = false;
+            m_DisconnectGraceFrames = 0;
         }
 
         public override void OnUpdate(float deltaTime)
@@ -42,11 +45,19 @@ namespace ChainedDecos.Scripts
 
             if (m_WasConnected && !Network.IsConnected)
             {
-                Log.Info("[PlayerController] Host disconnected — returning to menu.");
-                Scene.LoadScene(MenuScene);
-                return;
+                m_DisconnectGraceFrames++;
+                if (m_DisconnectGraceFrames > DisconnectGraceLimit)
+                {
+                    Log.Info("[PlayerController] Host disconnected — returning to menu.");
+                    Scene.LoadScene(MenuScene);
+                    return;
+                }
             }
-            if (Network.IsConnected) m_WasConnected = true;
+            else if (Network.IsConnected)
+            {
+                m_WasConnected = true;
+                m_DisconnectGraceFrames = 0;
+            }
 
             _rb        ??= Entity.GetComponent<RigidBodyComponent>();
             _transform ??= Entity.GetComponent<TransformComponent>();

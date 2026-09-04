@@ -25,26 +25,31 @@ namespace Chained
 		void Reset();
 
 		void SetLocalPlayerInfo(const char* name, uint8_t skinIndex);
-		const std::string& GetLocalPlayerName() const
+		std::string GetLocalPlayerName() const
 		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
 			return m_LocalPlayerName;
 		}
 		uint8_t GetLocalSkinIndex() const
 		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
 			return m_LocalSkinIndex;
 		}
 
 		uint64_t GetLocalNetworkID() const
 		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
 			return m_LocalNetworkID;
 		}
 		void SetLocalNetworkID(uint64_t id)
 		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
 			m_LocalNetworkID = id;
 		}
 
 		void SetHostNetworkID(uint64_t id)
 		{
+			std::lock_guard<std::mutex> lock(m_Mutex);
 			m_HostNetworkID = id;
 		}
 

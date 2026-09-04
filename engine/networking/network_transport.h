@@ -8,6 +8,7 @@
 #include <functional>
 #include <vector>
 #include <unordered_map>
+#include <mutex>
 
 namespace Chained
 {
@@ -54,18 +55,22 @@ namespace Chained
 
 		void ClearPendingChatMessages()
 		{
+			std::lock_guard<std::mutex> lock(m_ChatMutex);
 			m_PendingChatMessages.clear();
 		}
 		bool HasPendingChatMessages() const
 		{
+			std::lock_guard<std::mutex> lock(m_ChatMutex);
 			return !m_PendingChatMessages.empty();
 		}
-		const std::vector<ChatMessagePacket>& GetPendingChatMessages() const
+		std::vector<ChatMessagePacket> GetPendingChatMessages() const
 		{
+			std::lock_guard<std::mutex> lock(m_ChatMutex);
 			return m_PendingChatMessages;
 		}
 		void StorePendingChatMessage(const ChatMessagePacket& pkt)
 		{
+			std::lock_guard<std::mutex> lock(m_ChatMutex);
 			m_PendingChatMessages.push_back(pkt);
 		}
 
@@ -75,6 +80,7 @@ namespace Chained
 
 		NetworkSession* m_Session = nullptr;
 		PacketCallback m_PacketCallback;
+		mutable std::mutex m_ChatMutex;
 		std::vector<ChatMessagePacket> m_PendingChatMessages;
 	};
 

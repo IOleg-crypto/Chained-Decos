@@ -190,7 +190,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -247,7 +247,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -304,7 +304,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -361,7 +361,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [30, 30, 30, 255]
         Shadow: false
@@ -418,7 +418,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -475,7 +475,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -532,7 +532,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -589,7 +589,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [30, 30, 30, 255]
         Shadow: false
@@ -639,7 +639,7 @@ Entities:
         Pressed Scale: 0.949999988
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -689,7 +689,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 15
         Text Color: [220, 225, 240, 255]
         Shadow: false
@@ -743,7 +743,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [210, 215, 230, 255]
         Shadow: false
@@ -792,7 +792,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 15
         Text Color: [140, 145, 175, 255]
         Shadow: false
@@ -841,7 +841,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 14
         Text Color: [200, 200, 210, 255]
         Shadow: false
@@ -897,7 +897,7 @@ Entities:
         Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 18
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -950,7 +950,7 @@ Entities:
         Pressed Scale: 0.970000029
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 20
         Text Color: [255, 255, 255, 255]
         Shadow: false
@@ -1000,7 +1000,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 16
         Text Color: [110, 231, 211, 255]
         Shadow: false
@@ -1052,7 +1052,7 @@ Entities:
         Pressed Scale: 1
         Transition Speed: 0.150000006
       Text Style:
-        Font Name: font/static/Figtree-Regular.ttf
+        Font Name: font/arial.ttf
         Font Size: 18
         Text Color: [235, 238, 242, 255]
         Shadow: false

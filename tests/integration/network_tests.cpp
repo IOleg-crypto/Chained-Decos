@@ -262,10 +262,10 @@ TEST(NetworkChannelTest, ChannelEnumValuesAndReliability)
 
 	EXPECT_EQ(GetChannelForMessageType(MessageType_WorldState), ePacketChannel::SYNC);
 	EXPECT_EQ(GetChannelForMessageType(MessageType_InputState), ePacketChannel::SYNC);
-	EXPECT_EQ(GetChannelForMessageType(MessageType_EntitySpawn), ePacketChannel::EVENT);
-	EXPECT_EQ(GetChannelForMessageType(MessageType_EntityDestroy), ePacketChannel::EVENT);
 	EXPECT_EQ(GetChannelForMessageType(MessageType_ChatMessage), ePacketChannel::EVENT);
-	EXPECT_EQ(GetChannelForMessageType(MessageType_SceneLoaded), ePacketChannel::EVENT);
+	EXPECT_EQ(GetChannelForMessageType(MessageType_EntitySpawn), ePacketChannel::SYSTEM);
+	EXPECT_EQ(GetChannelForMessageType(MessageType_EntityDestroy), ePacketChannel::SYSTEM);
+	EXPECT_EQ(GetChannelForMessageType(MessageType_SceneLoaded), ePacketChannel::SYSTEM);
 	EXPECT_EQ(GetChannelForMessageType(MessageType_SceneChange), ePacketChannel::SYSTEM);
 	EXPECT_EQ(GetChannelForMessageType(MessageType_PlayerAssign), ePacketChannel::SYSTEM);
 	EXPECT_EQ(GetChannelForMessageType(MessageType_PlayerInfo), ePacketChannel::SYSTEM);

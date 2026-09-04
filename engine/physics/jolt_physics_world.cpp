@@ -164,7 +164,14 @@ namespace Chained
 
 	JoltPhysicsWorld::~JoltPhysicsWorld()
 	{
-		// PhysicsSystem destroyed automatically (member variable).
+		// 1. Signal background tasks that this world is shutting down and wait for in-flight tasks to finish
+		{
+			std::unique_lock<std::mutex> lock(m_CacheMutex);
+			m_IsShuttingDown = true;
+			m_BakeCondition.wait(lock, [this]() { return m_InFlightMeshBakes.empty(); });
+		}
+
+		// 2. PhysicsSystem destroyed automatically (member variable).
 		// Factory is destroyed last due to declaration order.
 		JPH::Factory::sInstance = nullptr;
 	}
@@ -201,6 +208,10 @@ namespace Chained
 
 		{
 			std::lock_guard lock(m_CacheMutex);
+			if (m_IsShuttingDown)
+			{
+				return;
+			}
 			if (m_MeshShapeCache.count(desc.CacheKey) > 0 || m_ConvexHullCache.count(desc.CacheKey) > 0 ||
 				m_ConvexHullCache.count(desc.CacheKey + "_convex") > 0 || m_InFlightMeshBakes.count(desc.CacheKey) > 0)
 			{
@@ -212,9 +223,24 @@ namespace Chained
 		if (auto* tp = ServiceLocator::TryGet<ThreadPool>())
 		{
 			tp->QueueTask([this, desc]() {
+				// Check if world is still alive before building
+				{
+					std::lock_guard lock(m_CacheMutex);
+					if (m_IsShuttingDown)
+					{
+						m_InFlightMeshBakes.erase(desc.CacheKey);
+						m_BakeCondition.notify_all();
+						return;
+					}
+				}
+
 				PrebuildShape(desc);
-				std::lock_guard lock(m_CacheMutex);
-				m_InFlightMeshBakes.erase(desc.CacheKey);
+
+				{
+					std::lock_guard lock(m_CacheMutex);
+					m_InFlightMeshBakes.erase(desc.CacheKey);
+					m_BakeCondition.notify_all();
+				}
 			});
 		}
 		else
@@ -222,6 +248,7 @@ namespace Chained
 			PrebuildShape(desc);
 			std::lock_guard lock(m_CacheMutex);
 			m_InFlightMeshBakes.erase(desc.CacheKey);
+			m_BakeCondition.notify_all();
 		}
 	}
 
@@ -348,7 +375,10 @@ namespace Chained
 				if (!convexKey.empty())
 				{
 					std::lock_guard<std::mutex> lock(m_CacheMutex);
-					m_ConvexHullCache[convexKey] = hull;
+					if (!m_IsShuttingDown)
+					{
+						m_ConvexHullCache[convexKey] = hull;
+					}
 				}
 
 				shape = hull;
@@ -454,7 +484,10 @@ namespace Chained
 				if (!desc.CacheKey.empty())
 				{
 					std::lock_guard<std::mutex> lock(m_CacheMutex);
-					m_MeshShapeCache[desc.CacheKey] = baseShape;
+					if (!m_IsShuttingDown)
+					{
+						m_MeshShapeCache[desc.CacheKey] = baseShape;
+					}
 				}
 
 				const auto buildEnd = std::chrono::steady_clock::now();

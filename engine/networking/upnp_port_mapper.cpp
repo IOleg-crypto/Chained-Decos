@@ -140,15 +140,16 @@ namespace Chained
 		std::strncpy(intClient, m_LanAddress, sizeof(intClient) - 1);
 
 		int result = UPNP_AddPortMapping(static_cast<char*>(m_ControlURL), static_cast<char*>(m_ServiceType), extPort,
-										 intPort, intClient, description, protocol, nullptr, 0);
+										 intPort, intClient, description, protocol, nullptr, "0");
 
 		if (result != UPNPCOMMAND_SUCCESS)
 		{
-			CH_CORE_WARN("UPnP: Failed to add port mapping {}:{} ({})", intClient, port, protocol);
+			CH_CORE_WARN("UPnP: Failed to add port mapping {}:{} ({}) — error code: {}", intClient, port, protocol,
+						 result);
 			return false;
 		}
 
-		CH_CORE_INFO("UPnP: Port mapping added — {}:{} ({})", intClient, port, protocol);
+		CH_CORE_INFO("UPnP: Port mapping added — {}:{} ({}) [Service: {}]", intClient, port, protocol, description);
 		return true;
 	}
 

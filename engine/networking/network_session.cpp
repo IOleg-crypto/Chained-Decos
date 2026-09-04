@@ -66,14 +66,17 @@ namespace Chained
 
 	void NetworkSession::Update(float /*dt*/)
 	{
-		if (!m_Driver || !m_Driver->IsConnected())
+		if (!m_Driver || !m_Driver->IsConnected() || m_IsUpdating)
 		{
 			return;
 		}
 
-		m_Driver->PollEvents(m_PolledEvents);
+		m_IsUpdating = true;
 
-		for (const auto& ev : m_PolledEvents)
+		std::vector<NetworkDriverEvent> polledEvents;
+		m_Driver->PollEvents(polledEvents);
+
+		for (const auto& ev : polledEvents)
 		{
 			switch (ev.Type)
 			{
@@ -102,10 +105,14 @@ namespace Chained
 						m_DisconnectionCallback(ev.PeerIndex, 0);
 					}
 				}
-				else if (m_Driver->GetRole() == Role::Client)
+				else
 				{
 					CH_CORE_INFO("NetworkSession: Disconnected from server.");
 					m_ServerConnection = kInvalidPeerHandle;
+					if (m_DisconnectionCallback)
+					{
+						m_DisconnectionCallback(0, 0);
+					}
 				}
 				break;
 			}
@@ -126,6 +133,8 @@ namespace Chained
 				break;
 			}
 		}
+
+		m_IsUpdating = false;
 	}
 
 	Role NetworkSession::GetRole() const

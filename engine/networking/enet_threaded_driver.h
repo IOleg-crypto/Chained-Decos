@@ -41,7 +41,12 @@ namespace Chained
 		}
 		bool IsConnected() const override
 		{
-			return m_Role.load(std::memory_order_relaxed) != Role::Offline;
+			Role r = m_Role.load(std::memory_order_relaxed);
+			if (r == Role::Client)
+			{
+				return m_FullyConnected.load(std::memory_order_relaxed);
+			}
+			return r != Role::Offline;
 		}
 		bool IsFullyConnected() const override
 		{
@@ -100,6 +105,7 @@ namespace Chained
 		// Low-level ENet objects (solely accessed by worker thread during runtime)
 		ENetHost* m_Host = nullptr;
 		ENetPeer* m_ServerPeer = nullptr;
+		mutable std::mutex m_PeerMutex;
 		std::unordered_map<int, ENetPeer*> m_PeerMap;
 
 		// RTT tracking

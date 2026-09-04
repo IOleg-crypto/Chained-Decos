@@ -19,15 +19,37 @@ namespace ChainedDecos.Scripts
         private readonly List<string> m_ChatLines = new List<string>();
         private string m_LastDisplayed = "";
         private string m_LastDisplayedInfo = "";
-        private bool   m_WasEnterDown  = false;
+        private int m_DisconnectGraceFrames = 0;
+        private const int DisconnectGraceLimit = 15;
+        private bool m_WasEnterDown = false;
 
         public override void OnCreate()
         {
             Log.Info("LobbyUI: Initialized");
+            m_DisconnectGraceFrames = 0;
         }
 
         public override void OnUpdate(float deltaTime)
         {
+            // 0. Detect host disconnect (client side)
+            if (Network.IsClient)
+            {
+                if (!Network.IsConnected)
+                {
+                    m_DisconnectGraceFrames++;
+                    if (m_DisconnectGraceFrames > DisconnectGraceLimit)
+                    {
+                        Log.Info("[LobbyUI] Host disconnected — returning to menu.");
+                        Scene.LoadScene("scenes/start_menu.chscene");
+                        return;
+                    }
+                }
+                else
+                {
+                    m_DisconnectGraceFrames = 0;
+                }
+            }
+
             // 1. Scene change from host (client side)
             if (Network.IsClient && Network.HasPendingSceneChange)
             {

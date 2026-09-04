@@ -258,6 +258,15 @@ namespace Chained
 			}
 			m_Session.CheckPeerTimeouts(dt, kClientTimeoutSeconds);
 		}
+		else if (m_Session.IsClient() && m_Session.IsConnected())
+		{
+			m_HeartbeatTimer += dt;
+			if (m_HeartbeatTimer >= kHeartbeatInterval)
+			{
+				m_HeartbeatTimer = 0.0f;
+				SendToServer(MessageType_Heartbeat, nullptr, 0, false);
+			}
+		}
 
 		// Detect client disconnect and trigger reconnect
 		bool isClientNowConnected = m_Session.IsClient() && m_Session.IsFullyConnected();
@@ -413,13 +422,13 @@ namespace Chained
 			return;
 		}
 
-		uint16_t localPort = m_Session.GetPort();
+		uint16_t localPort = m_Session.IsClient() ? 0 : m_Session.GetPort();
 		sockaddr_in bindAddr = {};
 		bindAddr.sin_family = AF_INET;
 		bindAddr.sin_addr.s_addr = INADDR_ANY;
 		bindAddr.sin_port = htons(localPort);
 
-		if (bind(m_HolePunchSocket, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0)
+		if (localPort != 0 && bind(m_HolePunchSocket, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0)
 		{
 			CH_CORE_WARN("Network: Failed to bind hole punch socket to port {} (ENet port may be in use).", localPort);
 			// Continue anyway — OS-assigned port may still work for NAT traversal

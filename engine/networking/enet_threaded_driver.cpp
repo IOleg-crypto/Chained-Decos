@@ -167,21 +167,22 @@ namespace Chained
 		{
 			if (m_Role.load(std::memory_order_relaxed) == Role::Host)
 			{
-				for (auto& [idx, peer] : m_PeerMap)
 				{
-					if (peer)
+					std::lock_guard<std::mutex> lock(m_PeerMutex);
+					for (auto& [idx, peer] : m_PeerMap)
 					{
-						enet_peer_disconnect(peer, 0);
+						if (peer)
+						{
+							enet_peer_disconnect_now(peer, 0);
+						}
 					}
 				}
-				ENetEvent event;
-				enet_host_service(m_Host, &event, 50);
+				enet_host_flush(m_Host);
 			}
 			else if (m_ServerPeer)
 			{
-				enet_peer_disconnect(m_ServerPeer, 0);
-				ENetEvent event;
-				enet_host_service(m_Host, &event, 50);
+				enet_peer_disconnect_now(m_ServerPeer, 0);
+				enet_host_flush(m_Host);
 				m_ServerPeer = nullptr;
 			}
 
@@ -189,7 +190,10 @@ namespace Chained
 			m_Host = nullptr;
 		}
 
-		m_PeerMap.clear();
+		{
+			std::lock_guard<std::mutex> lock(m_PeerMutex);
+			m_PeerMap.clear();
+		}
 		m_Role.store(Role::Offline, std::memory_order_relaxed);
 		m_FullyConnected.store(false, std::memory_order_relaxed);
 		m_Port.store(0, std::memory_order_relaxed);
@@ -294,6 +298,7 @@ namespace Chained
 	{
 		if (m_Role.load(std::memory_order_relaxed) == Role::Host)
 		{
+			std::lock_guard<std::mutex> lock(m_PeerMutex);
 			return m_PeerMap.find(peerIndex) != m_PeerMap.end();
 		}
 		if (m_Role.load(std::memory_order_relaxed) == Role::Client)
@@ -354,13 +359,14 @@ namespace Chained
 					{
 						if (role == Role::Host)
 						{
+							std::lock_guard<std::mutex> lock(m_PeerMutex);
 							auto it = m_PeerMap.find(pkt.PeerIndex);
 							if (it != m_PeerMap.end() && it->second)
 							{
 								enet_peer_disconnect_now(it->second, 0);
 								m_PeerMap.erase(it);
 								{
-									std::lock_guard<std::mutex> lock(m_RttMutex);
+									std::lock_guard<std::mutex> rttLock(m_RttMutex);
 									m_PeerRtt.erase(pkt.PeerIndex);
 								}
 							}
@@ -387,33 +393,50 @@ namespace Chained
 						// Broadcast
 						if (role == Role::Host)
 						{
-							for (auto& [idx, peer] : m_PeerMap)
-							{
-								if (peer)
-								{
-									enet_peer_send(peer, channel, enetPacket);
-								}
-							}
+							enet_host_broadcast(m_Host, channel, enetPacket);
 						}
 						else if (role == Role::Client && m_ServerPeer)
 						{
-							enet_peer_send(m_ServerPeer, channel, enetPacket);
+							if (enet_peer_send(m_ServerPeer, channel, enetPacket) != 0)
+							{
+								if (enetPacket->referenceCount == 0)
+								{
+									enet_packet_destroy(enetPacket);
+								}
+							}
+						}
+						else if (enetPacket->referenceCount == 0)
+						{
+							enet_packet_destroy(enetPacket);
 						}
 					}
 					else
 					{
 						// Targeted send
+						bool sent = false;
 						if (role == Role::Host)
 						{
+							std::lock_guard<std::mutex> lock(m_PeerMutex);
 							auto it = m_PeerMap.find(pkt.PeerIndex);
 							if (it != m_PeerMap.end() && it->second)
 							{
-								enet_peer_send(it->second, channel, enetPacket);
+								if (enet_peer_send(it->second, channel, enetPacket) == 0)
+								{
+									sent = true;
+								}
 							}
 						}
 						else if (role == Role::Client && m_ServerPeer)
 						{
-							enet_peer_send(m_ServerPeer, channel, enetPacket);
+							if (enet_peer_send(m_ServerPeer, channel, enetPacket) == 0)
+							{
+								sent = true;
+							}
+						}
+
+						if (!sent && enetPacket->referenceCount == 0)
+						{
+							enet_packet_destroy(enetPacket);
 						}
 					}
 				}
@@ -436,12 +459,16 @@ namespace Chained
 						if (role == Role::Host)
 						{
 							int clientIndex = 0;
-							while (m_PeerMap.find(clientIndex) != m_PeerMap.end())
 							{
-								++clientIndex;
+								std::lock_guard<std::mutex> lock(m_PeerMutex);
+								while (m_PeerMap.find(clientIndex) != m_PeerMap.end())
+								{
+									++clientIndex;
+								}
+								m_PeerMap[clientIndex] = event.peer;
 							}
-							m_PeerMap[clientIndex] = event.peer;
 							event.peer->data = reinterpret_cast<void*>(static_cast<intptr_t>(clientIndex));
+							enet_peer_timeout(event.peer, 32, 15000, 45000);
 
 							NetworkDriverEvent ev;
 							ev.Type = NetworkDriverEventType::Connected;
@@ -453,6 +480,7 @@ namespace Chained
 						else if (role == Role::Client)
 						{
 							m_FullyConnected.store(true, std::memory_order_relaxed);
+							enet_peer_timeout(event.peer, 32, 15000, 45000);
 
 							NetworkDriverEvent ev;
 							ev.Type = NetworkDriverEventType::Connected;
@@ -468,12 +496,15 @@ namespace Chained
 						if (role == Role::Host)
 						{
 							int clientIndex = static_cast<int>(reinterpret_cast<intptr_t>(event.peer->data));
-							for (auto it = m_PeerMap.begin(); it != m_PeerMap.end(); ++it)
 							{
-								if (it->second == event.peer)
+								std::lock_guard<std::mutex> lock(m_PeerMutex);
+								for (auto it = m_PeerMap.begin(); it != m_PeerMap.end(); ++it)
 								{
-									m_PeerMap.erase(it);
-									break;
+									if (it->second == event.peer)
+									{
+										m_PeerMap.erase(it);
+										break;
+									}
 								}
 							}
 
@@ -492,6 +523,7 @@ namespace Chained
 						else if (role == Role::Client)
 						{
 							m_FullyConnected.store(false, std::memory_order_relaxed);
+							m_Role.store(Role::Offline, std::memory_order_relaxed);
 							m_ServerPeer = nullptr;
 
 							NetworkDriverEvent ev;
@@ -539,6 +571,7 @@ namespace Chained
 					}
 					else if (m_Role.load(std::memory_order_relaxed) == Role::Host)
 					{
+						std::lock_guard<std::mutex> peerLock(m_PeerMutex);
 						for (auto& [idx, peer] : m_PeerMap)
 						{
 							if (peer)

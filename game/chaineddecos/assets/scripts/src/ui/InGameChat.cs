@@ -30,12 +30,14 @@ namespace ChainedDecos.Scripts
         private List<ChatEntry> m_Messages   = new List<ChatEntry>();
         private string          m_InputText  = "";
         private bool            m_FocusInput = false;
+        private bool            m_JustOpened = false;
 
         public override void OnCreate()
         {
             Priority = 90;
             IsOpen = false;
             IsChatOpen = false;
+            m_JustOpened = false;
         }
 
         public override void OnUpdate(float deltaTime)
@@ -65,17 +67,19 @@ namespace ChainedDecos.Scripts
                     IsOpen       = true;
                     IsChatOpen   = true;
                     m_FocusInput = true;
+                    m_JustOpened = true;
                     m_InputText  = "";
                     ConsumeEvent();
                 }
             }
             else
             {
-                if (Input.IsKeyPressed(Key.Escape) && Input.IsKeyPressed(Key.Delete))
+                if (Input.IsKeyPressed(Key.Escape) || Input.IsKeyPressed(Key.Delete))
                 {
-                    IsOpen      = false;
-                    IsChatOpen  = false;
-                    m_InputText = "";
+                    IsOpen       = false;
+                    IsChatOpen   = false;
+                    m_JustOpened = false;
+                    m_InputText  = "";
                 }
                 ConsumeEvent();
             }
@@ -117,15 +121,25 @@ namespace ChainedDecos.Scripts
                     m_FocusInput = false;
                 }
 
-                if (UI.InputText("##ChatInput", ref m_InputText, 256))
+                bool submitted = UI.InputText("##ChatInput", ref m_InputText, 256);
+                if (m_JustOpened)
                 {
-                    if (!string.IsNullOrWhiteSpace(m_InputText))
-                    {
-                        Network.SendChatMessage(m_InputText.Trim());
-                    }
+                    // Ignore submission on the frame it was opened by pressing Enter
+                    m_JustOpened = false;
+                    submitted = false;
+                }
+
+                if (submitted)
+                {
+                    string toSend = m_InputText.Trim();
                     m_InputText = "";
                     IsOpen      = false;
                     IsChatOpen  = false;
+
+                    if (!string.IsNullOrWhiteSpace(toSend))
+                    {
+                        Network.SendChatMessage(toSend);
+                    }
                 }
 
                 UI.EndWindow();

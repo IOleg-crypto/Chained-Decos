@@ -43,13 +43,13 @@ namespace Chained
 		case MessageType_WorldState:
 			return ePacketChannel::SYNC;
 
-		case MessageType_EntitySpawn:
-		case MessageType_EntityDestroy:
-		case MessageType_SceneLoaded:
 		case MessageType_ChatMessage:
 			return ePacketChannel::EVENT;
 
+		case MessageType_EntitySpawn:
+		case MessageType_EntityDestroy:
 		case MessageType_SceneChange:
+		case MessageType_SceneLoaded:
 		case MessageType_PlayerAssign:
 		case MessageType_PlayerInfo:
 		case MessageType_PlayerList:

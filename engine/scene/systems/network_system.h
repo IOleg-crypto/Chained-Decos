@@ -57,7 +57,7 @@ namespace Chained
 
 		// Maximum distance (m) between local and server position before snap-correction
 		// kicks in for owned entities. Below this threshold, local physics runs freely.
-		static constexpr float kMaxCorrectionDistance = 2.0f;
+		static constexpr float kMaxCorrectionDistance = 10.0f;
 
 		// Ensure the local player entity has a NetworkIdentityComponent BEFORE scripts
 		// run. Must be called early in the frame so PlayerController etc. can find it.
@@ -114,6 +114,8 @@ namespace Chained
 		// ---- Member state (previously file-scope globals) ----
 		std::unordered_map<uint64_t, PendingNetworkState> m_PendingStates;
 		std::vector<ProcessedInput> m_PendingInputs;
+		std::unordered_map<uint64_t, ProcessedInput> m_ActiveClientInputs;
+		std::unordered_map<uint64_t, float> m_ActiveClientInputTimers;
 		uint32_t m_ClientTick = 0;
 		uint32_t m_HostTick = 0;
 		std::unordered_map<int, uint64_t> m_PeerToNetworkID;
@@ -130,7 +132,7 @@ namespace Chained
 		std::unordered_map<int, std::string> m_DeferredSceneLoaded;
 		std::unordered_set<uint64_t> m_WarnedInputNetID;
 		float m_NetworkTickAccumulator = 0.0f;
-		static constexpr float kNetworkTickInterval = 1.0f / 30.0f; // 30 Hz
+		static constexpr float kNetworkTickInterval = 1.0f / 64.0f; // 64 Hz (Valve / Source tickrate standard)
 	};
 
 } // namespace Chained
