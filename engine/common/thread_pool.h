@@ -12,6 +12,7 @@
 #include <type_traits>
 
 #include "engine/core/service.h"
+#include "engine/core/log.h"
 
 namespace Chained
 {
@@ -99,7 +100,16 @@ namespace Chained
 							this->m_Tasks.pop();
 						}
 
-						task();
+						try
+						{
+							task();
+						} catch (const std::exception& e)
+						{
+							CH_CORE_ERROR("ThreadPool: task threw exception: {}", e.what());
+						} catch (...)
+						{
+							CH_CORE_ERROR("ThreadPool: task threw unknown exception");
+						}
 					}
 				});
 			}

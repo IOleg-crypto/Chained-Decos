@@ -18,7 +18,18 @@ namespace Chained
 		ComponentRegistry::RegisterReflective<TagComponent>("Tag", ICON_FA_TAG, "Core");
 		ComponentRegistry::RegisterReflective<CameraComponent>("Camera", ICON_FA_VIDEO, "Core");
 		ComponentRegistry::RegisterReflective<IDComponent>("ID", nullptr, "Core");
+		auto& idMeta = ComponentRegistry::GetMetadataMutable(entt::type_hash<IDComponent>::value());
+		idMeta.Visible = false;
+		idMeta.AllowAdd = false;
+
 		ComponentRegistry::RegisterReflective<NameComponent>("Name", nullptr, "Core");
+		auto& nameMeta = ComponentRegistry::GetMetadataMutable(entt::type_hash<NameComponent>::value());
+		nameMeta.Visible = false;
+		nameMeta.AllowAdd = false;
+
 		ComponentRegistry::RegisterReflective<HierarchyComponent>("Hierarchy", nullptr, "Core");
+		auto& hierMeta = ComponentRegistry::GetMetadataMutable(entt::type_hash<HierarchyComponent>::value());
+		hierMeta.Visible = false;
+		hierMeta.AllowAdd = false;
 	}
 } // namespace Chained

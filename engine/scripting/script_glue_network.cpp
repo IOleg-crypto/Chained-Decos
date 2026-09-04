@@ -170,22 +170,6 @@ namespace Chained
 		outBuffer[bufferSize - 1] = '\0';
 	}
 
-	CH_SCRIPT_FUNC void Network_GetPublicIPv6Address(char* outBuffer, int bufferSize)
-	{
-		auto* net = ServiceLocator::TryGet<Network>();
-		if (!net || !outBuffer || bufferSize <= 0)
-		{
-			if (outBuffer && bufferSize > 0)
-			{
-				outBuffer[0] = '\0';
-			}
-			return;
-		}
-		std::string addr = net->GetPublicIPv6Address();
-		std::strncpy(outBuffer, addr.c_str(), bufferSize - 1);
-		outBuffer[bufferSize - 1] = '\0';
-	}
-
 	CH_SCRIPT_FUNC void Network_BroadcastSceneChange(const Coral::UCChar* scenePath)
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
@@ -364,7 +348,7 @@ namespace Chained
 			return;
 		}
 		std::string pathStr = ch_u16_to_string(path);
-		NetworkSystem::GetInstance().SetPlayerPrefab(pathStr.c_str());
+		ServiceLocator::Get<NetworkSystem>()->SetPlayerPrefab(pathStr.c_str());
 		CH_CORE_INFO("[Script] Network.SetPlayerPrefab(path='{}')", pathStr);
 	}
 
@@ -376,12 +360,61 @@ namespace Chained
 		return net && net->IsUpnpAvailable();
 	}
 
-	// ---- Firewall ----
+	// ── STUN / NAT Traversal ─────────────────────────────────────────────
 
-	CH_SCRIPT_FUNC uint8_t Network_IsFirewallRuleActive()
+	CH_SCRIPT_FUNC uint8_t Network_HasStunResult()
 	{
 		auto* net = ServiceLocator::TryGet<Network>();
-		return net && net->IsFirewallRuleActive();
+		return net && net->HasStunResult();
+	}
+
+	CH_SCRIPT_FUNC void Network_GetStunPublicAddress(char* outBuffer, int bufferSize)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !outBuffer || bufferSize <= 0)
+		{
+			if (outBuffer && bufferSize > 0)
+			{
+				outBuffer[0] = '\0';
+			}
+			return;
+		}
+		std::string addr = net->GetPublicAddress();
+		std::strncpy(outBuffer, addr.c_str(), bufferSize - 1);
+		outBuffer[bufferSize - 1] = '\0';
+	}
+
+	CH_SCRIPT_FUNC void Network_StartHolePunch(const Coral::UCChar* remoteIP, uint16_t remotePort)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !remoteIP)
+		{
+			return;
+		}
+		std::string ip = ch_u16_to_string(remoteIP);
+		CH_CORE_INFO("[Script] Network.StartHolePunch(ip='{}', port={})", ip, remotePort);
+		net->StartHolePunch(ip, remotePort);
+	}
+
+	CH_SCRIPT_FUNC void Network_QueryStun(uint16_t localPort)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net)
+		{
+			return;
+		}
+		CH_CORE_INFO("[Script] Network.QueryStun(localPort={})", localPort);
+		net->QueryStunPublicEndpoint(localPort);
+	}
+
+	CH_SCRIPT_FUNC uint32_t Network_GetPing()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !net->IsClient())
+		{
+			return 0;
+		}
+		return net->GetPing();
 	}
 
 } // namespace Chained

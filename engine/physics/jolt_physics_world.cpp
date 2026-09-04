@@ -232,30 +232,28 @@ namespace Chained
 		switch (desc.Shape)
 		{
 		case ColliderType::Box: {
-			JPH::BoxShapeSettings boxSettings(JPH::Vec3(desc.Dimensions.x, desc.Dimensions.y, desc.Dimensions.z));
-			shape = boxSettings.Create().Get();
-			if (!shape)
-			{
-				shape = FallbackUnitBox("Box shape creation failed");
-			}
+			// Use HasError() check — calling .Get() on a failed Result triggers
+			// JPH_ASSERT(IsValid()), which was happening when AutoCalculate produced
+			// a zero-sized box (model not yet Ready).
+			auto result =
+				JPH::BoxShapeSettings(JPH::Vec3(desc.Dimensions.x, desc.Dimensions.y, desc.Dimensions.z)).Create();
+			shape = result.HasError()
+						? FallbackUnitBox("Box shape creation failed: " + std::string(result.GetError().c_str()))
+						: result.Get();
 			break;
 		}
 		case ColliderType::Sphere: {
-			JPH::SphereShapeSettings sphereSettings(desc.Dimensions.x);
-			shape = sphereSettings.Create().Get();
-			if (!shape)
-			{
-				shape = FallbackUnitBox("Sphere shape creation failed");
-			}
+			auto result = JPH::SphereShapeSettings(desc.Dimensions.x).Create();
+			shape = result.HasError()
+						? FallbackUnitBox("Sphere shape creation failed: " + std::string(result.GetError().c_str()))
+						: result.Get();
 			break;
 		}
 		case ColliderType::Capsule: {
-			JPH::CapsuleShapeSettings capsuleSettings(desc.Dimensions.y, desc.Dimensions.x);
-			shape = capsuleSettings.Create().Get();
-			if (!shape)
-			{
-				shape = FallbackUnitBox("Capsule shape creation failed");
-			}
+			auto result = JPH::CapsuleShapeSettings(desc.Dimensions.y, desc.Dimensions.x).Create();
+			shape = result.HasError()
+						? FallbackUnitBox("Capsule shape creation failed: " + std::string(result.GetError().c_str()))
+						: result.Get();
 			break;
 		}
 		case ColliderType::Mesh: {
@@ -443,9 +441,7 @@ namespace Chained
 				}
 
 				JPH::MeshShapeSettings s(std::move(joltTris));
-				s.mBuildQuality = desc.UseFastBuildQuality
-									  ? JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed
-									  : JPH::MeshShapeSettings::EBuildQuality::FavorRuntimePerformance;
+				s.mBuildQuality = JPH::MeshShapeSettings::EBuildQuality::FavorBuildSpeed;
 				auto result = s.Create();
 				if (result.HasError())
 				{

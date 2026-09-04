@@ -58,7 +58,7 @@ Chained Decos and Chained Engine target Windows and Linux.
 ## Download
 
 ### Chained Decos (Game)
-- [Windows / Linux](https://app.mediafire.com/folder/upu4y995ivl26) — pre-built binaries
+- [Windows / Linux](https://www.mediafire.com/folder/upu4y995ivl26/releases) — pre-built binaries
 
 ### ChainedEngine (Editor)
 - [GitHub Releases](https://github.com/IOleg-crypto/Chained-Engine/releases) — Windows + Linux builds

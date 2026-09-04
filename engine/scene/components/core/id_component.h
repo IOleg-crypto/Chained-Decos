@@ -17,7 +17,7 @@ namespace Chained
 
 		struct UI
 		{
-			UIMeta ID = {.Tooltip = "Unique entity identifier (UUID)"};
+			UIMeta ID = {.Tooltip = "Unique entity identifier (UUID)", .ReadOnly = true, .Transient = true};
 		};
 	};
 	CH_MARK_RFL(IDComponent);

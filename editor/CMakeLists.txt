@@ -32,11 +32,6 @@ if(TARGET pack-static)
     target_link_libraries(editor_core PUBLIC pack-static)
 endif()
 
-# Dictionary pack support — ZSTD dictionary compression for asset packs
-if(TARGET engine_pack)
-    target_link_libraries(editor_core PUBLIC engine_pack)
-endif()
-
 if(TARGET engine_external_basisu_encoder)
     target_link_libraries(editor_core PUBLIC engine_external_basisu_encoder)
 endif()
@@ -53,7 +48,18 @@ target_include_directories(editor_core PUBLIC
 
 # Define the Editor executable
 add_executable(ChainedEditor ${CMAKE_CURRENT_SOURCE_DIR}/main.cpp)
-        
+
+# Embed Windows application icon into the editor executable
+set(EDITOR_RC_FILE "")
+if(WIN32 AND EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ChainedEditor.rc")
+    set(EDITOR_RC_FILE "${CMAKE_CURRENT_SOURCE_DIR}/ChainedEditor.rc")
+    target_sources(ChainedEditor PRIVATE ${EDITOR_RC_FILE})
+    set(EDITOR_ICON_ABS_PATH "${CMAKE_CURRENT_SOURCE_DIR}/icons/chaineddecos.ico")
+    set_source_files_properties("${EDITOR_RC_FILE}" PROPERTIES
+        COMPILE_DEFINITIONS "CHAINED_ICON_PATH=\"${EDITOR_ICON_ABS_PATH}\""
+    )
+endif()
+
 target_link_libraries(ChainedEditor PRIVATE editor_core)
 
 # Packer utility — build-time tool, not linked to the editor

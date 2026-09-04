@@ -9,11 +9,6 @@
 #include <vector>
 #include <unordered_map>
 
-struct _ENetHost;
-struct _ENetPeer;
-typedef struct _ENetHost ENetHost;
-typedef struct _ENetPeer ENetPeer;
-
 namespace Chained
 {
 
@@ -39,8 +34,16 @@ namespace Chained
 		void ClearPacketCallback();
 
 		void SendPacket(int peerIndex, MessageType type, const void* data, size_t len, bool reliable = true);
+		void SendPacket(int peerIndex, ePacketChannel channel, MessageType type, const void* data, size_t len,
+						bool reliable);
+
 		void BroadcastPacket(MessageType type, bool reliable, const std::function<void(ByteWriter&)>& populate);
+		void BroadcastPacket(ePacketChannel channel, MessageType type, bool reliable,
+							 const std::function<void(ByteWriter&)>& populate);
+
 		void SendToServer(MessageType type, const void* data, size_t len, bool reliable = true);
+		void SendToServer(ePacketChannel channel, MessageType type, const void* data, size_t len, bool reliable);
+
 		void BroadcastSceneChange(const char* scenePath);
 
 		void SendPlayerInfoToHost(const char* name, uint8_t skinIndex, uint64_t localNetworkID);
@@ -48,18 +51,6 @@ namespace Chained
 		void SendChatMessage(const char* message, uint64_t localNetworkID, const std::string& localPlayerName);
 
 		void HandleIncomingPacket(int peerIndex, const uint8_t* data, size_t len);
-
-		void SetCryptoEnabled(bool enabled)
-		{
-			m_CryptoEnabled = enabled;
-		}
-		bool IsCryptoEnabled() const
-		{
-			return m_CryptoEnabled;
-		}
-
-		void ResetCounters();
-		void SetSessionKey(const uint8_t key[32]);
 
 		void ClearPendingChatMessages()
 		{
@@ -79,16 +70,12 @@ namespace Chained
 		}
 
 	private:
-		void SendRaw(int peerIndex, MessageType type, const void* payload, size_t payloadLen, bool reliable);
+		void SendRaw(int peerIndex, ePacketChannel channel, MessageType type, const void* payload, size_t payloadLen,
+					 bool reliable);
 
 		NetworkSession* m_Session = nullptr;
 		PacketCallback m_PacketCallback;
 		std::vector<ChatMessagePacket> m_PendingChatMessages;
-
-		uint8_t m_SessionKey[32] = {};
-		bool m_CryptoEnabled = false;
-		std::unordered_map<int, uint64_t> m_SendCounters;
-		std::unordered_map<int, uint64_t> m_RecvCounters;
 	};
 
 } // namespace Chained

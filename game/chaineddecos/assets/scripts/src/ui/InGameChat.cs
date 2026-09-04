@@ -14,6 +14,7 @@ namespace ChainedDecos.Scripts
             public float  TimeLeft = 8.0f;
         }
 
+        public static bool IsChatOpen { get; private set; } = false;
         public bool  IsOpen         { get; private set; } = false;
         public int   MaxHistory     = 30;
         public float MessageDuration = 8.0f;
@@ -29,6 +30,13 @@ namespace ChainedDecos.Scripts
         private List<ChatEntry> m_Messages   = new List<ChatEntry>();
         private string          m_InputText  = "";
         private bool            m_FocusInput = false;
+
+        public override void OnCreate()
+        {
+            Priority = 90;
+            IsOpen = false;
+            IsChatOpen = false;
+        }
 
         public override void OnUpdate(float deltaTime)
         {
@@ -55,18 +63,21 @@ namespace ChainedDecos.Scripts
                 if (Input.IsKeyPressed(Key.T) || Input.IsKeyPressed(Key.Enter))
                 {
                     IsOpen       = true;
+                    IsChatOpen   = true;
                     m_FocusInput = true;
                     m_InputText  = "";
+                    ConsumeEvent();
                 }
             }
             else
             {
-                // To avoid conflict with PlayerController.cs 
-                if (Input.IsKeyPressed(Key.Delete))
+                if (Input.IsKeyPressed(Key.Escape) && Input.IsKeyPressed(Key.Delete))
                 {
                     IsOpen      = false;
+                    IsChatOpen  = false;
                     m_InputText = "";
                 }
+                ConsumeEvent();
             }
         }
 
@@ -114,6 +125,7 @@ namespace ChainedDecos.Scripts
                     }
                     m_InputText = "";
                     IsOpen      = false;
+                    IsChatOpen  = false;
                 }
 
                 UI.EndWindow();

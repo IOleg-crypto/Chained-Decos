@@ -33,7 +33,6 @@ target_link_libraries(engine_tests_integration PRIVATE
     engine_scripting
     engine_project
     engine_assets
-    engine_pack
     engine_network
     engine_external_imgui
     engine_external_entt

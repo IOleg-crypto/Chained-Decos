@@ -1,10 +1,11 @@
 #include "network_service.h"
-#include "firewall_helper.h"
+#include "engine/common/platform_detection.h"
 #include <thread>
 #include <algorithm>
 #include <cctype>
+#include <chrono>
 
-#ifdef _WIN32
+#if CH_PLATFORM_WINDOWS
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif
@@ -20,164 +21,6 @@
 
 namespace Chained
 {
-	static std::string FetchPublicIPFromWeb()
-	{
-		struct addrinfo hints = {}, *res = nullptr;
-		hints.ai_family = AF_UNSPEC; // Підтримка IPv4 та IPv6
-		hints.ai_socktype = SOCK_STREAM;
-		if (getaddrinfo("api.ipify.org", "80", &hints, &res) != 0 || !res)
-		{
-			return {};
-		}
-
-		auto sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-		if (sock == -1
-#ifdef _WIN32
-			|| sock == INVALID_SOCKET
-#endif
-		)
-		{
-			freeaddrinfo(res);
-			return {};
-		}
-
-#ifdef _WIN32
-		DWORD timeout = 3000;
-		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
-#else
-		struct timeval tv = {3, 0};
-		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-#endif
-
-		if (connect(sock, res->ai_addr, (int)res->ai_addrlen) != 0)
-		{
-#ifdef _WIN32
-			closesocket(sock);
-#else
-			close(sock);
-#endif
-			freeaddrinfo(res);
-			return {};
-		}
-		freeaddrinfo(res);
-
-		const char* request =
-			"GET / HTTP/1.1\r\nHost: api.ipify.org\r\nConnection: close\r\nUser-Agent: ChainedEngine\r\n\r\n";
-		send(sock, request, (int)strlen(request), 0);
-
-		char buffer[1024] = {};
-		int totalBytes = 0;
-		int bytes = 0;
-		while ((bytes = recv(sock, buffer + totalBytes, sizeof(buffer) - 1 - totalBytes, 0)) > 0)
-		{
-			totalBytes += bytes;
-		}
-
-#ifdef _WIN32
-		closesocket(sock);
-#else
-		close(sock);
-#endif
-
-		if (totalBytes <= 0)
-		{
-			return {};
-		}
-		buffer[totalBytes] = '\0';
-
-		const char* body = strstr(buffer, "\r\n\r\n");
-		if (!body)
-		{
-			return {};
-		}
-		body += 4;
-
-		std::string ip(body);
-		ip.erase(std::remove_if(ip.begin(), ip.end(), [](unsigned char c) { return std::isspace(c); }), ip.end());
-		return ip;
-	}
-	static std::string FetchPublicIPv6FromWeb()
-	{
-		struct addrinfo hints = {}, *res = nullptr;
-		hints.ai_family = AF_INET6;
-		hints.ai_socktype = SOCK_STREAM;
-		hints.ai_flags = AI_V4MAPPED | AI_ADDRCONFIG;
-		if (getaddrinfo("ipv6.api.ipify.org", "80", &hints, &res) != 0 || !res)
-		{
-			return {};
-		}
-
-		auto sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
-		if (sock == -1
-#ifdef _WIN32
-			|| sock == INVALID_SOCKET
-#endif
-		)
-		{
-			freeaddrinfo(res);
-			return {};
-		}
-
-#ifdef _WIN32
-		DWORD timeout = 3000;
-		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof(timeout));
-		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, (const char*)&timeout, sizeof(timeout));
-#else
-		struct timeval tv = {3, 0};
-		setsockopt(sock, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv));
-		setsockopt(sock, SOL_SOCKET, SO_SNDTIMEO, &tv, sizeof(tv));
-#endif
-
-		if (connect(sock, res->ai_addr, (int)res->ai_addrlen) != 0)
-		{
-#ifdef _WIN32
-			closesocket(sock);
-#else
-			close(sock);
-#endif
-			freeaddrinfo(res);
-			return {};
-		}
-		freeaddrinfo(res);
-
-		const char* request = "GET /?format=text HTTP/1.1\r\nHost: ipv6.api.ipify.org\r\nConnection: "
-							  "close\r\nUser-Agent: ChainedEngine\r\n\r\n";
-		send(sock, request, (int)strlen(request), 0);
-
-		char buffer[1024] = {};
-		int totalBytes = 0;
-		int bytes = 0;
-		while ((bytes = recv(sock, buffer + totalBytes, sizeof(buffer) - 1 - totalBytes, 0)) > 0)
-		{
-			totalBytes += bytes;
-		}
-
-#ifdef _WIN32
-		closesocket(sock);
-#else
-		close(sock);
-#endif
-
-		if (totalBytes <= 0)
-		{
-			return {};
-		}
-		buffer[totalBytes] = '\0';
-
-		const char* body = strstr(buffer, "\r\n\r\n");
-		if (!body)
-		{
-			return {};
-		}
-		body += 4;
-
-		std::string ip(body);
-		ip.erase(std::remove_if(ip.begin(), ip.end(), [](unsigned char c) { return std::isspace(c); }), ip.end());
-		return ip;
-	}
-
 	Network::~Network()
 	{
 		if (m_Session.IsConnected())
@@ -196,11 +39,6 @@ namespace Chained
 			return;
 		}
 
-		static const uint8_t kSessionKey[32] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0A, 0x0B,
-												0x0C, 0x0D, 0x0E, 0x0F, 0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16,
-												0x17, 0x18, 0x19, 0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F, 0x20};
-		m_Transport.SetSessionKey(kSessionKey);
-		m_Transport.SetCryptoEnabled(false);
 		m_Transport.SetSession(&m_Session);
 
 		m_Session.SetConnectionCallback(
@@ -214,6 +52,28 @@ namespace Chained
 			}
 		});
 
+		// Resolve public IP in background on startup so hairpin NAT detection works for both Host and Client
+		if (!m_TestMode)
+		{
+			if (m_IPFetchThread.joinable())
+			{
+				m_IPFetchThread.join();
+			}
+			m_IPFetchThread = std::thread([this]() {
+				auto stunRes = m_StunClient.QueryPublicEndpointSync(0, 1500);
+				if (stunRes.Success && !stunRes.PublicIP.empty())
+				{
+					std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+					m_CachedPublicIP = stunRes.PublicIP;
+					CH_CORE_INFO("Network: Public IP resolved via STUN: {}", m_CachedPublicIP);
+				}
+				else
+				{
+					CH_CORE_WARN("Network: STUN failed to resolve public IP.");
+				}
+			});
+		}
+
 		CH_CORE_INFO("Network: Initialized.");
 	}
 
@@ -221,19 +81,30 @@ namespace Chained
 	{
 		uint16_t portToUnmap = m_Session.GetPort();
 
+		// Close hole punch socket
+		if (m_HolePunchSocket >= 0)
+		{
+#if CH_PLATFORM_WINDOWS
+			closesocket(m_HolePunchSocket);
+#else
+			close(m_HolePunchSocket);
+#endif
+			m_HolePunchSocket = -1;
+			m_HolePunchActive = false;
+		}
+
+		// Join background threads before destroying state
+		if (m_IPFetchThread.joinable())
+		{
+			m_IPFetchThread.join();
+		}
+
 		Disconnect();
 
 		if (m_UpnpMapper.IsAvailable() && portToUnmap != 0)
 		{
 			m_UpnpMapper.RemoveMapping(portToUnmap, "UDP");
 			m_UpnpMapper.Shutdown();
-		}
-
-		// Remove Windows Firewall rule
-		if (m_FirewallRuleActive && portToUnmap != 0)
-		{
-			Firewall::RemoveUDPRule(portToUnmap);
-			m_FirewallRuleActive = false;
 		}
 
 		m_Session.Shutdown();
@@ -251,8 +122,8 @@ namespace Chained
 		}
 
 		m_PlayerManager.Reset();
-		m_PlayerManager.SetHostNetworkID(HostNetworkID);
-		m_PlayerManager.AddHostSelf(HostNetworkID, m_PlayerManager.GetLocalPlayerName(),
+		m_PlayerManager.SetHostNetworkID(kHostNetworkID);
+		m_PlayerManager.AddHostSelf(kHostNetworkID, m_PlayerManager.GetLocalPlayerName(),
 									m_PlayerManager.GetLocalSkinIndex());
 
 		if (!m_TestMode)
@@ -270,65 +141,52 @@ namespace Chained
 			{
 				CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
 			}
-
-			// Add Windows Firewall inbound rule
-			m_FirewallRuleActive = Firewall::AddUDPRule(port);
-			if (!m_FirewallRuleActive)
-			{
-				CH_CORE_WARN("Network: Could not add firewall rule. Run as admin to allow inbound connections.");
-			}
 		}
 
+		if (!m_TestMode)
 		{
-			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-			m_CachedPublicIP = "Fetching...";
-			m_CachedPublicIPv6 = "Fetching...";
+			{
+				std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+				m_CachedPublicIP = "Fetching...";
+			}
+
+			// Query STUN for public endpoint
+			QueryStunPublicEndpoint(port);
 		}
-
-		// Asynchronously resolve true public WAN IP from web (api.ipify.org)
-		std::thread([this, port]() {
-			std::string ip = FetchPublicIPFromWeb();
-			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-			if (!ip.empty())
-			{
-				m_CachedPublicIP = ip + ":" + std::to_string(port);
-				CH_CORE_INFO("Network: Public IPv4 resolved: {}", m_CachedPublicIP);
-			}
-			else
-			{
-				std::string upnpIp = m_UpnpMapper.GetPublicIP();
-				if (!upnpIp.empty())
-				{
-					m_CachedPublicIP = upnpIp + ":" + std::to_string(port);
-				}
-				else
-				{
-					m_CachedPublicIP = "Manual (Port " + std::to_string(port) + ")";
-				}
-			}
-		}).detach();
-
-		// Asynchronously resolve public IPv6 address
-		std::thread([this, port]() {
-			std::string ipv6 = FetchPublicIPv6FromWeb();
-			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-			if (!ipv6.empty() && ipv6.find("error") == std::string::npos)
-			{
-				m_CachedPublicIPv6 = "[" + ipv6 + "]:" + std::to_string(port);
-				CH_CORE_INFO("Network: Public IPv6 resolved: {}", m_CachedPublicIPv6);
-			}
-			else
-			{
-				m_CachedPublicIPv6 = "Not available";
-			}
-		}).detach();
 
 		CH_CORE_INFO("Network: Hosting on port {} (max {} clients).", port, maxClients);
 	}
 
 	void Network::ConnectTo(const std::string& ip, uint16_t port)
 	{
-		NetworkError err = m_Session.ConnectTo(ip, port);
+		// Skip hairpin check for local addresses — connect directly
+		bool isLocal = (ip == "127.0.0.1" || ip == "localhost" || ip == "::1" || ip.rfind("192.168.", 0) == 0 ||
+						ip.rfind("10.", 0) == 0 || ip.rfind("172.", 0) == 0);
+
+		std::string resolvedIP = ip;
+
+		if (!isLocal)
+		{
+			// Auto-detect hairpin NAT: if connecting to our own public IP, use localhost
+			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+			if (!m_CachedPublicIP.empty() && m_CachedPublicIP != "Fetching...")
+			{
+				std::string pubIP = m_CachedPublicIP;
+				size_t colon = pubIP.rfind(':');
+				if (colon != std::string::npos)
+				{
+					pubIP = pubIP.substr(0, colon);
+				}
+
+				if (ip == pubIP)
+				{
+					resolvedIP = "127.0.0.1";
+					CH_CORE_INFO("Network: Hairpin NAT detected — redirecting {}:{} → 127.0.0.1:{}", ip, port, port);
+				}
+			}
+		}
+
+		NetworkError err = m_Session.ConnectTo(resolvedIP, port);
 		if (err != NetworkError::None)
 		{
 			CH_CORE_ERROR("Network: Failed to connect (error={}).", static_cast<int>(err));
@@ -336,20 +194,48 @@ namespace Chained
 		}
 
 		m_PlayerManager.Reset();
-		CH_CORE_INFO("Network: Connecting to {}:{}...", ip, port);
+
+		// Store connection info for potential reconnect
+		m_ReconnectIP = ip;
+		m_ReconnectPort = port;
+		m_ReconnectAttempts = 0;
+		m_ReconnectPending = false;
+		m_ReconnectTimer = 0.0f;
+
+		CH_CORE_INFO("Network: Connecting to {}:{} (resolved: {})...", ip, port, resolvedIP);
 	}
 
 	void Network::Disconnect()
 	{
+		// Clean up hole punch state
+		if (m_HolePunchSocket >= 0)
+		{
+#if CH_PLATFORM_WINDOWS
+			closesocket(m_HolePunchSocket);
+#else
+			close(m_HolePunchSocket);
+#endif
+			m_HolePunchSocket = -1;
+		}
+		m_HolePunchActive = false;
+		m_HolePunchCount = 0;
+		m_HolePunchTimer = 0.0f;
+		m_HolePunchCallback = nullptr;
+
+		// Cancel any pending reconnect
+		m_ReconnectPending = false;
+		m_ReconnectAttempts = 0;
+		m_ReconnectTimer = 0.0f;
+		m_ReconnectIP.clear();
+		m_ReconnectPort = 0;
+
 		m_Session.Disconnect();
 		m_Transport.ClearPacketCallback();
-		m_Transport.ResetCounters();
 		m_PlayerManager.Reset();
 		m_PendingSceneChange.clear();
 		{
 			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
 			m_CachedPublicIP.clear();
-			m_CachedPublicIPv6.clear();
 		}
 		CH_CORE_INFO("Network: Disconnected.");
 	}
@@ -357,6 +243,54 @@ namespace Chained
 	void Network::Update(float dt)
 	{
 		m_Session.Update(dt);
+		UpdateHolePunch(dt);
+
+		// Host: send heartbeat and check for dead clients
+		if (m_Session.IsHost())
+		{
+			m_HeartbeatTimer += dt;
+			if (m_HeartbeatTimer >= kHeartbeatInterval)
+			{
+				m_HeartbeatTimer = 0.0f;
+				BroadcastPacket(MessageType_Heartbeat, false, [](ByteWriter& bw) {
+					// Empty heartbeat — just the message type is enough
+				});
+			}
+			m_Session.CheckPeerTimeouts(dt, kClientTimeoutSeconds);
+		}
+
+		// Detect client disconnect and trigger reconnect
+		bool isClientNowConnected = m_Session.IsClient() && m_Session.IsFullyConnected();
+		if (m_WasClientConnected && !isClientNowConnected && !m_ReconnectPending)
+		{
+			// Client was connected but now disconnected — start reconnect flow
+			if (!m_ReconnectIP.empty() && m_ReconnectAttempts < kMaxReconnectAttempts)
+			{
+				m_ReconnectPending = true;
+				m_ReconnectTimer = 0.0f;
+				CH_CORE_WARN("Network: Connection lost. Will attempt reconnect ({}/{}).", m_ReconnectAttempts + 1,
+							 kMaxReconnectAttempts);
+			}
+		}
+		m_WasClientConnected = isClientNowConnected;
+
+		// Client reconnect logic: if we were connected but now disconnected,
+		// attempt automatic reconnect with exponential backoff.
+		if (m_ReconnectPending && m_ReconnectAttempts < kMaxReconnectAttempts)
+		{
+			m_ReconnectTimer += dt;
+			float backoff = 1.0f * static_cast<float>(1 << m_ReconnectAttempts); // 1s, 2s, 4s
+			if (m_ReconnectTimer >= backoff)
+			{
+				m_ReconnectTimer = 0.0f;
+				m_ReconnectAttempts++;
+				CH_CORE_INFO("Network: Reconnect attempt {}/{} to {}:{}...", m_ReconnectAttempts, kMaxReconnectAttempts,
+							 m_ReconnectIP, m_ReconnectPort);
+
+				m_ReconnectPending = false;
+				ConnectTo(m_ReconnectIP, m_ReconnectPort);
+			}
+		}
 	}
 
 	// ── Sending ──────────────────────────────────────────────────────────
@@ -366,14 +300,31 @@ namespace Chained
 		m_Transport.SendPacket(clientIndex, type, data, len, reliable);
 	}
 
+	void Network::SendPacket(int clientIndex, ePacketChannel channel, MessageType type, const void* data, size_t len,
+							 bool reliable)
+	{
+		m_Transport.SendPacket(clientIndex, channel, type, data, len, reliable);
+	}
+
 	void Network::BroadcastPacket(MessageType type, bool reliable, const std::function<void(ByteWriter&)>& populate)
 	{
 		m_Transport.BroadcastPacket(type, reliable, populate);
 	}
 
+	void Network::BroadcastPacket(ePacketChannel channel, MessageType type, bool reliable,
+								  const std::function<void(ByteWriter&)>& populate)
+	{
+		m_Transport.BroadcastPacket(channel, type, reliable, populate);
+	}
+
 	void Network::SendToServer(MessageType type, const void* data, size_t len, bool reliable)
 	{
 		m_Transport.SendToServer(type, data, len, reliable);
+	}
+
+	void Network::SendToServer(ePacketChannel channel, MessageType type, const void* data, size_t len, bool reliable)
+	{
+		m_Transport.SendToServer(channel, type, data, len, reliable);
 	}
 
 	void Network::BroadcastSceneChange(const char* scenePath)
@@ -414,14 +365,139 @@ namespace Chained
 		return "Fetching...";
 	}
 
-	std::string Network::GetPublicIPv6Address()
+	// ── STUN / NAT Traversal ─────────────────────────────────────────────
+
+	void Network::QueryStunPublicEndpoint(uint16_t localPort)
 	{
-		std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-		if (!m_CachedPublicIPv6.empty())
+		CH_CORE_INFO("Network: Querying STUN servers for public endpoint (local port {})...", localPort);
+		m_StunClient.QueryPublicEndpoint(localPort, [this, localPort](const StunClient::StunResult& result) {
+			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+			if (result.Success)
+			{
+				// Use the public IP from STUN but the ENet port (not STUN's ephemeral port)
+				m_CachedPublicIP = result.PublicIP + ":" + std::to_string(localPort);
+				CH_CORE_INFO("Network: STUN public endpoint: {} (IP from STUN, port from ENet)", m_CachedPublicIP);
+			}
+			else
+			{
+				CH_CORE_WARN("Network: STUN query failed — {}", result.Error);
+			}
+		});
+	}
+
+	void Network::StartHolePunch(const std::string& remoteIP, uint16_t remotePort)
+	{
+		if (m_HolePunchActive)
 		{
-			return m_CachedPublicIPv6;
+			CH_CORE_WARN("Network: Hole punch already in progress.");
+			return;
 		}
-		return "Fetching...";
+
+		m_HolePunchActive = true;
+		m_HolePunchTimer = 0.0f;
+		m_HolePunchCount = 0;
+		m_HolePunchRemoteIP = remoteIP;
+		m_HolePunchRemotePort = remotePort;
+
+		// Create UDP socket and bind to the same port ENet uses,
+		// so the hole punch comes from the port peers will reach us on.
+		m_HolePunchSocket = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+		if (m_HolePunchSocket < 0
+#if CH_PLATFORM_WINDOWS
+			|| m_HolePunchSocket == INVALID_SOCKET
+#endif
+		)
+		{
+			CH_CORE_ERROR("Network: Failed to create hole punch socket.");
+			m_HolePunchActive = false;
+			return;
+		}
+
+		uint16_t localPort = m_Session.GetPort();
+		sockaddr_in bindAddr = {};
+		bindAddr.sin_family = AF_INET;
+		bindAddr.sin_addr.s_addr = INADDR_ANY;
+		bindAddr.sin_port = htons(localPort);
+
+		if (bind(m_HolePunchSocket, (sockaddr*)&bindAddr, sizeof(bindAddr)) < 0)
+		{
+			CH_CORE_WARN("Network: Failed to bind hole punch socket to port {} (ENet port may be in use).", localPort);
+			// Continue anyway — OS-assigned port may still work for NAT traversal
+		}
+
+		CH_CORE_INFO("Network: Starting hole punch to {}:{} (local port {}, max {} attempts)", remoteIP, remotePort,
+					 localPort, m_HolePunchMaxAttempts);
+	}
+
+	void Network::PerformHolePunch(uint16_t localPort, const std::string& remoteIP, uint16_t remotePort)
+	{
+		if (m_HolePunchSocket < 0)
+		{
+			return;
+		}
+
+		sockaddr_in dest = {};
+		dest.sin_family = AF_INET;
+		dest.sin_port = htons(remotePort);
+		if (inet_pton(AF_INET, remoteIP.c_str(), &dest.sin_addr) <= 0)
+		{
+			struct addrinfo hints = {}, *res = nullptr;
+			hints.ai_family = AF_INET;
+			hints.ai_socktype = SOCK_DGRAM;
+			hints.ai_protocol = IPPROTO_UDP;
+
+			if (getaddrinfo(remoteIP.c_str(), nullptr, &hints, &res) != 0 || !res)
+			{
+				CH_CORE_ERROR("Network: Hole punch DNS failed for {}", remoteIP);
+				return;
+			}
+			memcpy(&dest, res->ai_addr, sizeof(sockaddr_in));
+			dest.sin_port = htons(remotePort);
+			freeaddrinfo(res);
+		}
+
+		// Send a small UDP packet to punch through NAT
+		const char* punch = "CH_PUNCH";
+		sendto(m_HolePunchSocket, punch, (int)strlen(punch), 0, (sockaddr*)&dest, sizeof(dest));
+		m_HolePunchCount++;
+		CH_CORE_INFO("Network: Hole punch packet #{} sent to {}:{}", m_HolePunchCount, remoteIP, remotePort);
+	}
+
+	void Network::UpdateHolePunch(float dt)
+	{
+		if (!m_HolePunchActive)
+		{
+			return;
+		}
+
+		m_HolePunchTimer += dt;
+
+		// Send hole punch packets at regular intervals
+		if (m_HolePunchTimer >= m_HolePunchInterval)
+		{
+			m_HolePunchTimer = 0.0f;
+			PerformHolePunch(m_Session.GetPort(), m_HolePunchRemoteIP, m_HolePunchRemotePort);
+		}
+
+		// Check timeout
+		if (m_HolePunchCount >= m_HolePunchMaxAttempts)
+		{
+			CH_CORE_INFO("Network: Hole punch complete ({} packets sent).", m_HolePunchCount);
+			m_HolePunchActive = false;
+			if (m_HolePunchSocket >= 0)
+			{
+#if CH_PLATFORM_WINDOWS
+				closesocket(m_HolePunchSocket);
+#else
+				close(m_HolePunchSocket);
+#endif
+				m_HolePunchSocket = -1;
+			}
+			if (m_HolePunchCallback)
+			{
+				m_HolePunchCallback(true);
+			}
+		}
 	}
 
 	// ── Player management ────────────────────────────────────────────────
@@ -435,16 +511,8 @@ namespace Chained
 			return;
 		}
 
-		auto& playerList = m_PlayerManager.GetPlayerListMutable();
-		auto self = std::find_if(playerList.begin(), playerList.end(),
-								 [](const PlayerNetInfo& p) { return p.NetworkID == HostNetworkID; });
-
-		if (self != playerList.end())
-		{
-			self->Name = name ? name : "Host";
-			self->SkinIndex = skinIndex;
-			BroadcastPlayerList();
-		}
+		m_PlayerManager.UpdatePlayerInfo(kHostNetworkID, name ? name : "Host", skinIndex);
+		BroadcastPlayerList();
 	}
 
 	void Network::SendPlayerInfoToHost(const char* name, uint8_t skinIndex)
@@ -481,7 +549,7 @@ namespace Chained
 
 	bool Network::IsClientConnected(int clientIndex) const
 	{
-		return m_Session.GetPeerForClient(clientIndex) != nullptr;
+		return m_Session.IsClientConnected(clientIndex);
 	}
 
 	// ── Connection callbacks ─────────────────────────────────────────────
@@ -490,6 +558,9 @@ namespace Chained
 	{
 		m_PlayerManager.OnClientConnected(clientIndex);
 		const uint64_t assignedID = m_PlayerManager.GetNetworkIDForConnection(clientIndex);
+
+		// Initialize heartbeat tracking for this peer
+		m_Session.RecordPeerActivity(clientIndex);
 
 		PlayerAssignMessage assignMsg;
 		assignMsg.NetworkID = assignedID;

@@ -4,16 +4,16 @@ using Chained;
 namespace ChainedDecos.Scripts
 {
     /// <summary>
-    /// Attach directly to the "Connect to Server" button entity.
-    /// Reads IP from input_ip and port from input_port, then calls Network.ConnectTo.
-    /// Polls for connection success/failure before loading lobby.
+    /// Attach to the "Connect to Server" button entity.
+    /// Reads IP/port from input fields, then calls Network.ConnectTo.
+    /// For WAN targets without UPnP — also starts hole punch in parallel.
     /// </summary>
     public class ConnectButton : Script
     {
         public string IpInputTag   = "input_ip";
         public string PortInputTag = "input_port";
         public string NickInputTag = "input_nick";
-        public string LobbyScene = "scenes/lobby.chscene";
+        public string LobbyScene   = "scenes/lobby.chscene";
         public string DefaultIp    = "127.0.0.1";
         public ushort DefaultPort  = 7777;
         public float  ConnectTimeout = 15f;
@@ -27,7 +27,7 @@ namespace ChainedDecos.Scripts
         {
             ButtonControl? btn = Entity.GetComponent<ButtonControl>();
 
-            // Poll connection state while connecting
+            // ── Poll connection state ─────────────────────────────────────
             if (m_IsConnecting)
             {
                 m_ConnectTimer += deltaTime;
@@ -51,89 +51,94 @@ namespace ChainedDecos.Scripts
                     return;
                 }
 
-                return; // wait, don't process button clicks
+                // Allow cancel
+                if (btn != null && btn.IsClicked)
+                {
+                    m_IsConnecting = false;
+                    if (btn != null) btn.Label = "Connect to Server";
+                    Network.Disconnect();
+                    return;
+                }
+
+                return; // wait
             }
 
             if (btn == null || !btn.IsClicked)
                 return;
 
-            string ip = DefaultIp;
+            // ── Read inputs ───────────────────────────────────────────────
+            string ip   = ReadText(IpInputTag,   DefaultIp);
             ushort port = DefaultPort;
 
-            Entity? ipEntity = Scene.FindEntityByTag(IpInputTag);
-            if (ipEntity != null && ipEntity.HasComponent<InputTextControl>())
-            {
-                InputTextControl? input = ipEntity.GetComponent<InputTextControl>();
-                if (input != null && !string.IsNullOrWhiteSpace(input.Text))
-                    ip = input.Text.Trim();
-            }
+            string portText = ReadText(PortInputTag, "");
+            if (ushort.TryParse(portText, out ushort parsedPort) && parsedPort > 0)
+                port = parsedPort;
 
-            Entity? portEntity = Scene.FindEntityByTag(PortInputTag);
-            if (portEntity != null && portEntity.HasComponent<InputTextControl>())
-            {
-                InputTextControl? input = portEntity.GetComponent<InputTextControl>();
-                if (input != null && ushort.TryParse(input.Text, out ushort parsed) && parsed > 0)
-                    port = parsed;
-            }
+            // Smart parse: user pasted "IP:PORT" into IP field
+            (ip, port) = ParseAddressField(ip, port);
 
-            // Smart check: If user pasted "IP:PORT" or "[IPv6]:port" into the IP field, parse both
-            if (ip.StartsWith("[") && ip.Contains("]"))
-            {
-                // Format: [IPv6]:port
-                int closeBracket = ip.IndexOf(']');
-                string ipv6Part = ip.Substring(1, closeBracket - 1).Trim();
-                string afterBracket = ip.Substring(closeBracket + 1).Trim();
-                if (afterBracket.StartsWith(":") && ushort.TryParse(afterBracket.Substring(1), out ushort extractedPort) && extractedPort > 0)
-                {
-                    port = extractedPort;
-                }
-                ip = ipv6Part;
-            }
-            else if (ip.Contains(":"))
-            {
-                // Format: IPv4:port (not IPv6 — IPv6 without brackets should be entered without port in the same field)
-                int colonIndex = ip.LastIndexOf(':');
-                string ipPart = ip.Substring(0, colonIndex).Trim();
-                string portPart = ip.Substring(colonIndex + 1).Trim();
-                if (ushort.TryParse(portPart, out ushort extractedPort) && extractedPort > 0)
-                {
-                    port = extractedPort;
-                    ip = ipPart;
-                }
-            }
+            // Read nickname
+            string nick = ReadText(NickInputTag, "");
+            if (!string.IsNullOrWhiteSpace(nick))
+                PlayerSettings.Nickname = nick.Trim();
 
-            Entity? nickEntity = Scene.FindEntityByTag(NickInputTag);
-            if (nickEntity != null && nickEntity.HasComponent<InputTextControl>())
-            {
-                InputTextControl? input = nickEntity.GetComponent<InputTextControl>();
-                if (input != null && !string.IsNullOrWhiteSpace(input.Text))
-                    PlayerSettings.Nickname = input.Text.Trim();
-            }
+            ShowError("");
+            Network.SetLocalPlayerInfo(PlayerSettings.Nickname, (byte)LobbyManager.SelectedSkinIndex);
 
             Log.Info($"[ConnectButton] Connecting to {ip}:{port}");
-            ShowError(""); // clear previous error
-            if (btn != null) btn.Label = "Connecting...";
 
-            Network.SetLocalPlayerInfo(PlayerSettings.Nickname, (byte)LobbyManager.SelectedSkinIndex);
+            bool isLocal = ip.StartsWith("127.") || ip.StartsWith("192.168.")
+                        || ip.StartsWith("10.")  || ip.StartsWith("172.")
+                        || ip == "::1" || ip == "localhost";
+
+            // For WAN without UPnP — start hole punch in parallel with ENet connect.
+            // The hole punch socket opens the NAT pinhole; ENet then connects through it.
+            if (!isLocal && !Network.IsUpnpAvailable)
+            {
+                Log.Info($"[ConnectButton] Starting hole punch to {ip}:{port} (parallel)");
+                Network.StartHolePunch(ip, port);
+            }
+
             Network.ConnectTo(ip, port);
-
-            m_PendingIp = ip;
+            m_PendingIp   = ip;
             m_PendingPort = port;
-            m_ConnectTimer = 0f;
             m_IsConnecting = true;
+            m_ConnectTimer = 0f;
+            if (btn != null) btn.Label = "Connecting...";
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────
+
+        private string ReadText(string tag, string fallback)
+        {
+            Entity? e = Scene.FindEntityByTag(tag);
+            if (e == null) return fallback;
+            InputTextControl? input = e.GetComponent<InputTextControl>();
+            return (input != null && !string.IsNullOrWhiteSpace(input.Text))
+                ? input.Text.Trim()
+                : fallback;
+        }
+
+        private static (string ip, ushort port) ParseAddressField(string raw, ushort fallbackPort)
+        {
+            if (raw.Contains(":"))
+            {
+                int colon = raw.LastIndexOf(':');
+                string ipPart   = raw.Substring(0, colon).Trim();
+                string portPart = raw.Substring(colon + 1).Trim();
+                if (ushort.TryParse(portPart, out ushort p) && p > 0)
+                    return (ipPart, p);
+            }
+            return (raw, fallbackPort);
         }
 
         private void ShowError(string message)
         {
-            Entity? errorLabel = Scene.FindEntityByTag("label_error");
-            if (errorLabel != null && errorLabel.IsValid)
-            {
-                LabelControl? lc = errorLabel.GetComponent<LabelControl>();
-                if (lc != null)
-                {
-                    lc.Text = message;
-                }
-            }
+            Entity? e = Scene.FindEntityByTag("label_error");
+            if (e == null || !e.IsValid) return;
+            LabelControl? lc = e.GetComponent<LabelControl>();
+            if (lc != null) lc.Text = message;
         }
     }
 }
+

@@ -309,6 +309,7 @@ namespace Chained
 		assembly.AddInternalCall("Chained.Scene", "Scene_GetPrimaryCameraEntity_Ptr",
 								 (void*)&Scene_GetPrimaryCameraEntity);
 		assembly.AddInternalCall("Chained.Scene", "Scene_CopyEntity_Ptr", (void*)&Scene_CopyEntity);
+		assembly.AddInternalCall("Chained.Scene", "Scene_GetCurrentScenePath_Ptr", (void*)&Scene_GetCurrentScenePath);
 
 		// ── Audio static ──────────────────────────────────────────────────
 		assembly.AddInternalCall("Chained.Audio", "Audio_Play_Ptr", (void*)&Audio_Play);
@@ -385,11 +386,16 @@ namespace Chained
 		// New: Prefab
 		assembly.AddInternalCall("Chained.Network", "Network_SetPlayerPrefab_Ptr", (void*)&Network_SetPlayerPrefab);
 
-		// UPnP + Firewall
+		// UPnP
 		assembly.AddInternalCall("Chained.Network", "Network_IsUpnpAvailable_Ptr", (void*)&Network_IsUpnpAvailable);
-		assembly.AddInternalCall("Chained.Network", "Network_IsFirewallRuleActive_Ptr",
-								 (void*)&Network_IsFirewallRuleActive);
 		assembly.AddInternalCall("Chained.Network", "Network_IsFullyConnected_Ptr", (void*)&Network_IsFullyConnected);
+
+		// STUN / NAT Traversal
+		assembly.AddInternalCall("Chained.Network", "Network_HasStunResult_Ptr", (void*)&Network_HasStunResult);
+		assembly.AddInternalCall("Chained.Network", "Network_GetStunPublicAddress_Ptr",
+								 (void*)&Network_GetStunPublicAddress);
+		assembly.AddInternalCall("Chained.Network", "Network_StartHolePunch_Ptr", (void*)&Network_StartHolePunch);
+		assembly.AddInternalCall("Chained.Network", "Network_QueryStun_Ptr", (void*)&Network_QueryStun);
 
 		// ── Auto-generated: Player, Spawn, NetworkIdentity properties ──────
 #include "generated/script_glue_generated_reg.inl"

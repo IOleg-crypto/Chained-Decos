@@ -90,6 +90,7 @@ build_error.txt
 *.chcache
 *.chasset
 *.pdf
+.texture_cache/
 
 .opencode
 .claude

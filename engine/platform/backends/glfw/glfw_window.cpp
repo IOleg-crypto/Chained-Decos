@@ -117,7 +117,8 @@ namespace Chained
 			glfwGetWindowSize(window, &winWidth, &winHeight);
 			glWindow.SetSizeDirect(winWidth, winHeight);
 
-			WindowResizeEvent event(width, height);
+			// Keep the event on logical window size; framebuffer dimensions are used only for OpenGL viewport state.
+			WindowResizeEvent event(winWidth, winHeight);
 			if (glWindow.m_EventCallback)
 			{
 				glWindow.m_EventCallback(event);

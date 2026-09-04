@@ -147,19 +147,16 @@ namespace ChainedDecos.Scripts
             if (Network.IsHost)
             {
                 string pub = Network.GetPublicAddress();
-                bool fetching = pub == "Fetching..." || pub == string.Empty;
+                bool fetching = pub == "Fetching..." || string.IsNullOrEmpty(pub);
                 string local = Network.GetListenAddress();
                 if (string.IsNullOrEmpty(local)) local = $"127.0.0.1:{LobbyManager.SelectedPort}";
-                string upnp = Network.IsUpnpAvailable ? "UPnP: Open (Auto)" : "UPnP: Off";
-                string fw = Network.IsFirewallRuleActive ? " | FW: OK" : "";
-                string hint = !Network.IsUpnpAvailable ? " (Tip: Use Radmin VPN or Port Forwarding for Internet)" : "";
-                text = $"[HOST] Local/LAN: {local}  |  Internet (Friends): {pub}  |  {upnp}{fw}{hint}";
+                string upnp = Network.IsUpnpAvailable ? "UPnP: OK" : "UPnP: Off";
+                string nat = Network.HasStunResult ? " | NAT: Open" : (fetching ? "" : " | NAT: Strict");
+                text = $"LAN: {local} | WAN: {pub} | {upnp}{nat}";
                 if (!fetching && text == m_LastDisplayedInfo) return;
             }
             else if (Network.IsClient)
             {
-                string lan = Network.GetListenAddress();
-                if (string.IsNullOrEmpty(lan)) lan = $"Port: {LobbyManager.SelectedPort}";
                 text = $"[CLIENT] Connected | Port: {LobbyManager.SelectedPort}";
             }
             else

@@ -128,9 +128,9 @@ namespace ChainedDecos.Scripts
                     continue;
                 }
 
-                m_SlotNetIds[freeSlot] = p.NetworkID;
-                m_SlotByNetId[p.NetworkID] = freeSlot;
-                SetSlotPosition(freeSlot, players.IndexOf(p));
+			m_SlotNetIds[freeSlot] = p.NetworkID;
+			m_SlotByNetId[p.NetworkID] = freeSlot;
+			SetSlotPosition(freeSlot, freeSlot);
                 SetSlotColor(freeSlot, p.SkinIndex);
                 Log.Info($"LobbyManager: Assigned netID={p.NetworkID} to slot {freeSlot} (skin={p.SkinIndex})");
             }
@@ -152,23 +152,16 @@ namespace ChainedDecos.Scripts
         private void SetSlotColor(int slot, int skinIndex)
         {
             Entity? avatar = Scene.FindEntityByTag(AvatarTagPrefix + slot);
-            if (avatar == null || !avatar.IsValid)
-                return;
-
-            // Primitive materials are now managed via Material Editor (.chmat)
+            if (avatar == null || !avatar.IsValid) return;
+            // Skin colors are now managed via Material Editor (.chmat)
         }
 
         private void SetSlotHidden(int slot)
         {
             Entity? avatar = Scene.FindEntityByTag(AvatarTagPrefix + slot);
-            if (avatar == null || !avatar.IsValid)
-                return;
-
-            TransformComponent? t = avatar.GetComponent<TransformComponent>();
-            if (t != null)
-            {
-                t.Translation = new Vector3(0, -100, 0);
-            }
+            if (avatar == null || !avatar.IsValid) return;
+            var t = avatar.GetComponent<TransformComponent>();
+            if (t != null) t.Translation = new Vector3(0, -100, 0);
         }
 
         private struct PlayerEntry

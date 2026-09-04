@@ -1,10 +1,14 @@
-# 1. Core library (No UI / Graphics dependencies)
-add_library(engine_scene_core STATIC
+# ── Source groups ─────────────────────────────────────────────────────────────
+
+set(SCENE_CORE_SOURCES
     entity.cpp entity.h
     scene.h
     scene_events.h scene_settings.h scene_state.h
     camera.cpp camera.h
     components.h
+)
+
+set(SCENE_COMPONENTS
     components/core/transform_component.h
     components/core/id_component.h
     components/core/tag_component.h
@@ -26,16 +30,10 @@ add_library(engine_scene_core STATIC
     components/gameplay/spawn_component.h
     components/gameplay/network_identity_component.h
     components/scripting/scripting_components.h
+    components/scripting/scripting_components.cpp
 )
-target_include_directories(engine_scene_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
-target_link_libraries(engine_scene_core PUBLIC engine_reflection engine_assets engine_external_entt glm)
-if(TARGET engine_pch)
-    target_link_libraries(engine_scene_core PRIVATE engine_pch)
-endif()
-set_target_properties(engine_scene_core PROPERTIES UNITY_BUILD OFF)
 
-# 2. Main scene library (Serialization, Registry, UI Components)
-add_library(engine_scene STATIC
+set(SCENE_REGISTRY
     component_registry.cpp
     component_registry_core.cpp
     component_registry_gameplay.cpp
@@ -44,6 +42,9 @@ add_library(engine_scene STATIC
     component_registry_scripting.cpp
     component_registry_ui.cpp
     component_ui_control.cpp
+)
+
+set(SCENE_SERIALIZERS
     component_serializer.cpp
     hierarchy_serializer.cpp
     prefab_serializer.cpp
@@ -51,6 +52,9 @@ add_library(engine_scene STATIC
     scene_serializer.cpp
     async_scene_loader.h
     async_scene_loader.cpp
+)
+
+set(SCENE_SYSTEMS
     systems/hierarchy_system.h
     systems/hierarchy_system.cpp
     systems/transform_system.h
@@ -71,9 +75,25 @@ add_library(engine_scene STATIC
     systems/network_system.cpp
     systems/camera_auto_select_system.h
     systems/camera_auto_select_system.cpp
-    systems/system_manager.h
-    systems/system_manager.cpp
-    components/scripting/scripting_components.cpp
+)
+
+# ── 1. Core library (No UI / Graphics dependencies) ───────────────────────────
+add_library(engine_scene_core STATIC
+    ${SCENE_CORE_SOURCES}
+    ${SCENE_COMPONENTS}
+)
+target_include_directories(engine_scene_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_SOURCE_DIR})
+target_link_libraries(engine_scene_core PUBLIC engine_reflection engine_assets engine_external_entt glm)
+if(TARGET engine_pch)
+    target_link_libraries(engine_scene_core PRIVATE engine_pch)
+endif()
+set_target_properties(engine_scene_core PROPERTIES UNITY_BUILD OFF)
+
+# ── 2. Main scene library (Serialization, Registry, UI Components) ────────────
+add_library(engine_scene STATIC
+    ${SCENE_REGISTRY}
+    ${SCENE_SERIALIZERS}
+    ${SCENE_SYSTEMS}
 )
 
 target_include_directories(engine_scene PUBLIC

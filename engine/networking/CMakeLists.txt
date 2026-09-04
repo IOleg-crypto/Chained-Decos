@@ -1,5 +1,8 @@
-add_library(engine_network STATIC
+set(NETWORK_SOURCES
     network_types.h
+    network_driver.h
+    enet_threaded_driver.h
+    enet_threaded_driver.cpp
     network_session.h
     network_session.cpp
     network_transport.h
@@ -9,10 +12,14 @@ add_library(engine_network STATIC
     network_service.h
     network_service.cpp
     net_packet.h
+    stun_client.h
+    stun_client.cpp
     upnp_port_mapper.h
     upnp_port_mapper.cpp
-    firewall_helper.h
-    firewall_helper.cpp
+)
+
+add_library(engine_network STATIC
+    ${NETWORK_SOURCES}
 )
 
 target_include_directories(engine_network PUBLIC
@@ -25,7 +32,6 @@ target_link_libraries(engine_network PUBLIC
     engine_project
     engine_external_entt
     enet::enet_static
-    sodium
     glm
     engine_external_miniupnpc
 )

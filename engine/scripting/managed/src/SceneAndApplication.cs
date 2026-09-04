@@ -15,7 +15,16 @@ namespace Chained
         internal static unsafe delegate* unmanaged<char*, void> Scene_LoadScene_Ptr;
         internal static unsafe delegate* unmanaged<ulong> Scene_GetPrimaryCameraEntity_Ptr;
         internal static unsafe delegate* unmanaged<ulong, ulong> Scene_CopyEntity_Ptr;
+        internal static unsafe delegate* unmanaged<char*> Scene_GetCurrentScenePath_Ptr;
 #pragma warning restore 0649
+
+        /// <summary>Returns the current scene file path (e.g. 'scenes/test_platform_scene.chscene').</summary>
+        public static unsafe string GetCurrentScenePath()
+        {
+            if (Scene_GetCurrentScenePath_Ptr == null) return "";
+            char* ptr = Scene_GetCurrentScenePath_Ptr();
+            return ptr != null ? new string(ptr) : "";
+        }
 
         /// <summary>Finds an entity by tag. Returns null if not found or pointer is uninitialized.</summary>
         

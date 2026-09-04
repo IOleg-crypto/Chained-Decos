@@ -82,6 +82,16 @@ namespace Chained
 						resolvedPath = candidate;
 					}
 				}
+
+				// Fallback: source resources directory (dev mode)
+				if (resolvedPath.empty() && !m_SourceResourcesDir.empty())
+				{
+					std::filesystem::path candidate = m_SourceResourcesDir / pathStr;
+					if (std::filesystem::exists(candidate))
+					{
+						resolvedPath = candidate;
+					}
+				}
 			}
 			else
 			{
@@ -97,6 +107,26 @@ namespace Chained
 				if (resolvedPath.empty() && !m_ProjectDirectory.empty())
 				{
 					std::filesystem::path candidate = m_ProjectDirectory / pathStr;
+					if (std::filesystem::exists(candidate))
+					{
+						resolvedPath = candidate;
+					}
+				}
+
+				// Fallback: source assets directory (dev mode)
+				if (resolvedPath.empty() && !m_SourceAssetsDir.empty())
+				{
+					std::filesystem::path candidate = m_SourceAssetsDir / pathStr;
+					if (std::filesystem::exists(candidate))
+					{
+						resolvedPath = candidate;
+					}
+				}
+
+				// Fallback: source resources directory for "resources/..." paths (dev mode)
+				if (resolvedPath.empty() && !m_SourceResourcesDir.empty())
+				{
+					std::filesystem::path candidate = m_SourceResourcesDir / pathStr;
 					if (std::filesystem::exists(candidate))
 					{
 						resolvedPath = candidate;
