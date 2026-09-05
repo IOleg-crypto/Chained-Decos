@@ -1149,9 +1149,15 @@ namespace Chained
 
 				RectTransform& rt = comp.Transform;
 
-				ui.Header("Anchor Presets");
+				if (ImGui::GetCurrentTable() != nullptr)
+				{
+					EditorGUI::EndPropertyGrid();
+				}
+
+				ImGui::Spacing();
+				ImGui::TextColored({0.2f, 0.7f, 0.9f, 1.0f}, "Anchor Presets");
 				ImGui::TextDisabled("Quickly align UI relative to screen edges:");
-				// ImGui::Spacing();
+				ImGui::Spacing();
 
 				struct AnchorPreset
 				{
@@ -1162,15 +1168,15 @@ namespace Chained
 				};
 
 				static const AnchorPreset presets[] = {
-					{" Top Left ", "Anchor to Top-Left corner (0.0, 0.0)", {0.0f, 0.0f}, {0.0f, 0.0f}},
-					{" Top Center ", "Anchor to Top-Center edge (0.5, 0.0)", {0.5f, 0.0f}, {0.5f, 0.0f}},
-					{" Top Right ", "Anchor to Top-Right corner (1.0, 0.0)", {1.0f, 0.0f}, {1.0f, 0.0f}},
-					{" Mid Left ", "Anchor to Middle-Left edge (0.0, 0.5)", {0.0f, 0.5f}, {0.0f, 0.5f}},
-					{"  Center  ", "Anchor to Screen Center (0.5, 0.5)", {0.5f, 0.5f}, {0.5f, 0.5f}},
-					{" Mid Right ", "Anchor to Middle-Right edge (1.0, 0.5)", {1.0f, 0.5f}, {1.0f, 0.5f}},
-					{" Bot Left ", "Anchor to Bottom-Left corner (0.0, 1.0)", {0.0f, 1.0f}, {0.0f, 1.0f}},
-					{" Bot Center ", "Anchor to Bottom-Center edge (0.5, 1.0)", {0.5f, 1.0f}, {0.5f, 1.0f}},
-					{" Bot Right ", "Anchor to Bottom-Right corner (1.0, 1.0)", {1.0f, 1.0f}, {1.0f, 1.0f}},
+					{"Top Left", "Anchor to Top-Left corner (0.0, 0.0)", {0.0f, 0.0f}, {0.0f, 0.0f}},
+					{"Top Center", "Anchor to Top-Center edge (0.5, 0.0)", {0.5f, 0.0f}, {0.5f, 0.0f}},
+					{"Top Right", "Anchor to Top-Right corner (1.0, 0.0)", {1.0f, 0.0f}, {1.0f, 0.0f}},
+					{"Mid Left", "Anchor to Middle-Left edge (0.0, 0.5)", {0.0f, 0.5f}, {0.0f, 0.5f}},
+					{"Center", "Anchor to Screen Center (0.5, 0.5)", {0.5f, 0.5f}, {0.5f, 0.5f}},
+					{"Mid Right", "Anchor to Middle-Right edge (1.0, 0.5)", {1.0f, 0.5f}, {1.0f, 0.5f}},
+					{"Bot Left", "Anchor to Bottom-Left corner (0.0, 1.0)", {0.0f, 1.0f}, {0.0f, 1.0f}},
+					{"Bot Center", "Anchor to Bottom-Center edge (0.5, 1.0)", {0.5f, 1.0f}, {0.5f, 1.0f}},
+					{"Bot Right", "Anchor to Bottom-Right corner (1.0, 1.0)", {1.0f, 1.0f}, {1.0f, 1.0f}},
 				};
 
 				float buttonWidth = (ImGui::GetContentRegionAvail().x - 12.0f) / 3.0f;
@@ -1255,7 +1261,7 @@ namespace Chained
 					}
 				}
 
-				if (ImGui::Button(" Stretch Full Screen ", ImVec2(ImGui::GetContentRegionAvail().x, 26.0f)))
+				if (ImGui::Button("Stretch Full Screen", ImVec2(ImGui::GetContentRegionAvail().x, 26.0f)))
 				{
 					rt.AnchorMin = {0.0f, 0.0f};
 					rt.AnchorMax = {1.0f, 1.0f};
@@ -1268,7 +1274,11 @@ namespace Chained
 					ImGui::SetTooltip("Stretch to fill entire screen / parent container");
 				}
 
-				ui.Separator();
+				ImGui::Spacing();
+				ImGui::Separator();
+				ImGui::Spacing();
+
+				EditorGUI::BeginPropertyGrid();
 
 				ui.Header("Rect Transform Offsets");
 				if (ui.Property("Anchor Min", rt.AnchorMin, PropertyMeta(0.0f, 1.0f, 0.01f)))
