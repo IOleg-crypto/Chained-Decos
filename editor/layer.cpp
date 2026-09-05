@@ -415,7 +415,7 @@ namespace Chained
 			}
 			m_PrevSceneState = state;
 
-			// If scene is in Play mode, ask ScriptEngine to execute scripts
+			// If scene is in Play mode, update runtime
 			if (state == SceneState::Play)
 			{
 				// Process UI input before scripts read widget state, unconditionally
@@ -428,11 +428,7 @@ namespace Chained
 					uiRenderer->ProcessInput(scene.get(), suppress);
 				}
 
-				auto* scriptEngine = ServiceLocator::TryGet<ScriptEngine>();
-				if (scriptEngine && scriptEngine->GetHost().IsInitialized() && scriptEngine->CanExecuteFrameScripts())
-				{
-					scene->OnUpdateRuntime(ts);
-				}
+				scene->OnUpdateRuntime(ts);
 			}
 			else if (scene->GetSceneState() == SceneState::Simulate)
 			{

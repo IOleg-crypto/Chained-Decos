@@ -162,6 +162,7 @@ namespace Chained
 				tc.PrevRotationQuat = tc.RotationQuat;
 				tc.PrevTranslation = tc.Translation;
 				tc.PrevScale = tc.Scale;
+				tc.TransformChanged = true;
 			}
 
 			if (entity.HasComponent<RigidBodyComponent>())

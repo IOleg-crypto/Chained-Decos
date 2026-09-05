@@ -31,11 +31,6 @@ namespace Chained
 		// Generate a cube mesh with given dimensions (for procedural cube generation)
 		Mesh GenerateCube(const glm::vec3& dimensions);
 
-		// Generate raw CPU-side model data (de-interleaved vertices/normals/texcoords/indices + one
-		// identity instance + a default material) for a procedural primitive. Does NOT create a VAO;
-		// feed the result to ModelAsset::SetPendingData + OnLoaded (main thread) to finalize on GPU.
-		// `type` uses ":cube:"/":sphere:"/":plane:"/":cylinder:"/... markers.
-		PendingModelData GeneratePrimitivePendingData(const std::string& type, const ProceduralParameters& params);
 	} // namespace GeometryGenerator
 } // namespace Chained
 

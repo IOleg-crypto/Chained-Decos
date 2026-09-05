@@ -18,7 +18,6 @@ set(SCENE_COMPONENTS
     components/render/model_component.h
     components/render/sprite_component.h
     components/render/shader_component.h
-    components/render/primitive_component.h
     components/physics/physics_component.h
     components/audio/audio_component.h
     components/animation/animation_component.h
@@ -67,8 +66,6 @@ set(SCENE_SYSTEMS
     systems/physics_body_system.cpp
     systems/asset_resolution_system.h
     systems/asset_resolution_system.cpp
-    systems/primitive_system.h
-    systems/primitive_system.cpp
     systems/scene_transition_system.h
     systems/scene_transition_system.cpp
     systems/network_system.h

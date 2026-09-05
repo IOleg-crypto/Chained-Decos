@@ -18,7 +18,6 @@
 #include "engine/scene/systems/camera_auto_select_system.h"
 #include "engine/scene/systems/network_system.h"
 #include "engine/scene/systems/transform_system.h"
-#include "engine/scene/systems/primitive_system.h"
 #include "engine/scene/component_serializer.h"
 #include "scene_scripting_manager.h"
 #include "engine/scripting/scriptengine.h"
@@ -44,7 +43,6 @@ namespace Chained
 		reg.on_destroy<HierarchyComponent>().connect<&Scene::OnHierarchyDestroy>(this);
 
 		AssetResolutionSystem::RegisterObservers(reg);
-		PrimitiveSystem::RegisterObservers(reg, "");
 
 		m_Settings.Environment = std::make_shared<EnvironmentAsset>();
 		m_ScriptingManager = std::make_unique<SceneScriptingManager>(this);
@@ -288,7 +286,7 @@ namespace Chained
 		// reads the correct velocity/grounded values for animation.
 		if (auto* net = ServiceLocator::TryGet<Network>())
 		{
-			if (net->IsClient())
+			if (net->IsClient() && netSys)
 			{
 				float dt = static_cast<float>(ts);
 				netSys->InterpolateEntities(*m_Registry, dt);
@@ -303,7 +301,10 @@ namespace Chained
 		TickCommonSystems(ts);
 
 		PhysicsBodySystem::Update(*m_Registry);
-		netSys->ApplyHostInputs(*m_Registry, ts);
+		if (netSys)
+		{
+			netSys->ApplyHostInputs(*m_Registry, ts);
+		}
 
 		if (auto* physics = ServiceLocator::TryGet<Physics>())
 		{
@@ -311,7 +312,10 @@ namespace Chained
 		}
 
 		Hierarchy::UpdateWorldTransforms(*m_Registry, GetRootEntities());
-		netSys->FinalizeFrame(this, ts);
+		if (netSys)
+		{
+			netSys->FinalizeFrame(this, ts);
+		}
 
 		if (auto target = SceneTransitionSystem::Update(*m_Registry))
 		{

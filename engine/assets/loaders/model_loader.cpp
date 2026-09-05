@@ -3,7 +3,6 @@
 #include "engine/assets/model_data.h"
 
 #include "engine/assets/types/model_asset.h"
-#include "engine/graphics/pipeline/geometry_generator.h"
 #include "engine/core/service_locator.h"
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/asset_metadata.h"
@@ -62,21 +61,6 @@ namespace Chained
 	bool ModelLoader::Load(std::shared_ptr<Asset> asset, const std::string& resolvedPath, std::string* outError)
 	{
 		auto modelAsset = std::static_pointer_cast<ModelAsset>(asset);
-
-		if (resolvedPath.starts_with(":"))
-		{
-			auto pendingData = GeometryGenerator::GeneratePrimitivePendingData(resolvedPath, ProceduralParameters());
-			if (pendingData.isValid)
-			{
-				modelAsset->SetPendingData(std::move(pendingData));
-				return true;
-			}
-			if (outError)
-			{
-				*outError = "ModelLoader: failed to generate procedural model for: " + resolvedPath;
-			}
-			return false;
-		}
 
 		auto pendingData = LoadMeshDataFromDisk(resolvedPath);
 		if (pendingData.isValid)

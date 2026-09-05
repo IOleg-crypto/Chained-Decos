@@ -10,7 +10,6 @@ set(INTEGRATION_SOURCES
     importer_tests.cpp
     integration_tests.cpp
     asset_manager_tests.cpp
-    primitive_tests.cpp
     material_tests.cpp
     hierarchy_tests.cpp
     serialization_tests.cpp

@@ -20,34 +20,20 @@ namespace Chained::AssetResolutionSystem
 	template <typename AssetT, typename HandleT, typename UUIDT, typename PathT>
 	static bool ResolveCommon(AssetManager* assets, HandleT& handle, UUIDT& uuid, PathT& path)
 	{
-		if (handle != AssetHandle(0))
-		{
-			auto currentAsset = assets->Get<AssetT>(handle);
-			if (currentAsset && currentAsset->IsReady())
-			{
-				return true;
-			}
-		}
-
-		if (uuid != 0)
-		{
-			auto asset = assets->GetByUUID<AssetT>(uuid);
-			if (asset)
-			{
-				if (asset->IsReady())
-				{
-					handle = asset->GetID();
-					if (path.empty())
-					{
-						path = asset->GetPath();
-					}
-				}
-				return true;
-			}
-		}
-
+		// 1. If path is provided, it is the primary source of truth
 		if (!path.empty())
 		{
+			// Check if existing handle is already valid for this exact path
+			if (handle != AssetHandle(0))
+			{
+				auto currentAsset = assets->Get<AssetT>(handle);
+				if (currentAsset && currentAsset->IsReady() && currentAsset->GetPath() == path)
+				{
+					return true;
+				}
+			}
+
+			// Load or retrieve by path
 			auto asset = assets->Get<AssetT>(path);
 			if (asset)
 			{
@@ -55,9 +41,35 @@ namespace Chained::AssetResolutionSystem
 				if (asset->IsReady())
 				{
 					handle = asset->GetID();
+					return true;
 				}
 			}
+			return false;
 		}
+
+		// 2. Fallback to handle if path is empty
+		if (handle != AssetHandle(0))
+		{
+			auto currentAsset = assets->Get<AssetT>(handle);
+			if (currentAsset && currentAsset->IsReady())
+			{
+				path = currentAsset->GetPath();
+				return true;
+			}
+		}
+
+		// 3. Fallback to UUID if path and handle are empty
+		if (uuid != 0)
+		{
+			auto asset = assets->GetByUUID<AssetT>(uuid);
+			if (asset && asset->IsReady())
+			{
+				handle = asset->GetID();
+				path = asset->GetPath();
+				return true;
+			}
+		}
+
 		return false;
 	}
 

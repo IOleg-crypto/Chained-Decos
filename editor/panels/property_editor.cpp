@@ -1,7 +1,6 @@
 #include "property_editor.h"
 #include "engine/reflection/reflection_rfl.h"
 #include "engine/reflection/reflection_rfl_impl.h"
-#include "engine/scene/components/render/primitive_component.h"
 #include "engine/scene/component_registry.h"
 #include "thirdparty/IconsFontAwesome6.h"
 #include "editor/layer.h"
@@ -377,15 +376,6 @@ namespace Chained
 	{
 		if (entity.HasComponent<T>())
 		{
-			if constexpr (std::is_same_v<T, ModelComponent>)
-			{
-				if (entity.HasComponent<PrimitiveComponent>() &&
-					entity.GetComponent<PrimitiveComponent>().Type != PrimitiveType::None)
-				{
-					return;
-				}
-			}
-
 			DrawComponentInternal(
 				entt::type_hash<T>::value(), name, icon, entity,
 				[&]() {
@@ -488,182 +478,6 @@ namespace Chained
 		// --- Core Components ---
 		ComponentRegistry::SetAllowAdd(entt::type_hash<TransformComponent>::value(), false);
 
-		// Custom drawer for PrimitiveComponent (shown in Inspector)
-		RegisterCustom<PrimitiveComponent>(
-			"Primitive",
-			[](PrimitiveComponent& comp, Entity entity) {
-				bool changed = false;
-				UIProperties ui;
-
-				static const char* primitiveTypes[] = {"None", "Cube",	"Sphere", "Plane",	   "Cylinder",
-													   "Cone", "Torus", "Knot",	  "Hemisphere"};
-				int typeIdx = static_cast<int>(comp.Type);
-				if (ui.Enum("Shape Type", typeIdx, primitiveTypes, 9))
-				{
-					comp.Type = static_cast<PrimitiveType>(typeIdx);
-					changed = true;
-				}
-
-				switch (comp.Type)
-				{
-				case PrimitiveType::Cube: {
-					if (ui.Property("Dimensions", comp.Dimensions, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Sphere: {
-					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Plane: {
-					if (ui.Property("Dimensions", comp.Dimensions, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Cylinder: {
-					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Height", comp.Height, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Cone: {
-					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Height", comp.Height, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Torus: {
-					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Inner Radius", comp.InnerRadius, PropertyMeta(0.01f, 50.0f, 0.01f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Knot: {
-					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Inner Radius", comp.InnerRadius, PropertyMeta(0.01f, 50.0f, 0.01f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				case PrimitiveType::Hemisphere: {
-					if (ui.Property("Radius", comp.Radius, PropertyMeta(0.01f, 100.0f, 0.05f)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Slices", comp.Slices, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					if (ui.Property("Stacks", comp.Stacks, PropertyMeta(3, 128, 1)))
-					{
-						changed = true;
-					}
-					break;
-				}
-				default:
-					break;
-				}
-
-				if (entity.HasComponent<ModelComponent>())
-				{
-					auto& mc = entity.GetComponent<ModelComponent>();
-					ImGui::Spacing();
-					ImGui::Separator();
-					ImGui::TextDisabled("Material Override");
-
-					if (mc.MaterialPaths.empty())
-					{
-						mc.MaterialPaths.resize(1);
-					}
-
-					std::filesystem::path modelPath(mc.ModelPath);
-					std::string modelName = modelPath.stem().string();
-					std::filesystem::path modelDir = modelPath.parent_path();
-
-					for (size_t matIdx = 0; matIdx < mc.MaterialPaths.size(); ++matIdx)
-					{
-						if (mc.MaterialPaths[matIdx].empty() && !mc.ModelPath.empty())
-						{
-							auto* am = ServiceLocator::TryGet<AssetManager>();
-							std::string autoName = modelName + "_material_" + std::to_string(matIdx) + ".chmat";
-							std::string autoRel = (modelDir / autoName).generic_string();
-							if (am && am->FileExists(autoRel))
-							{
-								mc.MaterialPaths[matIdx] = autoRel;
-							}
-						}
-
-						std::string matLabel = "Material " + std::to_string(matIdx);
-						if (ui.File(matLabel.c_str(), mc.MaterialPaths[matIdx], ".chmat"))
-						{
-							entity.GetRegistry().patch<ModelComponent>(entity, [](ModelComponent&) {});
-							EditorLayer::Get().GetSceneManager().MarkSceneDirty();
-							changed = true;
-						}
-					}
-				}
-
-				return changed;
-			},
-			ICON_FA_SHAPES);
 		RegisterCustom<LightComponent>(
 			"Light",
 			[&](LightComponent& comp, Entity entity) {

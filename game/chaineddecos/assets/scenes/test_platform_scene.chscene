@@ -383,8 +383,8 @@ Entities:
         isMoving: 0
   - Entity: 8226802247234689188
     ModelComponent:
-      ModelPath: primitives/CubeWithTexture.chmesh
-      ModelUUID: 7652099192965133075
+      ModelPath: models/primitives/Cube.obj
+      ModelUUID: 0
       MaterialPaths:
         []
     TransformComponent:
@@ -393,15 +393,6 @@ Entities:
       Scale: [2.92739296, 3.31053686, 5.81883764]
     TagComponent:
       Tag: CubeWithTexture
-    PrimitiveComponent:
-      Type: 1
-      Radius: 13.1099997
-      InnerRadius: 3.5999999
-      Height: 13.25
-      Slices: 42
-      Stacks: 145
-      Dimensions: [16.5, 12.8999996, 10.5]
-      MeshPath: primitives/CubeWithTexture.chmesh
     IDComponent:
       {}
   - Entity: 2178363417145863724

@@ -272,16 +272,16 @@ git submodule update --init --recursive
 | CMake | 3.31+ | Required by top-level CMakeLists |
 | Compiler | C++20 / C++23 | Clang 18+ (LLVM / MSYS2 / Linux), MSVC (VS2022+), or GCC 13+ |
 | Ninja | Latest | Recommended for fast parallel builds |
-| .NET SDK | 9.0.x / 10.0.x | Required for managed scripting |
+| .NET SDK | 9.0.x | Required for Coral managed C# scripting |
 | Graphics Driver | OpenGL 4.3+ | Needed for rendering |
 
-**Windows Toolchain (LLVM Clang + Ninja):**
+**Windows Toolchain (LLVM Clang + Ninja + .NET 9 SDK):**
 ```bash
 # Via Winget:
-winget install LLVM.LLVM Ninja-build.Ninja
+winget install LLVM.LLVM Ninja-build.Ninja Microsoft.DotNet.SDK.9
 
 # Or via Chocolatey:
-choco install llvm ninja ccache
+choco install llvm ninja ccache dotnet-9.0-sdk
 
 # Or via MSYS2 (MINGW64):
 pacman -S mingw-w64-x86_64-clang mingw-w64-x86_64-lld ninja
@@ -289,11 +289,12 @@ pacman -S mingw-w64-x86_64-clang mingw-w64-x86_64-lld ninja
 
 **Linux Packages (Ubuntu / Debian reference):**
 ```bash
+# Core build dependencies + .NET 9 SDK
 sudo apt-get install -y build-essential cmake ninja-build clang lld \
   libgl1-mesa-dev libx11-dev libxrandr-dev libxinerama-dev \
   libxcursor-dev libxi-dev libasound2-dev libglu1-mesa-dev \
   pkg-config libgtk-3-dev libdrm-dev libgbm-dev \
-  xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils
+  xvfb libxkbcommon-x11-0 libgl1-mesa-dri mesa-utils dotnet-sdk-9.0
 ```
 
 ## Testing
@@ -311,7 +312,7 @@ ctest --test-dir build/windows-clang -C Debug -L Unit --output-on-failure
 ctest --test-dir build/windows-clang -C Debug -L Integration --output-on-failure
 ```
 
-Managed (C#) tests require .NET SDK (9.0.x or 10.0.x) on PATH. Without it, the scripting target is silently skipped.
+Managed (C#) tests require .NET 9.0.x SDK on PATH. Without it, the scripting target is silently skipped.
 
 ## CI/CD
 
@@ -326,10 +327,11 @@ Deploy workflow (`.github/workflows/deploy-sdk.yml`): triggered by `v*` tags, pa
 
 ## Troubleshooting
 
+- **Coral Status 3 / DotNetNotFound:** Install .NET 9.0 SDK or Runtime (`winget install Microsoft.DotNet.SDK.9`). Coral host strictly discovers `.NET 9.0.x` hostfxr in `host/fxr/9.*`.
 - **Clang not found on Windows:** Ensure your LLVM bin directory (`C:\Program Files\LLVM\bin` or `C:\LLVM\bin`) is added to the system `PATH`.
 - **Submodule errors:** `git submodule update --init --recursive`
 - **Generator conflicts:** Reconfigure from a clean build folder when switching generator families
-- **No managed build:** Ensure `dotnet` SDK (9.0.x or 10.0.x) is on PATH
+- **No managed build:** Ensure `dotnet` SDK (9.0.x) is on PATH
 - **Linux headless:** Install packages from Prerequisites, use `xvfb` + Mesa
 - **Stale files after `CH_ACTIVE_GAME` change:** Reconfigure the build directory, don't just rebuild
 - **LFS files not downloading:** Run `git lfs pull` after cloning
