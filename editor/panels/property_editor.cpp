@@ -1151,7 +1151,7 @@ namespace Chained
 
 				ui.Header("Anchor Presets");
 				ImGui::TextDisabled("Quickly align UI relative to screen edges:");
-				ImGui::Spacing();
+				// ImGui::Spacing();
 
 				struct AnchorPreset
 				{
@@ -1162,15 +1162,15 @@ namespace Chained
 				};
 
 				static const AnchorPreset presets[] = {
-					{ " Top Left ", "Anchor to Top-Left corner (0.0, 0.0)", { 0.0f, 0.0f }, { 0.0f, 0.0f } },
-					{ " Top Center ", "Anchor to Top-Center edge (0.5, 0.0)", { 0.5f, 0.0f }, { 0.5f, 0.0f } },
-					{ " Top Right ", "Anchor to Top-Right corner (1.0, 0.0)", { 1.0f, 0.0f }, { 1.0f, 0.0f } },
-					{ " Mid Left ", "Anchor to Middle-Left edge (0.0, 0.5)", { 0.0f, 0.5f }, { 0.0f, 0.5f } },
-					{ "  Center  ", "Anchor to Screen Center (0.5, 0.5)", { 0.5f, 0.5f }, { 0.5f, 0.5f } },
-					{ " Mid Right ", "Anchor to Middle-Right edge (1.0, 0.5)", { 1.0f, 0.5f }, { 1.0f, 0.5f } },
-					{ " Bot Left ", "Anchor to Bottom-Left corner (0.0, 1.0)", { 0.0f, 1.0f }, { 0.0f, 1.0f } },
-					{ " Bot Center ", "Anchor to Bottom-Center edge (0.5, 1.0)", { 0.5f, 1.0f }, { 0.5f, 1.0f } },
-					{ " Bot Right ", "Anchor to Bottom-Right corner (1.0, 1.0)", { 1.0f, 1.0f }, { 1.0f, 1.0f } },
+					{" Top Left ", "Anchor to Top-Left corner (0.0, 0.0)", {0.0f, 0.0f}, {0.0f, 0.0f}},
+					{" Top Center ", "Anchor to Top-Center edge (0.5, 0.0)", {0.5f, 0.0f}, {0.5f, 0.0f}},
+					{" Top Right ", "Anchor to Top-Right corner (1.0, 0.0)", {1.0f, 0.0f}, {1.0f, 0.0f}},
+					{" Mid Left ", "Anchor to Middle-Left edge (0.0, 0.5)", {0.0f, 0.5f}, {0.0f, 0.5f}},
+					{"  Center  ", "Anchor to Screen Center (0.5, 0.5)", {0.5f, 0.5f}, {0.5f, 0.5f}},
+					{" Mid Right ", "Anchor to Middle-Right edge (1.0, 0.5)", {1.0f, 0.5f}, {1.0f, 0.5f}},
+					{" Bot Left ", "Anchor to Bottom-Left corner (0.0, 1.0)", {0.0f, 1.0f}, {0.0f, 1.0f}},
+					{" Bot Center ", "Anchor to Bottom-Center edge (0.5, 1.0)", {0.5f, 1.0f}, {0.5f, 1.0f}},
+					{" Bot Right ", "Anchor to Bottom-Right corner (1.0, 1.0)", {1.0f, 1.0f}, {1.0f, 1.0f}},
 				};
 
 				float buttonWidth = (ImGui::GetContentRegionAvail().x - 12.0f) / 3.0f;
@@ -1197,8 +1197,14 @@ namespace Chained
 					{
 						float width = rt.OffsetMax.x - rt.OffsetMin.x;
 						float height = rt.OffsetMax.y - rt.OffsetMin.y;
-						if (width <= 0.0f) width = 100.0f;
-						if (height <= 0.0f) height = 40.0f;
+						if (width <= 0.0f)
+						{
+							width = 100.0f;
+						}
+						if (height <= 0.0f)
+						{
+							height = 40.0f;
+						}
 
 						rt.AnchorMin = presets[i].Min;
 						rt.AnchorMax = presets[i].Max;
@@ -1251,10 +1257,10 @@ namespace Chained
 
 				if (ImGui::Button(" Stretch Full Screen ", ImVec2(ImGui::GetContentRegionAvail().x, 26.0f)))
 				{
-					rt.AnchorMin = { 0.0f, 0.0f };
-					rt.AnchorMax = { 1.0f, 1.0f };
-					rt.OffsetMin = { 0.0f, 0.0f };
-					rt.OffsetMax = { 0.0f, 0.0f };
+					rt.AnchorMin = {0.0f, 0.0f};
+					rt.AnchorMax = {1.0f, 1.0f};
+					rt.OffsetMin = {0.0f, 0.0f};
+					rt.OffsetMax = {0.0f, 0.0f};
 					changed = true;
 				}
 				if (ImGui::IsItemHovered())
@@ -1262,14 +1268,37 @@ namespace Chained
 					ImGui::SetTooltip("Stretch to fill entire screen / parent container");
 				}
 
+				ui.Separator();
+
 				ui.Header("Rect Transform Offsets");
-				if (ui.Property("Anchor Min", rt.AnchorMin, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
-				if (ui.Property("Anchor Max", rt.AnchorMax, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
-				if (ui.Property("Offset Min", rt.OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
-				if (ui.Property("Offset Max", rt.OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
-				if (ui.Property("Pivot", rt.Pivot, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
-				if (ui.Property("Z Order", comp.ZOrder)) changed = true;
-				if (ui.Property("Is Active", comp.IsActive)) changed = true;
+				if (ui.Property("Anchor Min", rt.AnchorMin, PropertyMeta(0.0f, 1.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Anchor Max", rt.AnchorMax, PropertyMeta(0.0f, 1.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Offset Min", rt.OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Offset Max", rt.OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Pivot", rt.Pivot, PropertyMeta(0.0f, 1.0f, 0.01f)))
+				{
+					changed = true;
+				}
+				if (ui.Property("Z Order", comp.ZOrder))
+				{
+					changed = true;
+				}
+				if (ui.Property("Is Active", comp.IsActive))
+				{
+					changed = true;
+				}
 
 				return changed;
 			},
