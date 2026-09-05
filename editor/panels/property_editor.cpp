@@ -20,6 +20,7 @@
 #include <Coral/ManagedObject.hpp>
 
 #include "engine/app/application.h"
+#include "engine/scene/components/ui/control_component.h"
 #include <yaml-cpp/yaml.h>
 #include "engine/assets/asset_manager.h"
 #include "engine/assets/types/model_asset.h"
@@ -1140,6 +1141,139 @@ namespace Chained
 			ICON_FA_FILM);
 
 		// --- UI Components ---
+		RegisterCustom<ControlComponent>(
+			"Rect Transform",
+			[](ControlComponent& comp, Entity entity) {
+				bool changed = false;
+				UIProperties ui;
+
+				RectTransform& rt = comp.Transform;
+
+				ui.Header("Anchor Presets");
+				ImGui::TextDisabled("Quickly align UI relative to screen edges:");
+				ImGui::Spacing();
+
+				struct AnchorPreset
+				{
+					const char* Label;
+					const char* Tooltip;
+					glm::vec2 Min;
+					glm::vec2 Max;
+				};
+
+				static const AnchorPreset presets[] = {
+					{ " Top Left ", "Anchor to Top-Left corner (0.0, 0.0)", { 0.0f, 0.0f }, { 0.0f, 0.0f } },
+					{ " Top Center ", "Anchor to Top-Center edge (0.5, 0.0)", { 0.5f, 0.0f }, { 0.5f, 0.0f } },
+					{ " Top Right ", "Anchor to Top-Right corner (1.0, 0.0)", { 1.0f, 0.0f }, { 1.0f, 0.0f } },
+					{ " Mid Left ", "Anchor to Middle-Left edge (0.0, 0.5)", { 0.0f, 0.5f }, { 0.0f, 0.5f } },
+					{ "  Center  ", "Anchor to Screen Center (0.5, 0.5)", { 0.5f, 0.5f }, { 0.5f, 0.5f } },
+					{ " Mid Right ", "Anchor to Middle-Right edge (1.0, 0.5)", { 1.0f, 0.5f }, { 1.0f, 0.5f } },
+					{ " Bot Left ", "Anchor to Bottom-Left corner (0.0, 1.0)", { 0.0f, 1.0f }, { 0.0f, 1.0f } },
+					{ " Bot Center ", "Anchor to Bottom-Center edge (0.5, 1.0)", { 0.5f, 1.0f }, { 0.5f, 1.0f } },
+					{ " Bot Right ", "Anchor to Bottom-Right corner (1.0, 1.0)", { 1.0f, 1.0f }, { 1.0f, 1.0f } },
+				};
+
+				float buttonWidth = (ImGui::GetContentRegionAvail().x - 12.0f) / 3.0f;
+				if (buttonWidth < 50.0f)
+				{
+					buttonWidth = 50.0f;
+				}
+
+				for (int i = 0; i < 9; i++)
+				{
+					if (i > 0 && i % 3 != 0)
+					{
+						ImGui::SameLine();
+					}
+
+					bool isCurrent = (rt.AnchorMin == presets[i].Min && rt.AnchorMax == presets[i].Max);
+					if (isCurrent)
+					{
+						ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.5f, 0.8f, 1.0f));
+					}
+
+					std::string btnId = std::string(presets[i].Label) + "##Anch" + std::to_string(i);
+					if (ImGui::Button(btnId.c_str(), ImVec2(buttonWidth, 26.0f)))
+					{
+						float width = rt.OffsetMax.x - rt.OffsetMin.x;
+						float height = rt.OffsetMax.y - rt.OffsetMin.y;
+						if (width <= 0.0f) width = 100.0f;
+						if (height <= 0.0f) height = 40.0f;
+
+						rt.AnchorMin = presets[i].Min;
+						rt.AnchorMax = presets[i].Max;
+
+						if (presets[i].Min.x == 0.0f)
+						{
+							rt.OffsetMin.x = 40.0f;
+							rt.OffsetMax.x = 40.0f + width;
+						}
+						else if (presets[i].Min.x == 0.5f)
+						{
+							rt.OffsetMin.x = -width * 0.5f;
+							rt.OffsetMax.x = width * 0.5f;
+						}
+						else
+						{
+							rt.OffsetMax.x = -40.0f;
+							rt.OffsetMin.x = -40.0f - width;
+						}
+
+						if (presets[i].Min.y == 0.0f)
+						{
+							rt.OffsetMin.y = 40.0f;
+							rt.OffsetMax.y = 40.0f + height;
+						}
+						else if (presets[i].Min.y == 0.5f)
+						{
+							rt.OffsetMin.y = -height * 0.5f;
+							rt.OffsetMax.y = height * 0.5f;
+						}
+						else
+						{
+							rt.OffsetMax.y = -40.0f;
+							rt.OffsetMin.y = -40.0f - height;
+						}
+
+						changed = true;
+					}
+
+					if (isCurrent)
+					{
+						ImGui::PopStyleColor();
+					}
+
+					if (ImGui::IsItemHovered())
+					{
+						ImGui::SetTooltip("%s", presets[i].Tooltip);
+					}
+				}
+
+				if (ImGui::Button(" Stretch Full Screen ", ImVec2(ImGui::GetContentRegionAvail().x, 26.0f)))
+				{
+					rt.AnchorMin = { 0.0f, 0.0f };
+					rt.AnchorMax = { 1.0f, 1.0f };
+					rt.OffsetMin = { 0.0f, 0.0f };
+					rt.OffsetMax = { 0.0f, 0.0f };
+					changed = true;
+				}
+				if (ImGui::IsItemHovered())
+				{
+					ImGui::SetTooltip("Stretch to fill entire screen / parent container");
+				}
+
+				ui.Header("Rect Transform Offsets");
+				if (ui.Property("Anchor Min", rt.AnchorMin, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
+				if (ui.Property("Anchor Max", rt.AnchorMax, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
+				if (ui.Property("Offset Min", rt.OffsetMin, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+				if (ui.Property("Offset Max", rt.OffsetMax, PropertyMeta(-2000.0f, 2000.0f, 1.0f))) changed = true;
+				if (ui.Property("Pivot", rt.Pivot, PropertyMeta(0.0f, 1.0f, 0.01f))) changed = true;
+				if (ui.Property("Z Order", comp.ZOrder)) changed = true;
+				if (ui.Property("Is Active", comp.IsActive)) changed = true;
+
+				return changed;
+			},
+			ICON_FA_SHAPES);
 
 		// --- UI Widgets ---
 		RegisterCustom<UIControlComponent>(
