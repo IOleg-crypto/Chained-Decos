@@ -60,8 +60,7 @@ namespace Chained
 
 		if (cleanPath.size() >= 2 && cleanPath[1] == ':')
 		{
-			static const std::vector<std::string> markers = { "/assets/", "/resources/", "/game/" };
-			bool matched = false;
+			static const std::vector<std::string> markers = {"/assets/", "/resources/", "/game/"};
 			for (const auto& marker : markers)
 			{
 				size_t pos = cleanPath.find(marker);
@@ -79,16 +78,7 @@ namespace Chained
 							cleanPath = cleanPath.substr(assetsPos + 8);
 						}
 					}
-					matched = true;
 					break;
-				}
-			}
-			if (!matched)
-			{
-				cleanPath = cleanPath.substr(2);
-				if (!cleanPath.empty() && cleanPath[0] == '/')
-				{
-					cleanPath = cleanPath.substr(1);
 				}
 			}
 		}
@@ -200,7 +190,14 @@ namespace Chained
 	{
 		std::string resolved = ResolvePath(path);
 		std::lock_guard<std::mutex> lock(m_PathMutex);
-		m_PathToHandle[resolved] = handle;
+		if (!resolved.empty())
+		{
+			m_PathToHandle[resolved] = handle;
+		}
+		if (!path.empty() && path != resolved)
+		{
+			m_PathToHandle[path] = handle;
+		}
 	}
 
 	void AssetPathResolver::UnregisterHandle(AssetHandle handle)
@@ -221,9 +218,17 @@ namespace Chained
 
 	AssetHandle AssetPathResolver::ResolveToHandle(const std::string& path) const
 	{
+		if (path.empty())
+		{
+			return AssetHandle(0);
+		}
 		std::string resolved = ResolvePath(path);
 		std::lock_guard<std::mutex> lock(m_PathMutex);
 		if (auto it = m_PathToHandle.find(resolved); it != m_PathToHandle.end())
+		{
+			return it->second;
+		}
+		if (auto it = m_PathToHandle.find(path); it != m_PathToHandle.end())
 		{
 			return it->second;
 		}
