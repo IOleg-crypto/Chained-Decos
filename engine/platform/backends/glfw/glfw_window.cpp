@@ -54,7 +54,6 @@ namespace Chained
 			s_GLFWInitialized = true;
 		}
 
-		// Якщо розміри не вказані, беремо робочу область головного монітора
 		if (initialWidth <= 0 || initialHeight <= 0)
 		{
 			GLFWmonitor* monitor = glfwGetPrimaryMonitor();

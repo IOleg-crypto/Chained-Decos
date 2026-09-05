@@ -55,7 +55,45 @@ namespace Chained
 			}
 		}
 
-		std::filesystem::path inputPath(path);
+		std::string cleanPath = path;
+		std::replace(cleanPath.begin(), cleanPath.end(), '\\', '/');
+
+		if (cleanPath.size() >= 2 && cleanPath[1] == ':')
+		{
+			static const std::vector<std::string> markers = { "/assets/", "/resources/", "/game/" };
+			bool matched = false;
+			for (const auto& marker : markers)
+			{
+				size_t pos = cleanPath.find(marker);
+				if (pos != std::string::npos)
+				{
+					if (marker == "/assets/" || marker == "/resources/")
+					{
+						cleanPath = cleanPath.substr(pos + 1);
+					}
+					else if (marker == "/game/")
+					{
+						size_t assetsPos = cleanPath.find("/assets/", pos);
+						if (assetsPos != std::string::npos)
+						{
+							cleanPath = cleanPath.substr(assetsPos + 8);
+						}
+					}
+					matched = true;
+					break;
+				}
+			}
+			if (!matched)
+			{
+				cleanPath = cleanPath.substr(2);
+				if (!cleanPath.empty() && cleanPath[0] == '/')
+				{
+					cleanPath = cleanPath.substr(1);
+				}
+			}
+		}
+
+		std::filesystem::path inputPath(cleanPath);
 		std::filesystem::path resolvedPath;
 
 		if (inputPath.is_absolute())

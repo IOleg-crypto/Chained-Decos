@@ -111,6 +111,7 @@ package/
 *.tar.gz
 
 exported
+exported_linux
 
 nul
 

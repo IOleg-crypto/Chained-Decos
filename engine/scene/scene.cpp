@@ -279,11 +279,10 @@ namespace Chained
 		}
 
 		auto* netSys = ServiceLocator::TryGet<NetworkSystem>();
-		if (!netSys)
+		if (netSys)
 		{
-			return;
+			netSys->PollNetwork(this, ts);
 		}
-		netSys->PollNetwork(this, ts);
 
 		// Interpolate remote entities BEFORE scripts so PlayerController
 		// reads the correct velocity/grounded values for animation.

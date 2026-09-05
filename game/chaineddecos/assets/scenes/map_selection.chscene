@@ -46,30 +46,7 @@ DebugSettings:
   DrawSpawnZones: true
   CollisionWireframeMode: 0
 Entities:
-  - Entity: 17351038530830413184
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: back_button
-    IDComponent:
-      {}
-    SceneTransitionComponent:
-      TargetScenePath: scenes/game_mode_selection.chscene
-      Triggered: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-100, 270]
-        OffsetMax: [100, 325]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+  - Entity: 9074518260032286860
     WidgetComponent:
       Box Style:
         BG Color: [25, 28, 35, 255]
@@ -99,30 +76,30 @@ Entities:
       Label: Back
       Interactable: true
       Auto Size: false
-  - Entity: 8923741572946021871
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-100, 270]
+        OffsetMax: [100, 325]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: btn_map_alpha
+      Tag: back_button
     IDComponent:
       {}
     SceneTransitionComponent:
-      TargetScenePath: scenes/rpg_strategy_scene.chscene
+      TargetScenePath: scenes/game_mode_selection.chscene
       Triggered: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [100, 140]
-        OffsetMax: [500, 195]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 1
-      IsActive: true
-      HiddenInHierarchy: false
+  - Entity: 13093687309351032429
     WidgetComponent:
       Box Style:
         BG Color: [25, 28, 35, 255]
@@ -152,27 +129,30 @@ Entities:
       Label: Laboratory Alpha
       Interactable: true
       Auto Size: false
-  - Entity: 1558335130132476056
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [100, 140]
+        OffsetMax: [500, 195]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 1
+      IsActive: true
+      HiddenInHierarchy: false
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: preview_map_laboratory
+      Tag: btn_map_alpha
     IDComponent:
       {}
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [100, -180]
-        OffsetMax: [500, 120]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+    SceneTransitionComponent:
+      TargetScenePath: scenes/rpg_strategy_scene.chscene
+      Triggered: false
+  - Entity: 9413447467467368068
     WidgetComponent:
       Box Style:
         BG Color: [25, 28, 35, 255]
@@ -202,30 +182,27 @@ Entities:
       Texture Path: map_previews/placeholder.jpg
       Tint Color: [255, 255, 255, 255]
       Border Color: [0, 0, 0, 0]
-  - Entity: 11027439178165653432
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [100, -180]
+        OffsetMax: [500, 120]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: btn_map_bravo
+      Tag: preview_map_laboratory
     IDComponent:
       {}
-    SceneTransitionComponent:
-      TargetScenePath: scenes/untitled100.chscene
-      Triggered: false
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-500, 140]
-        OffsetMax: [-100, 195]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 1
-      IsActive: true
-      HiddenInHierarchy: false
+  - Entity: 6154524873741956892
     WidgetComponent:
       Box Style:
         BG Color: [25, 28, 35, 255]
@@ -255,27 +232,30 @@ Entities:
       Label: Training Grounds
       Interactable: true
       Auto Size: false
-  - Entity: 2126387937254929582
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-500, 140]
+        OffsetMax: [-100, 195]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 1
+      IsActive: true
+      HiddenInHierarchy: false
     TransformComponent:
       Translation: [0, 0, 0]
       Rotation: [0, 0, 0]
       Scale: [1, 1, 1]
     TagComponent:
-      Tag: preview_map_training
+      Tag: btn_map_bravo
     IDComponent:
       {}
-    ControlComponent:
-      Transform:
-        AnchorMin: [0.5, 0.5]
-        AnchorMax: [0.5, 0.5]
-        OffsetMin: [-500, -180]
-        OffsetMax: [-100, 120]
-        Pivot: [0.5, 0.5]
-        Rotation: 0
-        Scale: [1, 1]
-      ZOrder: 0
-      IsActive: true
-      HiddenInHierarchy: false
+    SceneTransitionComponent:
+      TargetScenePath: scenes/untitled100.chscene
+      Triggered: false
+  - Entity: 207028471267694746
     WidgetComponent:
       Box Style:
         BG Color: [25, 28, 35, 255]
@@ -305,27 +285,27 @@ Entities:
       Texture Path: map_previews/placeholder.jpg
       Tint Color: [255, 255, 255, 255]
       Border Color: [0, 0, 0, 0]
-  - Entity: 11443684633403664878
-    TransformComponent:
-      Translation: [0, 0, 0]
-      Rotation: [0, 0, 0]
-      Scale: [1, 1, 1]
-    TagComponent:
-      Tag: title_map_selection
-    IDComponent:
-      {}
     ControlComponent:
       Transform:
         AnchorMin: [0.5, 0.5]
         AnchorMax: [0.5, 0.5]
-        OffsetMin: [-300, -360]
-        OffsetMax: [300, -300]
+        OffsetMin: [-500, -180]
+        OffsetMax: [-100, 120]
         Pivot: [0.5, 0.5]
         Rotation: 0
         Scale: [1, 1]
       ZOrder: 0
       IsActive: true
       HiddenInHierarchy: false
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: preview_map_training
+    IDComponent:
+      {}
+  - Entity: 5400423739944034269
     WidgetComponent:
       Box Style:
         BG Color: [0, 0, 0, 0]
@@ -354,3 +334,23 @@ Entities:
       Widget Type: 3
       Text: Select Map
       Auto Size: false
+    ControlComponent:
+      Transform:
+        AnchorMin: [0.5, 0.5]
+        AnchorMax: [0.5, 0.5]
+        OffsetMin: [-300, -360]
+        OffsetMax: [300, -300]
+        Pivot: [0.5, 0.5]
+        Rotation: 0
+        Scale: [1, 1]
+      ZOrder: 0
+      IsActive: true
+      HiddenInHierarchy: false
+    TransformComponent:
+      Translation: [0, 0, 0]
+      Rotation: [0, 0, 0]
+      Scale: [1, 1, 1]
+    TagComponent:
+      Tag: title_map_selection
+    IDComponent:
+      {}
