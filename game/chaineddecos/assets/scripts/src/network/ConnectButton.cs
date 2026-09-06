@@ -6,7 +6,6 @@ namespace ChainedDecos.Scripts
     /// <summary>
     /// Attach to the "Connect to Server" button entity.
     /// Reads IP/port from input fields, then calls Network.ConnectTo.
-    /// For WAN targets without UPnP — also starts hole punch in parallel.
     /// </summary>
     public class ConnectButton : Script
     {
@@ -109,12 +108,9 @@ namespace ChainedDecos.Scripts
 
             Log.Info($"[ConnectButton] Connecting to {ip}:{port}");
 
-            bool isLocal = ip.StartsWith("127.") || ip.StartsWith("192.168.")
-                        || ip.StartsWith("10.")  || ip.StartsWith("172.")
-                        || ip == "::1" || ip == "localhost";
-
             LobbyManager.SelectedPort = port;
             Network.ConnectTo(ip, port);
+
             m_PendingIp   = ip;
             m_PendingPort = port;
             m_IsConnecting = true;
@@ -156,4 +152,3 @@ namespace ChainedDecos.Scripts
         }
     }
 }
-

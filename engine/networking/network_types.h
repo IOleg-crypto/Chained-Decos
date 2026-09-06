@@ -32,6 +32,12 @@ namespace Chained
 		Client,
 	};
 
+	enum class DriverType : uint8_t
+	{
+		ENet = 0,
+		JuiceICE = 1
+	};
+
 	enum class NetworkError : uint8_t
 	{
 		None = 0,

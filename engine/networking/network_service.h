@@ -30,9 +30,14 @@ namespace Chained
 		void Initialize() override;
 		void Shutdown() override;
 
-		void HostGame(uint16_t port, int maxClients);
-		void ConnectTo(const std::string& ip, uint16_t port);
+		void HostGame(uint16_t port = kDefaultPort, int maxClients = 4);
+		void HostGameIce(uint16_t port = kDefaultPort, int maxClients = 4);
+		void ConnectTo(const std::string& ip, uint16_t port = kDefaultPort);
 		void Disconnect();
+
+		std::string GetIceSessionToken();
+		bool SetRemoteIceToken(const std::string& token);
+		bool IsIceActive() const;
 
 		void Update(float dt);
 
@@ -60,6 +65,7 @@ namespace Chained
 
 		// STUN / NAT traversal
 		void QueryStunPublicEndpoint(uint16_t localPort);
+		void QueryStunPublicEndpointSync(uint16_t localPort);
 		void StartHolePunch(const std::string& remoteIP, uint16_t remotePort);
 		void PerformHolePunch(uint16_t localPort, const std::string& remoteIP, uint16_t remotePort);
 		const std::string& GetStunPublicIP() const

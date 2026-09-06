@@ -3,7 +3,7 @@ Project:
   IconPath: resources/icons/chaineddecos.jpg
   StartScene: scenes\start_menu.chscene
   AssetDirectory: assets
-  ActiveScene: assets/scenes/untitled100.chscene
+  ActiveScene: assets/scenes/lobby.chscene
   Physics:
     Gravity: 17.2999992
     FixedTimestep: 0.00416666688
@@ -11,7 +11,7 @@ Project:
     TargetFPS: 60
   Render:
     ShadowResolution: 512
-    EnableShadows: false
+    EnableShadows: true
     AntiAliasingSamples: 2
   Mesh:
     ImportMaterials: true

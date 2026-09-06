@@ -74,6 +74,15 @@ namespace Chained
 			m_Driver = std::move(driver);
 		}
 
+		void SetDriverType(DriverType type);
+		DriverType GetDriverType() const
+		{
+			return m_DriverType;
+		}
+
+		std::string GetIceSessionToken() const;
+		bool SetRemoteIceToken(const std::string& token);
+
 		bool IsClientConnected(int clientIndex) const;
 		uint32_t GetPeerRtt(int peerIndex) const;
 
@@ -92,6 +101,7 @@ namespace Chained
 		void CheckPeerTimeouts(float dt, float timeoutSeconds);
 
 	private:
+		DriverType m_DriverType = DriverType::ENet;
 		std::unique_ptr<INetworkDriver> m_Driver;
 		int m_ServerConnection = kInvalidPeerHandle;
 

@@ -329,9 +329,14 @@ namespace Chained
 	void ENetThreadedDriver::WorkerLoop()
 	{
 		std::vector<OutboundPacket> pendingOutbound;
+		uint64_t loopIterations = 0;
+		uint64_t eventsProcessed = 0;
+		uint64_t serviceCallErrors = 0;
+		auto lastHeartbeat = std::chrono::steady_clock::now();
 
 		while (m_WorkerRunning.load(std::memory_order_relaxed))
 		{
+			loopIterations++;
 			// 1. Drain outbound commands
 			{
 				std::unique_lock<std::mutex> lock(m_OutboundMutex);
@@ -449,8 +454,23 @@ namespace Chained
 			if (m_Host)
 			{
 				ENetEvent event;
-				while (m_Host && enet_host_service(m_Host, &event, 0) > 0)
+				while (m_Host)
 				{
+					int svcResult = enet_host_service(m_Host, &event, 0);
+					if (svcResult < 0)
+					{
+						serviceCallErrors++;
+						CH_CORE_WARN("[ENet][Worker] enet_host_service returned error: {}", svcResult);
+						break;
+					}
+					else if (svcResult == 0)
+					{
+						// No events available — normal, exit loop
+						break;
+					}
+
+					eventsProcessed++;
+
 					Role role = m_Role.load(std::memory_order_relaxed);
 
 					switch (event.type)
@@ -576,6 +596,19 @@ namespace Chained
 
 					default:
 						break;
+					}
+				}
+
+				// 3.5. Diagnostic heartbeat — log every 5 seconds
+				{
+					auto now = std::chrono::steady_clock::now();
+					if (now - lastHeartbeat >= std::chrono::seconds(5))
+					{
+						Role role = m_Role.load(std::memory_order_relaxed);
+						CH_CORE_INFO("[ENet][Worker] Alive — role={}, loop={}, events={}, service-errors={}, host={}",
+									 static_cast<int>(role), loopIterations, eventsProcessed, serviceCallErrors,
+									 (void*)m_Host);
+						lastHeartbeat = now;
 					}
 				}
 

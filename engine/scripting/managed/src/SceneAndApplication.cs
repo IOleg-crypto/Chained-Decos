@@ -216,6 +216,10 @@ namespace Chained
         internal static unsafe delegate* unmanaged<byte, void> Window_SetAntialiasing_Ptr;
         internal static unsafe delegate* unmanaged<int, void> Window_SetAntiAliasingSamples_Ptr;
         internal static unsafe delegate* unmanaged<int> Window_GetAntiAliasingSamples_Ptr;
+        internal static unsafe delegate* unmanaged<byte, void> Window_SetEnableShadows_Ptr;
+        internal static unsafe delegate* unmanaged<byte> Window_GetEnableShadows_Ptr;
+        internal static unsafe delegate* unmanaged<int, void> Window_SetShadowResolution_Ptr;
+        internal static unsafe delegate* unmanaged<int> Window_GetShadowResolution_Ptr;
         internal static unsafe delegate* unmanaged<byte> Window_GetVSync_Ptr;
         internal static unsafe delegate* unmanaged<byte> Window_GetFullscreen_Ptr;
         internal static unsafe delegate* unmanaged<int> Window_GetWidth_Ptr;
@@ -263,6 +267,34 @@ namespace Chained
         {
             if (Window_GetAntiAliasingSamples_Ptr == null) return 4;
             return Window_GetAntiAliasingSamples_Ptr();
+        }
+
+        /// <summary>Enables or disables shadow rendering.</summary>
+        public static unsafe void SetEnableShadows(bool enabled)
+        {
+            if (Window_SetEnableShadows_Ptr == null) return;
+            Window_SetEnableShadows_Ptr((byte)(enabled ? 1 : 0));
+        }
+
+        /// <summary>Returns whether shadow rendering is enabled.</summary>
+        public static unsafe bool GetEnableShadows()
+        {
+            if (Window_GetEnableShadows_Ptr == null) return true;
+            return Window_GetEnableShadows_Ptr() != 0;
+        }
+
+        /// <summary>Sets the shadow map resolution (512, 1024, 2048, 4096).</summary>
+        public static unsafe void SetShadowResolution(int resolution)
+        {
+            if (Window_SetShadowResolution_Ptr == null) return;
+            Window_SetShadowResolution_Ptr(resolution);
+        }
+
+        /// <summary>Returns the shadow map resolution in pixels.</summary>
+        public static unsafe int GetShadowResolution()
+        {
+            if (Window_GetShadowResolution_Ptr == null) return 2048;
+            return Window_GetShadowResolution_Ptr();
         }
 
         /// <summary>Returns whether vertical sync is enabled.</summary>

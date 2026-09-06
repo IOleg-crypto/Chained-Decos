@@ -151,6 +151,35 @@ namespace Chained
 
 		if (result != UPNPCOMMAND_SUCCESS)
 		{
+			// Error 718 = ConflictInMappingEntry — port already mapped by another client
+			// (e.g. manual port forwarding rule). Check if the existing mapping is correct.
+			if (result == 718)
+			{
+				char existingClient[16] = {};
+				char existingPort[6] = {};
+				char existingDesc[80] = {};
+				char existingEnabled[4] = {};
+				char existingLease[16] = {};
+
+				int getRes = UPNP_GetSpecificPortMappingEntry(
+					static_cast<char*>(m_ControlURL), static_cast<char*>(m_ServiceType), extPort, protocol, nullptr,
+					existingClient, existingPort, existingDesc, existingEnabled, existingLease);
+
+				if (getRes == UPNPCOMMAND_SUCCESS && existingClient[0] != '\0')
+				{
+					// A mapping exists — check if it points to our LAN IP
+					if (std::strcmp(existingClient, m_LanAddress) == 0)
+					{
+						m_PortMapped = true;
+						CH_CORE_INFO("UPnP: Port {} ({}) already mapped to {} by manual rule — treating as OK", port,
+									 protocol, existingClient);
+						return true;
+					}
+					CH_CORE_WARN("UPnP: Port {} ({}) mapped to different client {} (expected {}). Conflict.", port,
+								 protocol, existingClient, m_LanAddress);
+				}
+			}
+
 			CH_CORE_WARN("UPnP: Failed to add port mapping {}:{} ({}) — error code: {}", intClient, port, protocol,
 						 result);
 			m_PortMapped = false;

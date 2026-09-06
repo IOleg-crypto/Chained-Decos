@@ -451,4 +451,15 @@ namespace Chained
 		return glfwGetWindowAttrib(m_WindowHandle, GLFW_FOCUSED) == GLFW_TRUE;
 	}
 
+	void GlfwWindow::SetClipboardText(const std::string& text)
+	{
+		glfwSetClipboardString(m_WindowHandle, text.c_str());
+	}
+
+	std::string GlfwWindow::GetClipboardText() const
+	{
+		const char* text = glfwGetClipboardString(m_WindowHandle);
+		return text ? std::string(text) : "";
+	}
+
 } // namespace Chained

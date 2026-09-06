@@ -417,4 +417,53 @@ namespace Chained
 		return net->GetPing();
 	}
 
+	CH_SCRIPT_FUNC void Network_HostGameIce(uint16_t port, int maxClients)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net)
+		{
+			return;
+		}
+		CH_CORE_INFO("[Script] Network.HostGameIce(port={}, maxClients={})", port, maxClients);
+		net->HostGameIce(port, maxClients);
+	}
+
+	CH_SCRIPT_FUNC void Network_GetIceSessionToken(char* outBuffer, int bufferSize)
+	{
+		if (!outBuffer || bufferSize <= 0)
+		{
+			return;
+		}
+		outBuffer[0] = '\0';
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net)
+		{
+			return;
+		}
+		std::string token = net->GetIceSessionToken();
+		std::strncpy(outBuffer, token.c_str(), bufferSize - 1);
+		outBuffer[bufferSize - 1] = '\0';
+	}
+
+	CH_SCRIPT_FUNC uint8_t Network_SetRemoteIceToken(const Coral::UCChar* token)
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net || !token)
+		{
+			return 0;
+		}
+		std::string tokenStr = ch_u16_to_string(token);
+		return net->SetRemoteIceToken(tokenStr) ? 1 : 0;
+	}
+
+	CH_SCRIPT_FUNC uint8_t Network_IsIceActive()
+	{
+		auto* net = ServiceLocator::TryGet<Network>();
+		if (!net)
+		{
+			return 0;
+		}
+		return net->IsIceActive() ? 1 : 0;
+	}
+
 } // namespace Chained

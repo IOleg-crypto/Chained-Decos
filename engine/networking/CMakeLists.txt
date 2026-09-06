@@ -16,6 +16,8 @@ set(NETWORK_SOURCES
     stun_client.cpp
     upnp_port_mapper.h
     upnp_port_mapper.cpp
+    juice_ice_driver.h
+    juice_ice_driver.cpp
 )
 
 add_library(engine_network STATIC
@@ -32,6 +34,7 @@ target_link_libraries(engine_network PUBLIC
     engine_project
     engine_external_entt
     enet::enet_static
+    juice
     glm
     engine_external_miniupnpc
 )

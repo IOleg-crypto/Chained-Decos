@@ -337,6 +337,12 @@ namespace Chained
 								 (void*)&Window_SetAntiAliasingSamples);
 		assembly.AddInternalCall("Chained.AppWindow", "Window_GetAntiAliasingSamples_Ptr",
 								 (void*)&Window_GetAntiAliasingSamples);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_SetEnableShadows_Ptr", (void*)&Window_SetEnableShadows);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetEnableShadows_Ptr", (void*)&Window_GetEnableShadows);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_SetShadowResolution_Ptr",
+								 (void*)&Window_SetShadowResolution);
+		assembly.AddInternalCall("Chained.AppWindow", "Window_GetShadowResolution_Ptr",
+								 (void*)&Window_GetShadowResolution);
 		assembly.AddInternalCall("Chained.AppWindow", "Window_GetVSync_Ptr", (void*)&Window_GetVSync);
 		assembly.AddInternalCall("Chained.AppWindow", "Window_GetFullscreen_Ptr", (void*)&Window_GetFullscreen);
 		assembly.AddInternalCall("Chained.AppWindow", "Window_GetWidth_Ptr", (void*)&Window_GetWidth);
@@ -396,6 +402,16 @@ namespace Chained
 								 (void*)&Network_GetStunPublicAddress);
 		assembly.AddInternalCall("Chained.Network", "Network_StartHolePunch_Ptr", (void*)&Network_StartHolePunch);
 		assembly.AddInternalCall("Chained.Network", "Network_QueryStun_Ptr", (void*)&Network_QueryStun);
+
+		// ICE / WebRTC
+		assembly.AddInternalCall("Chained.Network", "Network_HostGameIce_Ptr", (void*)&Network_HostGameIce);
+		assembly.AddInternalCall("Chained.Network", "Network_GetIceSessionToken_Ptr",
+								 (void*)&Network_GetIceSessionToken);
+		assembly.AddInternalCall("Chained.Network", "Network_SetRemoteIceToken_Ptr", (void*)&Network_SetRemoteIceToken);
+		assembly.AddInternalCall("Chained.Network", "Network_IsIceActive_Ptr", (void*)&Network_IsIceActive);
+
+		// Clipboard
+		assembly.AddInternalCall("Chained.Clipboard", "Clipboard_SetText_Ptr", (void*)&Clipboard_SetText);
 
 		// ── Auto-generated: Player, Spawn, NetworkIdentity properties ──────
 #include "generated/script_glue_generated_reg.inl"

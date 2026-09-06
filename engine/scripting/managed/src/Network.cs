@@ -59,6 +59,12 @@ namespace Chained
         // Ping / RTT
         internal static unsafe delegate* unmanaged<uint> Network_GetPing_Ptr;
 
+        // ICE / WebRTC
+        internal static unsafe delegate* unmanaged<ushort, int, void> Network_HostGameIce_Ptr;
+        internal static unsafe delegate* unmanaged<char*, int, void> Network_GetIceSessionToken_Ptr;
+        internal static unsafe delegate* unmanaged<char*, byte> Network_SetRemoteIceToken_Ptr;
+        internal static unsafe delegate* unmanaged<byte> Network_IsIceActive_Ptr;
+
 #pragma warning restore 0649
 
         /// <summary>Starts a listen server on the given port.</summary>
@@ -173,6 +179,9 @@ namespace Chained
         /// <summary>Number of players in the lobby (including host).</summary>
         public static unsafe int PlayerCount => Network_GetPlayerCount_Ptr != null ? Network_GetPlayerCount_Ptr() : 0;
 
+        /// <summary>Returns the player count in the lobby.</summary>
+        public static int GetPlayerCount() => PlayerCount;
+
         /// <summary>Returns the player list as a JSON string.</summary>
         public static unsafe string GetPlayerListJSON()
         {
@@ -268,5 +277,36 @@ namespace Chained
             if (Network_GetPing_Ptr == null) return 0;
             return Network_GetPing_Ptr();
         }
+
+        // ── ICE / WebRTC ────────────────────────────────────────────────
+
+        /// <summary>Starts an ICE listen server using WebRTC STUN.</summary>
+        public static unsafe void HostGameIce(ushort port = DefaultPort, int maxClients = 4)
+        {
+            if (Network_HostGameIce_Ptr == null) return;
+            Network_HostGameIce_Ptr(port, maxClients);
+        }
+
+        /// <summary>Returns the local ICE SDP session token for WebRTC relay connections.</summary>
+        public static unsafe string GetIceSessionToken()
+        {
+            if (Network_GetIceSessionToken_Ptr == null) return string.Empty;
+            sbyte* buf = stackalloc sbyte[4096];
+            Network_GetIceSessionToken_Ptr((char*)buf, 4096);
+            int len = 0;
+            while (buf[len] != 0 && len < 4095) len++;
+            return System.Text.Encoding.UTF8.GetString((byte*)buf, len);
+        }
+
+        /// <summary>Sets the remote ICE SDP session token to initiate WebRTC relay connectivity.</summary>
+        public static unsafe bool SetRemoteIceToken(string token)
+        {
+            if (Network_SetRemoteIceToken_Ptr == null || string.IsNullOrEmpty(token)) return false;
+            fixed (char* ptr = token) return Network_SetRemoteIceToken_Ptr(ptr) != 0;
+        }
+
+        /// <summary>True when the network session is operating via libjuice ICE.</summary>
+        public static unsafe bool IsIceActive => Network_IsIceActive_Ptr != null && Network_IsIceActive_Ptr() != 0;
+
     }
 }

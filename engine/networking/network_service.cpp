@@ -102,9 +102,16 @@ namespace Chained
 			}
 			if (m_UpnpMapper.IsAvailable())
 			{
-				m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
-				CH_CORE_INFO("[Network][Host] UPnP: OK | Port {} (UDP) mapped | Router LAN: {}", port,
-							 m_UpnpMapper.GetLanIP());
+				bool mapped = m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
+				if (mapped)
+				{
+					CH_CORE_INFO("[Network][Host] UPnP: OK | Port {} (UDP) mapped | Router LAN: {}", port,
+								 m_UpnpMapper.GetLanIP());
+				}
+				else
+				{
+					CH_CORE_WARN("[Network][Host] UPnP: Mapping failed — port {} may need manual forwarding.", port);
+				}
 			}
 			else
 			{
@@ -112,10 +119,12 @@ namespace Chained
 							 port);
 			}
 
-			// Query STUN on-demand for the host's public IP
-			QueryStunPublicEndpoint(port);
+			// Query STUN synchronously BEFORE ENet binds the port,
+			// so STUN can actually bind to localPort and verify it's reachable from the internet.
+			QueryStunPublicEndpointSync(port);
 		}
 
+		m_Session.SetDriverType(DriverType::ENet);
 		NetworkError err = m_Session.HostGame(port, maxClients);
 		if (err != NetworkError::None)
 		{
@@ -131,9 +140,60 @@ namespace Chained
 		CH_CORE_INFO("[Network][Host] Server listening on LAN: {} (ENet Host active).", GetListenAddress());
 	}
 
+	void Network::HostGameIce(uint16_t port, int maxClients)
+	{
+		CH_CORE_INFO("[Network][Host] Starting ICE host on port {} (max {} clients)...", port, maxClients);
+
+		m_Session.SetDriverType(DriverType::JuiceICE);
+		NetworkError err = m_Session.HostGame(port, maxClients);
+		if (err != NetworkError::None)
+		{
+			CH_CORE_ERROR("[Network][Host] Failed to start ICE host (error={}).", static_cast<int>(err));
+			return;
+		}
+
+		m_PlayerManager.Reset();
+		m_PlayerManager.SetHostNetworkID(kHostNetworkID);
+		m_PlayerManager.AddHostSelf(kHostNetworkID, m_PlayerManager.GetLocalPlayerName(),
+									m_PlayerManager.GetLocalSkinIndex());
+
+		CH_CORE_INFO("[Network][Host] ICE Host active with STUN.");
+	}
+
+	std::string Network::GetIceSessionToken()
+	{
+		return m_Session.GetIceSessionToken();
+	}
+
+	bool Network::SetRemoteIceToken(const std::string& token)
+	{
+		return m_Session.SetRemoteIceToken(token);
+	}
+
+	bool Network::IsIceActive() const
+	{
+		return m_Session.GetDriverType() == DriverType::JuiceICE;
+	}
+
 	void Network::ConnectTo(const std::string& ip, uint16_t port)
 	{
-		CH_CORE_INFO("[Network][Client] Connect requested to target {}:{}...", ip, port);
+		CH_CORE_INFO("[Network][Client] Connect requested to target {} (port={})...", ip.substr(0, 30), port);
+
+		if (ip.rfind("ICE:", 0) == 0 || ip.rfind("v=0", 0) == 0 || ip.find("ice-ufrag") != std::string::npos)
+		{
+			m_Session.SetDriverType(DriverType::JuiceICE);
+			NetworkError err = m_Session.ConnectTo(ip, port);
+			if (err != NetworkError::None)
+			{
+				CH_CORE_ERROR("[Network][Client] Failed to initiate ICE connection (error={}).", static_cast<int>(err));
+				return;
+			}
+			m_PlayerManager.Reset();
+			CH_CORE_INFO("[Network][Client] Connecting via libjuice ICE to host token...");
+			return;
+		}
+
+		m_Session.SetDriverType(DriverType::ENet);
 
 		// Skip hairpin check for local addresses — connect directly
 		bool isLocal = (ip == "127.0.0.1" || ip == "localhost" || ip == "::1" || ip.rfind("192.168.", 0) == 0 ||
@@ -143,16 +203,38 @@ namespace Chained
 
 		if (!isLocal)
 		{
-			// Auto-detect hairpin NAT: if connecting to our own public IP, use localhost
-			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-			std::string myPubIP = m_ResolvedPublicIP;
-			if (myPubIP.empty() && !m_CachedPublicIP.empty() && m_CachedPublicIP != "Fetching...")
+			// Auto-detect hairpin NAT: if connecting to our own public IP, use localhost.
+			// Populate the public IP cache via a quick STUN query if we don't have it yet
+			// (e.g., client instance that never hosted).
+
+			std::string myPubIP;
 			{
-				myPubIP = m_CachedPublicIP;
-				size_t colon = myPubIP.rfind(':');
-				if (colon != std::string::npos)
+				std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+				myPubIP = m_ResolvedPublicIP;
+				if (myPubIP.empty() && !m_CachedPublicIP.empty() && m_CachedPublicIP != "Fetching...")
 				{
-					myPubIP = myPubIP.substr(0, colon);
+					myPubIP = m_CachedPublicIP;
+					size_t colon = myPubIP.rfind(':');
+					if (colon != std::string::npos)
+					{
+						myPubIP = myPubIP.substr(0, colon);
+					}
+				}
+			}
+
+			// If we still don't know our public IP, do a fast sync STUN query now
+			// (ephemeral port 0, 1500ms timeout) to enable hairpin detection.
+			if (myPubIP.empty())
+			{
+				CH_CORE_INFO("[Network][Client] No public IP cached — running fast STUN for hairpin detection...");
+				auto stunResult = m_StunClient.QueryPublicEndpointSync(0, 1500);
+				if (stunResult.Success)
+				{
+					myPubIP = stunResult.PublicIP;
+					std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+					// Cache it so future calls are instant
+					m_CachedPublicIP = stunResult.PublicIP + ":" + std::to_string(stunResult.PublicPort);
+					CH_CORE_INFO("[Network][Client] Fast STUN resolved public IP: {}", m_CachedPublicIP);
 				}
 			}
 
@@ -362,26 +444,46 @@ namespace Chained
 			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
 			if (result.Success)
 			{
-				// If UPnP is active, the router has forwarded external localPort -> internal localPort.
-				// If STUN could not bind to localPort (e.g. ENet already owns it), STUN used an ephemeral port
-				// which is unrelated to the game, so the game is reachable on localPort.
-				// Only if UPnP is NOT active AND STUN bound to localPort do we use STUN's mapped public port.
 				uint16_t effectivePort = localPort;
-				if (!m_UpnpMapper.IsAvailable() && result.BoundToRequestedPort && result.PublicPort != 0)
+				if (!m_UpnpMapper.IsPortMapped() && result.BoundToRequestedPort && result.PublicPort != 0)
 				{
 					effectivePort = result.PublicPort;
 				}
 
 				m_CachedPublicIP = result.PublicIP + ":" + std::to_string(effectivePort);
-				CH_CORE_INFO("Network: Public endpoint: {} (IP: {}, Port: {}, UPnP: {}, STUN bound: {})",
+				CH_CORE_INFO("Network: Public endpoint: {} (IP: {}, Port: {}, UPnP mapped: {}, STUN bound: {})",
 							 m_CachedPublicIP, result.PublicIP, effectivePort,
-							 m_UpnpMapper.IsAvailable() ? "yes" : "no", result.BoundToRequestedPort ? "yes" : "no");
+							 m_UpnpMapper.IsPortMapped() ? "yes" : "no", result.BoundToRequestedPort ? "yes" : "no");
 			}
 			else
 			{
 				CH_CORE_WARN("Network: STUN query failed — {}", result.Error);
 			}
 		});
+	}
+
+	void Network::QueryStunPublicEndpointSync(uint16_t localPort)
+	{
+		CH_CORE_INFO("Network: Querying STUN servers for public endpoint (local port {}, sync)...", localPort);
+		auto result = m_StunClient.QueryPublicEndpointSync(localPort, 3000);
+		std::lock_guard<std::mutex> lock(m_PublicIPMutex);
+		if (result.Success)
+		{
+			uint16_t effectivePort = localPort;
+			if (!m_UpnpMapper.IsPortMapped() && result.BoundToRequestedPort && result.PublicPort != 0)
+			{
+				effectivePort = result.PublicPort;
+			}
+
+			m_CachedPublicIP = result.PublicIP + ":" + std::to_string(effectivePort);
+			CH_CORE_INFO("Network: Public endpoint: {} (IP: {}, Port: {}, UPnP mapped: {}, STUN bound: {})",
+						 m_CachedPublicIP, result.PublicIP, effectivePort, m_UpnpMapper.IsPortMapped() ? "yes" : "no",
+						 result.BoundToRequestedPort ? "yes" : "no");
+		}
+		else
+		{
+			CH_CORE_WARN("Network: STUN query failed — {}", result.Error);
+		}
 	}
 
 	void Network::StartHolePunch(const std::string& remoteIP, uint16_t remotePort)
