@@ -52,29 +52,7 @@ namespace Chained
 			}
 		});
 
-		// Resolve public IP in background on startup so hairpin NAT detection works for both Host and Client
-		if (!m_TestMode)
-		{
-			if (m_IPFetchThread.joinable())
-			{
-				m_IPFetchThread.join();
-			}
-			m_IPFetchThread = std::thread([this]() {
-				auto stunRes = m_StunClient.QueryPublicEndpointSync(0, 1500);
-				if (stunRes.Success && !stunRes.PublicIP.empty())
-				{
-					std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-					m_CachedPublicIP = stunRes.PublicIP;
-					CH_CORE_INFO("Network: Public IP resolved via STUN: {}", m_CachedPublicIP);
-				}
-				else
-				{
-					CH_CORE_WARN("Network: STUN failed to resolve public IP.");
-				}
-			});
-		}
-
-		CH_CORE_INFO("Network: Initialized.");
+		CH_CORE_TRACE("[Network] Initialized in Offline mode.");
 	}
 
 	void Network::Shutdown()
@@ -114,17 +92,7 @@ namespace Chained
 
 	void Network::HostGame(uint16_t port, int maxClients)
 	{
-		NetworkError err = m_Session.HostGame(port, maxClients);
-		if (err != NetworkError::None)
-		{
-			CH_CORE_ERROR("Network: Failed to host (error={}).", static_cast<int>(err));
-			return;
-		}
-
-		m_PlayerManager.Reset();
-		m_PlayerManager.SetHostNetworkID(kHostNetworkID);
-		m_PlayerManager.AddHostSelf(kHostNetworkID, m_PlayerManager.GetLocalPlayerName(),
-									m_PlayerManager.GetLocalSkinIndex());
+		CH_CORE_INFO("[Network][Host] Starting server on port {} (max {} clients)...", port, maxClients);
 
 		if (!m_TestMode)
 		{
@@ -135,30 +103,38 @@ namespace Chained
 			if (m_UpnpMapper.IsAvailable())
 			{
 				m_UpnpMapper.AddMapping(port, "UDP", "ChainedDecos");
-				CH_CORE_INFO("Network: UPnP mapping added.");
+				CH_CORE_INFO("[Network][Host] UPnP: OK | Port {} (UDP) mapped | Router LAN: {}", port,
+							 m_UpnpMapper.GetLanIP());
 			}
 			else
 			{
-				CH_CORE_WARN("Network: UPnP unavailable — players must forward port {} manually.", port);
-			}
-		}
-
-		if (!m_TestMode)
-		{
-			{
-				std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-				m_CachedPublicIP = "Fetching...";
+				CH_CORE_WARN("[Network][Host] UPnP: Unavailable (port {} must be forwarded manually if behind NAT).",
+							 port);
 			}
 
-			// Query STUN for public endpoint
+			// Query STUN on-demand for the host's public IP
 			QueryStunPublicEndpoint(port);
 		}
 
-		CH_CORE_INFO("Network: Hosting on port {} (max {} clients).", port, maxClients);
+		NetworkError err = m_Session.HostGame(port, maxClients);
+		if (err != NetworkError::None)
+		{
+			CH_CORE_ERROR("[Network][Host] Failed to start host server (error={}).", static_cast<int>(err));
+			return;
+		}
+
+		m_PlayerManager.Reset();
+		m_PlayerManager.SetHostNetworkID(kHostNetworkID);
+		m_PlayerManager.AddHostSelf(kHostNetworkID, m_PlayerManager.GetLocalPlayerName(),
+									m_PlayerManager.GetLocalSkinIndex());
+
+		CH_CORE_INFO("[Network][Host] Server listening on LAN: {} (ENet Host active).", GetListenAddress());
 	}
 
 	void Network::ConnectTo(const std::string& ip, uint16_t port)
 	{
+		CH_CORE_INFO("[Network][Client] Connect requested to target {}:{}...", ip, port);
+
 		// Skip hairpin check for local addresses — connect directly
 		bool isLocal = (ip == "127.0.0.1" || ip == "localhost" || ip == "::1" || ip.rfind("192.168.", 0) == 0 ||
 						ip.rfind("10.", 0) == 0 || ip.rfind("172.", 0) == 0);
@@ -169,27 +145,30 @@ namespace Chained
 		{
 			// Auto-detect hairpin NAT: if connecting to our own public IP, use localhost
 			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
-			if (!m_CachedPublicIP.empty() && m_CachedPublicIP != "Fetching...")
+			std::string myPubIP = m_ResolvedPublicIP;
+			if (myPubIP.empty() && !m_CachedPublicIP.empty() && m_CachedPublicIP != "Fetching...")
 			{
-				std::string pubIP = m_CachedPublicIP;
-				size_t colon = pubIP.rfind(':');
+				myPubIP = m_CachedPublicIP;
+				size_t colon = myPubIP.rfind(':');
 				if (colon != std::string::npos)
 				{
-					pubIP = pubIP.substr(0, colon);
+					myPubIP = myPubIP.substr(0, colon);
 				}
+			}
 
-				if (ip == pubIP)
-				{
-					resolvedIP = "127.0.0.1";
-					CH_CORE_INFO("Network: Hairpin NAT detected — redirecting {}:{} → 127.0.0.1:{}", ip, port, port);
-				}
+			if (!myPubIP.empty() && ip == myPubIP)
+			{
+				resolvedIP = "127.0.0.1";
+				CH_CORE_INFO("[Network][Client] Hairpin NAT detected (target matches local public IP {}) — redirecting "
+							 "to 127.0.0.1:{}",
+							 myPubIP, port);
 			}
 		}
 
 		NetworkError err = m_Session.ConnectTo(resolvedIP, port);
 		if (err != NetworkError::None)
 		{
-			CH_CORE_ERROR("Network: Failed to connect (error={}).", static_cast<int>(err));
+			CH_CORE_ERROR("[Network][Client] Failed to initiate connection (error={}).", static_cast<int>(err));
 			return;
 		}
 
@@ -202,7 +181,7 @@ namespace Chained
 		m_ReconnectPending = false;
 		m_ReconnectTimer = 0.0f;
 
-		CH_CORE_INFO("Network: Connecting to {}:{} (resolved: {})...", ip, port, resolvedIP);
+		CH_CORE_INFO("[Network][Client] Connecting to {} (resolved: {}:{})...", ip, resolvedIP, port);
 	}
 
 	void Network::Disconnect()
@@ -383,9 +362,20 @@ namespace Chained
 			std::lock_guard<std::mutex> lock(m_PublicIPMutex);
 			if (result.Success)
 			{
-				// Use the public IP from STUN but the ENet port (not STUN's ephemeral port)
-				m_CachedPublicIP = result.PublicIP + ":" + std::to_string(localPort);
-				CH_CORE_INFO("Network: STUN public endpoint: {} (IP from STUN, port from ENet)", m_CachedPublicIP);
+				// If UPnP is active, the router has forwarded external localPort -> internal localPort.
+				// If STUN could not bind to localPort (e.g. ENet already owns it), STUN used an ephemeral port
+				// which is unrelated to the game, so the game is reachable on localPort.
+				// Only if UPnP is NOT active AND STUN bound to localPort do we use STUN's mapped public port.
+				uint16_t effectivePort = localPort;
+				if (!m_UpnpMapper.IsAvailable() && result.BoundToRequestedPort && result.PublicPort != 0)
+				{
+					effectivePort = result.PublicPort;
+				}
+
+				m_CachedPublicIP = result.PublicIP + ":" + std::to_string(effectivePort);
+				CH_CORE_INFO("Network: Public endpoint: {} (IP: {}, Port: {}, UPnP: {}, STUN bound: {})",
+							 m_CachedPublicIP, result.PublicIP, effectivePort,
+							 m_UpnpMapper.IsAvailable() ? "yes" : "no", result.BoundToRequestedPort ? "yes" : "no");
 			}
 			else
 			{
@@ -578,13 +568,16 @@ namespace Chained
 		m_Transport.SendPacket(clientIndex, MessageType_PlayerAssign, w.Data().data(), w.Data().size(), true);
 
 		BroadcastPlayerList();
-		CH_CORE_INFO("Network: Client connected (index={}, netID={}).", clientIndex, assignedID);
+		CH_CORE_INFO("[Network][Peer] Client connected: ClientIndex={}, Assigned NetworkID={}", clientIndex,
+					 assignedID);
 	}
 
 	void Network::OnClientDisconnectedInternal(int clientIndex, uint64_t /*networkID*/)
 	{
+		const uint64_t discID = m_PlayerManager.GetNetworkIDForConnection(clientIndex);
 		m_PlayerManager.OnClientDisconnected(clientIndex);
 		BroadcastPlayerList();
+		CH_CORE_WARN("[Network][Peer] Client disconnected: ClientIndex={}, NetworkID={}", clientIndex, discID);
 	}
 
 } // namespace Chained

@@ -46,7 +46,8 @@ Chained Decos and Chained Engine target Windows and Linux.
 - YAML-based project and scene serialization
 - Editor with hierarchy/inspector/panels and in-editor play mode
 - Managed C# gameplay scripting through Coral (.NET/CoreCLR)
-- UDP networking with client/server model, UPnP port forwarding, and encryption
+- UDP networking with client/server model, automated UPnP port forwarding, STUN WAN discovery, Hairpin NAT detection, and encryption
+- Automatic high-performance discrete GPU offloading for dual-GPU laptops (Windows & Linux)
 - Project export pipeline with compressed asset packs (ZSTD)
 - Visual Animation Graph system (`.chag`)
 
@@ -336,6 +337,7 @@ Deploy workflow (`.github/workflows/deploy-sdk.yml`): triggered by `v*` tags, pa
 - **Stale files after `CH_ACTIVE_GAME` change:** Reconfigure the build directory, don't just rebuild
 - **LFS files not downloading:** Run `git lfs pull` after cloning
 - **Slow LFS downloads:** Increase concurrent transfers: `git config lfs.concurrenttransfers 16`
+- **Multiplayer host connection issues:** If external players cannot connect, ensure UDP port 4588 (or your selected game port) is allowed in Windows Firewall (`New-NetFirewallRule -DisplayName "ChainedDecos UDP" -Direction Inbound -Protocol UDP -LocalPort 4588 -Action Allow`) or check UPnP settings on your router.
 
 ## Known Issues
 

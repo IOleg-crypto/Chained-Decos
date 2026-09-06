@@ -209,11 +209,11 @@ namespace Chained
 		if (getaddrinfo(server.Host.c_str(), nullptr, &hints, &res) != 0 || !res)
 		{
 			result.Error = "DNS failed for " + server.Host;
-			CH_CORE_WARN("STUN: DNS resolution failed for '{}'", server.Host);
+			CH_CORE_WARN("[Network][STUN] DNS resolution failed for '{}'", server.Host);
 			return result;
 		}
 
-		CH_CORE_INFO("STUN: Resolved '{}' → family={}", server.Host, res->ai_family);
+		CH_CORE_TRACE("[Network][STUN] Resolved '{}' → family={}", server.Host, res->ai_family);
 
 		// Create UDP socket
 		int sock = socket(res->ai_family, res->ai_socktype, res->ai_protocol);
@@ -230,7 +230,7 @@ namespace Chained
 #endif
 			freeaddrinfo(res);
 			result.Error = "Socket creation failed (err=" + std::to_string(err) + ")";
-			CH_CORE_WARN("STUN: Socket creation failed for '{}' — err={}", server.Host, err);
+			CH_CORE_WARN("[Network][STUN] Socket creation failed for '{}' — err={}", server.Host, err);
 			return result;
 		}
 
@@ -253,9 +253,34 @@ namespace Chained
 		}
 		freeaddrinfo(res);
 
-		// Don't bind to specific port — let OS assign ephemeral port.
-		// Binding to ENet's port would fail because ENet already owns it.
-		// STUN gives us the public IP; we already know the ENet port separately.
+		// Allow reusing address/port
+		int reuseOpt = 1;
+#if CH_PLATFORM_WINDOWS
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const char*)&reuseOpt, sizeof(reuseOpt));
+#else
+		setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, (const void*)&reuseOpt, sizeof(reuseOpt));
+#ifdef SO_REUSEPORT
+		setsockopt(sock, SOL_SOCKET, SO_REUSEPORT, (const void*)&reuseOpt, sizeof(reuseOpt));
+#endif
+#endif
+
+		bool boundRequested = false;
+		if (localPort > 0)
+		{
+			sockaddr_in localAddr = {};
+			localAddr.sin_family = AF_INET;
+			localAddr.sin_addr.s_addr = INADDR_ANY;
+			localAddr.sin_port = htons(localPort);
+			if (bind(sock, (sockaddr*)&localAddr, sizeof(localAddr)) == 0)
+			{
+				boundRequested = true;
+				CH_CORE_TRACE("[Network][STUN] Bound socket to local port {}", localPort);
+			}
+			else
+			{
+				CH_CORE_TRACE("[Network][STUN] Querying via ephemeral port (local port {} in use)", localPort);
+			}
+		}
 
 		// Set socket timeout
 #if CH_PLATFORM_WINDOWS
@@ -298,10 +323,10 @@ namespace Chained
 			close(sock);
 #endif
 			result.Error = "Send failed (err=" + std::to_string(err) + ")";
-			CH_CORE_WARN("STUN: Sendto {}:{} failed — err={}", server.Host, server.Port, err);
+			CH_CORE_WARN("[Network][STUN] Sendto {}:{} failed — err={}", server.Host, server.Port, err);
 			return result;
 		}
-		CH_CORE_INFO("STUN: Sent {} bytes to {}:{}", sent, server.Host, server.Port);
+		CH_CORE_TRACE("[Network][STUN] Sent {} bytes to {}:{}", sent, server.Host, server.Port);
 
 		// Receive response
 		uint8_t response[1024];
@@ -324,10 +349,11 @@ namespace Chained
 #endif
 			result.Error =
 				"No response from STUN server (recv=" + std::to_string(received) + ", err=" + std::to_string(err) + ")";
-			CH_CORE_WARN("STUN: No response from {}:{} — received={}, err={}", server.Host, server.Port, received, err);
+			CH_CORE_TRACE("[Network][STUN] No response from {}:{} — received={}, err={}", server.Host, server.Port,
+						  received, err);
 			return result;
 		}
-		CH_CORE_INFO("STUN: Received {} bytes from {}:{}", received, server.Host, server.Port);
+		CH_CORE_TRACE("[Network][STUN] Received {} bytes from {}:{}", received, server.Host, server.Port);
 
 		// Parse response
 		std::string publicIP;
@@ -336,14 +362,15 @@ namespace Chained
 		if (ParseBindingResponse(response, received, transactionId, publicIP, publicPort))
 		{
 			result.Success = true;
+			result.BoundToRequestedPort = boundRequested;
 			result.PublicIP = publicIP;
 			result.PublicPort = publicPort;
-			CH_CORE_INFO("STUN: Public endpoint from {} → {}:{}", server.Host, publicIP, publicPort);
+			CH_CORE_INFO("[Network][STUN] Public endpoint resolved: {}:{}", publicIP, publicPort);
 		}
 		else
 		{
 			result.Error = "Failed to parse STUN response";
-			CH_CORE_WARN("STUN: Parse failed for response from {}:{}", server.Host, server.Port);
+			CH_CORE_WARN("[Network][STUN] Parse failed for response from {}:{}", server.Host, server.Port);
 		}
 
 		return result;

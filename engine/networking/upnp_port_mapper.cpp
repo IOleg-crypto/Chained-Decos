@@ -45,6 +45,7 @@ namespace Chained
 			m_ServiceType = nullptr;
 		}
 		m_Available = false;
+		m_PortMapped = false;
 		m_PublicIPFetched = false;
 		m_CachedPublicIP[0] = '\0';
 	}
@@ -128,6 +129,7 @@ namespace Chained
 	{
 		if (!m_Available || !m_ControlURL || !m_ServiceType)
 		{
+			m_PortMapped = false;
 			return false;
 		}
 
@@ -139,6 +141,11 @@ namespace Chained
 		char intClient[64] = {};
 		std::strncpy(intClient, m_LanAddress, sizeof(intClient) - 1);
 
+		// First, attempt to delete any existing stale mapping on this port to prevent Error 718
+		// (ConflictInMappingEntry)
+		UPNP_DeletePortMapping(static_cast<char*>(m_ControlURL), static_cast<char*>(m_ServiceType), extPort, protocol,
+							   nullptr);
+
 		int result = UPNP_AddPortMapping(static_cast<char*>(m_ControlURL), static_cast<char*>(m_ServiceType), extPort,
 										 intPort, intClient, description, protocol, nullptr, "0");
 
@@ -146,15 +153,18 @@ namespace Chained
 		{
 			CH_CORE_WARN("UPnP: Failed to add port mapping {}:{} ({}) — error code: {}", intClient, port, protocol,
 						 result);
+			m_PortMapped = false;
 			return false;
 		}
 
+		m_PortMapped = true;
 		CH_CORE_INFO("UPnP: Port mapping added — {}:{} ({}) [Service: {}]", intClient, port, protocol, description);
 		return true;
 	}
 
 	bool UpnpPortMapper::RemoveMapping(uint16_t port, const char* protocol)
 	{
+		m_PortMapped = false;
 		if (!m_Available || !m_ControlURL || !m_ServiceType)
 		{
 			return false;

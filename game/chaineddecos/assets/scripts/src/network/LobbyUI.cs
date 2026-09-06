@@ -173,7 +173,7 @@ namespace ChainedDecos.Scripts
                 string local = Network.GetListenAddress();
                 if (string.IsNullOrEmpty(local)) local = $"127.0.0.1:{LobbyManager.SelectedPort}";
                 string upnp = Network.IsUpnpAvailable ? "UPnP: OK" : "UPnP: Off";
-                string nat = Network.HasStunResult ? " | NAT: Open" : (fetching ? "" : " | NAT: Strict");
+                string nat = Network.HasStunResult ? " | STUN: Ready" : (fetching ? "" : " | STUN: Direct");
                 text = $"LAN: {local} | WAN: {pub} | {upnp}{nat}";
                 if (!fetching && text == m_LastDisplayedInfo) return;
             }

@@ -470,6 +470,12 @@ namespace Chained
 							event.peer->data = reinterpret_cast<void*>(static_cast<intptr_t>(clientIndex));
 							enet_peer_timeout(event.peer, 32, 15000, 45000);
 
+							char peerIp[64] = {};
+							enet_address_get_host_ip(&event.peer->address, peerIp, sizeof(peerIp));
+							CH_CORE_INFO(
+								"[Network][Host] Low-level ENet peer connected from {}:{} -> assigned ClientIndex={}",
+								peerIp, event.peer->address.port, clientIndex);
+
 							NetworkDriverEvent ev;
 							ev.Type = NetworkDriverEventType::Connected;
 							ev.PeerIndex = clientIndex;
@@ -481,6 +487,9 @@ namespace Chained
 						{
 							m_FullyConnected.store(true, std::memory_order_relaxed);
 							enet_peer_timeout(event.peer, 32, 15000, 45000);
+
+							CH_CORE_INFO("[Network][Client] Low-level ENet connection confirmed! (RTT: {}ms)",
+										 event.peer->roundTripTime);
 
 							NetworkDriverEvent ev;
 							ev.Type = NetworkDriverEventType::Connected;
@@ -513,6 +522,11 @@ namespace Chained
 								m_PeerRtt.erase(clientIndex);
 							}
 
+							char peerIp[64] = {};
+							enet_address_get_host_ip(&event.peer->address, peerIp, sizeof(peerIp));
+							CH_CORE_WARN("[Network][Host] Low-level ENet peer #{}({}:{}) disconnected (code={}).",
+										 clientIndex, peerIp, event.peer->address.port, event.data);
+
 							NetworkDriverEvent ev;
 							ev.Type = NetworkDriverEventType::Disconnected;
 							ev.PeerIndex = clientIndex;
@@ -525,6 +539,9 @@ namespace Chained
 							m_FullyConnected.store(false, std::memory_order_relaxed);
 							m_Role.store(Role::Offline, std::memory_order_relaxed);
 							m_ServerPeer = nullptr;
+
+							CH_CORE_WARN("[Network][Client] Low-level ENet disconnected from server (code={}).",
+										 event.data);
 
 							NetworkDriverEvent ev;
 							ev.Type = NetworkDriverEventType::Disconnected;

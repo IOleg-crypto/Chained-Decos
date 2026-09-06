@@ -77,26 +77,26 @@ namespace ChainedDecos.Scripts
             string ip   = ReadText(IpInputTag, DefaultIp);
             ushort port = DefaultPort;
 
-            string portText = ReadText(PortInputTag, "");
-            bool explicitPortGiven = false;
-            if (!string.IsNullOrWhiteSpace(portText))
+            // If the user entered/pasted "IP:PORT" (e.g. "178.150.20.10:54321"), prioritize it
+            if (ip.Contains(":"))
             {
-                if (ushort.TryParse(portText, out ushort parsedPort) && parsedPort > 0)
-                {
-                    port = parsedPort;
-                    explicitPortGiven = true;
-                }
-                else
-                {
-                    ShowError($"Invalid port: '{portText}'");
-                    return;
-                }
+                (ip, port) = ParseAddressField(ip, DefaultPort);
             }
-
-            // Only parse "IP:PORT" from IP field if port field wasn't explicitly given
-            if (!explicitPortGiven && ip.Contains(":"))
+            else
             {
-                (ip, port) = ParseAddressField(ip, port);
+                string portText = ReadText(PortInputTag, "");
+                if (!string.IsNullOrWhiteSpace(portText))
+                {
+                    if (ushort.TryParse(portText, out ushort parsedPort) && parsedPort > 0)
+                    {
+                        port = parsedPort;
+                    }
+                    else
+                    {
+                        ShowError($"Invalid port: '{portText}'");
+                        return;
+                    }
+                }
             }
 
             // Read nickname
@@ -112,14 +112,6 @@ namespace ChainedDecos.Scripts
             bool isLocal = ip.StartsWith("127.") || ip.StartsWith("192.168.")
                         || ip.StartsWith("10.")  || ip.StartsWith("172.")
                         || ip == "::1" || ip == "localhost";
-
-            // For WAN without UPnP — start hole punch in parallel with ENet connect.
-            // The hole punch socket opens the NAT pinhole; ENet then connects through it.
-            if (!isLocal && !Network.IsUpnpAvailable)
-            {
-                Log.Info($"[ConnectButton] Starting hole punch to {ip}:{port} (parallel)");
-                Network.StartHolePunch(ip, port);
-            }
 
             LobbyManager.SelectedPort = port;
             Network.ConnectTo(ip, port);

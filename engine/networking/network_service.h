@@ -182,7 +182,7 @@ namespace Chained
 		bool IsClientConnected(int clientIndex) const;
 		bool IsUpnpAvailable() const
 		{
-			return m_UpnpMapper.IsAvailable();
+			return m_UpnpMapper.IsPortMapped();
 		}
 
 		void SetTestMode(bool enabled)
@@ -219,6 +219,7 @@ namespace Chained
 		std::string m_PendingSceneChange;
 		UpnpPortMapper m_UpnpMapper;
 
+		std::string m_ResolvedPublicIP;
 		std::string m_CachedPublicIP;
 		std::mutex m_PublicIPMutex;
 		std::thread m_IPFetchThread;

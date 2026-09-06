@@ -22,6 +22,7 @@ namespace Chained
 		struct StunResult
 		{
 			bool Success = false;
+			bool BoundToRequestedPort = false;
 			std::string PublicIP;
 			uint16_t PublicPort = 0;
 			std::string Error;
